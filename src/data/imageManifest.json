@@ -1,0 +1,643 @@
+{
+  "version": "1.0.0",
+  "generated": "2025-10-22T19:15:00.325Z",
+  "cities": {},
+  "neighborhoods": {
+    "aoyama": {
+      "slug": "aoyama",
+      "hasCustomImage": true,
+      "square": {
+        "webp": "/images/neighborhoods/square/aoyama.webp",
+        "jpg": "/images/neighborhoods/square/aoyama.jpg"
+      },
+      "preview": {
+        "webp": "/images/neighborhoods/preview/aoyama-preview.webp",
+        "jpg": "/images/neighborhoods/preview/aoyama-preview.jpg"
+      }
+    },
+    "asakusa": {
+      "slug": "asakusa",
+      "hasCustomImage": true,
+      "square": {
+        "webp": "/images/neighborhoods/square/asakusa.webp",
+        "jpg": "/images/neighborhoods/square/asakusa.jpg"
+      },
+      "preview": {
+        "webp": "/images/neighborhoods/preview/asakusa-preview.webp",
+        "jpg": "/images/neighborhoods/preview/asakusa-preview.jpg"
+      }
+    },
+    "asakusabashi": {
+      "slug": "asakusabashi",
+      "hasCustomImage": true,
+      "square": {
+        "webp": "/images/neighborhoods/square/asakusabashi.webp",
+        "jpg": "/images/neighborhoods/square/asakusabashi.jpg"
+      },
+      "preview": {
+        "webp": "/images/neighborhoods/preview/asakusabashi-preview.webp",
+        "jpg": "/images/neighborhoods/preview/asakusabashi-preview.jpg"
+      }
+    },
+    "chiba": {
+      "slug": "chiba",
+      "hasCustomImage": true,
+      "square": {
+        "webp": "/images/neighborhoods/square/chiba.webp",
+        "jpg": "/images/neighborhoods/square/chiba.jpg"
+      },
+      "preview": {
+        "webp": "/images/neighborhoods/preview/chiba-preview.webp",
+        "jpg": "/images/neighborhoods/preview/chiba-preview.jpg"
+      }
+    },
+    "chofu": {
+      "slug": "chofu",
+      "hasCustomImage": true,
+      "square": {
+        "webp": "/images/neighborhoods/square/chofu.webp",
+        "jpg": "/images/neighborhoods/square/chofu.jpg"
+      },
+      "preview": {
+        "webp": "/images/neighborhoods/preview/chofu-preview.webp",
+        "jpg": "/images/neighborhoods/preview/chofu-preview.jpg"
+      }
+    },
+    "daikanyama": {
+      "slug": "daikanyama",
+      "hasCustomImage": true,
+      "square": {
+        "webp": "/images/neighborhoods/square/daikanyama.webp",
+        "jpg": "/images/neighborhoods/square/daikanyama.jpg"
+      },
+      "preview": {
+        "webp": "/images/neighborhoods/preview/daikanyama-preview.webp",
+        "jpg": "/images/neighborhoods/preview/daikanyama-preview.jpg"
+      }
+    },
+    "ebisu": {
+      "slug": "ebisu",
+      "hasCustomImage": true,
+      "square": {
+        "webp": "/images/neighborhoods/square/ebisu.webp",
+        "jpg": "/images/neighborhoods/square/ebisu.jpg"
+      },
+      "preview": {
+        "webp": "/images/neighborhoods/preview/ebisu-preview.webp",
+        "jpg": "/images/neighborhoods/preview/ebisu-preview.jpg"
+      }
+    },
+    "fukuoka": {
+      "slug": "fukuoka",
+      "hasCustomImage": true,
+      "square": {
+        "webp": "/images/neighborhoods/square/fukuoka.webp",
+        "jpg": "/images/neighborhoods/square/fukuoka.jpg"
+      },
+      "preview": {
+        "webp": "/images/neighborhoods/preview/fukuoka-preview.webp",
+        "jpg": "/images/neighborhoods/preview/fukuoka-preview.jpg"
+      }
+    },
+    "fukushima": {
+      "slug": "fukushima",
+      "hasCustomImage": true,
+      "square": {
+        "webp": "/images/neighborhoods/square/fukushima.webp",
+        "jpg": "/images/neighborhoods/square/fukushima.jpg"
+      },
+      "preview": {
+        "webp": "/images/neighborhoods/preview/fukushima-preview.webp",
+        "jpg": "/images/neighborhoods/preview/fukushima-preview.jpg"
+      }
+    },
+    "gakugei-daigaku": {
+      "slug": "gakugei-daigaku",
+      "hasCustomImage": true,
+      "square": {
+        "webp": "/images/neighborhoods/square/gakugei-daigaku.webp",
+        "jpg": "/images/neighborhoods/square/gakugei-daigaku.jpg"
+      },
+      "preview": {
+        "webp": "/images/neighborhoods/preview/gakugei-daigaku-preview.webp",
+        "jpg": "/images/neighborhoods/preview/gakugei-daigaku-preview.jpg"
+      }
+    },
+    "ginza": {
+      "slug": "ginza",
+      "hasCustomImage": true,
+      "square": {
+        "webp": "/images/neighborhoods/square/ginza.webp",
+        "jpg": "/images/neighborhoods/square/ginza.jpg"
+      },
+      "preview": {
+        "webp": "/images/neighborhoods/preview/ginza-preview.webp",
+        "jpg": "/images/neighborhoods/preview/ginza-preview.jpg"
+      }
+    },
+    "harajuku": {
+      "slug": "harajuku",
+      "hasCustomImage": true,
+      "square": {
+        "webp": "/images/neighborhoods/square/harajuku.webp",
+        "jpg": "/images/neighborhoods/square/harajuku.jpg"
+      },
+      "preview": {
+        "webp": "/images/neighborhoods/preview/harajuku-preview.webp",
+        "jpg": "/images/neighborhoods/preview/harajuku-preview.jpg"
+      }
+    },
+    "hiroo": {
+      "slug": "hiroo",
+      "hasCustomImage": true,
+      "square": {
+        "webp": "/images/neighborhoods/square/hiroo.webp",
+        "jpg": "/images/neighborhoods/square/hiroo.jpg"
+      },
+      "preview": {
+        "webp": "/images/neighborhoods/preview/hiroo-preview.webp",
+        "jpg": "/images/neighborhoods/preview/hiroo-preview.jpg"
+      }
+    },
+    "hiroshima": {
+      "slug": "hiroshima",
+      "hasCustomImage": true,
+      "square": {
+        "webp": "/images/neighborhoods/square/hiroshima.webp",
+        "jpg": "/images/neighborhoods/square/hiroshima.jpg"
+      },
+      "preview": {
+        "webp": "/images/neighborhoods/preview/hiroshima-preview.webp",
+        "jpg": "/images/neighborhoods/preview/hiroshima-preview.jpg"
+      }
+    },
+    "horie": {
+      "slug": "horie",
+      "hasCustomImage": true,
+      "square": {
+        "webp": "/images/neighborhoods/square/horie.webp",
+        "jpg": "/images/neighborhoods/square/horie.jpg"
+      },
+      "preview": {
+        "webp": "/images/neighborhoods/preview/horie-preview.webp",
+        "jpg": "/images/neighborhoods/preview/horie-preview.jpg"
+      }
+    },
+    "ikebukuro": {
+      "slug": "ikebukuro",
+      "hasCustomImage": true,
+      "square": {
+        "webp": "/images/neighborhoods/square/ikebukuro.webp",
+        "jpg": "/images/neighborhoods/square/ikebukuro.jpg"
+      },
+      "preview": {
+        "webp": "/images/neighborhoods/preview/ikebukuro-preview.webp",
+        "jpg": "/images/neighborhoods/preview/ikebukuro-preview.jpg"
+      }
+    },
+    "jinbocho": {
+      "slug": "jinbocho",
+      "hasCustomImage": true,
+      "square": {
+        "webp": "/images/neighborhoods/square/jinbocho.webp",
+        "jpg": "/images/neighborhoods/square/jinbocho.jpg"
+      },
+      "preview": {
+        "webp": "/images/neighborhoods/preview/jinbocho-preview.webp",
+        "jpg": "/images/neighborhoods/preview/jinbocho-preview.jpg"
+      }
+    },
+    "jiyugaoka": {
+      "slug": "jiyugaoka",
+      "hasCustomImage": true,
+      "square": {
+        "webp": "/images/neighborhoods/square/jiyugaoka.webp",
+        "jpg": "/images/neighborhoods/square/jiyugaoka.jpg"
+      },
+      "preview": {
+        "webp": "/images/neighborhoods/preview/jiyugaoka-preview.webp",
+        "jpg": "/images/neighborhoods/preview/jiyugaoka-preview.jpg"
+      }
+    },
+    "kanazawa": {
+      "slug": "kanazawa",
+      "hasCustomImage": true,
+      "square": {
+        "webp": "/images/neighborhoods/square/kanazawa.webp",
+        "jpg": "/images/neighborhoods/square/kanazawa.jpg"
+      },
+      "preview": {
+        "webp": "/images/neighborhoods/preview/kanazawa-preview.webp",
+        "jpg": "/images/neighborhoods/preview/kanazawa-preview.jpg"
+      }
+    },
+    "kichijoji": {
+      "slug": "kichijoji",
+      "hasCustomImage": true,
+      "square": {
+        "webp": "/images/neighborhoods/square/kichijoji.webp",
+        "jpg": "/images/neighborhoods/square/kichijoji.jpg"
+      },
+      "preview": {
+        "webp": "/images/neighborhoods/preview/kichijoji-preview.webp",
+        "jpg": "/images/neighborhoods/preview/kichijoji-preview.jpg"
+      }
+    },
+    "kiyosumi-shirakawa": {
+      "slug": "kiyosumi-shirakawa",
+      "hasCustomImage": true,
+      "square": {
+        "webp": "/images/neighborhoods/square/kiyosumi-shirakawa.webp",
+        "jpg": "/images/neighborhoods/square/kiyosumi-shirakawa.jpg"
+      },
+      "preview": {
+        "webp": "/images/neighborhoods/preview/kiyosumi-shirakawa-preview.webp",
+        "jpg": "/images/neighborhoods/preview/kiyosumi-shirakawa-preview.jpg"
+      }
+    },
+    "kobe": {
+      "slug": "kobe",
+      "hasCustomImage": true,
+      "square": {
+        "webp": "/images/neighborhoods/square/kobe.webp",
+        "jpg": "/images/neighborhoods/square/kobe.jpg"
+      },
+      "preview": {
+        "webp": "/images/neighborhoods/preview/kobe-preview.webp",
+        "jpg": "/images/neighborhoods/preview/kobe-preview.jpg"
+      }
+    },
+    "koenji": {
+      "slug": "koenji",
+      "hasCustomImage": true,
+      "square": {
+        "webp": "/images/neighborhoods/square/koenji.webp",
+        "jpg": "/images/neighborhoods/square/koenji.jpg"
+      },
+      "preview": {
+        "webp": "/images/neighborhoods/preview/koenji-preview.webp",
+        "jpg": "/images/neighborhoods/preview/koenji-preview.jpg"
+      }
+    },
+    "kojima": {
+      "slug": "kojima",
+      "hasCustomImage": true,
+      "square": {
+        "webp": "/images/neighborhoods/square/kojima.webp",
+        "jpg": "/images/neighborhoods/square/kojima.jpg"
+      },
+      "preview": {
+        "webp": "/images/neighborhoods/preview/kojima-preview.webp",
+        "jpg": "/images/neighborhoods/preview/kojima-preview.jpg"
+      }
+    },
+    "komae": {
+      "slug": "komae",
+      "hasCustomImage": true,
+      "square": {
+        "webp": "/images/neighborhoods/square/komae.webp",
+        "jpg": "/images/neighborhoods/square/komae.jpg"
+      },
+      "preview": {
+        "webp": "/images/neighborhoods/preview/komae-preview.webp",
+        "jpg": "/images/neighborhoods/preview/komae-preview.jpg"
+      }
+    },
+    "kuramae": {
+      "slug": "kuramae",
+      "hasCustomImage": true,
+      "square": {
+        "webp": "/images/neighborhoods/square/kuramae.webp",
+        "jpg": "/images/neighborhoods/square/kuramae.jpg"
+      },
+      "preview": {
+        "webp": "/images/neighborhoods/preview/kuramae-preview.webp",
+        "jpg": "/images/neighborhoods/preview/kuramae-preview.jpg"
+      }
+    },
+    "kyoto": {
+      "slug": "kyoto",
+      "hasCustomImage": true,
+      "square": {
+        "webp": "/images/neighborhoods/square/kyoto.webp",
+        "jpg": "/images/neighborhoods/square/kyoto.jpg"
+      },
+      "preview": {
+        "webp": "/images/neighborhoods/preview/kyoto-preview.webp",
+        "jpg": "/images/neighborhoods/preview/kyoto-preview.jpg"
+      }
+    },
+    "megurocity": {
+      "slug": "megurocity",
+      "hasCustomImage": true,
+      "square": {
+        "webp": "/images/neighborhoods/square/megurocity.webp",
+        "jpg": "/images/neighborhoods/square/megurocity.jpg"
+      },
+      "preview": {
+        "webp": "/images/neighborhoods/preview/megurocity-preview.webp",
+        "jpg": "/images/neighborhoods/preview/megurocity-preview.jpg"
+      }
+    },
+    "nakameguro": {
+      "slug": "nakameguro",
+      "hasCustomImage": true,
+      "square": {
+        "webp": "/images/neighborhoods/square/nakameguro.webp",
+        "jpg": "/images/neighborhoods/square/nakameguro.jpg"
+      },
+      "preview": {
+        "webp": "/images/neighborhoods/preview/nakameguro-preview.webp",
+        "jpg": "/images/neighborhoods/preview/nakameguro-preview.jpg"
+      }
+    },
+    "nakano": {
+      "slug": "nakano",
+      "hasCustomImage": true,
+      "square": {
+        "webp": "/images/neighborhoods/square/nakano.webp",
+        "jpg": "/images/neighborhoods/square/nakano.jpg"
+      },
+      "preview": {
+        "webp": "/images/neighborhoods/preview/nakano-preview.webp",
+        "jpg": "/images/neighborhoods/preview/nakano-preview.jpg"
+      }
+    },
+    "nakatsu": {
+      "slug": "nakatsu",
+      "hasCustomImage": true,
+      "square": {
+        "webp": "/images/neighborhoods/square/nakatsu.webp",
+        "jpg": "/images/neighborhoods/square/nakatsu.jpg"
+      },
+      "preview": {
+        "webp": "/images/neighborhoods/preview/nakatsu-preview.webp",
+        "jpg": "/images/neighborhoods/preview/nakatsu-preview.jpg"
+      }
+    },
+    "nakazakicho": {
+      "slug": "nakazakicho",
+      "hasCustomImage": true,
+      "square": {
+        "webp": "/images/neighborhoods/square/nakazakicho.webp",
+        "jpg": "/images/neighborhoods/square/nakazakicho.jpg"
+      },
+      "preview": {
+        "webp": "/images/neighborhoods/preview/nakazakicho-preview.webp",
+        "jpg": "/images/neighborhoods/preview/nakazakicho-preview.jpg"
+      }
+    },
+    "niigata": {
+      "slug": "niigata",
+      "hasCustomImage": true,
+      "square": {
+        "webp": "/images/neighborhoods/square/niigata.webp",
+        "jpg": "/images/neighborhoods/square/niigata.jpg"
+      },
+      "preview": {
+        "webp": "/images/neighborhoods/preview/niigata-preview.webp",
+        "jpg": "/images/neighborhoods/preview/niigata-preview.jpg"
+      }
+    },
+    "odaiba": {
+      "slug": "odaiba",
+      "hasCustomImage": true,
+      "square": {
+        "webp": "/images/neighborhoods/square/odaiba.webp",
+        "jpg": "/images/neighborhoods/square/odaiba.jpg"
+      },
+      "preview": {
+        "webp": "/images/neighborhoods/preview/odaiba-preview.webp",
+        "jpg": "/images/neighborhoods/preview/odaiba-preview.jpg"
+      }
+    },
+    "okayama": {
+      "slug": "okayama",
+      "hasCustomImage": true,
+      "square": {
+        "webp": "/images/neighborhoods/square/okayama.webp",
+        "jpg": "/images/neighborhoods/square/okayama.jpg"
+      },
+      "preview": {
+        "webp": "/images/neighborhoods/preview/okayama-preview.webp",
+        "jpg": "/images/neighborhoods/preview/okayama-preview.jpg"
+      }
+    },
+    "omotesando": {
+      "slug": "omotesando",
+      "hasCustomImage": true,
+      "square": {
+        "webp": "/images/neighborhoods/square/omotesando.webp",
+        "jpg": "/images/neighborhoods/square/omotesando.jpg"
+      },
+      "preview": {
+        "webp": "/images/neighborhoods/preview/omotesando-preview.webp",
+        "jpg": "/images/neighborhoods/preview/omotesando-preview.jpg"
+      }
+    },
+    "osu": {
+      "slug": "osu",
+      "hasCustomImage": true,
+      "square": {
+        "webp": "/images/neighborhoods/square/osu.webp",
+        "jpg": "/images/neighborhoods/square/osu.jpg"
+      },
+      "preview": {
+        "webp": "/images/neighborhoods/preview/osu-preview.webp",
+        "jpg": "/images/neighborhoods/preview/osu-preview.jpg"
+      }
+    },
+    "sakae": {
+      "slug": "sakae",
+      "hasCustomImage": true,
+      "square": {
+        "webp": "/images/neighborhoods/square/sakae.webp",
+        "jpg": "/images/neighborhoods/square/sakae.jpg"
+      },
+      "preview": {
+        "webp": "/images/neighborhoods/preview/sakae-preview.webp",
+        "jpg": "/images/neighborhoods/preview/sakae-preview.jpg"
+      }
+    },
+    "sangenjaya": {
+      "slug": "sangenjaya",
+      "hasCustomImage": true,
+      "square": {
+        "webp": "/images/neighborhoods/square/sangenjaya.webp",
+        "jpg": "/images/neighborhoods/square/sangenjaya.jpg"
+      },
+      "preview": {
+        "webp": "/images/neighborhoods/preview/sangenjaya-preview.webp",
+        "jpg": "/images/neighborhoods/preview/sangenjaya-preview.jpg"
+      }
+    },
+    "sapporo": {
+      "slug": "sapporo",
+      "hasCustomImage": true,
+      "square": {
+        "webp": "/images/neighborhoods/square/sapporo.webp",
+        "jpg": "/images/neighborhoods/square/sapporo.jpg"
+      },
+      "preview": {
+        "webp": "/images/neighborhoods/preview/sapporo-preview.webp",
+        "jpg": "/images/neighborhoods/preview/sapporo-preview.jpg"
+      }
+    },
+    "setagayacity": {
+      "slug": "setagayacity",
+      "hasCustomImage": true,
+      "square": {
+        "webp": "/images/neighborhoods/square/setagayacity.webp",
+        "jpg": "/images/neighborhoods/square/setagayacity.jpg"
+      },
+      "preview": {
+        "webp": "/images/neighborhoods/preview/setagayacity-preview.webp",
+        "jpg": "/images/neighborhoods/preview/setagayacity-preview.jpg"
+      }
+    },
+    "shibuya": {
+      "slug": "shibuya",
+      "hasCustomImage": true,
+      "square": {
+        "webp": "/images/neighborhoods/square/shibuya.webp",
+        "jpg": "/images/neighborhoods/square/shibuya.jpg"
+      },
+      "preview": {
+        "webp": "/images/neighborhoods/preview/shibuya-preview.webp",
+        "jpg": "/images/neighborhoods/preview/shibuya-preview.jpg"
+      }
+    },
+    "shimokitazawa": {
+      "slug": "shimokitazawa",
+      "hasCustomImage": true,
+      "square": {
+        "webp": "/images/neighborhoods/square/shimokitazawa.webp",
+        "jpg": "/images/neighborhoods/square/shimokitazawa.jpg"
+      },
+      "preview": {
+        "webp": "/images/neighborhoods/preview/shimokitazawa-preview.webp",
+        "jpg": "/images/neighborhoods/preview/shimokitazawa-preview.jpg"
+      }
+    },
+    "shinjuku": {
+      "slug": "shinjuku",
+      "hasCustomImage": true,
+      "square": {
+        "webp": "/images/neighborhoods/square/shinjuku.webp",
+        "jpg": "/images/neighborhoods/square/shinjuku.jpg"
+      },
+      "preview": {
+        "webp": "/images/neighborhoods/preview/shinjuku-preview.webp",
+        "jpg": "/images/neighborhoods/preview/shinjuku-preview.jpg"
+      }
+    },
+    "shinsaibashi": {
+      "slug": "shinsaibashi",
+      "hasCustomImage": true,
+      "square": {
+        "webp": "/images/neighborhoods/square/shinsaibashi.webp",
+        "jpg": "/images/neighborhoods/square/shinsaibashi.jpg"
+      },
+      "preview": {
+        "webp": "/images/neighborhoods/preview/shinsaibashi-preview.webp",
+        "jpg": "/images/neighborhoods/preview/shinsaibashi-preview.jpg"
+      }
+    },
+    "takamatsu": {
+      "slug": "takamatsu",
+      "hasCustomImage": true,
+      "square": {
+        "webp": "/images/neighborhoods/square/takamatsu.webp",
+        "jpg": "/images/neighborhoods/square/takamatsu.jpg"
+      },
+      "preview": {
+        "webp": "/images/neighborhoods/preview/takamatsu-preview.webp",
+        "jpg": "/images/neighborhoods/preview/takamatsu-preview.jpg"
+      }
+    },
+    "tokyodome": {
+      "slug": "tokyodome",
+      "hasCustomImage": true,
+      "square": {
+        "webp": "/images/neighborhoods/square/tokyodome.webp",
+        "jpg": "/images/neighborhoods/square/tokyodome.jpg"
+      },
+      "preview": {
+        "webp": "/images/neighborhoods/preview/tokyodome-preview.webp",
+        "jpg": "/images/neighborhoods/preview/tokyodome-preview.jpg"
+      }
+    },
+    "ueda": {
+      "slug": "ueda",
+      "hasCustomImage": true,
+      "square": {
+        "webp": "/images/neighborhoods/square/ueda.webp",
+        "jpg": "/images/neighborhoods/square/ueda.jpg"
+      },
+      "preview": {
+        "webp": "/images/neighborhoods/preview/ueda-preview.webp",
+        "jpg": "/images/neighborhoods/preview/ueda-preview.jpg"
+      }
+    },
+    "ueno": {
+      "slug": "ueno",
+      "hasCustomImage": true,
+      "square": {
+        "webp": "/images/neighborhoods/square/ueno.webp",
+        "jpg": "/images/neighborhoods/square/ueno.jpg"
+      },
+      "preview": {
+        "webp": "/images/neighborhoods/preview/ueno-preview.webp",
+        "jpg": "/images/neighborhoods/preview/ueno-preview.jpg"
+      }
+    },
+    "umeda": {
+      "slug": "umeda",
+      "hasCustomImage": true,
+      "square": {
+        "webp": "/images/neighborhoods/square/umeda.webp",
+        "jpg": "/images/neighborhoods/square/umeda.jpg"
+      },
+      "preview": {
+        "webp": "/images/neighborhoods/preview/umeda-preview.webp",
+        "jpg": "/images/neighborhoods/preview/umeda-preview.jpg"
+      }
+    },
+    "yokohama": {
+      "slug": "yokohama",
+      "hasCustomImage": true,
+      "square": {
+        "webp": "/images/neighborhoods/square/yokohama.webp",
+        "jpg": "/images/neighborhoods/square/yokohama.jpg"
+      },
+      "preview": {
+        "webp": "/images/neighborhoods/preview/yokohama-preview.webp",
+        "jpg": "/images/neighborhoods/preview/yokohama-preview.jpg"
+      }
+    },
+    "yoyogi": {
+      "slug": "yoyogi",
+      "hasCustomImage": true,
+      "square": {
+        "webp": "/images/neighborhoods/square/yoyogi.webp",
+        "jpg": "/images/neighborhoods/square/yoyogi.jpg"
+      },
+      "preview": {
+        "webp": "/images/neighborhoods/preview/yoyogi-preview.webp",
+        "jpg": "/images/neighborhoods/preview/yoyogi-preview.jpg"
+      }
+    },
+    "yutenji": {
+      "slug": "yutenji",
+      "hasCustomImage": true,
+      "square": {
+        "webp": "/images/neighborhoods/square/yutenji.webp",
+        "jpg": "/images/neighborhoods/square/yutenji.jpg"
+      },
+      "preview": {
+        "webp": "/images/neighborhoods/preview/yutenji-preview.webp",
+        "jpg": "/images/neighborhoods/preview/yutenji-preview.jpg"
+      }
+    }
+  }
+}

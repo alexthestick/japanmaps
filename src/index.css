@@ -1,0 +1,324 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Design Tokens */
+:root {
+  /* Brand & neutrals */
+  --color-bg: #ffffff;
+  --color-text: #0b0f19;
+  --color-muted: #6b7280;
+  --color-border: #e5e7eb;
+  --color-surface: #ffffff;
+  --color-surface-elev: #f9fafb;
+
+  /* Primary accents */
+  --color-primary: #111827; /* charcoal */
+  --color-primary-contrast: #ffffff;
+
+  /* Category accents (fallbacks, Map legend owns canon) */
+  --color-fashion: #f59e0b;
+  --color-food: #3b82f6;
+  --color-coffee: #92400e;
+  --color-homegoods: #6b7280;
+  --color-museum: #9ca3af;
+
+  /* Elevation */
+  --shadow-sm: 0 1px 2px rgba(0,0,0,0.06);
+  --shadow-md: 0 4px 12px rgba(0,0,0,0.08);
+  --shadow-lg: 0 10px 24px rgba(0,0,0,0.12);
+
+  /* Radii */
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 16px;
+  --radius-xl: 20px;
+
+  /* Spacing scale */
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 20px;
+  --space-6: 24px;
+  --space-8: 32px;
+  --space-10: 40px;
+
+  /* Type scale */
+  --font-sans: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Inter, Helvetica, Arial, Noto Sans, Apple Color Emoji, Segoe UI Emoji, Segoe UI Symbol;
+  --text-xs: 12px;
+  --text-sm: 14px;
+  --text-md: 16px;
+  --text-lg: 18px;
+  --text-xl: 20px;
+
+  /* Motion & Animation Tokens */
+  /* Durations */
+  --motion-fast: 120ms;
+  --motion-micro: 150ms;
+  --motion-medium: 200ms;
+  --motion-slow: 300ms;
+  --motion-scene: 450ms;
+
+  /* Easing curves */
+  --curve-standard: cubic-bezier(0.4, 0, 0.2, 1);
+  --curve-emph: cubic-bezier(0.2, 0.8, 0.2, 1);
+  --curve-entrance: cubic-bezier(0.16, 1, 0.3, 1);
+  --curve-exit: cubic-bezier(0.4, 0, 1, 1);
+  --curve-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+/* Custom scrollbar styles */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: #f1f1f1;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #888;
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #555;
+}
+
+/* Custom scrollbar for modal content */
+.custom-scrollbar::-webkit-scrollbar {
+  width: 6px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: #d1d5db;
+  border-radius: 3px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: #9ca3af;
+}
+
+/* Line clamp utility */
+.line-clamp-2 {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.line-clamp-3 {
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+/* Mapbox overrides */
+.mapboxgl-popup-content {
+  padding: 0;
+  border-radius: var(--radius-md);
+}
+
+.mapboxgl-popup-close-button {
+  font-size: 20px;
+  padding: 8px;
+}
+
+/* Smooth transitions */
+* {
+  transition-property: color, background-color, border-color, text-decoration-color, fill, stroke;
+  transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+  transition-duration: 150ms;
+}
+
+/* Sidebar slide-in animation */
+@keyframes slide-in {
+  from {
+    transform: translateX(100%);
+  }
+  to {
+    transform: translateX(0);
+  }
+}
+
+.animate-slide-in {
+  animation: slide-in 300ms ease-out;
+}
+
+/* Fade-in animation */
+@keyframes fade-in {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Shinkansen streak animation */
+@keyframes streak {
+  0% {
+    transform: translateX(-100%);
+    opacity: 1;
+  }
+  100% {
+    transform: translateX(100vw);
+    opacity: 0;
+  }
+}
+
+.animate-streak {
+  animation: streak 350ms cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.animate-fade-in {
+  animation: fade-in 200ms ease-in;
+}
+
+.animate-fadeIn {
+  animation: fade-in 300ms ease-out;
+}
+
+/* Slide up animation for modals */
+@keyframes slide-up {
+  from {
+    opacity: 0;
+    transform: translate(-50%, 20px);
+  }
+  to {
+    opacity: 1;
+    transform: translate(-50%, 0);
+  }
+}
+
+.animate-slideUp {
+  animation: slide-up 400ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+/* Custom hover scale for map pins */
+.hover\:scale-115:hover {
+  transform: scale(1.15);
+}
+
+/* Neighborhoods page animations */
+@keyframes gradient-shift {
+  0%, 100% {
+    transform: translate(0, 0) scale(1);
+    opacity: 0.3;
+  }
+  50% {
+    transform: translate(10px, 10px) scale(1.05);
+    opacity: 0.4;
+  }
+}
+
+@keyframes drift {
+  0% {
+    transform: translateX(0) translateY(0);
+  }
+  100% {
+    transform: translateX(20px) translateY(20px);
+  }
+}
+
+@keyframes train-line-1 {
+  0% {
+    transform: translateX(-100%) rotate(-2deg);
+  }
+  100% {
+    transform: translateX(200%) rotate(-2deg);
+  }
+}
+
+@keyframes train-line-2 {
+  0% {
+    transform: translateX(-100%) rotate(1deg);
+  }
+  100% {
+    transform: translateX(200%) rotate(1deg);
+  }
+}
+
+@keyframes train-line-3 {
+  0% {
+    transform: translateX(100%) rotate(-1deg);
+  }
+  100% {
+    transform: translateX(-200%) rotate(-1deg);
+  }
+}
+
+@keyframes train-line-4 {
+  0% {
+    transform: translateX(100%) rotate(2deg);
+  }
+  100% {
+    transform: translateX(-200%) rotate(2deg);
+  }
+}
+
+@keyframes border-pulse {
+  0%, 100% {
+    opacity: 0.5;
+  }
+  50% {
+    opacity: 0.8;
+  }
+}
+
+@keyframes bounce-subtle {
+  0% {
+    transform: translateY(0) scale(1);
+  }
+  50% {
+    transform: translateY(-8px) scale(1.05);
+  }
+  100% {
+    transform: translateY(-2px) scale(1.1);
+  }
+}
+
+.animate-gradient-shift {
+  animation: gradient-shift 15s ease-in-out infinite;
+}
+
+.animate-drift {
+  animation: drift 60s linear infinite;
+}
+
+.animate-train-line-1 {
+  animation: train-line-1 20s linear infinite;
+}
+
+.animate-train-line-2 {
+  animation: train-line-2 25s linear infinite;
+}
+
+.animate-train-line-3 {
+  animation: train-line-3 30s linear infinite;
+}
+
+.animate-train-line-4 {
+  animation: train-line-4 22s linear infinite;
+}
+
+.animate-border-pulse {
+  animation: border-pulse 3s ease-in-out infinite;
+}
+
+/* Film grain texture */
+.film-grain {
+  background-image: url('data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIzMDAiIGhlaWdodD0iMzAwIj48ZmlsdGVyIGlkPSJhIiB4PSIwIiB5PSIwIj48ZmVUdXJidWxlbmNlIGJhc2VGcmVxdWVuY3k9Ii43NSIgc3RpdGNoVGlsZXM9InN0aXRjaCIgdHlwZT0iZnJhY3RhbE5vaXNlIi8+PGZlQ29sb3JNYXRyaXggdHlwZT0ic2F0dXJhdGUiIHZhbHVlcz0iMCIvPjwvZmlsdGVyPjxwYXRoIGQ9Ik0wIDBoMzAwdjMwMEgweiIgZmlsdGVyPSJ1cmwoI2EpIiBvcGFjaXR5PSIuMDUiLz48L3N2Zz4=');
+  background-repeat: repeat;
+}
+
+

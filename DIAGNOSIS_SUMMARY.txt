@@ -1,0 +1,309 @@
+╔════════════════════════════════════════════════════════════════════════════╗
+║                      CAROUSEL DIAGNOSIS - EXECUTIVE SUMMARY               ║
+║                                                                            ║
+║  For: Independent review and implementation by another developer          ║
+║  Date: October 23, 2025                                                   ║
+║  Status: Complete and Ready for Sharing                                   ║
+╚════════════════════════════════════════════════════════════════════════════╝
+
+═══════════════════════════════════════════════════════════════════════════════
+ISSUES OBSERVED BY USER
+═══════════════════════════════════════════════════════════════════════════════
+
+1. INITIAL POSITION BROKEN
+   └─ Page loads showing Random in header but wrong carousel position
+   └─ selectedCity not initialized
+
+2. ARROW SKIPPING CITIES
+   └─ Press arrow once → skips 2-3 cities (not smooth 1-by-1)
+   └─ Behavior inconsistent and worsens over time
+
+3. CAROUSEL/PICTURE DESYNC
+   └─ Carousel animates to one city
+   └─ Picture shows different city
+   └─ Train dots show yet another city
+   └─ Eventually carousel moves but picture frozen
+
+4. CARDS WORK PERFECTLY
+   └─ Clicking individual city cards works flawlessly
+   └─ No desync, smooth updates
+   └─ PROOF that hook is the problem, not component
+
+═══════════════════════════════════════════════════════════════════════════════
+ROOT CAUSE: STATE COLLISION
+═══════════════════════════════════════════════════════════════════════════════
+
+TWO INDEPENDENT STATE SYSTEMS:
+
+System A: useLoopingCarousel Hook
+├─ Manages carousel visual position
+├─ Methods: next(), prev()
+├─ State: displayIndex, translateX, logicalIndex, shouldTransition
+├─ Updates: When arrows pressed
+
+System B: CitiesPage Component
+├─ Manages selected city and displayed picture
+├─ Methods: handleCitySelect()
+├─ State: selectedCity, hoveredCity, currentPhotoIndex
+├─ Updates: When cards clicked OR when carousel.displayIndex changes
+
+PROBLEM: They update ASYNCHRONOUSLY and DON'T SYNCHRONIZE PROPERLY
+
+═══════════════════════════════════════════════════════════════════════════════
+TECHNICAL BREAKDOWN
+═══════════════════════════════════════════════════════════════════════════════
+
+WHEN ARROW PRESSED:
+┌─────────────────────────────────────────────┐
+│ T0: User clicks arrow                       │
+│ └─→ carousel.next() called                  │
+│                                             │
+│ T1: Hook state updates                      │
+│ └─→ displayIndex += 1                       │
+│ └─→ shouldTransition = true                 │
+│ └─→ CSS transform animation starts (300ms)  │
+│                                             │
+│ T2: Animation runs                          │
+│ └─→ Visual carousel slides (300ms duration) │
+│                                             │
+│ T3: 300ms later - timeout fires             │
+│ └─→ Check if wrap-around needed             │
+│ └─→ May update displayIndex AGAIN           │
+│ └─→ If wrap: displayIndex = newPosition     │
+│                                             │
+│ T4: useEffect triggers (displayIndex change)│
+│ └─→ Reads extendedCities[displayIndex]      │
+│ └─→ Updates selectedCity                    │
+│ ⚠️  BUT: displayIndex may have changed      │
+│     at T3, so it syncs to wrong city!       │
+│                                             │
+│ Result: Carousel position ≠ selectedCity    │
+│         Displayed picture wrong             │
+│         Train dots wrong                    │
+└─────────────────────────────────────────────┘
+
+WHY CARDS WORK:
+┌─────────────────────────────────────────────┐
+│ User clicks card                            │
+│ └─→ handleCitySelect() called directly      │
+│ └─→ setSelectedCity() updates immediately   │
+│                                             │
+│ ✅ NO HOOK INVOLVED                         │
+│ ✅ NO ASYNC TIMING                          │
+│ ✅ NO DESYNC POSSIBLE                       │
+│                                             │
+│ Result: Picture updates instantly           │
+│         Always in sync                      │
+└─────────────────────────────────────────────┘
+
+═══════════════════════════════════════════════════════════════════════════════
+FIVE CORE PROBLEMS IDENTIFIED
+═══════════════════════════════════════════════════════════════════════════════
+
+1. RACE CONDITION
+   Problem: Wrap timeout and useEffect fire during same animation
+   Impact: selectedCity syncs to wrong city
+   
+2. STALE CLOSURES
+   Problem: navigate() callback depends on displayIndex in deps
+   Impact: Gets recreated every render, timeout handlers capture stale values
+   
+3. NO DEBOUNCING
+   Problem: useEffect fires on EVERY displayIndex change
+   Impact: Multiple rapid state updates break sync
+   
+4. NO INITIAL SETUP
+   Problem: Hook positions carousel correctly but no initial selectedCity
+   Impact: Page loads with null selection, blank picture
+   
+5. COMPETING STATE
+   Problem: Two separate state systems trying to manage one carousel
+   Impact: Desync inevitable with async updates
+
+═══════════════════════════════════════════════════════════════════════════════
+WHY SYMPTOMS PROGRESSIVELY WORSEN
+═══════════════════════════════════════════════════════════════════════════════
+
+Click 1:  ✅ Works
+          └─ Fresh state, displayIndex 9→10, animation works
+          └─ useEffect syncs selectedCity correctly
+          
+Click 2:  ⚠️ Partial Break
+          └─ displayIndex 10→11, animation works
+          └─ Wrap logic may fire, displayIndex jumps
+          └─ useEffect syncs to jumped position (wrong city)
+          
+Click 3:  ❌ Getting Worse
+          └─ displayIndex increment
+          └─ Previous desync still in effect
+          └─ New state mismatch compounds previous one
+          
+Click 5:  💥 Severely Broken
+          └─ Accumulated desync too great
+          └─ Carousel position divorced from selectedCity
+          
+Click 10+: 💀 Frozen
+          └─ Carousel still moves (visual transform works)
+          └─ selectedCity stuck on old city
+          └─ Picture doesn't update anymore
+
+═══════════════════════════════════════════════════════════════════════════════
+RECOMMENDED SOLUTION: MERGED STATE MANAGEMENT
+═══════════════════════════════════════════════════════════════════════════════
+
+APPROACH: Move all carousel logic into the component itself
+
+Benefits:
+├─ Single source of truth (selectedCity)
+├─ Synchronous updates (no race conditions)
+├─ Simple, predictable data flow
+├─ Easier to test and debug
+├─ No stale closure issues
+└─ 100% reliable
+
+IMPLEMENTATION PATTERN:
+
+  const handleArrowClick = (direction: 'left' | 'right') => {
+    // 1. Calculate new index
+    const newIndex = direction === 'right' ? displayIndex + 1 : displayIndex - 1;
+    
+    // 2. UPDATE BOTH AT THE SAME TIME (synchronous)
+    setDisplayIndex(newIndex);
+    setSelectedCity(cities[actualIndex]);
+    
+    // 3. After animation completes
+    setTimeout(() => {
+      // Check if wrap-around needed
+      if (newIndex >= CLONE_COUNT + cities.length) {
+        setShouldTransition(false);
+        setDisplayIndex(CLONE_COUNT);
+      } else if (newIndex < CLONE_COUNT) {
+        setShouldTransition(false);
+        setDisplayIndex(CLONE_COUNT + cities.length - 1);
+      }
+    }, 300);
+  };
+
+KEY: Both state updates happen SYNCHRONOUSLY, then wrap happens separately
+
+═══════════════════════════════════════════════════════════════════════════════
+FILES TO MODIFY
+═══════════════════════════════════════════════════════════════════════════════
+
+1. src/pages/CitiesPage.tsx
+   ├─ Add local displayIndex state
+   ├─ Add shouldTransition state
+   ├─ Add isTransitioning state
+   ├─ Create handleArrowClick() function
+   ├─ Update carousel container to use local state
+   └─ Update button clicks to use handleArrowClick()
+
+2. src/hooks/useLoopingCarousel.ts
+   └─ Remove or deprecate (no longer needed)
+
+3. Optional: Create useCarouselAnimation.ts
+   ├─ If you want to extract animation logic
+   ├─ Keep component as main controller
+   └─ Hook handles only CSS calculations
+
+═══════════════════════════════════════════════════════════════════════════════
+TESTING CHECKLIST
+═══════════════════════════════════════════════════════════════════════════════
+
+After implementing the fix:
+
+INITIAL STATE:
+  [ ] Page loads with Random selected
+  [ ] selectedCity = Random (not null)
+  [ ] Train dots show Random highlighted
+  [ ] Carousel displays Random, Tokyo, Osaka, Kyoto
+
+SINGLE ARROW PRESS:
+  [ ] Press right arrow
+  [ ] Carousel moves exactly 1 card
+  [ ] selectedCity updates to Tokyo
+  [ ] Picture changes to Tokyo image
+  [ ] Train dots highlight Tokyo
+
+RAPID ARROW PRESSES:
+  [ ] Press right arrow 10 times
+  [ ] Carousel moves 10 cards total (not skipping)
+  [ ] No jank or freezing
+  [ ] selectedCity always matches carousel position
+  [ ] No console errors
+
+WRAP-AROUND:
+  [ ] Reach last city (Fukuoka)
+  [ ] Press right arrow
+  [ ] Smooth animation to Random
+  [ ] No jank at wrap point
+  [ ] selectedCity = Random
+
+CARD CLICKS:
+  [ ] Click a city card
+  [ ] Carousel updates to that city
+  [ ] Still works after arrow navigation
+  [ ] No desync
+
+═══════════════════════════════════════════════════════════════════════════════
+CURRENT CODE STRUCTURE
+═══════════════════════════════════════════════════════════════════════════════
+
+Hook File: src/hooks/useLoopingCarousel.ts
+├─ 97 lines
+├─ Manages: displayIndex, translateX, logicalIndex, wrapping
+├─ Problem: Independent state, no sync back to component
+
+Component File: src/pages/CitiesPage.tsx
+├─ 500+ lines
+├─ Imports and uses: useLoopingCarousel hook
+├─ Line 163: carousel = useLoopingCarousel(extendedCities, {...})
+├─ Line 170: useEffect trying to sync selectedCity
+├─ Line 370-380: Arrow buttons calling carousel.next()/prev()
+├─ Line 386-391: Carousel container using carousel.translateX
+
+═══════════════════════════════════════════════════════════════════════════════
+QUICK REFERENCE: EXTENDED CITIES STRUCTURE
+═══════════════════════════════════════════════════════════════════════════════
+
+Total: 36 items (9 left clones + 18 real cities + 9 right clones)
+
+Index 0-8:    Left clones of cities 9-17
+Index 9-26:   Real cities (Random, Tokyo, Osaka, ... Fukuoka)
+Index 27-35:  Right clones of cities 9-17
+
+Starting position: displayIndex = 9 (Random)
+Wrap triggers:
+  • displayIndex < 9: wrap to 26 (Fukuoka)
+  • displayIndex ≥ 27: wrap to 9 (Random)
+
+═══════════════════════════════════════════════════════════════════════════════
+FOR THE NEXT DEVELOPER
+═══════════════════════════════════════════════════════════════════════════════
+
+This diagnosis is complete and ready for implementation.
+
+Reference Materials:
+  ✅ CAROUSEL_DIAGNOSIS_V2.md - Full detailed analysis
+  ✅ This file - Executive summary
+  ✅ Code comments in CitiesPage.tsx and useLoopingCarousel.ts
+
+Key Points to Remember:
+  1. Two systems fighting = desync
+  2. Merge state = solved
+  3. Synchronous updates = reliable
+  4. Cards work = proof of concept
+  5. Test verification checklist = validation
+
+Good luck! This is a well-understood problem with a clear solution.
+
+═══════════════════════════════════════════════════════════════════════════════
+
+Questions? Reference CAROUSEL_DIAGNOSIS_V2.md for:
+  • Code snippets with line numbers
+  • Architecture diagrams
+  • Timeline visualizations
+  • Detailed root cause analysis
+  • Implementation recommendations
+  • Debugging procedures
+
