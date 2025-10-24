@@ -236,20 +236,65 @@ export function CitiesPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-indigo-950 via-blue-900 to-purple-900 relative overflow-hidden">
-      {/* Animated Background Elements */}
-      <div className="absolute inset-0 opacity-30">
-        <div className="absolute inset-0 bg-gradient-to-br from-cyan-500/20 via-transparent to-purple-500/20 animate-gradient-shift" />
-        <div className="absolute inset-0 bg-[url('/grid-pattern.svg')] opacity-10" />
+    <div className="min-h-screen relative overflow-hidden"
+         style={{
+           background: `
+             radial-gradient(ellipse at top, rgba(99, 102, 241, 0.15), transparent 50%),
+             radial-gradient(ellipse at bottom left, rgba(168, 85, 247, 0.15), transparent 50%),
+             linear-gradient(135deg, #1e1b4b 0%, #1e3a8a 50%, #581c87 100%)
+           `
+         }}>
+
+      {/* Volumetric Light Rays */}
+      <div className="absolute inset-0 overflow-hidden pointer-events-none">
+        <div className="absolute w-1 h-96 bg-gradient-to-b from-cyan-400/0 via-cyan-400/20 to-cyan-400/0 blur-xl"
+             style={{ left: '20%', top: '-10%', rotate: '25deg', animation: 'float-ray 25s ease-in-out infinite' }} />
+        <div className="absolute w-1 h-96 bg-gradient-to-b from-purple-400/0 via-purple-400/15 to-purple-400/0 blur-xl"
+             style={{ left: '70%', top: '-5%', rotate: '-20deg', animation: 'float-ray 30s ease-in-out infinite 5s' }} />
+        <div className="absolute w-1 h-96 bg-gradient-to-b from-pink-400/0 via-pink-400/10 to-pink-400/0 blur-xl"
+             style={{ left: '50%', top: '-15%', rotate: '15deg', animation: 'float-ray 35s ease-in-out infinite 10s' }} />
+      </div>
+
+      {/* Bokeh Particles - Extended */}
+      <div className="absolute inset-0 overflow-hidden pointer-events-none">
+        <div className="absolute w-3 h-3 rounded-full bg-white/10 blur-sm"
+             style={{ left: '15%', top: '20%', animation: 'float-particle 12s ease-in-out infinite' }} />
+        <div className="absolute w-2 h-2 rounded-full bg-cyan-300/15 blur-sm"
+             style={{ left: '80%', top: '40%', animation: 'float-particle 15s ease-in-out infinite 3s' }} />
+        <div className="absolute w-4 h-4 rounded-full bg-purple-300/10 blur-sm"
+             style={{ left: '60%', top: '70%', animation: 'float-particle 18s ease-in-out infinite 6s' }} />
+        <div className="absolute w-2 h-2 rounded-full bg-pink-300/12 blur-sm"
+             style={{ left: '30%', top: '60%', animation: 'float-particle 20s ease-in-out infinite 9s' }} />
+        <div className="absolute w-3 h-3 rounded-full bg-blue-300/10 blur-sm"
+             style={{ left: '90%', top: '25%', animation: 'float-particle 14s ease-in-out infinite 4s' }} />
+        <div className="absolute w-2 h-2 rounded-full bg-cyan-200/10 blur-sm"
+             style={{ left: '25%', top: '35%', animation: 'float-particle 16s ease-in-out infinite 2s' }} />
+        <div className="absolute w-3 h-3 rounded-full bg-purple-200/8 blur-sm"
+             style={{ left: '70%', top: '80%', animation: 'float-particle 22s ease-in-out infinite 7s' }} />
+        <div className="absolute w-2 h-2 rounded-full bg-pink-200/10 blur-sm"
+             style={{ left: '45%', top: '15%', animation: 'float-particle 19s ease-in-out infinite 5s' }} />
+        <div className="absolute w-4 h-4 rounded-full bg-blue-200/8 blur-sm"
+             style={{ left: '85%', top: '65%', animation: 'float-particle 17s ease-in-out infinite 8s' }} />
+        <div className="absolute w-2 h-2 rounded-full bg-white/8 blur-sm"
+             style={{ left: '10%', top: '75%', animation: 'float-particle 21s ease-in-out infinite 11s' }} />
+      </div>
+
+      {/* Animated Gradient Overlay */}
+      <div className="absolute inset-0 opacity-20">
+        <div className="absolute inset-0 bg-gradient-to-br from-cyan-500/20 via-transparent to-purple-500/20"
+             style={{ animation: 'gradient-shift 20s ease-in-out infinite' }} />
       </div>
 
       {/* Film Grain */}
       <div className="fixed inset-0 bg-[url('/film-grain.png')] opacity-[0.03] pointer-events-none mix-blend-overlay" />
 
-      {/* Back Button */}
+      {/* Back Button - Enhanced HUD Style */}
       <button
         onClick={() => navigate('/')}
-        className="fixed top-6 left-6 z-50 bg-black/40 backdrop-blur-md border border-cyan-400/30 rounded-lg px-4 py-2 flex items-center gap-2 text-cyan-300 hover:bg-cyan-500/20 hover:border-cyan-400/50 transition-all duration-200"
+        className="fixed top-6 left-6 z-50 bg-black/40 backdrop-blur-md border border-cyan-400/30 rounded-lg px-4 py-2 flex items-center gap-2 text-cyan-300 hover:bg-cyan-500/20 hover:border-cyan-400/50 transition-all duration-200 font-display uppercase tracking-wide text-sm"
+        style={{
+          boxShadow: '0 0 20px rgba(34, 211, 238, 0.2), inset 0 0 30px rgba(0,0,0,0.3)',
+        }}
       >
         <ArrowLeft className="w-5 h-5" />
         <span className="font-semibold">Back</span>
@@ -262,11 +307,20 @@ export function CitiesPage() {
         <div className="flex-[65] flex items-center justify-center p-6 pt-16">
           <div className="relative max-w-4xl w-full scale-90">
 
+            {/* Atmospheric Glow Behind Preview */}
+            <div
+              className="absolute inset-0 rounded-2xl blur-3xl opacity-30"
+              style={{
+                background: `radial-gradient(ellipse at center, ${displayCity.color}60, transparent 70%)`,
+                animation: 'pulse-glow 4s ease-in-out infinite',
+              }}
+            />
+
             {/* Large City Preview */}
             <div className="relative aspect-[16/10] rounded-2xl overflow-hidden border-4 shadow-2xl"
               style={{
                 borderColor: displayCity.color,
-                boxShadow: `0 0 60px ${displayCity.color}40`,
+                boxShadow: `0 0 80px ${displayCity.color}50, 0 0 40px ${displayCity.color}30, inset 0 0 60px rgba(0,0,0,0.4)`,
               }}
             >
               {/* City Image with Ken Burns Effect */}
@@ -321,30 +375,45 @@ export function CitiesPage() {
               {/* City Info Overlay (Top Right - Mario Kart style) */}
               {displayCity && (
                 <div className="absolute top-8 right-8 bg-black/60 backdrop-blur-xl border-2 rounded-xl p-6 min-w-[320px]"
-                  style={{ borderColor: displayCity.color }}
+                  style={{
+                    borderColor: displayCity.color,
+                    boxShadow: `0 0 30px ${displayCity.color}30, inset 0 0 60px rgba(0,0,0,0.3)`,
+                  }}
                 >
                   <div className="space-y-3">
                     {/* City Name */}
                     <div>
-                      <h2 className="text-4xl font-black text-white tracking-tight">
+                      <h2 className="text-4xl font-black text-white tracking-tight font-display uppercase"
+                        style={{
+                          textShadow: `0 0 20px ${displayCity.color}80`,
+                        }}
+                      >
                         {displayCity.name}
                       </h2>
-                      <div className="text-2xl font-medium mt-1"
-                        style={{ color: displayCity.color }}
+                      <div className="text-2xl font-medium mt-1 font-sans"
+                        style={{
+                          color: displayCity.color,
+                          textShadow: `0 0 10px ${displayCity.color}60`,
+                        }}
                       >
                         {displayCity.nameJapanese}
                       </div>
                     </div>
 
                     {/* Stats */}
-                    <div className="flex items-center gap-4 text-sm text-gray-300">
+                    <div className="flex items-center gap-4 text-sm text-gray-300 font-sans">
                       <div className="flex items-center gap-1">
                         <Train className="w-4 h-4" />
                         <span>{displayCity.region}</span>
                       </div>
                       {!displayCity.isRandom && (
                         <div className="flex items-center gap-1">
-                          <span className="w-2 h-2 rounded-full bg-cyan-400" />
+                          <span className="w-2 h-2 rounded-full bg-cyan-400"
+                            style={{
+                              boxShadow: '0 0 8px rgba(34, 211, 238, 0.8)',
+                              animation: 'pulse-glow 2s ease-in-out infinite',
+                            }}
+                          />
                           <span>{displayCity.storeCount} Stores</span>
                         </div>
                       )}
@@ -354,12 +423,15 @@ export function CitiesPage() {
                     {selectedCity && !selectedCity.isRandom && (
                       <button
                         onClick={() => handleTravel(selectedCity)}
-                        className="w-full mt-4 bg-gradient-to-r from-cyan-500 to-blue-500 hover:from-cyan-400 hover:to-blue-400 text-white font-bold py-3 px-6 rounded-lg uppercase tracking-wider text-sm transition-all duration-200 shadow-lg hover:shadow-cyan-500/50 hover:scale-105"
+                        className="w-full mt-4 text-white font-bold py-3 px-6 rounded-lg uppercase tracking-wider text-sm transition-all duration-300 hover:scale-105 font-display relative overflow-hidden group"
                         style={{
                           background: `linear-gradient(135deg, ${selectedCity.color}, ${selectedCity.color}dd)`,
+                          boxShadow: `0 0 30px ${selectedCity.color}60, 0 8px 20px rgba(0,0,0,0.4), inset 0 0 40px rgba(255,255,255,0.1)`,
                         }}
                       >
-                        <div className="flex items-center justify-center gap-2">
+                        {/* Shimmer effect on hover */}
+                        <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-700" />
+                        <div className="flex items-center justify-center gap-2 relative z-10">
                           <Train className="w-5 h-5" />
                           <span>Travel to {selectedCity.name}</span>
                         </div>
@@ -379,7 +451,12 @@ export function CitiesPage() {
               {/* Hint Text (only when no selection) */}
               {!selectedCity && (
                 <div className="absolute bottom-8 left-1/2 transform -translate-x-1/2 text-center">
-                  <div className="bg-black/40 backdrop-blur-md border border-cyan-400/30 rounded-full px-6 py-3 text-cyan-300 text-sm font-medium">
+                  <div className="bg-black/40 backdrop-blur-md border border-cyan-400/30 rounded-full px-6 py-3 text-cyan-300 text-sm font-medium font-sans"
+                    style={{
+                      boxShadow: '0 0 20px rgba(34, 211, 238, 0.2), inset 0 0 30px rgba(0,0,0,0.3)',
+                      animation: 'pulse-glow 3s ease-in-out infinite',
+                    }}
+                  >
                     Hover over a city ticket to preview • Click to select
                   </div>
                 </div>
@@ -393,19 +470,35 @@ export function CitiesPage() {
 
           {/* Train Line Visual */}
           <div className="w-full max-w-6xl mb-6 scale-90">
-            <div className="relative h-1 bg-gradient-to-r from-transparent via-cyan-400/50 to-transparent">
+            <div className="relative h-1 bg-gradient-to-r from-transparent via-cyan-400/50 to-transparent shadow-[0_0_15px_rgba(34,211,238,0.3)]">
               {/* Station Dots - ALL cities */}
               <div className="absolute inset-0 flex justify-around items-center">
-                {cities.map((city) => (
-                  <div
-                    key={city.id}
-                    className="w-2.5 h-2.5 rounded-full transition-all duration-300"
-                    style={{
-                      backgroundColor: selectedCity?.id === city.id ? city.color : '#4B5563',
-                      boxShadow: selectedCity?.id === city.id ? `0 0 12px ${city.color}` : 'none',
-                    }}
-                  />
-                ))}
+                {cities.map((city) => {
+                  const isActive = selectedCity?.id === city.id;
+                  return (
+                    <div key={city.id} className="relative">
+                      <div
+                        className="w-2.5 h-2.5 rounded-full transition-all duration-300"
+                        style={{
+                          backgroundColor: isActive ? city.color : '#4B5563',
+                          boxShadow: isActive ? `0 0 16px ${city.color}, 0 0 8px ${city.color}` : 'none',
+                          animation: isActive ? 'pulse-glow 2s ease-in-out infinite' : 'none',
+                        }}
+                      />
+                      {/* Outer glow ring for selected city */}
+                      {isActive && (
+                        <div
+                          className="absolute inset-0 w-4 h-4 -m-0.75 rounded-full opacity-40"
+                          style={{
+                            backgroundColor: city.color,
+                            filter: 'blur(4px)',
+                            animation: 'pulse-glow 2s ease-in-out infinite',
+                          }}
+                        />
+                      )}
+                    </div>
+                  );
+                })}
               </div>
             </div>
           </div>
@@ -413,18 +506,24 @@ export function CitiesPage() {
           {/* Ticket Cards Carousel */}
           <div className="relative w-full max-w-6xl scale-90">
 
-            {/* Scroll Buttons - Bigger */}
+            {/* Scroll Buttons - Enhanced */}
             <button
               onClick={() => handleArrowClick('left')}
               disabled={isTransitioning}
-              className="absolute left-0 top-1/2 -translate-y-1/2 z-10 bg-black/70 backdrop-blur-md border-2 border-cyan-400/40 rounded-full p-4 text-cyan-300 hover:bg-cyan-500/30 hover:border-cyan-400/60 hover:scale-110 transition-all duration-200 shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
+              className="absolute left-0 top-1/2 -translate-y-1/2 z-10 bg-black/70 backdrop-blur-md border-2 border-cyan-400/40 rounded-full p-4 text-cyan-300 hover:bg-cyan-500/30 hover:border-cyan-400/60 hover:scale-110 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+              style={{
+                boxShadow: '0 0 30px rgba(34, 211, 238, 0.3), inset 0 0 40px rgba(0,0,0,0.4)',
+              }}
             >
               <ArrowLeft className="w-7 h-7" />
             </button>
             <button
               onClick={() => handleArrowClick('right')}
               disabled={isTransitioning}
-              className="absolute right-0 top-1/2 -translate-y-1/2 z-10 bg-black/70 backdrop-blur-md border-2 border-cyan-400/40 rounded-full p-4 text-cyan-300 hover:bg-cyan-500/30 hover:border-cyan-400/60 hover:scale-110 transition-all duration-200 shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
+              className="absolute right-0 top-1/2 -translate-y-1/2 z-10 bg-black/70 backdrop-blur-md border-2 border-cyan-400/40 rounded-full p-4 text-cyan-300 hover:bg-cyan-500/30 hover:border-cyan-400/60 hover:scale-110 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+              style={{
+                boxShadow: '0 0 30px rgba(34, 211, 238, 0.3), inset 0 0 40px rgba(0,0,0,0.4)',
+              }}
             >
               <ArrowLeft className="w-7 h-7 rotate-180" />
             </button>
@@ -480,6 +579,59 @@ export function CitiesPage() {
           animation: gradient-shift 20s ease-in-out infinite;
         }
 
+        @keyframes float-ray {
+          0%, 100% {
+            transform: translateY(0) translateX(0);
+            opacity: 0.2;
+          }
+          50% {
+            transform: translateY(-30px) translateX(10px);
+            opacity: 0.4;
+          }
+        }
+
+        @keyframes float-particle {
+          0%, 100% {
+            transform: translateY(0) scale(1);
+            opacity: 0.3;
+          }
+          50% {
+            transform: translateY(-40px) scale(1.2);
+            opacity: 0.7;
+          }
+        }
+
+        @keyframes pulse-glow {
+          0%, 100% {
+            opacity: 0.6;
+            transform: scale(1);
+          }
+          50% {
+            opacity: 1;
+            transform: scale(1.05);
+          }
+        }
+
+        @keyframes breathe {
+          0%, 100% {
+            opacity: 1;
+            transform: scale(1);
+          }
+          50% {
+            opacity: 0.85;
+            transform: scale(0.98);
+          }
+        }
+
+        @keyframes shimmer {
+          0% {
+            background-position: -1000px 0;
+          }
+          100% {
+            background-position: 1000px 0;
+          }
+        }
+
         .scrollbar-hide::-webkit-scrollbar {
           display: none;
         }
@@ -497,23 +649,34 @@ interface CityTicketCardProps {
 }
 
 function CityTicketCard({ city, isSelected, onHover, onSelect }: CityTicketCardProps) {
+  const [isHovered, setIsHovered] = useState(false);
+
   return (
     <div
       className="relative flex-shrink-0 snap-center transition-all duration-300 cursor-pointer"
       style={{
         transform: isSelected ? 'translateY(-20px) scale(1.05)' : 'translateY(0) scale(1)',
+        filter: !isSelected && !isHovered ? 'brightness(0.7)' : 'brightness(1)',
       }}
-      onMouseEnter={() => onHover(city)}
-      onMouseLeave={() => onHover(null)}
+      onMouseEnter={() => {
+        onHover(city);
+        setIsHovered(true);
+      }}
+      onMouseLeave={() => {
+        onHover(null);
+        setIsHovered(false);
+      }}
       onClick={() => onSelect(city)}
     >
       {/* Ticket Card */}
       <div
-        className="w-[280px] h-[160px] rounded-xl overflow-hidden border-2 transition-all duration-300 relative"
+        className="w-[280px] h-[160px] rounded-xl overflow-hidden border-2 transition-all duration-300 relative backdrop-blur-md"
         style={{
           borderColor: isSelected ? city.color : 'rgba(255,255,255,0.1)',
           boxShadow: isSelected
-            ? `0 20px 60px ${city.color}80, 0 0 0 3px ${city.color}40`
+            ? `0 20px 60px ${city.color}80, 0 0 30px ${city.color}60, 0 0 0 3px ${city.color}40`
+            : isHovered
+            ? `0 8px 30px ${city.color}40, 0 0 20px ${city.color}30`
             : '0 4px 12px rgba(0,0,0,0.3)',
           backgroundColor: 'rgba(0,0,0,0.6)',
         }}
@@ -568,18 +731,27 @@ function CityTicketCard({ city, isSelected, onHover, onSelect }: CityTicketCardP
             {city.isRandom ? (
               <>
                 <Shuffle className="w-8 h-8 mb-2" style={{ color: city.color }} />
-                <div className="text-white font-bold text-lg">Mystery</div>
-                <div className="text-gray-300 text-xs">Random City</div>
+                <div className="text-white font-bold text-lg font-display uppercase tracking-wide">Mystery</div>
+                <div className="text-gray-300 text-xs font-sans">Random City</div>
               </>
             ) : (
               <>
-                <div className="text-white font-bold text-lg leading-tight mb-1">
+                <div className="text-white font-bold text-lg leading-tight mb-1 font-display uppercase tracking-tight"
+                  style={{
+                    textShadow: isSelected ? `0 0 10px ${city.color}80` : 'none',
+                  }}
+                >
                   {city.name}
                 </div>
-                <div className="text-sm font-medium mb-2" style={{ color: city.color }}>
+                <div className="text-sm font-medium mb-2 font-sans"
+                  style={{
+                    color: city.color,
+                    textShadow: isSelected ? `0 0 8px ${city.color}60` : 'none',
+                  }}
+                >
                   {city.nameJapanese}
                 </div>
-                <div className="space-y-0.5 text-xs text-gray-300">
+                <div className="space-y-0.5 text-xs text-gray-300 font-sans">
                   <div className="flex items-center gap-1">
                     <Train className="w-3 h-3" />
                     <span>{city.region}</span>
