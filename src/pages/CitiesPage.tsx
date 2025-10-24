@@ -1,6 +1,7 @@
 import { useState, useEffect, useMemo, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ArrowLeft, Shuffle, Train } from 'lucide-react';
+import { motion } from 'framer-motion';
 import {
   MAJOR_CITIES_JAPAN,
   CITY_COLORS,
@@ -23,7 +24,37 @@ interface CityData {
   isRandom?: boolean;
   isClone?: boolean; // Flag for cloned cards in infinite carousel
   originalId?: string; // Original city ID for clones
+  regionColor?: string; // Regional color accent for Phase 7b
 }
+
+// Phase 7b: Regional Color System
+const REGION_COLOR_PALETTE: { [key: string]: { primary: string; accent: string; glow: string } } = {
+  'Hokkaido': {
+    primary: '#00d4ff', // Cool cyan
+    accent: '#0088ff', // Ice blue
+    glow: 'rgba(0, 212, 255, 0.4)',
+  },
+  'Kanto': {
+    primary: '#ff00ff', // Electric magenta
+    accent: '#d946ef', // Violet
+    glow: 'rgba(255, 0, 255, 0.3)',
+  },
+  'Kansai': {
+    primary: '#ffa500', // Warm amber
+    accent: '#ffb84d', // Gold
+    glow: 'rgba(255, 165, 0, 0.3)',
+  },
+  'Chugoku': {
+    primary: '#00ffaa', // Teal-green
+    accent: '#20c997', // Emerald
+    glow: 'rgba(0, 255, 170, 0.3)',
+  },
+  'Kyushu': {
+    primary: '#ff1493', // Pink-red
+    accent: '#ff69b4', // Hot pink
+    glow: 'rgba(255, 20, 147, 0.3)',
+  },
+};
 
 export function CitiesPage() {
   const navigate = useNavigate();
@@ -32,14 +63,16 @@ export function CitiesPage() {
   const [storeCounts, setStoreCounts] = useState<Map<string, number>>(new Map());
   const [loading, setLoading] = useState(true);
   const [currentPhotoIndex, setCurrentPhotoIndex] = useState(0);
+  const [previewParallax, setPreviewParallax] = useState({ x: 0, y: 0 }); // Phase 7c: Parallax state
+  const [isTransitioning, setIsTransitioningState] = useState(false); // Phase 8: Travel transition state
 
   // Carousel state (merged from hook)
   const CLONE_COUNT = 9;
-  const CARD_WIDTH = 304; // 280px + 24px gap
+  const CARD_WIDTH = 320; // 280px + 40px gap
   const TRANSITION_MS = 300;
   const [displayIndex, setDisplayIndex] = useState(CLONE_COUNT); // Start at first real city (Random)
   const [shouldTransition, setShouldTransition] = useState(true);
-  const [isTransitioning, setIsTransitioning] = useState(false);
+  const [isCarouselTransitioning, setIsCarouselTransitioning] = useState(false);
 
   // Fetch real store counts on mount
   useEffect(() => {
@@ -74,6 +107,8 @@ export function CitiesPage() {
       const cityStr = city as string;
       const slug = cityStr.toLowerCase().replace(/\s+/g, '').replace(/\//g, '');
       const imageSlug = cityStr === 'Kanagawa / Yokohama' ? 'yokohama' : slug;
+      const regionName = CITY_REGIONS[cityStr] || 'Japan';
+      const regionPalette = REGION_COLOR_PALETTE[regionName] || REGION_COLOR_PALETTE['Kanto'];
 
       // Tokyo has 6 photos (tokyo1-tokyo6)
       let images: string[] = [];
@@ -88,12 +123,13 @@ export function CitiesPage() {
         id: cityStr,
         name: cityStr,
         nameJapanese: CITY_NAMES_JAPANESE[cityStr] || cityStr,
-        region: CITY_REGIONS[cityStr] || 'Japan',
+        region: regionName,
         storeCount: storeCounts.get(cityStr) || 0,
         color: CITY_COLORS[cityStr] || '#6B7280',
         images: images,
         thumbnailImage: `/images/cities/square/${cityStr === 'Tokyo' ? 'tokyo1' : imageSlug}.jpg`,
         coordinates: CITY_COORDINATES[cityStr] || { latitude: 35.6895, longitude: 139.6917, zoom: 12 },
+        regionColor: regionPalette.primary, // Phase 7b: Regional color accent
       });
     });
 
@@ -140,7 +176,7 @@ export function CitiesPage() {
   }, [selectedCity]);
 
   // Handle city selection + auto-center
-  const handleCitySelect = (city: CityData) => {
+  const handleCitySelect = (city: CityData, clickedIndex?: number) => {
     const actualCityId = city.isClone ? city.originalId! : city.id;
 
     if (city.isRandom) {
@@ -148,22 +184,58 @@ export function CitiesPage() {
       const realCities = cities.filter(c => !c.isRandom);
       const randomCity = realCities[Math.floor(Math.random() * realCities.length)];
       setSelectedCity(randomCity);
+
+      // Find the real city index in the original cities array
+      const realCityIndex = cities.findIndex(c => c.id === randomCity.id);
+      if (realCityIndex !== -1) {
+        // Convert to extended array index (real cities start at CLONE_COUNT)
+        const targetIndex = CLONE_COUNT + realCityIndex;
+        setShouldTransition(true);
+        setDisplayIndex(targetIndex);
+      }
     } else {
       // Find the actual city from the original cities array
       const actualCity = cities.find(c => c.id === actualCityId);
       if (actualCity) {
         setSelectedCity(actualCity);
+
+        // Find the real city index (not clone) in the original cities array
+        const realCityIndex = cities.findIndex(c => c.id === actualCityId);
+        if (realCityIndex !== -1) {
+          // Convert to extended array index (real cities start at CLONE_COUNT)
+          // This ensures we ALWAYS center on the real city (indices 9-21), never clones
+          const targetIndex = CLONE_COUNT + realCityIndex;
+          setShouldTransition(true);
+          setDisplayIndex(targetIndex);
+        }
       }
     }
   };
 
-  // Handle travel/navigate to city
+  // Handle travel/navigate to city - Phase 8: Cinematic transition
   const handleTravel = (city: CityData) => {
     if (city.isRandom) return;
-    const params = new URLSearchParams();
-    params.set('view', 'map');
-    params.set('city', city.name);
-    navigate(`/map?${params.toString()}`);
+    setIsTransitioningState(true);
+
+    // Trigger warp effect and fade out
+    setTimeout(() => {
+      const params = new URLSearchParams();
+      params.set('view', 'map');
+      params.set('city', city.name);
+      navigate(`/map?${params.toString()}`);
+    }, 600); // Allow warp animation to play
+  };
+
+  // Phase 7c: Handle parallax on preview container
+  const handlePreviewMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
+    const rect = e.currentTarget.getBoundingClientRect();
+    const x = (e.clientX - rect.left - rect.width / 2) / 60; // Reduced parallax intensity
+    const y = (e.clientY - rect.top - rect.height / 2) / 60;
+    setPreviewParallax({ x: Math.max(-4, Math.min(4, x)), y: Math.max(-4, Math.min(4, y)) });
+  };
+
+  const handlePreviewMouseLeave = () => {
+    setPreviewParallax({ x: 0, y: 0 });
   };
 
   // Initialize selectedCity on mount (fix initial position)
@@ -178,9 +250,9 @@ export function CitiesPage() {
 
   // Arrow navigation - MERGED STATE MANAGEMENT (synchronous updates)
   const handleArrowClick = (direction: 'left' | 'right') => {
-    if (isTransitioning || cities.length === 0) return;
+    if (isCarouselTransitioning || cities.length === 0) return;
 
-    setIsTransitioning(true);
+    setIsCarouselTransitioning(true);
     setShouldTransition(true);
 
     // Calculate new index
@@ -210,7 +282,7 @@ export function CitiesPage() {
         setShouldTransition(false);
         setDisplayIndex(CLONE_COUNT + cities.length - 1);
       }
-      setIsTransitioning(false);
+      setIsCarouselTransitioning(false);
     }, TRANSITION_MS);
   };
 
@@ -255,8 +327,9 @@ export function CitiesPage() {
              style={{ left: '50%', top: '-15%', rotate: '15deg', animation: 'float-ray 35s ease-in-out infinite 10s' }} />
       </div>
 
-      {/* Bokeh Particles - Extended */}
+      {/* Bokeh Particles & Floating Glints - Phase 10: Enhanced ambient motion */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
+        {/* Soft bokeh particles */}
         <div className="absolute w-3 h-3 rounded-full bg-white/10 blur-sm"
              style={{ left: '15%', top: '20%', animation: 'float-particle 12s ease-in-out infinite' }} />
         <div className="absolute w-2 h-2 rounded-full bg-cyan-300/15 blur-sm"
@@ -277,6 +350,18 @@ export function CitiesPage() {
              style={{ left: '85%', top: '65%', animation: 'float-particle 17s ease-in-out infinite 8s' }} />
         <div className="absolute w-2 h-2 rounded-full bg-white/8 blur-sm"
              style={{ left: '10%', top: '75%', animation: 'float-particle 21s ease-in-out infinite 11s' }} />
+
+        {/* Phase 10: Floating light glints (faster, more subtle) */}
+        <div className="absolute w-1 h-1 rounded-full bg-cyan-200/20 blur-md"
+             style={{ left: '35%', top: '45%', animation: 'float-glint 8s ease-in-out infinite' }} />
+        <div className="absolute w-1.5 h-1.5 rounded-full bg-purple-300/15 blur-md"
+             style={{ left: '65%', top: '25%', animation: 'float-glint 10s ease-in-out infinite 2s' }} />
+        <div className="absolute w-1 h-1 rounded-full bg-pink-200/15 blur-md"
+             style={{ left: '50%', top: '60%', animation: 'float-glint 9s ease-in-out infinite 1s' }} />
+        <div className="absolute w-1.5 h-1.5 rounded-full bg-cyan-300/15 blur-md"
+             style={{ left: '20%', top: '55%', animation: 'float-glint 11s ease-in-out infinite 3s' }} />
+        <div className="absolute w-1 h-1 rounded-full bg-blue-200/15 blur-md"
+             style={{ left: '75%', top: '35%', animation: 'float-glint 8.5s ease-in-out infinite 1.5s' }} />
       </div>
 
       {/* Animated Gradient Overlay */}
@@ -290,7 +375,7 @@ export function CitiesPage() {
 
       {/* Back Button - Enhanced HUD Style */}
       <button
-        onClick={() => navigate('/')}
+        onClick={() => navigate(-1)}
         className="fixed top-6 left-6 z-50 bg-black/40 backdrop-blur-md border border-cyan-400/30 rounded-lg px-4 py-2 flex items-center gap-2 text-cyan-300 hover:bg-cyan-500/20 hover:border-cyan-400/50 transition-all duration-200 font-display uppercase tracking-wide text-sm"
         style={{
           boxShadow: '0 0 20px rgba(34, 211, 238, 0.2), inset 0 0 30px rgba(0,0,0,0.3)',
@@ -300,27 +385,90 @@ export function CitiesPage() {
         <span className="font-semibold">Back</span>
       </button>
 
-      {/* Main Content */}
-      <div className="relative z-10 min-h-screen flex flex-col">
+      {/* Main Content - Train Arrival Animation */}
+      <motion.div
+        className="relative z-10 min-h-screen flex flex-col"
+        initial={{ x: '100%', opacity: 0 }}
+        animate={{ x: 0, opacity: 1 }}
+        exit={{ x: '-100%', opacity: 0 }}
+        transition={{
+          type: 'spring',
+          damping: 25,
+          stiffness: 120,
+          duration: 0.8,
+        }}
+      >
 
-        {/* Preview Section - Top 65% */}
-        <div className="flex-[65] flex items-center justify-center p-6 pt-16">
-          <div className="relative max-w-4xl w-full scale-90">
-
-            {/* Atmospheric Glow Behind Preview */}
-            <div
-              className="absolute inset-0 rounded-2xl blur-3xl opacity-30"
+        {/* Phase 1a: CITIES Masthead Section - Branding Header */}
+        <div className="relative z-20 px-8 pt-20 pb-8"
+          style={{
+            clipPath: 'polygon(0 0, 100% 3%, 100% 100%, 0 97%)',
+            background: 'linear-gradient(135deg, rgba(0,0,0,0.4), rgba(0,0,0,0.3))',
+            backdropFilter: 'blur(10px)',
+            borderBottom: '2px solid rgba(34, 211, 238, 0.3)',
+          }}
+        >
+          <div className="max-w-6xl mx-auto">
+            <h1 className="text-7xl font-black tracking-widest text-white font-display"
               style={{
-                background: `radial-gradient(ellipse at center, ${displayCity.color}60, transparent 70%)`,
+                textShadow: '0 0 30px rgba(34, 211, 238, 0.4), 0 4px 12px rgba(0,0,0,0.6)',
+                letterSpacing: '0.15em',
+              }}
+            >
+              CITIES
+            </h1>
+            <p className="text-lg text-cyan-300/70 font-serif italic mt-2 tracking-wide"
+              style={{ letterSpacing: '0.05em' }}
+            >
+              日本の街を巡る旅 • Journey Through Japanese Cities
+            </p>
+          </div>
+        </div>
+
+        {/* Phase 1b: Hero Section - 60/40 Split Container */}
+        <div className="flex flex-1 overflow-hidden"
+          style={{
+            clipPath: 'polygon(0 0, 100% 3%, 100% 97%, 0 100%)',
+          }}
+        >
+          {/* Left side: Preview - 60% */}
+          <div className="flex-[60] flex items-center justify-center p-6"
+          onMouseMove={handlePreviewMouseMove}
+          onMouseLeave={handlePreviewMouseLeave}
+        >
+          <div className="relative max-w-5xl w-full scale-100"
+            style={{
+              transform: `perspective(1200px) rotateX(${previewParallax.y * 0.3}deg) rotateY(${previewParallax.x * 0.3}deg)`,
+              transition: 'transform 0.2s ease-out',
+            }}
+          >
+
+            {/* Atmospheric Glow Behind Preview - Phase 7b: Regional color with smooth transitions */}
+            <div
+              className="absolute inset-0 rounded-2xl blur-3xl opacity-35"
+              style={{
+                background: `radial-gradient(ellipse at center, ${displayCity.regionColor || displayCity.color}60, transparent 70%)`,
                 animation: 'pulse-glow 4s ease-in-out infinite',
+                transition: 'background 0.6s ease-in-out',
+              }}
+            />
+
+            {/* Chunky Nintendo Border Glow - Phase 7b: Dynamic regional color */}
+            <div
+              className="absolute -inset-1 rounded-2xl opacity-70"
+              style={{
+                background: `linear-gradient(135deg, ${displayCity.regionColor || displayCity.color}, ${displayCity.regionColor || displayCity.color}80)`,
+                animation: 'border-pulse 3s ease-in-out infinite',
+                filter: 'blur(8px)',
+                transition: 'background 0.6s ease-in-out',
               }}
             />
 
             {/* Large City Preview */}
-            <div className="relative aspect-[16/10] rounded-2xl overflow-hidden border-4 shadow-2xl"
+            <div className="relative aspect-[16/10] rounded-2xl overflow-hidden shadow-2xl"
               style={{
-                borderColor: displayCity.color,
-                boxShadow: `0 0 80px ${displayCity.color}50, 0 0 40px ${displayCity.color}30, inset 0 0 60px rgba(0,0,0,0.4)`,
+                border: `5px solid ${displayCity.color}`,
+                boxShadow: `0 0 80px ${displayCity.color}50, 0 0 40px ${displayCity.color}30, inset 0 0 60px rgba(0,0,0,0.4), inset 0 6px 15px rgba(255,255,255,0.15)`,
               }}
             >
               {/* City Image with Ken Burns Effect */}
@@ -372,68 +520,111 @@ export function CitiesPage() {
               {/* Gradient Overlay at Bottom */}
               <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
 
-              {/* City Info Overlay (Top Right - Mario Kart style) */}
+              {/* City Info Overlay (Top Right - HUD Panel) - Phase 11: Enhanced glass morphism & spacing */}
               {displayCity && (
-                <div className="absolute top-8 right-8 bg-black/60 backdrop-blur-xl border-2 rounded-xl p-6 min-w-[320px]"
+                <div className="absolute top-8 right-8 rounded-xl min-w-[380px]"
                   style={{
-                    borderColor: displayCity.color,
-                    boxShadow: `0 0 30px ${displayCity.color}30, inset 0 0 60px rgba(0,0,0,0.3)`,
+                    background: 'linear-gradient(135deg, rgba(0,0,0,0.6), rgba(0,0,0,0.5))',
+                    backdropFilter: 'blur(30px)',
+                    border: `2px solid ${displayCity.regionColor || displayCity.color}60`,
+                    boxShadow: `0 0 60px ${displayCity.regionColor || displayCity.color}35, inset 0 0 80px rgba(0,0,0,0.4), inset 0 3px 12px rgba(255,255,255,0.12), 0 8px 32px rgba(0,0,0,0.3)`,
+                    padding: '32px',
+                    transition: 'all 0.6s ease-in-out',
+                    transform: isTransitioning ? 'scale(0.95) translateY(10px)' : 'scale(1) translateY(0)',
                   }}
                 >
-                  <div className="space-y-3">
+                  <div className="space-y-4">
                     {/* City Name */}
                     <div>
-                      <h2 className="text-4xl font-black text-white tracking-tight font-display uppercase"
+                      <h2 className="text-5xl font-black text-white font-display uppercase"
                         style={{
-                          textShadow: `0 0 20px ${displayCity.color}80`,
+                          textShadow: `0 0 24px ${displayCity.color}90, 0 2px 8px rgba(0,0,0,0.8)`,
+                          letterSpacing: '0.02em',
                         }}
                       >
                         {displayCity.name}
                       </h2>
-                      <div className="text-2xl font-medium mt-1 font-sans"
+                      <div className="text-2xl font-medium mt-2 font-sans"
                         style={{
                           color: displayCity.color,
-                          textShadow: `0 0 10px ${displayCity.color}60`,
+                          textShadow: `0 0 12px ${displayCity.color}50, 0 1px 4px rgba(0,0,0,0.6)`,
+                          letterSpacing: '0.08em',
+                          opacity: 0.95,
                         }}
                       >
                         {displayCity.nameJapanese}
                       </div>
                     </div>
 
-                    {/* Stats */}
-                    <div className="flex items-center gap-4 text-sm text-gray-300 font-sans">
-                      <div className="flex items-center gap-1">
-                        <Train className="w-4 h-4" />
-                        <span>{displayCity.region}</span>
+                    {/* Stats - Enhanced */}
+                    <div className="flex items-center gap-5 text-sm font-sans pt-2">
+                      <div className="flex items-center gap-2"
+                        style={{
+                          color: 'rgba(255,255,255,0.7)',
+                        }}
+                      >
+                        <Train className="w-4 h-4"
+                          style={{
+                            color: displayCity.color,
+                            filter: `drop-shadow(0 0 4px ${displayCity.color}60)`,
+                          }}
+                        />
+                        <span className="font-medium">{displayCity.region}</span>
                       </div>
                       {!displayCity.isRandom && (
-                        <div className="flex items-center gap-1">
+                        <div className="flex items-center gap-2"
+                          style={{
+                            color: 'rgba(255,255,255,0.7)',
+                          }}
+                        >
                           <span className="w-2 h-2 rounded-full bg-cyan-400"
                             style={{
-                              boxShadow: '0 0 8px rgba(34, 211, 238, 0.8)',
+                              boxShadow: '0 0 10px rgba(34, 211, 238, 0.9), 0 0 4px rgba(34, 211, 238, 1)',
                               animation: 'pulse-glow 2s ease-in-out infinite',
                             }}
                           />
-                          <span>{displayCity.storeCount} Stores</span>
+                          <span className="font-medium">{displayCity.storeCount} Stores</span>
                         </div>
                       )}
                     </div>
 
-                    {/* Travel Button (only for selected city) */}
+                    {/* Travel Button (only for selected city) - Phase 8: Enhanced with regional colors & warp */}
                     {selectedCity && !selectedCity.isRandom && (
                       <button
                         onClick={() => handleTravel(selectedCity)}
-                        className="w-full mt-4 text-white font-bold py-3 px-6 rounded-lg uppercase tracking-wider text-sm transition-all duration-300 hover:scale-105 font-display relative overflow-hidden group"
+                        className="w-full mt-6 text-white font-bold py-4 px-8 rounded-lg uppercase tracking-wider text-sm font-display relative overflow-hidden group active:scale-95 disabled:opacity-50"
+                        disabled={isTransitioning}
                         style={{
-                          background: `linear-gradient(135deg, ${selectedCity.color}, ${selectedCity.color}dd)`,
-                          boxShadow: `0 0 30px ${selectedCity.color}60, 0 8px 20px rgba(0,0,0,0.4), inset 0 0 40px rgba(255,255,255,0.1)`,
+                          background: `linear-gradient(135deg, ${selectedCity.regionColor || selectedCity.color}, ${selectedCity.regionColor || selectedCity.color}dd)`,
+                          boxShadow: `0 0 40px ${selectedCity.regionColor || selectedCity.color}70, 0 12px 30px rgba(0,0,0,0.4), inset 0 0 50px rgba(255,255,255,0.12)`,
+                          transition: isTransitioning
+                            ? 'all 0.6s ease-in-out'
+                            : 'transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.3s ease',
+                          transform: isTransitioning ? 'scale(0.95) translateY(5px)' : 'scale(1)',
+                          opacity: isTransitioning ? 0.7 : 1,
+                        }}
+                        onMouseEnter={(e) => {
+                          if (!isTransitioning) {
+                            e.currentTarget.style.transform = 'scale(1.08)';
+                            e.currentTarget.style.boxShadow = `0 0 50px ${selectedCity.regionColor || selectedCity.color}90, 0 16px 40px rgba(0,0,0,0.5), inset 0 0 60px rgba(255,255,255,0.15)`;
+                          }
+                        }}
+                        onMouseLeave={(e) => {
+                          if (!isTransitioning) {
+                            e.currentTarget.style.transform = 'scale(1)';
+                            e.currentTarget.style.boxShadow = `0 0 40px ${selectedCity.regionColor || selectedCity.color}70, 0 12px 30px rgba(0,0,0,0.4), inset 0 0 50px rgba(255,255,255,0.12)`;
+                          }
                         }}
                       >
                         {/* Shimmer effect on hover */}
                         <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-700" />
+                        {/* Phase 8: Warp effect */}
+                        {isTransitioning && (
+                          <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/40 to-transparent animate-pulse" />
+                        )}
                         <div className="flex items-center justify-center gap-2 relative z-10">
                           <Train className="w-5 h-5" />
-                          <span>Travel to {selectedCity.name}</span>
+                          <span>{isTransitioning ? 'Departing...' : `Travel to ${selectedCity.name}`}</span>
                         </div>
                       </button>
                     )}
@@ -465,38 +656,82 @@ export function CitiesPage() {
           </div>
         </div>
 
-        {/* Train Line Carousel - Bottom 35% */}
-        <div className="flex-[35] flex flex-col items-center justify-center px-8 pb-8">
-
-          {/* Train Line Visual */}
-          <div className="w-full max-w-6xl mb-6 scale-90">
-            <div className="relative h-1 bg-gradient-to-r from-transparent via-cyan-400/50 to-transparent shadow-[0_0_15px_rgba(34,211,238,0.3)]">
-              {/* Station Dots - ALL cities */}
-              <div className="absolute inset-0 flex justify-around items-center">
-                {cities.map((city) => {
-                  const isActive = selectedCity?.id === city.id;
-                  return (
-                    <div key={city.id} className="relative">
-                      <div
-                        className="w-2.5 h-2.5 rounded-full transition-all duration-300"
-                        style={{
-                          backgroundColor: isActive ? city.color : '#4B5563',
-                          boxShadow: isActive ? `0 0 16px ${city.color}, 0 0 8px ${city.color}` : 'none',
-                          animation: isActive ? 'pulse-glow 2s ease-in-out infinite' : 'none',
-                        }}
-                      />
-                      {/* Outer glow ring for selected city */}
-                      {isActive && (
-                        <div
-                          className="absolute inset-0 w-4 h-4 -m-0.75 rounded-full opacity-40"
-                          style={{
-                            backgroundColor: city.color,
-                            filter: 'blur(4px)',
-                            animation: 'pulse-glow 2s ease-in-out infinite',
-                          }}
-                        />
-                      )}
+          {/* Right side: Store Preview Section - 40% - Phase 1b: Placeholder for Phase 3 */}
+          <div className="flex-[40] flex flex-col items-start justify-start p-6 overflow-y-auto relative"
+            style={{
+              background: 'linear-gradient(135deg, rgba(0,0,0,0.3), rgba(0,0,0,0.2))',
+              borderLeft: '2px solid rgba(34, 211, 238, 0.2)',
+            }}
+          >
+            {/* Store Preview Grid - Will be populated in Phase 3 */}
+            <div className="w-full">
+              <h3 className="text-sm font-display uppercase tracking-widest text-cyan-300/50 mb-4">Featured Stores</h3>
+              <div className="grid grid-cols-2 gap-3">
+                {/* 6 Store Card Placeholders - Will be replaced with real components in Phase 3 */}
+                {[...Array(6)].map((_, i) => (
+                  <div key={i}
+                    className="aspect-square rounded-lg overflow-hidden relative bg-black/20 border border-cyan-400/20"
+                    style={{
+                      clipPath: 'polygon(0 3%, 100% 0, 100% 97%, 0 100%)',
+                      animation: `float-particle ${8 + i}s ease-in-out infinite ${i * 0.2}s`,
+                    }}
+                  >
+                    <div className="w-full h-full flex items-center justify-center text-cyan-300/20 text-xs font-serif italic">
+                      Store {i + 1}
                     </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Train Line Carousel - Below Hero Section */}
+        <div className="flex-none flex flex-col items-center justify-center px-8 pb-8 pt-8"
+          style={{
+            height: 'auto',
+            minHeight: '300px',
+            opacity: isTransitioning ? 0.5 : 1,
+            transition: 'opacity 0.6s ease-in-out',
+          }}
+        >
+
+          {/* Train Line Visual - Enhanced Travel Route */}
+          <div className="w-full max-w-6xl mb-10 scale-90">
+            <div className="relative h-2 rounded-full overflow-visible">
+              {/* Base rail with gradient */}
+              <div className="absolute inset-0 rounded-full bg-gradient-to-r from-transparent via-cyan-400/40 to-transparent"
+                style={{
+                  boxShadow: '0 0 20px rgba(34, 211, 238, 0.25), inset 0 1px 2px rgba(255,255,255,0.1)',
+                }}
+              />
+
+              {/* Animated energy flow */}
+              <div className="absolute inset-0 rounded-full bg-gradient-to-r from-transparent via-cyan-300/30 to-transparent"
+                style={{
+                  animation: 'rail-flow 3s linear infinite',
+                  backgroundSize: '200% 100%',
+                }}
+              />
+
+              {/* Station Dots - ALL cities - Phase 10: Enhanced hover reactions & Phase 7b regional colors */}
+              <div className="absolute inset-0 flex justify-around items-center">
+                {cities.map((city, idx) => {
+                  const isActive = selectedCity?.id === city.id;
+                  const cityIndex = cities.findIndex(c => c.id === city.id);
+                  const selectedIndex = cities.findIndex(c => c.id === selectedCity?.id);
+                  const isConnected = selectedIndex !== -1 &&
+                    ((cityIndex < selectedIndex) || (cityIndex === selectedIndex));
+
+                  return (
+                    <StationDot
+                      key={city.id}
+                      city={city}
+                      isActive={isActive}
+                      cityIndex={cityIndex}
+                      isConnected={isConnected}
+                      previousCity={cityIndex > 0 ? cities[cityIndex - 1] : null}
+                    />
                   );
                 })}
               </div>
@@ -506,50 +741,86 @@ export function CitiesPage() {
           {/* Ticket Cards Carousel */}
           <div className="relative w-full max-w-6xl scale-90">
 
-            {/* Scroll Buttons - Enhanced */}
+            {/* Navigation Buttons - Circular Neon Station Controls */}
             <button
               onClick={() => handleArrowClick('left')}
-              disabled={isTransitioning}
-              className="absolute left-0 top-1/2 -translate-y-1/2 z-10 bg-black/70 backdrop-blur-md border-2 border-cyan-400/40 rounded-full p-4 text-cyan-300 hover:bg-cyan-500/30 hover:border-cyan-400/60 hover:scale-110 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
-              style={{
-                boxShadow: '0 0 30px rgba(34, 211, 238, 0.3), inset 0 0 40px rgba(0,0,0,0.4)',
-              }}
+              disabled={isCarouselTransitioning}
+              className="absolute -left-20 top-1/2 -translate-y-1/2 z-10 group disabled:opacity-30 disabled:cursor-not-allowed transition-all duration-300"
             >
-              <ArrowLeft className="w-7 h-7" />
-            </button>
-            <button
-              onClick={() => handleArrowClick('right')}
-              disabled={isTransitioning}
-              className="absolute right-0 top-1/2 -translate-y-1/2 z-10 bg-black/70 backdrop-blur-md border-2 border-cyan-400/40 rounded-full p-4 text-cyan-300 hover:bg-cyan-500/30 hover:border-cyan-400/60 hover:scale-110 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
-              style={{
-                boxShadow: '0 0 30px rgba(34, 211, 238, 0.3), inset 0 0 40px rgba(0,0,0,0.4)',
-              }}
-            >
-              <ArrowLeft className="w-7 h-7 rotate-180" />
+              {/* Outer neon ring */}
+              <div className="absolute inset-0 rounded-full border-2 border-cyan-400/40 group-hover:border-cyan-400/80 transition-all duration-300"
+                style={{
+                  boxShadow: '0 0 20px rgba(34, 211, 238, 0.2), inset 0 0 20px rgba(0,0,0,0.6)',
+                }}
+              />
+              {/* Hover glow */}
+              <div className="absolute inset-0 rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-300"
+                style={{
+                  background: 'radial-gradient(circle, rgba(34, 211, 238, 0.2), transparent 70%)',
+                  filter: 'blur(15px)',
+                }}
+              />
+              {/* Button content */}
+              <div className="relative w-14 h-14 flex items-center justify-center bg-black/60 backdrop-blur-md rounded-full group-hover:scale-110 group-active:scale-95 transition-transform duration-200">
+                <ArrowLeft className="w-6 h-6 text-cyan-300 group-hover:text-cyan-200 transition-colors" />
+              </div>
             </button>
 
-            {/* Carousel Container */}
+            <button
+              onClick={() => handleArrowClick('right')}
+              disabled={isCarouselTransitioning}
+              className="absolute -right-20 top-1/2 -translate-y-1/2 z-10 group disabled:opacity-30 disabled:cursor-not-allowed transition-all duration-300"
+            >
+              {/* Outer neon ring */}
+              <div className="absolute inset-0 rounded-full border-2 border-cyan-400/40 group-hover:border-cyan-400/80 transition-all duration-300"
+                style={{
+                  boxShadow: '0 0 20px rgba(34, 211, 238, 0.2), inset 0 0 20px rgba(0,0,0,0.6)',
+                }}
+              />
+              {/* Hover glow */}
+              <div className="absolute inset-0 rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-300"
+                style={{
+                  background: 'radial-gradient(circle, rgba(34, 211, 238, 0.2), transparent 70%)',
+                  filter: 'blur(15px)',
+                }}
+              />
+              {/* Button content */}
+              <div className="relative w-14 h-14 flex items-center justify-center bg-black/60 backdrop-blur-md rounded-full group-hover:scale-110 group-active:scale-95 transition-transform duration-200">
+                <ArrowLeft className="w-6 h-6 text-cyan-300 group-hover:text-cyan-200 transition-colors rotate-180" />
+              </div>
+            </button>
+
+            {/* Carousel Container - Extra vertical space for selected card */}
             <div
               className="overflow-hidden"
+              style={{
+                paddingTop: '60px',
+                paddingBottom: '40px',
+                marginTop: '-40px',
+              }}
             >
               <div
-                className="flex gap-6 px-16 py-4"
+                className="flex gap-10 px-16"
                 style={{
                   transform: `translateX(${translateX}px)`,
-                  transition: shouldTransition ? 'transform 300ms ease-out' : 'none',
+                  transition: shouldTransition ? 'transform 400ms cubic-bezier(0.34, 1.26, 0.64, 1)' : 'none',
                 }}
               >
-                {extendedCities.map((city) => {
+                {extendedCities.map((city, index) => {
                   const actualCityId = city.isClone ? city.originalId! : city.id;
                   const isSelected = selectedCity?.id === actualCityId;
+
+                  // Calculate distance from center for depth of field effect
+                  const distanceFromCenter = Math.abs(index - displayIndex);
 
                   return (
                     <CityTicketCard
                       key={city.id}
                       city={city}
                       isSelected={isSelected}
+                      distanceFromCenter={distanceFromCenter}
                       onHover={setHoveredCity}
-                      onSelect={handleCitySelect}
+                      onSelect={() => handleCitySelect(city, index)}
                     />
                   );
                 })}
@@ -557,7 +828,7 @@ export function CitiesPage() {
             </div>
           </div>
         </div>
-      </div>
+      </motion.div>
 
       {/* Custom Styles */}
       <style>{`
@@ -623,6 +894,17 @@ export function CitiesPage() {
           }
         }
 
+        @keyframes breathe-glow {
+          0%, 100% {
+            opacity: 0.6;
+            transform: scale(1);
+          }
+          50% {
+            opacity: 0.9;
+            transform: scale(1.05);
+          }
+        }
+
         @keyframes shimmer {
           0% {
             background-position: -1000px 0;
@@ -632,10 +914,166 @@ export function CitiesPage() {
           }
         }
 
+        @keyframes border-pulse {
+          0%, 100% {
+            opacity: 0.5;
+            transform: scale(1);
+          }
+          50% {
+            opacity: 0.9;
+            transform: scale(1.02);
+          }
+        }
+
+        @keyframes rail-flow {
+          0% {
+            background-position: 0% 0%;
+          }
+          100% {
+            background-position: 200% 0%;
+          }
+        }
+
+        @keyframes rail-glow {
+          0%, 100% {
+            opacity: 0.6;
+          }
+          50% {
+            opacity: 1;
+          }
+        }
+
         .scrollbar-hide::-webkit-scrollbar {
           display: none;
         }
+
+        /* Phase 10: Floating glint animation */
+        @keyframes float-glint {
+          0%, 100% {
+            transform: translate(0, 0) scale(1);
+            opacity: 0;
+          }
+          50% {
+            opacity: 0.8;
+            transform: translate(15px, -20px) scale(1.1);
+          }
+        }
+
+        /* Phase 8: Warp/hyperspace effect */
+        @keyframes warp-out {
+          0% {
+            transform: scale(1) translateZ(0);
+            opacity: 1;
+          }
+          100% {
+            transform: scale(1.5) translateZ(100px);
+            opacity: 0;
+          }
+        }
+
+        .animate-warp {
+          animation: warp-out 0.6s cubic-bezier(0.36, 0, 0.66, -0.56) forwards;
+        }
+
+        /* Phase 8: Teleport rays */
+        @keyframes teleport-rays {
+          0% {
+            transform: scale(0) rotate(0deg);
+            opacity: 1;
+          }
+          100% {
+            transform: scale(2) rotate(360deg);
+            opacity: 0;
+          }
+        }
+
+        /* Phase 7c: Enhanced parallax perspective */
+        @keyframes parallax-shift {
+          0%, 100% {
+            transform: translateZ(20px);
+          }
+          50% {
+            transform: translateZ(50px);
+          }
+        }
       `}</style>
+    </div>
+  );
+}
+
+// Station Dot Component - Phase 10: Separate component to avoid React Hooks violations
+interface StationDotProps {
+  city: CityData;
+  isActive: boolean;
+  cityIndex: number;
+  isConnected: boolean;
+  previousCity: CityData | null;
+}
+
+function StationDot({ city, isActive, cityIndex, isConnected, previousCity }: StationDotProps) {
+  const [isDotHovered, setIsDotHovered] = useState(false);
+
+  return (
+    <div key={city.id} className="relative group cursor-pointer"
+      onMouseEnter={() => setIsDotHovered(true)}
+      onMouseLeave={() => setIsDotHovered(false)}
+    >
+      {/* Connection glow to previous dot - Phase 7b: Regional color gradient */}
+      {isConnected && cityIndex > 0 && previousCity && (
+        <div
+          className="absolute right-full w-[calc(100vw/13)] h-0.5 top-1/2 -translate-y-1/2"
+          style={{
+            background: `linear-gradient(to right, ${previousCity?.regionColor || previousCity?.color || '#4B5563'}80, ${city.regionColor || city.color}80)`,
+            boxShadow: `0 0 12px ${city.regionColor || city.color}70`,
+            animation: 'rail-glow 2s ease-in-out infinite',
+            transition: 'box-shadow 0.3s ease',
+          }}
+        />
+      )}
+
+      {/* Station dot - Phase 10: Hover warm-up effect */}
+      <div
+        className="w-3 h-3 rounded-full transition-all duration-300 relative z-10"
+        style={{
+          backgroundColor: isActive
+            ? city.regionColor || city.color
+            : isDotHovered
+            ? city.regionColor || city.color
+            : '#4B5563',
+          boxShadow: isActive
+            ? `0 0 20px ${city.regionColor || city.color}, 0 0 10px ${city.regionColor || city.color}, 0 0 4px #fff`
+            : isDotHovered
+            ? `0 0 12px ${city.regionColor || city.color}80, 0 0 6px ${city.regionColor || city.color}`
+            : 'none',
+          border: isActive ? `2px solid ${(city.regionColor || city.color)}40` : 'none',
+          animation: isActive ? 'pulse-glow 2s ease-in-out infinite' : 'none',
+          transform: isDotHovered && !isActive ? 'scale(1.2)' : 'scale(1)',
+        }}
+      />
+
+      {/* Outer glow ring for selected city */}
+      {isActive && (
+        <div
+          className="absolute inset-0 w-5 h-5 -m-1 rounded-full opacity-50"
+          style={{
+            backgroundColor: city.regionColor || city.color,
+            filter: 'blur(6px)',
+            animation: 'breathe-glow 3s ease-in-out infinite',
+          }}
+        />
+      )}
+
+      {/* Hover glow aura for non-active dots */}
+      {isDotHovered && !isActive && (
+        <div
+          className="absolute inset-0 w-4 h-4 -m-0.5 rounded-full opacity-40"
+          style={{
+            backgroundColor: city.regionColor || city.color,
+            filter: 'blur(4px)',
+            animation: 'breathe-glow 2s ease-in-out infinite',
+          }}
+        />
+      )}
     </div>
   );
 }
@@ -644,41 +1082,74 @@ export function CitiesPage() {
 interface CityTicketCardProps {
   city: CityData;
   isSelected: boolean;
+  distanceFromCenter: number;
   onHover: (city: CityData | null) => void;
-  onSelect: (city: CityData) => void;
+  onSelect: () => void;
 }
 
-function CityTicketCard({ city, isSelected, onHover, onSelect }: CityTicketCardProps) {
+function CityTicketCard({ city, isSelected, distanceFromCenter, onHover, onSelect }: CityTicketCardProps) {
   const [isHovered, setIsHovered] = useState(false);
+  const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 });
+  const [cardParallax, setCardParallax] = useState({ x: 0, y: 0 }); // Phase 10: Card depth effect
+
+  // Depth of field calculations - stronger hierarchy
+  const scaleAmount = 1 - Math.min(distanceFromCenter * 0.08, 0.35);
+  const opacityAmount = 1 - Math.min(distanceFromCenter * 0.25, 0.7);
+
+  const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
+    if (!isSelected) return;
+    const rect = e.currentTarget.getBoundingClientRect();
+    const x = (e.clientX - rect.left - rect.width / 2) / 15;
+    const y = (e.clientY - rect.top - rect.height / 2) / 15;
+    setMousePosition({ x, y });
+  };
+
+  const handleMouseLeave = () => {
+    onHover(null);
+    setIsHovered(false);
+    setMousePosition({ x: 0, y: 0 });
+  };
 
   return (
     <div
-      className="relative flex-shrink-0 snap-center transition-all duration-300 cursor-pointer"
+      className="relative flex-shrink-0 snap-center cursor-pointer"
       style={{
-        transform: isSelected ? 'translateY(-20px) scale(1.05)' : 'translateY(0) scale(1)',
-        filter: !isSelected && !isHovered ? 'brightness(0.7)' : 'brightness(1)',
+        transform: isSelected
+          ? `translateY(-24px) scale(1.22) perspective(1000px) rotateY(${mousePosition.x}deg) rotateX(${-mousePosition.y}deg)`
+          : isHovered
+          ? `translateY(-4px) scale(${scaleAmount * 1.03})`
+          : `translateY(0) scale(${scaleAmount})`,
+        filter: `brightness(${isSelected ? 1.15 : isHovered ? 0.85 : 0.5}) saturate(${isSelected ? 1.25 : 0.9}) contrast(${isSelected ? 1.05 : 1})`,
+        opacity: isSelected ? 1 : opacityAmount,
+        transition: isSelected
+          ? 'transform 0.5s cubic-bezier(0.34, 1.56, 0.64, 1), filter 0.4s ease-out, opacity 0.4s ease-out'
+          : 'transform 0.35s cubic-bezier(0.4, 0.0, 0.2, 1), filter 0.3s ease, opacity 0.3s ease',
+        zIndex: isSelected ? 20 : isHovered ? 10 : 1,
       }}
       onMouseEnter={() => {
         onHover(city);
         setIsHovered(true);
       }}
-      onMouseLeave={() => {
-        onHover(null);
-        setIsHovered(false);
-      }}
-      onClick={() => onSelect(city)}
+      onMouseMove={handleMouseMove}
+      onMouseLeave={handleMouseLeave}
+      onClick={onSelect}
     >
-      {/* Ticket Card */}
+      {/* Ticket Card - Phase 7b & 11: Regional colors & enhanced glass morphism */}
       <div
-        className="w-[280px] h-[160px] rounded-xl overflow-hidden border-2 transition-all duration-300 relative backdrop-blur-md"
+        className="w-[280px] h-[160px] rounded-xl overflow-hidden transition-all duration-300 relative backdrop-blur-md"
         style={{
-          borderColor: isSelected ? city.color : 'rgba(255,255,255,0.1)',
-          boxShadow: isSelected
-            ? `0 20px 60px ${city.color}80, 0 0 30px ${city.color}60, 0 0 0 3px ${city.color}40`
+          border: isSelected
+            ? `4px solid ${city.regionColor || city.color}`
             : isHovered
-            ? `0 8px 30px ${city.color}40, 0 0 20px ${city.color}30`
-            : '0 4px 12px rgba(0,0,0,0.3)',
-          backgroundColor: 'rgba(0,0,0,0.6)',
+            ? `3px solid ${city.regionColor || city.color}60`
+            : '3px solid rgba(255,255,255,0.15)',
+          boxShadow: isSelected
+            ? `0 20px 60px ${city.regionColor || city.color}80, 0 0 40px ${city.regionColor || city.color}70, inset 0 0 30px ${city.regionColor || city.color}20, inset 0 4px 10px rgba(255,255,255,0.2)`
+            : isHovered
+            ? `0 8px 30px ${city.regionColor || city.color}50, 0 0 20px ${city.regionColor || city.color}40, inset 0 2px 8px rgba(255,255,255,0.1)`
+            : '0 4px 12px rgba(0,0,0,0.3), inset 0 1px 4px rgba(255,255,255,0.05)',
+          backgroundColor: isSelected ? 'rgba(0,0,0,0.7)' : 'rgba(0,0,0,0.6)',
+          transition: 'all 0.3s ease',
         }}
       >
         {/* Perforated Edge (Left Side) */}
@@ -726,37 +1197,86 @@ function CityTicketCard({ city, isSelected, onHover, onSelect }: CityTicketCardP
             <div className="absolute inset-0 bg-gradient-to-r from-transparent to-black/40 pointer-events-none" />
           </div>
 
-          {/* Right: City Info (40%) */}
+          {/* Right: City Info (40%) - Enhanced Typography */}
           <div className="flex-[4] flex flex-col justify-center items-start px-4 relative z-10">
             {city.isRandom ? (
               <>
-                <Shuffle className="w-8 h-8 mb-2" style={{ color: city.color }} />
-                <div className="text-white font-bold text-lg font-display uppercase tracking-wide">Mystery</div>
-                <div className="text-gray-300 text-xs font-sans">Random City</div>
+                <Shuffle className="w-8 h-8 mb-2"
+                  style={{
+                    color: city.color,
+                    filter: `drop-shadow(0 0 6px ${city.color}80)`,
+                  }}
+                />
+                <div className="text-white font-black text-xl font-display uppercase tracking-wide"
+                  style={{
+                    textShadow: `0 0 12px ${city.color}70`,
+                  }}
+                >
+                  Mystery
+                </div>
+                <div className="text-xs font-sans"
+                  style={{
+                    color: 'rgba(255,255,255,0.6)',
+                  }}
+                >
+                  Random City
+                </div>
               </>
             ) : (
               <>
-                <div className="text-white font-bold text-lg leading-tight mb-1 font-display uppercase tracking-tight"
+                <div className="text-white font-black text-xl leading-tight mb-1 font-display uppercase"
                   style={{
-                    textShadow: isSelected ? `0 0 10px ${city.color}80` : 'none',
+                    textShadow: isSelected
+                      ? `0 0 14px ${city.regionColor || city.color}90, 0 1px 4px rgba(0,0,0,0.8)`
+                      : '0 1px 3px rgba(0,0,0,0.6)',
+                    letterSpacing: '0.01em',
+                    transition: 'text-shadow 0.3s ease',
                   }}
                 >
                   {city.name}
                 </div>
                 <div className="text-sm font-medium mb-2 font-sans"
                   style={{
-                    color: city.color,
-                    textShadow: isSelected ? `0 0 8px ${city.color}60` : 'none',
+                    color: city.regionColor || city.color,
+                    textShadow: isSelected
+                      ? `0 0 10px ${city.regionColor || city.color}60, 0 1px 3px rgba(0,0,0,0.6)`
+                      : '0 1px 2px rgba(0,0,0,0.5)',
+                    letterSpacing: '0.06em',
+                    opacity: 0.95,
+                    transition: 'all 0.3s ease',
                   }}
                 >
                   {city.nameJapanese}
                 </div>
-                <div className="space-y-0.5 text-xs text-gray-300 font-sans">
-                  <div className="flex items-center gap-1">
-                    <Train className="w-3 h-3" />
-                    <span>{city.region}</span>
+                <div className="space-y-1 text-xs font-sans"
+                  style={{
+                    color: 'rgba(255,255,255,0.65)',
+                  }}
+                >
+                  <div className="flex items-center gap-1.5">
+                    <Train className="w-3 h-3"
+                      style={{
+                        color: isSelected ? city.regionColor || city.color : 'rgba(255,255,255,0.5)',
+                        filter: isSelected ? `drop-shadow(0 0 3px ${city.regionColor || city.color}60)` : 'none',
+                        transition: 'all 0.3s ease',
+                      }}
+                    />
+                    <span className="font-medium">{city.region}</span>
                   </div>
-                  <div className="font-medium" style={{ color: city.color }}>
+                  <div className="font-medium flex items-center gap-1.5"
+                    style={{
+                      color: isSelected ? city.regionColor || city.color : 'rgba(255,255,255,0.6)',
+                      textShadow: isSelected ? `0 0 6px ${city.regionColor || city.color}40` : 'none',
+                      transition: 'all 0.3s ease',
+                    }}
+                  >
+                    <span className="w-1.5 h-1.5 rounded-full"
+                      style={{
+                        backgroundColor: isSelected ? city.regionColor || city.color : 'rgba(255,255,255,0.4)',
+                        boxShadow: isSelected ? `0 0 6px ${city.regionColor || city.color}80` : 'none',
+                        transition: 'all 0.3s ease',
+                      }}
+                    />
                     {city.storeCount} stores
                   </div>
                 </div>
@@ -775,15 +1295,57 @@ function CityTicketCard({ city, isSelected, onHover, onSelect }: CityTicketCardP
         />
       </div>
 
-      {/* Selection Glow */}
+      {/* Selection Corona - Soft Neon Halo System - Phase 7b: Regional colors */}
       {isSelected && (
-        <div
-          className="absolute inset-0 rounded-xl blur-xl opacity-50 pointer-events-none"
-          style={{
-            backgroundColor: city.color,
-            animation: 'pulse 2s ease-in-out infinite',
-          }}
-        />
+        <>
+          {/* Outer diffused glow (far background) */}
+          <div
+            className="absolute pointer-events-none"
+            style={{
+              left: '-25%',
+              right: '-25%',
+              top: '-25%',
+              bottom: '-25%',
+              background: `radial-gradient(ellipse at center, ${city.regionColor || city.color}30, ${city.regionColor || city.color}15 50%, transparent 70%)`,
+              filter: 'blur(30px)',
+              opacity: 0.8,
+              animation: 'breathe-glow 4s ease-in-out infinite',
+              zIndex: -2,
+              transition: 'background 0.6s ease',
+            }}
+          />
+
+          {/* Mid-layer glow (pulsing) */}
+          <div
+            className="absolute pointer-events-none"
+            style={{
+              left: '-15%',
+              right: '-15%',
+              top: '-15%',
+              bottom: '-15%',
+              background: `radial-gradient(ellipse at center, ${city.regionColor || city.color}50, ${city.regionColor || city.color}20 60%, transparent 80%)`,
+              filter: 'blur(20px)',
+              opacity: 0.6,
+              animation: 'pulse-glow 2.5s ease-in-out infinite',
+              zIndex: -1,
+              transition: 'background 0.6s ease',
+            }}
+          />
+
+          {/* Sharp neon edge accent (just outside border) */}
+          <div
+            className="absolute pointer-events-none rounded-xl"
+            style={{
+              inset: '-3px',
+              background: 'transparent',
+              boxShadow: `0 0 15px ${city.regionColor || city.color}80, 0 0 30px ${city.regionColor || city.color}40`,
+              opacity: 0.9,
+              animation: 'pulse-glow 2s ease-in-out infinite 0.3s',
+              zIndex: 0,
+              transition: 'box-shadow 0.6s ease',
+            }}
+          />
+        </>
       )}
     </div>
   );
