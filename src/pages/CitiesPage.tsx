@@ -659,7 +659,7 @@ export function CitiesPage() {
               />
 
               {/* Large City Preview */}
-              <div className="absolute inset-0 rounded-2xl overflow-visible shadow-2xl"
+              <div className="absolute inset-0 rounded-2xl overflow-hidden shadow-2xl"
                 style={{
                   border: `5px solid rgba(34, 211, 238, 0.9)`,
                   boxShadow: `0 0 80px rgba(34, 211, 238, 0.5), 0 0 40px rgba(34, 211, 238, 0.3), inset 0 0 60px rgba(0,0,0,0.4), inset 0 6px 15px rgba(255,255,255,0.15)`,
