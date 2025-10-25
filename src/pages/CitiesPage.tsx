@@ -572,12 +572,15 @@ export function CitiesPage() {
             }}
           />
 
-          {/* Diagonal Color Block Accent */}
-          <div className="absolute top-0 right-0 w-96 h-32 pointer-events-none"
+          {/* Diagonal Color Block Accent - Much bigger and bolder */}
+          <div className="absolute top-0 right-0 pointer-events-none"
             style={{
-              background: `linear-gradient(135deg, ${displayCity.regionColor || displayCity.color}25 0%, ${displayCity.regionColor || displayCity.color}40 50%, transparent 100%)`,
-              clipPath: 'polygon(100% 0, 100% 70%, 0 0)',
-              filter: 'blur(0.5px)',
+              width: '600px',
+              height: '280px',
+              background: `linear-gradient(135deg, ${displayCity.regionColor || displayCity.color}40 0%, ${displayCity.regionColor || displayCity.color}60 40%, transparent 100%)`,
+              clipPath: 'polygon(100% 0, 100% 60%, 0 0)',
+              filter: 'blur(1px)',
+              boxShadow: `0 0 60px ${displayCity.regionColor || displayCity.color}40, inset 0 0 40px ${displayCity.regionColor || displayCity.color}20`,
             }}
           />
 
@@ -644,8 +647,8 @@ export function CitiesPage() {
               {/* Large City Preview */}
               <div className="absolute inset-0 rounded-2xl overflow-hidden shadow-2xl"
                 style={{
-                  border: `5px solid ${displayCity.color}`,
-                  boxShadow: `0 0 80px ${displayCity.color}50, 0 0 40px ${displayCity.color}30, inset 0 0 60px rgba(0,0,0,0.4), inset 0 6px 15px rgba(255,255,255,0.15)`,
+                  border: `5px solid rgba(34, 211, 238, 0.9)`,
+                  boxShadow: `0 0 80px rgba(34, 211, 238, 0.5), 0 0 40px rgba(34, 211, 238, 0.3), inset 0 0 60px rgba(0,0,0,0.4), inset 0 6px 15px rgba(255,255,255,0.15)`,
                 }}
               >
               {/* City Image with Ken Burns Effect */}
