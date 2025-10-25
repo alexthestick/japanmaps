@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo, useRef } from 'react';
+import { useState, useEffect, useMemo, useRef, memo, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ArrowLeft, Shuffle, Train } from 'lucide-react';
 import { motion } from 'framer-motion';
@@ -10,6 +10,8 @@ import {
   CITY_REGIONS,
 } from '../lib/constants';
 import { getNeighborhoodStoreCounts } from '../utils/neighborhoodData';
+import { useCityStorePreviews } from '../hooks/useCityStorePreviews';
+import type { Store } from '../types/store';
 
 interface CityData {
   id: string;
@@ -26,6 +28,95 @@ interface CityData {
   originalId?: string; // Original city ID for clones
   regionColor?: string; // Regional color accent for Phase 7b
 }
+
+// StorePreviewCard Component - Memoized for performance
+interface StorePreviewCardProps {
+  store: Store | null;
+  category: string;
+  icon: string;
+  isHovered: boolean;
+  onMouseEnter: () => void;
+  onMouseLeave: () => void;
+}
+
+const StorePreviewCard = memo(function StorePreviewCard({
+  store,
+  category,
+  icon,
+  isHovered,
+  onMouseEnter,
+  onMouseLeave,
+}: StorePreviewCardProps) {
+  return (
+    <div
+      className="aspect-square rounded-lg overflow-hidden relative bg-black/20 border-3 border-cyan-400/30 cursor-pointer group"
+      style={{
+        clipPath: 'polygon(0 3%, 100% 0, 100% 97%, 0 100%)',
+        willChange: 'transform, border-color, box-shadow',
+        WebkitBackfaceVisibility: 'hidden',
+        backfaceVisibility: 'hidden',
+      }}
+      onMouseEnter={onMouseEnter}
+      onMouseLeave={onMouseLeave}
+    >
+      {store && store.photos && store.photos.length > 0 ? (
+        <>
+          <img
+            src={store.photos[0]}
+            alt={store.name}
+            className="w-full h-full object-cover"
+            style={{
+              transition: 'transform 200ms ease-out, opacity 200ms ease-out',
+              transform: isHovered ? 'scale(1.05)' : 'scale(1)',
+              WebkitBackfaceVisibility: 'hidden',
+              backfaceVisibility: 'hidden',
+            }}
+            loading="eager"
+            fetchPriority="high"
+            onError={(e) => {
+              const target = e.target as HTMLImageElement;
+              target.style.opacity = '0';
+            }}
+          />
+
+          {/* Gradient Overlay */}
+          <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
+
+          {/* Category Icon Pill */}
+          <div className="absolute top-2 right-2 bg-black/60 backdrop-blur-md p-1 rounded-full border border-cyan-400/40 flex items-center justify-center"
+            style={{
+              boxShadow: '0 0 8px rgba(34, 211, 238, 0.2)',
+              width: '28px',
+              height: '28px',
+            }}
+          >
+            <span className="text-base">{icon}</span>
+          </div>
+
+          {/* Store Name Overlay - Hover Show */}
+          <div className="absolute bottom-0 left-0 right-0 px-3 py-2"
+            style={{
+              opacity: isHovered ? 1 : 0,
+              transition: 'opacity 200ms ease-out',
+            }}
+          >
+            <div className="text-xs font-bold text-white uppercase tracking-wide line-clamp-2"
+              style={{
+                textShadow: '0 2px 8px rgba(0,0,0,0.8)',
+              }}
+            >
+              {store.name}
+            </div>
+          </div>
+        </>
+      ) : (
+        <div className="w-full h-full flex items-center justify-center text-cyan-300/30 text-xs font-serif italic">
+          {icon} No stores
+        </div>
+      )}
+    </div>
+  );
+});
 
 // Phase 7b: Regional Color System
 const REGION_COLOR_PALETTE: { [key: string]: { primary: string; accent: string; glow: string } } = {
@@ -56,6 +147,54 @@ const REGION_COLOR_PALETTE: { [key: string]: { primary: string; accent: string; 
   },
 };
 
+// StorePreviews Component - Fetches and renders store cards
+interface StorePreviewsProps {
+  cityName: string;
+  hoveredCardIndex: number | null;
+  handleCardMouseEnter: (index: number) => void;
+  handleCardMouseLeave: () => void;
+}
+
+function StorePreviews({ cityName, hoveredCardIndex, handleCardMouseEnter, handleCardMouseLeave }: StorePreviewsProps) {
+  const { previews, loading } = useCityStorePreviews(cityName);
+
+  if (loading) {
+    return (
+      <div className="grid grid-cols-2 gap-2.5 w-full flex-1">
+        {[...Array(6)].map((_, i) => (
+          <div
+            key={i}
+            className="aspect-square rounded-lg bg-gradient-to-br from-cyan-400/20 to-cyan-400/5 border border-cyan-400/20 animate-pulse"
+            style={{
+              clipPath: 'polygon(0 3%, 100% 0, 100% 97%, 0 100%)',
+            }}
+          />
+        ))}
+      </div>
+    );
+  }
+
+  return (
+    <div className="grid grid-cols-2 gap-2.5 w-full flex-1"
+      style={{
+        gridTemplateRows: 'repeat(3, 1fr)',
+      }}
+    >
+      {previews.map((preview, idx) => (
+        <StorePreviewCard
+          key={idx}
+          store={preview.store}
+          category={preview.category}
+          icon={preview.icon}
+          isHovered={hoveredCardIndex === idx}
+          onMouseEnter={() => handleCardMouseEnter(idx)}
+          onMouseLeave={handleCardMouseLeave}
+        />
+      ))}
+    </div>
+  );
+}
+
 export function CitiesPage() {
   const navigate = useNavigate();
   const [selectedCity, setSelectedCity] = useState<CityData | null>(null);
@@ -65,6 +204,7 @@ export function CitiesPage() {
   const [currentPhotoIndex, setCurrentPhotoIndex] = useState(0);
   const [previewParallax, setPreviewParallax] = useState({ x: 0, y: 0 }); // Phase 7c: Parallax state
   const [isTransitioning, setIsTransitioningState] = useState(false); // Phase 8: Travel transition state
+  const [hoveredCardIndex, setHoveredCardIndex] = useState<number | null>(null); // New state for hovered card index
 
   // Carousel state (merged from hook)
   const CLONE_COUNT = 9;
@@ -237,6 +377,15 @@ export function CitiesPage() {
   const handlePreviewMouseLeave = () => {
     setPreviewParallax({ x: 0, y: 0 });
   };
+
+  // Handlers for store card hover - stable references for memoized components
+  const handleCardMouseEnter = useCallback((index: number) => {
+    setHoveredCardIndex(index);
+  }, []);
+
+  const handleCardMouseLeave = useCallback(() => {
+    setHoveredCardIndex(null);
+  }, []);
 
   // Initialize selectedCity on mount (fix initial position)
   useEffect(() => {
@@ -431,88 +580,89 @@ export function CitiesPage() {
             clipPath: 'polygon(0 0, 100% 3%, 100% 97%, 0 100%)',
           }}
         >
-          {/* Left side: Preview - 60% */}
-          <div className="flex-[60] flex items-center justify-center p-6"
+          {/* Left side: Preview - 80% */}
+          <div className="flex-[80] flex items-center justify-center p-6 sticky top-0 max-h-screen overflow-hidden"
           onMouseMove={handlePreviewMouseMove}
           onMouseLeave={handlePreviewMouseLeave}
         >
-          <div className="relative max-w-5xl w-full scale-100"
+          <div className="relative max-w-5xl w-full scale-100 h-full flex items-center"
             style={{
               transform: `perspective(1200px) rotateX(${previewParallax.y * 0.3}deg) rotateY(${previewParallax.x * 0.3}deg)`,
               transition: 'transform 0.2s ease-out',
             }}
           >
 
-            {/* Atmospheric Glow Behind Preview - Phase 7b: Regional color with smooth transitions */}
-            <div
-              className="absolute inset-0 rounded-2xl blur-3xl opacity-35"
-              style={{
-                background: `radial-gradient(ellipse at center, ${displayCity.regionColor || displayCity.color}60, transparent 70%)`,
-                animation: 'pulse-glow 4s ease-in-out infinite',
-                transition: 'background 0.6s ease-in-out',
-              }}
-            />
+            {/* Glow Container */}
+            <div className="relative w-full aspect-[16/10]">
+              {/* Atmospheric Glow Behind Preview - Phase 7b: Regional color with smooth transitions */}
+              <div
+                className="absolute inset-0 rounded-2xl blur-3xl opacity-35 pointer-events-none"
+                style={{
+                  background: `radial-gradient(ellipse at center, ${displayCity.regionColor || displayCity.color}60, transparent 70%)`,
+                  animation: 'pulse-glow 4s ease-in-out infinite',
+                  transition: 'background 0.6s ease-in-out',
+                }}
+              />
 
-            {/* Chunky Nintendo Border Glow - Phase 7b: Dynamic regional color */}
-            <div
-              className="absolute -inset-1 rounded-2xl opacity-70"
-              style={{
-                background: `linear-gradient(135deg, ${displayCity.regionColor || displayCity.color}, ${displayCity.regionColor || displayCity.color}80)`,
-                animation: 'border-pulse 3s ease-in-out infinite',
-                filter: 'blur(8px)',
-                transition: 'background 0.6s ease-in-out',
-              }}
-            />
+              {/* Chunky Nintendo Border Glow - Phase 7b: Dynamic regional color */}
+              <div
+                className="absolute inset-1 rounded-2xl opacity-70 pointer-events-none"
+                style={{
+                  background: `linear-gradient(135deg, ${displayCity.regionColor || displayCity.color}, ${displayCity.regionColor || displayCity.color}80)`,
+                  animation: 'border-pulse 3s ease-in-out infinite',
+                  filter: 'blur(8px)',
+                  transition: 'background 0.6s ease-in-out',
+                }}
+              />
 
-            {/* Large City Preview */}
-            <div className="relative aspect-[16/10] rounded-2xl overflow-hidden shadow-2xl"
-              style={{
-                border: `5px solid ${displayCity.color}`,
-                boxShadow: `0 0 80px ${displayCity.color}50, 0 0 40px ${displayCity.color}30, inset 0 0 60px rgba(0,0,0,0.4), inset 0 6px 15px rgba(255,255,255,0.15)`,
-              }}
-            >
+              {/* Large City Preview */}
+              <div className="absolute inset-0 rounded-2xl overflow-hidden shadow-2xl"
+                style={{
+                  border: `5px solid ${displayCity.color}`,
+                  boxShadow: `0 0 80px ${displayCity.color}50, 0 0 40px ${displayCity.color}30, inset 0 0 60px rgba(0,0,0,0.4), inset 0 6px 15px rgba(255,255,255,0.15)`,
+                }}
+              >
               {/* City Image with Ken Burns Effect */}
-              <div className="absolute inset-0 bg-gradient-to-br from-indigo-900 to-purple-900" key={displayCity.id}>
-                <img
-                  src={currentImage}
-                  alt={displayCity.name}
-                  className="w-full h-full object-cover animate-ken-burns transition-opacity duration-500"
-                  loading="eager"
-                  fetchpriority="high"
-                  style={{
-                    imageRendering: 'auto',
-                    WebkitBackfaceVisibility: 'hidden',
-                    backfaceVisibility: 'hidden',
-                    transform: 'translateZ(0)',
-                  }}
-                  onError={(e) => {
-                    const target = e.target as HTMLImageElement;
-                    target.style.opacity = '0';
-                    const container = target.parentElement;
-                    if (container && !container.querySelector('.placeholder-text')) {
-                      const placeholder = document.createElement('div');
-                      placeholder.className = 'placeholder-text w-full h-full flex items-center justify-center absolute inset-0';
-                      placeholder.innerHTML = `
-                        <div class="text-center">
-                          <div class="text-8xl font-black text-white/20 mb-4">${displayCity.nameJapanese}</div>
-                          <div class="text-4xl font-bold text-white/40">${displayCity.name}</div>
-                          <div class="text-lg text-white/30 mt-4">Image Coming Soon</div>
-                        </div>
-                      `;
-                      container.appendChild(placeholder);
-                    }
-                  }}
-                  onLoad={(e) => {
-                    const target = e.target as HTMLImageElement;
-                    target.style.opacity = '1';
-                    const container = target.parentElement;
-                    if (container) {
-                      const placeholder = container.querySelector('.placeholder-text');
-                      if (placeholder) placeholder.remove();
-                    }
-                  }}
-                />
-              </div>
+              <img
+                src={currentImage}
+                alt={displayCity.name}
+                className="w-full h-full object-cover animate-ken-burns transition-opacity duration-500"
+                loading="eager"
+                fetchPriority="high"
+                style={{
+                  imageRendering: 'auto',
+                  WebkitBackfaceVisibility: 'hidden',
+                  backfaceVisibility: 'hidden',
+                  transform: 'translateZ(0)',
+                  opacity: 1,
+                }}
+                onError={(e) => {
+                  const target = e.target as HTMLImageElement;
+                  target.style.display = 'none';
+                  const container = target.parentElement;
+                  if (container && !container.querySelector('.placeholder-text')) {
+                    const placeholder = document.createElement('div');
+                    placeholder.className = 'placeholder-text w-full h-full flex items-center justify-center absolute inset-0 bg-gradient-to-br from-indigo-900 to-purple-900';
+                    placeholder.innerHTML = `
+                      <div class="text-center">
+                        <div class="text-8xl font-black text-white/20 mb-4">${displayCity.nameJapanese}</div>
+                        <div class="text-4xl font-bold text-white/40">${displayCity.name}</div>
+                        <div class="text-lg text-white/30 mt-4">Image Coming Soon</div>
+                      </div>
+                    `;
+                    container.appendChild(placeholder);
+                  }
+                }}
+                onLoad={(e) => {
+                  const target = e.target as HTMLImageElement;
+                  target.style.display = 'block';
+                  const container = target.parentElement;
+                  if (container) {
+                    const placeholder = container.querySelector('.placeholder-text');
+                    if (placeholder) placeholder.remove();
+                  }
+                }}
+              />
 
               {/* Film Grain Overlay */}
               <div className="absolute inset-0 bg-[url('/film-grain.png')] opacity-[0.05] pointer-events-none mix-blend-overlay" />
@@ -520,128 +670,60 @@ export function CitiesPage() {
               {/* Gradient Overlay at Bottom */}
               <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
 
-              {/* City Info Overlay (Top Right - HUD Panel) - Phase 11: Enhanced glass morphism & spacing */}
-              {displayCity && (
-                <div className="absolute top-8 right-8 rounded-xl min-w-[380px]"
+              {/* Train Travel Button - Bottom Center with Kirby Aesthetic */}
+              {selectedCity && !selectedCity.isRandom && (
+                <button
+                  onClick={() => handleTravel(selectedCity)}
+                  className="absolute text-white font-black uppercase tracking-wider text-lg font-display relative overflow-hidden group active:scale-95 disabled:opacity-50 px-12 py-4 transition-all duration-300"
+                  disabled={isTransitioning}
                   style={{
-                    background: 'linear-gradient(135deg, rgba(0,0,0,0.6), rgba(0,0,0,0.5))',
-                    backdropFilter: 'blur(30px)',
-                    border: `2px solid ${displayCity.regionColor || displayCity.color}60`,
-                    boxShadow: `0 0 60px ${displayCity.regionColor || displayCity.color}35, inset 0 0 80px rgba(0,0,0,0.4), inset 0 3px 12px rgba(255,255,255,0.12), 0 8px 32px rgba(0,0,0,0.3)`,
-                    padding: '32px',
-                    transition: 'all 0.6s ease-in-out',
-                    transform: isTransitioning ? 'scale(0.95) translateY(10px)' : 'scale(1) translateY(0)',
+                    bottom: '-24px',
+                    left: '50%',
+                    transform: isTransitioning ? 'scale(0.9) translateY(5px) translateX(-50%)' : 'scale(1) translateY(0) translateX(-50%)',
+                    clipPath: 'polygon(15% 0%, 85% 0%, 100% 50%, 85% 100%, 15% 100%, 0% 50%)',
+                    background: `linear-gradient(135deg, ${selectedCity.regionColor || selectedCity.color}, ${selectedCity.regionColor || selectedCity.color}dd)`,
+                    border: `4px solid ${selectedCity.regionColor || selectedCity.color}`,
+                    boxShadow: `0 0 60px ${selectedCity.regionColor || selectedCity.color}80, 0 0 30px ${selectedCity.regionColor || selectedCity.color}60, 0 12px 40px rgba(0,0,0,0.6), inset 0 0 40px rgba(255,255,255,0.15)`,
+                    transition: isTransitioning
+                      ? 'all 0.6s ease-in-out'
+                      : 'all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1)',
+                    opacity: isTransitioning ? 0.7 : 1,
+                    zIndex: 20,
+                  }}
+                  onMouseEnter={(e) => {
+                    if (!isTransitioning) {
+                      e.currentTarget.style.transform = 'scale(1.12) translateY(-5px) translateX(-50%)';
+                      e.currentTarget.style.boxShadow = `0 0 80px ${selectedCity.regionColor || selectedCity.color}90, 0 0 40px ${selectedCity.regionColor || selectedCity.color}80, 0 16px 50px rgba(0,0,0,0.7), inset 0 0 50px rgba(255,255,255,0.2)`;
+                    }
+                  }}
+                  onMouseLeave={(e) => {
+                    if (!isTransitioning) {
+                      e.currentTarget.style.transform = 'scale(1) translateY(0) translateX(-50%)';
+                      e.currentTarget.style.boxShadow = `0 0 60px ${selectedCity.regionColor || selectedCity.color}80, 0 0 30px ${selectedCity.regionColor || selectedCity.color}60, 0 12px 40px rgba(0,0,0,0.6), inset 0 0 40px rgba(255,255,255,0.15)`;
+                    }
                   }}
                 >
-                  <div className="space-y-4">
-                    {/* City Name */}
-                    <div>
-                      <h2 className="text-5xl font-black text-white font-display uppercase"
-                        style={{
-                          textShadow: `0 0 24px ${displayCity.color}90, 0 2px 8px rgba(0,0,0,0.8)`,
-                          letterSpacing: '0.02em',
-                        }}
-                      >
-                        {displayCity.name}
-                      </h2>
-                      <div className="text-2xl font-medium mt-2 font-sans"
-                        style={{
-                          color: displayCity.color,
-                          textShadow: `0 0 12px ${displayCity.color}50, 0 1px 4px rgba(0,0,0,0.6)`,
-                          letterSpacing: '0.08em',
-                          opacity: 0.95,
-                        }}
-                      >
-                        {displayCity.nameJapanese}
-                      </div>
-                    </div>
-
-                    {/* Stats - Enhanced */}
-                    <div className="flex items-center gap-5 text-sm font-sans pt-2">
-                      <div className="flex items-center gap-2"
-                        style={{
-                          color: 'rgba(255,255,255,0.7)',
-                        }}
-                      >
-                        <Train className="w-4 h-4"
-                          style={{
-                            color: displayCity.color,
-                            filter: `drop-shadow(0 0 4px ${displayCity.color}60)`,
-                          }}
-                        />
-                        <span className="font-medium">{displayCity.region}</span>
-                      </div>
-                      {!displayCity.isRandom && (
-                        <div className="flex items-center gap-2"
-                          style={{
-                            color: 'rgba(255,255,255,0.7)',
-                          }}
-                        >
-                          <span className="w-2 h-2 rounded-full bg-cyan-400"
-                            style={{
-                              boxShadow: '0 0 10px rgba(34, 211, 238, 0.9), 0 0 4px rgba(34, 211, 238, 1)',
-                              animation: 'pulse-glow 2s ease-in-out infinite',
-                            }}
-                          />
-                          <span className="font-medium">{displayCity.storeCount} Stores</span>
-                        </div>
-                      )}
-                    </div>
-
-                    {/* Travel Button (only for selected city) - Phase 8: Enhanced with regional colors & warp */}
-                    {selectedCity && !selectedCity.isRandom && (
-                      <button
-                        onClick={() => handleTravel(selectedCity)}
-                        className="w-full mt-6 text-white font-bold py-4 px-8 rounded-lg uppercase tracking-wider text-sm font-display relative overflow-hidden group active:scale-95 disabled:opacity-50"
-                        disabled={isTransitioning}
-                        style={{
-                          background: `linear-gradient(135deg, ${selectedCity.regionColor || selectedCity.color}, ${selectedCity.regionColor || selectedCity.color}dd)`,
-                          boxShadow: `0 0 40px ${selectedCity.regionColor || selectedCity.color}70, 0 12px 30px rgba(0,0,0,0.4), inset 0 0 50px rgba(255,255,255,0.12)`,
-                          transition: isTransitioning
-                            ? 'all 0.6s ease-in-out'
-                            : 'transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.3s ease',
-                          transform: isTransitioning ? 'scale(0.95) translateY(5px)' : 'scale(1)',
-                          opacity: isTransitioning ? 0.7 : 1,
-                        }}
-                        onMouseEnter={(e) => {
-                          if (!isTransitioning) {
-                            e.currentTarget.style.transform = 'scale(1.08)';
-                            e.currentTarget.style.boxShadow = `0 0 50px ${selectedCity.regionColor || selectedCity.color}90, 0 16px 40px rgba(0,0,0,0.5), inset 0 0 60px rgba(255,255,255,0.15)`;
-                          }
-                        }}
-                        onMouseLeave={(e) => {
-                          if (!isTransitioning) {
-                            e.currentTarget.style.transform = 'scale(1)';
-                            e.currentTarget.style.boxShadow = `0 0 40px ${selectedCity.regionColor || selectedCity.color}70, 0 12px 30px rgba(0,0,0,0.4), inset 0 0 50px rgba(255,255,255,0.12)`;
-                          }
-                        }}
-                      >
-                        {/* Shimmer effect on hover */}
-                        <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-700" />
-                        {/* Phase 8: Warp effect */}
-                        {isTransitioning && (
-                          <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/40 to-transparent animate-pulse" />
-                        )}
-                        <div className="flex items-center justify-center gap-2 relative z-10">
-                          <Train className="w-5 h-5" />
-                          <span>{isTransitioning ? 'Departing...' : `Travel to ${selectedCity.name}`}</span>
-                        </div>
-                      </button>
-                    )}
-
-                    {/* Mystery Hint */}
-                    {selectedCity?.isRandom && (
-                      <div className="text-center text-cyan-300 text-sm italic mt-4">
-                        Select a city card below to reveal your destination
-                      </div>
-                    )}
+                  {/* Shimmer effect on hover */}
+                  <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/30 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-700" style={{ clipPath: 'polygon(15% 0%, 85% 0%, 100% 50%, 85% 100%, 15% 100%, 0% 50%)' }} />
+                  
+                  {/* Warp effect when transitioning */}
+                  {isTransitioning && (
+                    <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/40 to-transparent animate-pulse" style={{ clipPath: 'polygon(15% 0%, 85% 0%, 100% 50%, 85% 100%, 15% 100%, 0% 50%)' }} />
+                  )}
+                  
+                  {/* Button Content */}
+                  <div className="flex items-center justify-center gap-3 relative z-10">
+                    <Train className="w-6 h-6" style={{ filter: `drop-shadow(0 0 8px ${selectedCity.regionColor || selectedCity.color})` }} />
+                    <span style={{ textShadow: `0 0 12px ${selectedCity.regionColor || selectedCity.color}80, 0 3px 8px rgba(0,0,0,0.9)` }}>
+                      {isTransitioning ? 'DEPARTING...' : `TRAVEL TO ${selectedCity.name.toUpperCase()}`}
+                    </span>
                   </div>
-                </div>
+                </button>
               )}
 
               {/* Hint Text (only when no selection) */}
               {!selectedCity && (
-                <div className="absolute bottom-8 left-1/2 transform -translate-x-1/2 text-center">
+                <div className="absolute bottom-10 left-1/2 transform -translate-x-1/2 text-center">
                   <div className="bg-black/40 backdrop-blur-md border border-cyan-400/30 rounded-full px-6 py-3 text-cyan-300 text-sm font-medium font-sans"
                     style={{
                       boxShadow: '0 0 20px rgba(34, 211, 238, 0.2), inset 0 0 30px rgba(0,0,0,0.3)',
@@ -654,34 +736,82 @@ export function CitiesPage() {
               )}
             </div>
           </div>
+            </div>
         </div>
 
-          {/* Right side: Store Preview Section - 40% - Phase 1b: Placeholder for Phase 3 */}
-          <div className="flex-[40] flex flex-col items-start justify-start p-6 overflow-y-auto relative"
+          {/* Right side: Store Preview Section - 20% - Real store data integration */}
+          <div className="flex-[20] flex flex-col items-start justify-start p-5 sticky top-0 max-h-screen overflow-hidden relative"
             style={{
               background: 'linear-gradient(135deg, rgba(0,0,0,0.3), rgba(0,0,0,0.2))',
-              borderLeft: '2px solid rgba(34, 211, 238, 0.2)',
+              borderLeft: '3px solid rgba(34, 211, 238, 0.2)',
             }}
           >
-            {/* Store Preview Grid - Will be populated in Phase 3 */}
-            <div className="w-full">
-              <h3 className="text-sm font-display uppercase tracking-widest text-cyan-300/50 mb-4">Featured Stores</h3>
-              <div className="grid grid-cols-2 gap-3">
-                {/* 6 Store Card Placeholders - Will be replaced with real components in Phase 3 */}
-                {[...Array(6)].map((_, i) => (
-                  <div key={i}
-                    className="aspect-square rounded-lg overflow-hidden relative bg-black/20 border border-cyan-400/20"
-                    style={{
-                      clipPath: 'polygon(0 3%, 100% 0, 100% 97%, 0 100%)',
-                      animation: `float-particle ${8 + i}s ease-in-out infinite ${i * 0.2}s`,
-                    }}
-                  >
-                    <div className="w-full h-full flex items-center justify-center text-cyan-300/20 text-xs font-serif italic">
-                      Store {i + 1}
+            {/* Info Card - Overlapping Preview */}
+            {displayCity && (
+              <div className="w-full rounded-lg p-4 mb-4"
+                style={{
+                  background: 'linear-gradient(135deg, rgba(0,0,0,0.7), rgba(0,0,0,0.6))',
+                  border: `2px solid ${displayCity.regionColor || displayCity.color}60`,
+                  boxShadow: `0 0 30px ${displayCity.regionColor || displayCity.color}30, inset 0 0 20px rgba(0,0,0,0.4)`,
+                  minHeight: '115px',
+                }}
+              >
+                <div className="space-y-2">
+                  <div>
+                    <h3 className="text-3xl font-black text-white uppercase font-display"
+                      style={{
+                        textShadow: `0 0 12px ${displayCity.regionColor || displayCity.color}80`,
+                        letterSpacing: '0.05em',
+                      }}
+                    >
+                      {displayCity.name}
+                    </h3>
+                    <div className="text-sm font-medium mt-1"
+                      style={{
+                        color: displayCity.regionColor || displayCity.color,
+                        textShadow: `0 0 8px ${displayCity.regionColor || displayCity.color}60`,
+                      }}
+                    >
+                      {displayCity.nameJapanese}
                     </div>
                   </div>
-                ))}
+                  <div className="flex gap-2 flex-wrap pt-1">
+                    <div className="px-2.5 py-0.5 rounded-full bg-black/40 border border-cyan-400/50 text-xs font-bold text-cyan-300 uppercase tracking-widest"
+                      style={{
+                        boxShadow: '0 0 8px rgba(34, 211, 238, 0.2)',
+                      }}
+                    >
+                      {displayCity.region}
+                    </div>
+                    {!displayCity.isRandom && (
+                      <div className="px-2.5 py-0.5 rounded-full bg-black/40 border border-cyan-400/50 text-xs font-bold text-cyan-300 uppercase tracking-widest"
+                        style={{
+                          boxShadow: '0 0 8px rgba(34, 211, 238, 0.2)',
+                        }}
+                      >
+                        ⭐ {displayCity.storeCount}
+                      </div>
+                    )}
+                  </div>
+                </div>
               </div>
+            )}
+
+            {/* Store Preview Grid */}
+            <div className="w-full flex-1 flex flex-col overflow-hidden">
+              <h4 className="text-xs font-display uppercase tracking-widest text-cyan-300/40 pb-2 mb-2.5">Featured</h4>
+              
+              {/* Fetch and display real store data */}
+              {displayCity && !displayCity.isRandom && (
+                <StorePreviews cityName={displayCity.name} hoveredCardIndex={hoveredCardIndex} handleCardMouseEnter={handleCardMouseEnter} handleCardMouseLeave={handleCardMouseLeave} />
+              )}
+              
+              {/* Mystery city - no stores */}
+              {displayCity?.isRandom && (
+                <div className="w-full h-full flex items-center justify-center text-cyan-300/20 text-xs font-serif italic">
+                  Select a city to see stores
+                </div>
+              )}
             </div>
           </div>
         </div>
