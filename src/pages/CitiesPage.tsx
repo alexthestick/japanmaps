@@ -720,7 +720,7 @@ export function CitiesPage() {
                   className="absolute text-white font-black uppercase tracking-wider text-lg font-display relative overflow-hidden group active:scale-95 disabled:opacity-50 px-12 py-4 transition-all duration-300"
                   disabled={isTransitioning}
                   style={{
-                    bottom: '-120px',
+                    bottom: '20px',
                     left: '50%',
                     transform: isTransitioning ? 'scale(0.9) translateY(5px) translateX(-50%)' : 'scale(1) translateY(0) translateX(-50%)',
                     clipPath: 'polygon(15% 0%, 85% 0%, 100% 50%, 85% 100%, 15% 100%, 0% 50%)',
@@ -731,7 +731,7 @@ export function CitiesPage() {
                       ? 'all 0.6s ease-in-out'
                       : 'all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1)',
                     opacity: isTransitioning ? 0.7 : 1,
-                    zIndex: 50,
+                    zIndex: 100,
                   }}
                   onMouseEnter={(e) => {
                     if (!isTransitioning) {
