@@ -163,7 +163,7 @@ function StorePreviews({ cityName, hoveredCardIndex, handleCardMouseEnter, handl
       <div className="grid grid-cols-2 w-full flex-1 overflow-hidden"
         style={{
           gridTemplateRows: 'repeat(3, 1fr)',
-          gap: '12px',
+          gap: '8px',
         }}
       >
         {[...Array(6)].map((_, i) => (
@@ -183,7 +183,7 @@ function StorePreviews({ cityName, hoveredCardIndex, handleCardMouseEnter, handl
     <div className="grid grid-cols-2 w-full flex-1 overflow-hidden"
       style={{
         gridTemplateRows: 'repeat(3, 1fr)',
-        gap: '12px',
+        gap: '8px',
       }}
     >
       {previews.map((preview, idx) => (
@@ -748,7 +748,7 @@ export function CitiesPage() {
         </div>
 
           {/* Right side: Store Preview Section - 20% - Real store data integration */}
-          <div className="flex-[20] flex flex-col items-start justify-start p-3 sticky top-0 max-h-screen overflow-hidden relative"
+          <div className="flex-[20] flex flex-col items-start justify-start p-2 sticky top-0 max-h-screen overflow-hidden relative"
             style={{
               background: 'linear-gradient(135deg, rgba(0,0,0,0.3), rgba(0,0,0,0.2))',
               borderLeft: '3px solid rgba(34, 211, 238, 0.2)',
@@ -756,7 +756,7 @@ export function CitiesPage() {
           >
             {/* Info Card - Overlapping Preview */}
             {displayCity && (
-              <div className="w-full rounded-lg p-4 mb-3"
+              <div className="w-full rounded-lg p-4 mb-2"
                 style={{
                   background: 'linear-gradient(135deg, rgba(0,0,0,0.7), rgba(0,0,0,0.6))',
                   border: `2px solid ${displayCity.regionColor || displayCity.color}60`,
