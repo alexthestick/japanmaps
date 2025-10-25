@@ -176,7 +176,7 @@ function StorePreviews({ cityName, hoveredCardIndex, handleCardMouseEnter, handl
       <div className="grid grid-cols-2 w-full flex-1 overflow-hidden"
         style={{
           gridTemplateRows: 'repeat(3, 1fr)',
-          gap: '8px',
+          gap: '12px',
         }}
       >
         {[...Array(6)].map((_, i) => (
@@ -196,7 +196,7 @@ function StorePreviews({ cityName, hoveredCardIndex, handleCardMouseEnter, handl
     <div className="grid grid-cols-2 w-full flex-1 overflow-hidden"
       style={{
         gridTemplateRows: 'repeat(3, 1fr)',
-        gap: '8px',
+        gap: '12px',
       }}
     >
       {previews.map((preview, idx) => (
@@ -624,7 +624,7 @@ export function CitiesPage() {
           }}
         >
           {/* Left side: Preview - 80% */}
-          <div className="flex-[80] flex items-center justify-center p-6 sticky top-0 max-h-screen overflow-visible"
+          <div className="flex-[75] flex items-center justify-center p-6 sticky top-0 max-h-screen overflow-visible"
           onMouseMove={handlePreviewMouseMove}
           onMouseLeave={handlePreviewMouseLeave}
         >
@@ -783,7 +783,7 @@ export function CitiesPage() {
         </div>
 
           {/* Right side: Store Preview Section - 20% - Real store data integration */}
-          <div className="flex-[20] flex flex-col items-start justify-start p-2 sticky top-0 max-h-screen overflow-hidden relative"
+          <div className="flex-[25] flex flex-col items-start justify-start p-2 sticky top-0 max-h-screen overflow-hidden relative"
             style={{
               background: 'linear-gradient(135deg, rgba(0,0,0,0.3), rgba(0,0,0,0.2))',
               borderLeft: '3px solid rgba(34, 211, 238, 0.2)',
