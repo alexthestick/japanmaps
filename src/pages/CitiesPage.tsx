@@ -624,7 +624,7 @@ export function CitiesPage() {
           }}
         >
           {/* Left side: Preview - 80% */}
-          <div className="flex-[80] flex items-center justify-center p-6 sticky top-0 max-h-screen overflow-hidden"
+          <div className="flex-[80] flex items-center justify-center p-6 sticky top-0 max-h-screen overflow-visible"
           onMouseMove={handlePreviewMouseMove}
           onMouseLeave={handlePreviewMouseLeave}
         >
