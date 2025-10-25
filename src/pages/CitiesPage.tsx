@@ -49,12 +49,18 @@ const StorePreviewCard = memo(function StorePreviewCard({
 }: StorePreviewCardProps) {
   return (
     <div
-      className="aspect-square rounded-lg overflow-hidden relative bg-black/20 border-3 border-cyan-400/30 cursor-pointer group"
+      className="aspect-square rounded-lg overflow-hidden relative bg-black/20 cursor-pointer group"
       style={{
         clipPath: 'polygon(0 3%, 100% 0, 100% 97%, 0 100%)',
         willChange: 'transform, border-color, box-shadow',
         WebkitBackfaceVisibility: 'hidden',
         backfaceVisibility: 'hidden',
+        border: '3px solid rgba(34, 211, 238, 0.6)',
+        boxShadow: isHovered 
+          ? '0 0 30px rgba(34, 211, 238, 0.5), 0 0 60px rgba(34, 211, 238, 0.2), inset 0 0 20px rgba(34, 211, 238, 0.1)' 
+          : '0 0 15px rgba(34, 211, 238, 0.2), inset 0 0 10px rgba(34, 211, 238, 0.05)',
+        transition: 'border-color 200ms ease-out, box-shadow 200ms ease-out, transform 200ms ease-out',
+        transform: isHovered ? 'scale(1.02) translateY(-2px)' : 'scale(1)',
       }}
       onMouseEnter={onMouseEnter}
       onMouseLeave={onMouseLeave}
@@ -67,7 +73,7 @@ const StorePreviewCard = memo(function StorePreviewCard({
             className="w-full h-full object-cover"
             style={{
               transition: 'transform 200ms ease-out, opacity 200ms ease-out',
-              transform: isHovered ? 'scale(1.05)' : 'scale(1)',
+              transform: isHovered ? 'scale(1.08)' : 'scale(1)',
               WebkitBackfaceVisibility: 'hidden',
               backfaceVisibility: 'hidden',
             }}
@@ -82,19 +88,21 @@ const StorePreviewCard = memo(function StorePreviewCard({
           {/* Gradient Overlay */}
           <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
 
-          {/* Category Icon Pill */}
-          <div className="absolute top-2 right-2 bg-black/60 backdrop-blur-md p-1 rounded-full border border-cyan-400/40 flex items-center justify-center"
+          {/* Category Icon Pill - Enhanced Kirby Style */}
+          <div className="absolute top-2 right-2 bg-black/70 backdrop-blur-md p-1.5 rounded-full border-2 border-cyan-400/70 flex items-center justify-center"
             style={{
-              boxShadow: '0 0 8px rgba(34, 211, 238, 0.2)',
-              width: '28px',
-              height: '28px',
+              boxShadow: '0 0 16px rgba(34, 211, 238, 0.4), inset 0 0 8px rgba(34, 211, 238, 0.2)',
+              width: '32px',
+              height: '32px',
+              transition: 'all 200ms ease-out',
+              transform: isHovered ? 'scale(1.1)' : 'scale(1)',
             }}
           >
-            <span className="text-base">{icon}</span>
+            <span className="text-lg">{icon}</span>
           </div>
 
-          {/* Store Name Overlay - Hover Show */}
-          <div className="absolute bottom-0 left-0 right-0 px-3 py-2"
+          {/* Store Name Overlay - Hover Show - Enhanced */}
+          <div className="absolute bottom-0 left-0 right-0 px-3 py-2 bg-gradient-to-t from-black/90 via-black/60 to-transparent"
             style={{
               opacity: isHovered ? 1 : 0,
               transition: 'opacity 200ms ease-out',
@@ -102,7 +110,8 @@ const StorePreviewCard = memo(function StorePreviewCard({
           >
             <div className="text-xs font-bold text-white uppercase tracking-wide line-clamp-2"
               style={{
-                textShadow: '0 2px 8px rgba(0,0,0,0.8)',
+                textShadow: '0 0 12px rgba(34, 211, 238, 0.6), 0 2px 8px rgba(0,0,0,0.8), 0 0 4px rgba(34, 211, 238, 0.3)',
+                letterSpacing: '0.05em',
               }}
             >
               {store.name}
