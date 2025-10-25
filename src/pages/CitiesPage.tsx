@@ -720,7 +720,7 @@ export function CitiesPage() {
                   className="absolute text-white font-black uppercase tracking-wider text-lg font-display relative overflow-hidden group active:scale-95 disabled:opacity-50 px-12 py-4 transition-all duration-300"
                   disabled={isTransitioning}
                   style={{
-                    bottom: '20px',
+                    bottom: '80px',
                     left: '50%',
                     transform: isTransitioning ? 'scale(0.9) translateY(5px) translateX(-50%)' : 'scale(1) translateY(0) translateX(-50%)',
                     clipPath: 'polygon(15% 0%, 85% 0%, 100% 50%, 85% 100%, 15% 100%, 0% 50%)',
