@@ -37,6 +37,7 @@ interface StorePreviewCardProps {
   isHovered: boolean;
   onMouseEnter: () => void;
   onMouseLeave: () => void;
+  cityColor: string;
 }
 
 const StorePreviewCard = memo(function StorePreviewCard({
@@ -46,19 +47,20 @@ const StorePreviewCard = memo(function StorePreviewCard({
   isHovered,
   onMouseEnter,
   onMouseLeave,
+  cityColor,
 }: StorePreviewCardProps) {
   return (
     <div
       className="aspect-square rounded-lg overflow-hidden relative bg-black/20 cursor-pointer group"
       style={{
-        clipPath: 'polygon(0 3%, 100% 0, 100% 97%, 0 100%)',
+        clipPath: 'polygon(0 5%, 100% 0, 100% 95%, 0 100%)',
         willChange: 'transform, border-color, box-shadow',
         WebkitBackfaceVisibility: 'hidden',
         backfaceVisibility: 'hidden',
-        border: '3px solid rgba(34, 211, 238, 0.6)',
+        border: `3px solid ${cityColor}`,
         boxShadow: isHovered 
-          ? '0 0 30px rgba(34, 211, 238, 0.5), 0 0 60px rgba(34, 211, 238, 0.2), inset 0 0 20px rgba(34, 211, 238, 0.1)' 
-          : '0 0 15px rgba(34, 211, 238, 0.2), inset 0 0 10px rgba(34, 211, 238, 0.05)',
+          ? `0 0 30px ${cityColor}80, 0 0 60px ${cityColor}40, inset 0 0 20px ${cityColor}20` 
+          : `0 0 15px ${cityColor}40, inset 0 0 10px ${cityColor}15`,
         transition: 'border-color 200ms ease-out, box-shadow 200ms ease-out, transform 200ms ease-out',
         transform: isHovered ? 'scale(1.02) translateY(-2px)' : 'scale(1)',
       }}
@@ -89,9 +91,10 @@ const StorePreviewCard = memo(function StorePreviewCard({
           <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
 
           {/* Category Icon Pill - Enhanced Kirby Style */}
-          <div className="absolute top-2 right-2 bg-black/70 backdrop-blur-md p-1.5 rounded-full border-2 border-cyan-400/70 flex items-center justify-center"
+          <div className="absolute top-2 right-2 bg-black/70 backdrop-blur-md p-1.5 rounded-full border-2 flex items-center justify-center"
             style={{
-              boxShadow: '0 0 16px rgba(34, 211, 238, 0.4), inset 0 0 8px rgba(34, 211, 238, 0.2)',
+              borderColor: cityColor,
+              boxShadow: `0 0 16px ${cityColor}60, inset 0 0 8px ${cityColor}30`,
               width: '32px',
               height: '32px',
               transition: 'all 200ms ease-out',
@@ -110,7 +113,7 @@ const StorePreviewCard = memo(function StorePreviewCard({
           >
             <div className="text-xs font-bold text-white uppercase tracking-wide line-clamp-2"
               style={{
-                textShadow: '0 0 12px rgba(34, 211, 238, 0.6), 0 2px 8px rgba(0,0,0,0.8), 0 0 4px rgba(34, 211, 238, 0.3)',
+                textShadow: `0 0 12px ${cityColor}80, 0 2px 8px rgba(0,0,0,0.8), 0 0 4px ${cityColor}50`,
                 letterSpacing: '0.05em',
               }}
             >
@@ -162,9 +165,10 @@ interface StorePreviewsProps {
   hoveredCardIndex: number | null;
   handleCardMouseEnter: (index: number) => void;
   handleCardMouseLeave: () => void;
+  cityColor: string;
 }
 
-function StorePreviews({ cityName, hoveredCardIndex, handleCardMouseEnter, handleCardMouseLeave }: StorePreviewsProps) {
+function StorePreviews({ cityName, hoveredCardIndex, handleCardMouseEnter, handleCardMouseLeave, cityColor }: StorePreviewsProps) {
   const { previews, loading } = useCityStorePreviews(cityName);
 
   if (loading) {
@@ -204,6 +208,7 @@ function StorePreviews({ cityName, hoveredCardIndex, handleCardMouseEnter, handl
           isHovered={hoveredCardIndex === idx}
           onMouseEnter={() => handleCardMouseEnter(idx)}
           onMouseLeave={handleCardMouseLeave}
+          cityColor={cityColor}
         />
       ))}
     </div>
@@ -872,7 +877,7 @@ export function CitiesPage() {
               
               {/* Fetch and display real store data */}
               {displayCity && !displayCity.isRandom && (
-                <StorePreviews cityName={displayCity.name} hoveredCardIndex={hoveredCardIndex} handleCardMouseEnter={handleCardMouseEnter} handleCardMouseLeave={handleCardMouseLeave} />
+                <StorePreviews cityName={displayCity.name} hoveredCardIndex={hoveredCardIndex} handleCardMouseEnter={handleCardMouseEnter} handleCardMouseLeave={handleCardMouseLeave} cityColor={displayCity.regionColor || displayCity.color} />
               )}
               
               {/* Mystery city - no stores */}
