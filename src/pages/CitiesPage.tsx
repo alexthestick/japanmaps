@@ -160,7 +160,12 @@ function StorePreviews({ cityName, hoveredCardIndex, handleCardMouseEnter, handl
 
   if (loading) {
     return (
-      <div className="grid grid-cols-2 gap-2.5 w-full flex-1">
+      <div className="grid grid-cols-2 w-full flex-1 overflow-hidden"
+        style={{
+          gridTemplateRows: 'repeat(3, 1fr)',
+          gap: '12px',
+        }}
+      >
         {[...Array(6)].map((_, i) => (
           <div
             key={i}
@@ -175,9 +180,10 @@ function StorePreviews({ cityName, hoveredCardIndex, handleCardMouseEnter, handl
   }
 
   return (
-    <div className="grid grid-cols-2 gap-2.5 w-full flex-1"
+    <div className="grid grid-cols-2 w-full flex-1 overflow-hidden"
       style={{
         gridTemplateRows: 'repeat(3, 1fr)',
+        gap: '12px',
       }}
     >
       {previews.map((preview, idx) => (
@@ -558,10 +564,12 @@ export function CitiesPage() {
           }}
         >
           <div className="max-w-6xl mx-auto">
-            <h1 className="text-7xl font-black tracking-widest text-white font-display"
+            <h1 className="text-9xl font-black tracking-widest text-white font-display"
               style={{
                 textShadow: '0 0 30px rgba(34, 211, 238, 0.4), 0 4px 12px rgba(0,0,0,0.6)',
                 letterSpacing: '0.15em',
+                WebkitTextStroke: '1.5px rgba(34, 211, 238, 0.4)',
+                paintOrder: 'stroke fill',
               }}
             >
               CITIES
@@ -575,7 +583,7 @@ export function CitiesPage() {
         </div>
 
         {/* Phase 1b: Hero Section - 60/40 Split Container */}
-        <div className="flex flex-1 overflow-hidden"
+        <div className="flex flex-1 overflow-visible"
           style={{
             clipPath: 'polygon(0 0, 100% 3%, 100% 97%, 0 100%)',
           }}
@@ -740,7 +748,7 @@ export function CitiesPage() {
         </div>
 
           {/* Right side: Store Preview Section - 20% - Real store data integration */}
-          <div className="flex-[20] flex flex-col items-start justify-start p-5 sticky top-0 max-h-screen overflow-hidden relative"
+          <div className="flex-[20] flex flex-col items-start justify-start p-3 sticky top-0 max-h-screen overflow-hidden relative"
             style={{
               background: 'linear-gradient(135deg, rgba(0,0,0,0.3), rgba(0,0,0,0.2))',
               borderLeft: '3px solid rgba(34, 211, 238, 0.2)',
@@ -748,12 +756,13 @@ export function CitiesPage() {
           >
             {/* Info Card - Overlapping Preview */}
             {displayCity && (
-              <div className="w-full rounded-lg p-4 mb-4"
+              <div className="w-full rounded-lg p-4 mb-3"
                 style={{
                   background: 'linear-gradient(135deg, rgba(0,0,0,0.7), rgba(0,0,0,0.6))',
                   border: `2px solid ${displayCity.regionColor || displayCity.color}60`,
                   boxShadow: `0 0 30px ${displayCity.regionColor || displayCity.color}30, inset 0 0 20px rgba(0,0,0,0.4)`,
                   minHeight: '115px',
+                  flexShrink: 0,
                 }}
               >
                 <div className="space-y-2">
@@ -799,7 +808,7 @@ export function CitiesPage() {
 
             {/* Store Preview Grid */}
             <div className="w-full flex-1 flex flex-col overflow-hidden">
-              <h4 className="text-xs font-display uppercase tracking-widest text-cyan-300/40 pb-2 mb-2.5">Featured</h4>
+              <h4 className="text-xs font-display uppercase tracking-widest text-cyan-300/40 pb-2 mb-2 flex-shrink-0">Featured</h4>
               
               {/* Fetch and display real store data */}
               {displayCity && !displayCity.isRandom && (
