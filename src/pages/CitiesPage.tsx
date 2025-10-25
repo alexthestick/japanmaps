@@ -685,7 +685,7 @@ export function CitiesPage() {
                   const container = target.parentElement;
                   if (container && !container.querySelector('.placeholder-text')) {
                     const placeholder = document.createElement('div');
-                    placeholder.className = 'placeholder-text w-full h-full flex items-center justify-center absolute inset-0 bg-gradient-to-br from-indigo-900 to-purple-900';
+                    placeholder.className = 'placeholder-text w-full h-full flex items-center justify-center absolute inset-0 bg-gradient-to-br from-indigo-900 to-purple-900 hidden';
                     placeholder.innerHTML = `
                       <div class="text-center">
                         <div class="text-8xl font-black text-white/20 mb-4">${displayCity.nameJapanese}</div>
@@ -796,7 +796,7 @@ export function CitiesPage() {
                   background: `linear-gradient(135deg, ${displayCity.regionColor || displayCity.color}30, ${displayCity.regionColor || displayCity.color}15)`,
                   border: `2.5px solid ${displayCity.regionColor || displayCity.color}80`,
                   boxShadow: `0 0 40px ${displayCity.regionColor || displayCity.color}50, 0 0 60px ${displayCity.regionColor || displayCity.color}20, inset 0 0 30px rgba(0,0,0,0.3)`,
-                  minHeight: '140px',
+                  minHeight: '100px',
                   flexShrink: 0,
                   backdropFilter: 'blur(8px)',
                 }}
@@ -819,7 +819,7 @@ export function CitiesPage() {
 
                 <div className="space-y-2 relative z-10">
                   <div>
-                    <h3 className="text-4xl font-black text-white uppercase font-display"
+                    <h3 className="text-3xl font-black text-white uppercase font-display"
                       style={{
                         textShadow: `0 0 20px ${displayCity.regionColor || displayCity.color}80, 0 4px 8px rgba(0,0,0,0.8)`,
                         letterSpacing: '0.05em',
