@@ -678,6 +678,7 @@ export function CitiesPage() {
                   backfaceVisibility: 'hidden',
                   transform: 'translateZ(0)',
                   opacity: 1,
+                  willChange: 'transform',
                 }}
                 onError={(e) => {
                   const target = e.target as HTMLImageElement;
@@ -720,7 +721,7 @@ export function CitiesPage() {
                   className="absolute text-white font-black uppercase tracking-wider text-lg font-display relative overflow-hidden group active:scale-95 disabled:opacity-50 px-12 py-4 transition-all duration-300"
                   disabled={isTransitioning}
                   style={{
-                    bottom: '24px',
+                    bottom: '-35px',
                     left: '50%',
                     transform: isTransitioning ? 'scale(0.9) translateY(5px) translateX(-50%)' : 'scale(1) translateY(0) translateX(-50%)',
                     clipPath: 'polygon(15% 0%, 85% 0%, 100% 50%, 85% 100%, 15% 100%, 0% 50%)',
@@ -1038,7 +1039,7 @@ export function CitiesPage() {
       <style>{`
         @keyframes ken-burns {
           0% { transform: scale(1) translate(0, 0); }
-          100% { transform: scale(1.1) translate(-2%, -2%); }
+          100% { transform: scale(1.05) translate(-1%, -1%); }
         }
 
         .animate-ken-burns {
