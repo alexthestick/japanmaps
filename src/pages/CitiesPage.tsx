@@ -554,8 +554,8 @@ export function CitiesPage() {
         }}
       >
 
-        {/* Phase 1a: CITIES Masthead Section - Branding Header */}
-        <div className="relative z-20 px-8 pt-20 pb-8"
+        {/* Phase 1a: CITIES Masthead Section - Branding Header - Phase 5: Enhanced with color blocking */}
+        <div className="relative z-20 px-8 pt-6 pb-3 overflow-hidden"
           style={{
             clipPath: 'polygon(0 0, 100% 3%, 100% 100%, 0 97%)',
             background: 'linear-gradient(135deg, rgba(0,0,0,0.4), rgba(0,0,0,0.3))',
@@ -563,10 +563,28 @@ export function CitiesPage() {
             borderBottom: '2px solid rgba(34, 211, 238, 0.3)',
           }}
         >
-          <div className="max-w-6xl mx-auto">
+          {/* Top Glow Effect */}
+          <div className="absolute top-0 left-0 right-0 h-1.5"
+            style={{
+              background: `linear-gradient(90deg, ${displayCity.regionColor || displayCity.color}40, ${displayCity.regionColor || displayCity.color}80, ${displayCity.regionColor || displayCity.color}40)`,
+              boxShadow: `0 0 20px ${displayCity.regionColor || displayCity.color}60, inset 0 0 10px ${displayCity.regionColor || displayCity.color}40`,
+              filter: 'blur(1px)',
+            }}
+          />
+
+          {/* Diagonal Color Block Accent */}
+          <div className="absolute top-0 right-0 w-96 h-32 pointer-events-none"
+            style={{
+              background: `linear-gradient(135deg, ${displayCity.regionColor || displayCity.color}25 0%, ${displayCity.regionColor || displayCity.color}40 50%, transparent 100%)`,
+              clipPath: 'polygon(100% 0, 100% 70%, 0 0)',
+              filter: 'blur(0.5px)',
+            }}
+          />
+
+          <div className="max-w-6xl mx-auto relative z-10">
             <h1 className="text-9xl font-black tracking-widest text-white font-display"
               style={{
-                textShadow: '0 0 30px rgba(34, 211, 238, 0.4), 0 4px 12px rgba(0,0,0,0.6)',
+                textShadow: `0 0 30px rgba(34, 211, 238, 0.4), 0 0 20px ${displayCity.regionColor || displayCity.color}40, 0 4px 12px rgba(0,0,0,0.6)`,
                 letterSpacing: '0.15em',
                 WebkitTextStroke: '1.5px rgba(34, 211, 238, 0.4)',
                 paintOrder: 'stroke fill',
@@ -574,7 +592,7 @@ export function CitiesPage() {
             >
               CITIES
             </h1>
-            <p className="text-lg text-cyan-300/70 font-serif italic mt-2 tracking-wide"
+            <p className="text-lg text-cyan-300/70 font-serif italic mt-1 tracking-wide"
               style={{ letterSpacing: '0.05em' }}
             >
               日本の街を巡る旅 • Journey Through Japanese Cities
@@ -754,22 +772,39 @@ export function CitiesPage() {
               borderLeft: '3px solid rgba(34, 211, 238, 0.2)',
             }}
           >
-            {/* Info Card - Overlapping Preview */}
+            {/* Info Card - Overlapping Preview - Phase 6: Kirby Ticket Style */}
             {displayCity && (
-              <div className="w-full rounded-lg p-4 mb-2"
+              <div className="w-full rounded-lg p-5 mb-2 relative overflow-hidden"
                 style={{
-                  background: 'linear-gradient(135deg, rgba(0,0,0,0.7), rgba(0,0,0,0.6))',
-                  border: `2px solid ${displayCity.regionColor || displayCity.color}60`,
-                  boxShadow: `0 0 30px ${displayCity.regionColor || displayCity.color}30, inset 0 0 20px rgba(0,0,0,0.4)`,
-                  minHeight: '115px',
+                  background: `linear-gradient(135deg, ${displayCity.regionColor || displayCity.color}30, ${displayCity.regionColor || displayCity.color}15)`,
+                  border: `2.5px solid ${displayCity.regionColor || displayCity.color}80`,
+                  boxShadow: `0 0 40px ${displayCity.regionColor || displayCity.color}50, 0 0 60px ${displayCity.regionColor || displayCity.color}20, inset 0 0 30px rgba(0,0,0,0.3)`,
+                  minHeight: '140px',
                   flexShrink: 0,
+                  backdropFilter: 'blur(8px)',
                 }}
               >
-                <div className="space-y-2">
+                {/* Glossy Overlay Effect */}
+                <div className="absolute inset-0 pointer-events-none"
+                  style={{
+                    background: `linear-gradient(135deg, ${displayCity.regionColor || displayCity.color}20 0%, transparent 50%, ${displayCity.regionColor || displayCity.color}10 100%)`,
+                    mixBlendMode: 'screen',
+                  }}
+                />
+
+                {/* Shine effect */}
+                <div className="absolute top-0 left-0 right-0 h-8 pointer-events-none"
+                  style={{
+                    background: `linear-gradient(180deg, rgba(255,255,255,0.1) 0%, transparent 100%)`,
+                    filter: 'blur(1px)',
+                  }}
+                />
+
+                <div className="space-y-2 relative z-10">
                   <div>
-                    <h3 className="text-3xl font-black text-white uppercase font-display"
+                    <h3 className="text-4xl font-black text-white uppercase font-display"
                       style={{
-                        textShadow: `0 0 12px ${displayCity.regionColor || displayCity.color}80`,
+                        textShadow: `0 0 20px ${displayCity.regionColor || displayCity.color}80, 0 4px 8px rgba(0,0,0,0.8)`,
                         letterSpacing: '0.05em',
                       }}
                     >
@@ -778,24 +813,37 @@ export function CitiesPage() {
                     <div className="text-sm font-medium mt-1"
                       style={{
                         color: displayCity.regionColor || displayCity.color,
-                        textShadow: `0 0 8px ${displayCity.regionColor || displayCity.color}60`,
+                        textShadow: `0 0 12px ${displayCity.regionColor || displayCity.color}70`,
+                        letterSpacing: '0.02em',
                       }}
                     >
                       {displayCity.nameJapanese}
                     </div>
                   </div>
-                  <div className="flex gap-2 flex-wrap pt-1">
-                    <div className="px-2.5 py-0.5 rounded-full bg-black/40 border border-cyan-400/50 text-xs font-bold text-cyan-300 uppercase tracking-widest"
+                  <div className="flex gap-2 flex-wrap pt-2">
+                    <div className="px-3 py-1 rounded-full bg-black/50 backdrop-blur-md border-2"
                       style={{
-                        boxShadow: '0 0 8px rgba(34, 211, 238, 0.2)',
+                        borderColor: `${displayCity.regionColor || displayCity.color}80`,
+                        boxShadow: `0 0 12px ${displayCity.regionColor || displayCity.color}40, inset 0 0 8px rgba(0,0,0,0.4)`,
+                        color: displayCity.regionColor || displayCity.color,
+                        fontSize: '0.75rem',
+                        fontWeight: '700',
+                        textTransform: 'uppercase',
+                        letterSpacing: '0.05em',
                       }}
                     >
                       {displayCity.region}
                     </div>
                     {!displayCity.isRandom && (
-                      <div className="px-2.5 py-0.5 rounded-full bg-black/40 border border-cyan-400/50 text-xs font-bold text-cyan-300 uppercase tracking-widest"
+                      <div className="px-3 py-1 rounded-full bg-black/50 backdrop-blur-md border-2"
                         style={{
-                          boxShadow: '0 0 8px rgba(34, 211, 238, 0.2)',
+                          borderColor: `${displayCity.regionColor || displayCity.color}80`,
+                          boxShadow: `0 0 12px ${displayCity.regionColor || displayCity.color}40, inset 0 0 8px rgba(0,0,0,0.4)`,
+                          color: displayCity.regionColor || displayCity.color,
+                          fontSize: '0.75rem',
+                          fontWeight: '700',
+                          textTransform: 'uppercase',
+                          letterSpacing: '0.05em',
                         }}
                       >
                         ⭐ {displayCity.storeCount}
