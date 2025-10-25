@@ -642,8 +642,8 @@ export function CitiesPage() {
                 className="absolute inset-0 rounded-2xl blur-3xl opacity-35 pointer-events-none"
                 style={{
                   background: `radial-gradient(ellipse at center, ${displayCity.regionColor || displayCity.color}60, transparent 70%)`,
-                  animation: 'pulse-glow 4s ease-in-out infinite',
                   transition: 'background 0.6s ease-in-out',
+                  willChange: 'background',
                 }}
               />
 
@@ -652,9 +652,9 @@ export function CitiesPage() {
                 className="absolute inset-1 rounded-2xl opacity-70 pointer-events-none"
                 style={{
                   background: `linear-gradient(135deg, ${displayCity.regionColor || displayCity.color}, ${displayCity.regionColor || displayCity.color}80)`,
-                  animation: 'border-pulse 3s ease-in-out infinite',
                   filter: 'blur(8px)',
                   transition: 'background 0.6s ease-in-out',
+                  willChange: 'background',
                 }}
               />
 
@@ -713,8 +713,8 @@ export function CitiesPage() {
               {/* Gradient Overlay at Bottom */}
               <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
 
-              {/* Train Travel Button - Bottom Center with Kirby Aesthetic */}
-              {selectedCity && !selectedCity.isRandom && (
+              {/* Train Travel Button - Bottom Center with Kirby Aesthetic - Visible for ALL cities */}
+              {selectedCity && (
                 <button
                   onClick={() => handleTravel(selectedCity)}
                   className="absolute text-white font-black uppercase tracking-wider text-lg font-display relative overflow-hidden group active:scale-95 disabled:opacity-50 px-12 py-4 transition-all duration-300"
