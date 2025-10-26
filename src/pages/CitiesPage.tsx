@@ -340,6 +340,19 @@ export function CitiesPage() {
     }
   }, [selectedCity]);
 
+  // Preload next image in cycle for smooth transitions
+  useEffect(() => {
+    if (selectedCity && selectedCity.images && selectedCity.images.length > 1) {
+      const nextIndex = (currentPhotoIndex + 1) % selectedCity.images.length;
+      const nextImageUrl = selectedCity.images[nextIndex];
+      
+      if (nextImageUrl) {
+        const img = new Image();
+        img.src = nextImageUrl;
+      }
+    }
+  }, [currentPhotoIndex, selectedCity]);
+
   // Handle city selection + auto-center
   const handleCitySelect = (city: CityData, clickedIndex?: number) => {
     const actualCityId = city.isClone ? city.originalId! : city.id;
@@ -644,7 +657,7 @@ export function CitiesPage() {
             <div className="relative w-full aspect-[16/10]">
               {/* Atmospheric Glow Behind Preview - Phase 7b: Regional color with smooth transitions */}
               <div
-                className="absolute inset-0 rounded-2xl blur-3xl opacity-35 pointer-events-none"
+                className="absolute inset-0 rounded-2xl blur-2xl opacity-35 pointer-events-none"
                 style={{
                   background: `radial-gradient(ellipse at center, ${displayCity.regionColor || displayCity.color}60, transparent 70%)`,
                   transition: 'background 0.3s ease-in-out',
@@ -656,7 +669,7 @@ export function CitiesPage() {
                 className="absolute inset-1 rounded-2xl opacity-70 pointer-events-none"
                 style={{
                   background: `linear-gradient(135deg, ${displayCity.regionColor || displayCity.color}, ${displayCity.regionColor || displayCity.color}80)`,
-                  filter: 'blur(8px)',
+                  filter: 'blur(4px)',
                   transition: 'background 0.3s ease-in-out',
                 }}
               />
@@ -666,6 +679,7 @@ export function CitiesPage() {
                 style={{
                   border: `5px solid rgba(34, 211, 238, 0.9)`,
                   boxShadow: `0 0 80px rgba(34, 211, 238, 0.5), 0 0 40px rgba(34, 211, 238, 0.3), inset 0 0 60px rgba(0,0,0,0.4), inset 0 6px 15px rgba(255,255,255,0.15)`,
+                  transition: 'border 300ms ease-in-out, box-shadow 300ms ease-in-out',
                 }}
               >
               {/* City Image with Ken Burns Effect */}
@@ -677,9 +691,6 @@ export function CitiesPage() {
                 fetchPriority="high"
                 style={{
                   imageRendering: 'auto',
-                  WebkitBackfaceVisibility: 'hidden',
-                  backfaceVisibility: 'hidden',
-                  transform: 'translateZ(0)',
                   opacity: imageError ? 0 : 1,
                   transition: 'opacity 300ms ease-in-out',
                 }}
