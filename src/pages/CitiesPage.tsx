@@ -624,11 +624,11 @@ export function CitiesPage() {
           }}
         >
           {/* Left side: Preview - 80% */}
-          <div className="flex-[75] flex items-center justify-center p-6 pb-24 sticky top-0 max-h-screen overflow-visible"
+          <div className="flex-[78] flex items-center justify-center p-6 pb-24 sticky top-0 max-h-screen overflow-visible"
           onMouseMove={handlePreviewMouseMove}
           onMouseLeave={handlePreviewMouseLeave}
         >
-          <div className="relative max-w-5xl w-full scale-100 h-full flex items-center"
+          <div className="relative max-w-6xl w-full scale-100 h-full flex items-center"
             style={{
               transform: `perspective(1200px) rotateX(${previewParallax.y * 0.3}deg) rotateY(${previewParallax.x * 0.3}deg)`,
               transition: 'transform 0.2s ease-out',
@@ -721,7 +721,7 @@ export function CitiesPage() {
                   className="absolute text-white font-black uppercase tracking-wider text-lg font-display relative overflow-hidden group active:scale-95 disabled:opacity-50 px-12 py-4 transition-all duration-300"
                   disabled={isTransitioning}
                   style={{
-                    bottom: '20px',
+                    bottom: '60px',
                     left: '50%',
                     transform: isTransitioning ? 'scale(0.9) translateY(5px) translateX(-50%)' : 'scale(1) translateY(0) translateX(-50%)',
                     clipPath: 'polygon(15% 0%, 85% 0%, 100% 50%, 85% 100%, 15% 100%, 0% 50%)',
@@ -784,7 +784,7 @@ export function CitiesPage() {
         </div>
 
           {/* Right side: Store Preview Section - 20% - Real store data integration */}
-          <div className="flex-[25] flex flex-col items-start justify-start p-2 sticky top-0 max-h-screen overflow-hidden relative"
+          <div className="flex-[22] flex flex-col items-start justify-start p-2 sticky top-0 max-h-screen overflow-hidden relative"
             style={{
               background: 'linear-gradient(135deg, rgba(0,0,0,0.3), rgba(0,0,0,0.2))',
               borderLeft: '3px solid rgba(34, 211, 238, 0.2)',
