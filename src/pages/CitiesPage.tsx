@@ -226,6 +226,10 @@ export function CitiesPage() {
   const [isTransitioning, setIsTransitioningState] = useState(false); // Phase 8: Travel transition state
   const [hoveredCardIndex, setHoveredCardIndex] = useState<number | null>(null); // New state for hovered card index
 
+  // Image loading state management
+  const [imageLoading, setImageLoading] = useState(false);
+  const [imageError, setImageError] = useState(false);
+
   // Carousel state (merged from hook)
   const CLONE_COUNT = 9;
   const CARD_WIDTH = 320; // 280px + 40px gap
@@ -321,7 +325,8 @@ export function CitiesPage() {
   const displayCity = selectedCity || hoveredCity || defaultCity;
 
   // Get current image to display
-  const currentImage = displayCity?.images?.[selectedCity ? currentPhotoIndex : 0];
+  const currentImage = displayCity?.images?.[selectedCity ? currentPhotoIndex : 0] || 
+                       (displayCity?.isRandom ? 'https://via.placeholder.com/1200x750/7c3aed/ffffff?text=???' : '');
 
   // Photo cycling effect - only cycles when a city is SELECTED (not hovered)
   useEffect(() => {
@@ -642,7 +647,7 @@ export function CitiesPage() {
                 className="absolute inset-0 rounded-2xl blur-3xl opacity-35 pointer-events-none"
                 style={{
                   background: `radial-gradient(ellipse at center, ${displayCity.regionColor || displayCity.color}60, transparent 70%)`,
-                  transition: 'background 0.6s ease-in-out',
+                  transition: 'background 0.3s ease-in-out',
                 }}
               />
 
@@ -652,7 +657,7 @@ export function CitiesPage() {
                 style={{
                   background: `linear-gradient(135deg, ${displayCity.regionColor || displayCity.color}, ${displayCity.regionColor || displayCity.color}80)`,
                   filter: 'blur(8px)',
-                  transition: 'background 0.6s ease-in-out',
+                  transition: 'background 0.3s ease-in-out',
                 }}
               />
 
@@ -675,15 +680,17 @@ export function CitiesPage() {
                   WebkitBackfaceVisibility: 'hidden',
                   backfaceVisibility: 'hidden',
                   transform: 'translateZ(0)',
-                  opacity: 1,
+                  opacity: imageError ? 0 : 1,
+                  transition: 'opacity 300ms ease-in-out',
                 }}
                 onError={(e) => {
                   const target = e.target as HTMLImageElement;
-                  target.style.display = 'none';
+                  setImageError(true);
+                  target.style.opacity = '0';
                   const container = target.parentElement;
                   if (container && !container.querySelector('.placeholder-text')) {
                     const placeholder = document.createElement('div');
-                    placeholder.className = 'placeholder-text w-full h-full flex items-center justify-center absolute inset-0 bg-gradient-to-br from-indigo-900 to-purple-900 hidden';
+                    placeholder.className = 'placeholder-text w-full h-full flex items-center justify-center absolute inset-0 bg-gradient-to-br from-indigo-900 to-purple-900';
                     placeholder.innerHTML = `
                       <div class="text-center">
                         <div class="text-8xl font-black text-white/20 mb-4">${displayCity.nameJapanese}</div>
@@ -696,7 +703,9 @@ export function CitiesPage() {
                 }}
                 onLoad={(e) => {
                   const target = e.target as HTMLImageElement;
-                  target.style.display = 'block';
+                  setImageError(false);
+                  setImageLoading(false);
+                  target.style.opacity = '1';
                   const container = target.parentElement;
                   if (container) {
                     const placeholder = container.querySelector('.placeholder-text');

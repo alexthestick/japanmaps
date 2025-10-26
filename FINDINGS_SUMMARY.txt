@@ -1,0 +1,96 @@
+═══════════════════════════════════════════════════════════════════════════════
+  PERFORMANCE ISSUES IDENTIFIED - CitiesPage Preview Panel
+═══════════════════════════════════════════════════════════════════════════════
+
+OBSERVATION: Image flashing + border delay on preview panel
+
+ROOT CAUSES FOUND: 6 Major Issues
+
+───────────────────────────────────────────────────────────────────────────────
+1. IMAGE FLASHING (CRITICAL)
+───────────────────────────────────────────────────────────────────────────────
+   File: src/pages/CitiesPage.tsx
+   Lines: 667-705
+   
+   Problem: Image toggles between display:none and display:block
+   - Causes instant flash when city changes
+   - Triggers on both load AND error states
+   - No intermediate loading state
+
+───────────────────────────────────────────────────────────────────────────────
+2. UNDEFINED IMAGE SRC (CRITICAL)
+───────────────────────────────────────────────────────────────────────────────
+   File: src/pages/CitiesPage.tsx
+   Lines: 321-324, 668
+   
+   Problem: currentImage can be undefined
+   - Empty images array → undefined src
+   - Browser error on undefined → onError fires immediately
+   - Creates instant flash appearance
+
+───────────────────────────────────────────────────────────────────────────────
+3. BROKEN PLACEHOLDER (CRITICAL)
+───────────────────────────────────────────────────────────────────────────────
+   File: src/pages/CitiesPage.tsx
+   Line: 686
+   
+   Problem: Placeholder has 'hidden' class by default
+   - Never visible even when image fails
+   - Results in blank empty space
+   - Creates "broken" UI appearance
+
+───────────────────────────────────────────────────────────────────────────────
+4. BORDER TRANSITION DELAY (MEDIUM)
+───────────────────────────────────────────────────────────────────────────────
+   File: src/pages/CitiesPage.tsx
+   Lines: 641-657
+   
+   Problem: Glow layers have 600ms transitions, border has none
+   - User perceives border "taking time" to appear
+   - Visual inconsistency between elements
+   - Glow transitions lag while border appears instantly
+
+───────────────────────────────────────────────────────────────────────────────
+5. NO LOADING STATE MANAGEMENT (HIGH)
+───────────────────────────────────────────────────────────────────────────────
+   File: src/pages/CitiesPage.tsx
+   Lines: 220-336
+   
+   Problem: No loading indicator or state tracking
+   - No preloading of next image
+   - No skeleton/placeholder while loading
+   - No smooth transitions between states
+
+───────────────────────────────────────────────────────────────────────────────
+6. ASYNC IMAGE SWITCHING (MEDIUM)
+───────────────────────────────────────────────────────────────────────────────
+   File: src/pages/CitiesPage.tsx
+   Lines: 327-336
+   
+   Problem: Photo cycling without proper transitions
+   - Every 3 seconds image changes abruptly
+   - No fade effect between photos
+   - Creates jarring visual switches
+
+═══════════════════════════════════════════════════════════════════════════════
+  QUICK REFERENCE
+═══════════════════════════════════════════════════════════════════════════════
+
+FILE TO SHARE WITH CLAUDE:
+→ PERFORMANCE_ANALYSIS_REPORT.md (Detailed technical analysis)
+
+KEY PROBLEM AREAS:
+1. Image element (lines 667-705)
+2. State management (lines 220-336)  
+3. Glow styling (lines 641-657)
+4. Placeholder logic (line 686)
+
+PRIORITY FIXES:
+[CRITICAL] Handle undefined image src safely
+[CRITICAL] Add image loading state
+[CRITICAL] Fix placeholder visibility
+[HIGH] Add fade transitions
+[HIGH] Optimize glow transitions
+[MEDIUM] Preload next image
+
+═══════════════════════════════════════════════════════════════════════════════

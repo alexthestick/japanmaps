@@ -1,0 +1,145 @@
+╔═════════════════════════════════════════════════════════════════════════════╗
+║                    PREVIEW PANEL FLASHING - ISSUE FLOWCHART                ║
+╚═════════════════════════════════════════════════════════════════════════════╝
+
+SCENARIO: User Hovers Over / Selects a City
+
+┌─────────────────────────────────────────────────────────────────────────────┐
+│ 1. CITY SELECTION / HOVER OCCURS                                             │
+│    ├─ displayCity changes                                                    │
+│    ├─ currentImage is calculated                                             │
+│    └─ React re-render triggered                                             │
+└─────────────────────────────────────────────────────────────────────────────┘
+                                    │
+                                    ▼
+┌─────────────────────────────────────────────────────────────────────────────┐
+│ 2. IMAGE SOURCE EVALUATION (Line 668)                                        │
+│                                                                               │
+│    currentImage = displayCity?.images?.[0]                                  │
+│                                                                               │
+│    PROBLEM: Can be undefined if:                                            │
+│    • displayCity.images is empty array                                       │
+│    • displayCity is null                                                     │
+│    • Array index out of bounds                                              │
+└─────────────────────────────────────────────────────────────────────────────┘
+                                    │
+                ┌───────────────────┴───────────────────┐
+                │                                       │
+                ▼ VALID URL                            ▼ UNDEFINED
+        ┌───────────────────┐              ┌───────────────────────────┐
+        │ Image src=""      │              │ <img src={undefined} />   │
+        │ Browser loads     │              │ Browser error!            │
+        │ (may be slow)     │              │ IMMEDIATE onError fired   │
+        └───────────────────┘              └───────────────────────────┘
+                │                                      │
+                ▼                                      ▼
+    ┌───────────────────────┐         ┌────────────────────────────┐
+    │ IF SLOW LOAD:         │         │ onError Handler Runs:      │
+    │ • Old image visible   │         │ • display = 'none'         │
+    │ • Loading happens     │         │ • Panel goes BLANK         │
+    │ • User sees nothing   │         │ • FLASH! (appears then   │
+    │ • Then image appears  │         │   disappears)              │
+    │ • FLASH effect        │         └────────────────────────────┘
+    └───────────────────────┘                        │
+                │                                    ▼
+                │                      ┌────────────────────────────┐
+                │                      │ Placeholder Check:         │
+                │                      │ Line 686 has 'hidden'      │
+                │                      │ class - NEVER VISIBLE!     │
+                │                      │ Result: BLANK SPACE        │
+                │                      │ (not even placeholder      │
+                │                      │  shows)                    │
+                │                      └────────────────────────────┘
+                │                                    │
+                ▼                                    ▼
+        ┌───────────────────┐              ┌──────────────────────┐
+        │ onLoad Handler:   │              │ User sees:           │
+        │ • display=block   │              │ • Border appears ✓   │
+        │ • Image visible   │              │ • Glow visible ✓     │
+        │ • Panel fills     │              │ • Content: BLANK ✗   │
+        │ • FLASH! (now     │              │ • No placeholder ✗   │
+        │   appears)        │              │                      │
+        └───────────────────┘              └──────────────────────┘
+                │
+                ▼
+        ┌───────────────────┐
+        │ Image displayed   │
+        │ for 3 seconds     │
+        │ (photo cycling)   │
+        └───────────────────┘
+                │
+                ▼
+        ┌───────────────────┐
+        │ Next photo index  │
+        │ changes (3000ms)  │
+        │ (Line 327-336)    │
+        │                   │
+        │ CYCLE REPEATS!    │
+        │ (FLASHES AGAIN)   │
+        └───────────────────┘
+
+╔═════════════════════════════════════════════════════════════════════════════╗
+║                         BORDER DELAY FLOWCHART                             ║
+╚═════════════════════════════════════════════════════════════════════════════╝
+
+USER CHANGES CITY
+
+┌──────────────────────────────────────────────────────────────────────────┐
+│ City changes → displayCity updated                                       │
+│ → Region color changes                                                   │
+└──────────────────────────────────────────────────────────────────────────┘
+                            │
+                            ▼
+        ┌─────────────────────────────────────┐
+        │ Border (Line 660-665)               │
+        │ • Cyan border: always cyan          │
+        │ • NO transition                     │
+        │ • Updates INSTANTLY                 │
+        │ ✓ APPEARS IMMEDIATELY               │
+        └─────────────────────────────────────┘
+                            │
+                            ▼
+        ┌─────────────────────────────────────┐
+        │ Atmospheric Glow (Line 641)         │
+        │ • Color from displayCity            │
+        │ • transition: 0.6s ease-in-out      │
+        │ • Takes 600ms to settle             │
+        │ ✗ DELAYED APPEARANCE                │
+        └─────────────────────────────────────┘
+                            │
+                            ▼
+        ┌─────────────────────────────────────┐
+        │ Border Glow (Line 651)              │
+        │ • Color from displayCity            │
+        │ • filter: blur(8px)                 │
+        │ • transition: 0.6s ease-in-out      │
+        │ • Takes 600ms to settle             │
+        │ ✗ DELAYED APPEARANCE                │
+        └─────────────────────────────────────┘
+
+RESULT: 
+• Border visible immediately (good)
+• Glows still transitioning (bad perception)
+• User thinks border took time to appear
+• Visual inconsistency
+
+╔═════════════════════════════════════════════════════════════════════════════╗
+║                            SOLUTION NEEDED                                 ║
+╚═════════════════════════════════════════════════════════════════════════════╝
+
+TO FIX IMAGE FLASHING:
+✓ Add loading state management
+✓ Prevent undefined image src
+✓ Remove 'hidden' class from placeholder
+✓ Use fade transitions instead of display:none
+✓ Add preloading logic
+
+TO FIX BORDER DELAY:
+✓ Reduce glow transitions (0.6s → 0.3s)
+✓ Add border transition matching
+✓ Separate immediate vs delayed elements
+
+TO PREVENT JARRING SWITCHES:
+✓ Add fade between photo cycles
+✓ Preload next image before switching
+✓ Smooth state transitions
