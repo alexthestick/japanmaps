@@ -934,7 +934,7 @@ export function CitiesPage() {
         </div>
 
           {/* Right side: Store Preview Section - Real store data integration */}
-          <div className={`flex-[22] flex flex-col items-start justify-start px-2 py-4 relative transition-all duration-300 self-start ${isLandingMode ? '' : 'flex-[22]'}`}
+          <div className={`flex-[22] flex flex-col items-start justify-start px-2 py-4 overflow-hidden relative transition-all duration-300 self-start ${isLandingMode ? '' : 'flex-[22]'}`}
             style={{
               background: 'linear-gradient(135deg, rgba(0,0,0,0.3), rgba(0,0,0,0.2))',
               borderLeft: '3px solid rgba(34, 211, 238, 0.2)',
