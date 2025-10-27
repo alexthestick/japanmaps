@@ -229,6 +229,9 @@ export function CitiesPage() {
   const [imageLoading, setImageLoading] = useState(false);
   const [imageError, setImageError] = useState(false);
 
+  // Landing state management
+  const [isLandingMode, setIsLandingMode] = useState(true);
+
   // Carousel state (merged from hook)
   const CLONE_COUNT = 9;
   const CARD_WIDTH = 320; // 280px + 40px gap
@@ -354,6 +357,10 @@ export function CitiesPage() {
 
   // Handle city selection + auto-center
   const handleCitySelect = (city: CityData, clickedIndex?: number) => {
+    setSelectedCity(city);
+    setIsLandingMode(false); // Exit landing mode on city selection
+    setCurrentPhotoIndex(0);
+
     const actualCityId = city.isClone ? city.originalId! : city.id;
 
     if (city.isRandom) {
@@ -628,8 +635,8 @@ export function CitiesPage() {
             clipPath: 'polygon(0 0, 100% 3%, 100% 97%, 0 100%)',
           }}
         >
-          {/* Left side: Preview - 80% */}
-          <div className="flex-[78] flex items-center justify-center p-6 pb-24 overflow-visible">
+          {/* Left side: Preview - Flexible Width */}
+          <div className={`${isLandingMode ? 'flex-[100]' : 'flex-[78]'} flex items-center justify-center p-6 pb-24 overflow-visible`}>
           <div className="relative max-w-6xl w-full h-full flex items-center">
 
             {/* Glow Container */}
@@ -761,6 +768,16 @@ export function CitiesPage() {
                 </button>
               )}
 
+              {/* Landing Mode Message */}
+              {isLandingMode && (
+                <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                  <div className="text-center">
+                    <h2 className="text-5xl font-black text-white/90 mb-4">Select a City</h2>
+                    <p className="text-xl text-white/70">to explore stores and neighborhoods</p>
+                  </div>
+                </div>
+              )}
+
               {/* Hint Text (only when no selection) */}
               {!selectedCity && (
                 <div className="absolute bottom-10 left-1/2 transform -translate-x-1/2 text-center">
@@ -779,8 +796,8 @@ export function CitiesPage() {
             </div>
         </div>
 
-          {/* Right side: Store Preview Section - 20% - Real store data integration */}
-          <div className="flex-[22] flex flex-col items-start justify-start p-2 overflow-hidden relative"
+          {/* Right side: Store Preview Section - Real store data integration */}
+          <div className={`flex-[22] flex flex-col items-start justify-start p-2 overflow-hidden relative transition-all duration-300 ${isLandingMode ? 'opacity-0 pointer-events-none' : 'opacity-100'}`}
             style={{
               background: 'linear-gradient(135deg, rgba(0,0,0,0.3), rgba(0,0,0,0.2))',
               borderLeft: '3px solid rgba(34, 211, 238, 0.2)',
