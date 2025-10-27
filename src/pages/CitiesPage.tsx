@@ -222,7 +222,6 @@ export function CitiesPage() {
   const [storeCounts, setStoreCounts] = useState<Map<string, number>>(new Map());
   const [loading, setLoading] = useState(true);
   const [currentPhotoIndex, setCurrentPhotoIndex] = useState(0);
-  const [previewParallax, setPreviewParallax] = useState({ x: 0, y: 0 }); // Phase 7c: Parallax state
   const [isTransitioning, setIsTransitioningState] = useState(false); // Phase 8: Travel transition state
   const [hoveredCardIndex, setHoveredCardIndex] = useState<number | null>(null); // New state for hovered card index
 
@@ -402,18 +401,6 @@ export function CitiesPage() {
       params.set('city', city.name);
       navigate(`/map?${params.toString()}`);
     }, 600); // Allow warp animation to play
-  };
-
-  // Phase 7c: Handle parallax on preview container
-  const handlePreviewMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
-    const rect = e.currentTarget.getBoundingClientRect();
-    const x = (e.clientX - rect.left - rect.width / 2) / 60; // Reduced parallax intensity
-    const y = (e.clientY - rect.top - rect.height / 2) / 60;
-    setPreviewParallax({ x: Math.max(-4, Math.min(4, x)), y: Math.max(-4, Math.min(4, y)) });
-  };
-
-  const handlePreviewMouseLeave = () => {
-    setPreviewParallax({ x: 0, y: 0 });
   };
 
   // Handlers for store card hover - stable references for memoized components
@@ -642,16 +629,8 @@ export function CitiesPage() {
           }}
         >
           {/* Left side: Preview - 80% */}
-          <div className="flex-[78] flex items-center justify-center p-6 pb-24 overflow-visible"
-          onMouseMove={handlePreviewMouseMove}
-          onMouseLeave={handlePreviewMouseLeave}
-        >
-          <div className="relative max-w-6xl w-full scale-100 h-full flex items-center"
-            style={{
-              transform: `perspective(1200px) rotateX(${previewParallax.y * 0.3}deg) rotateY(${previewParallax.x * 0.3}deg)`,
-              transition: 'transform 0.2s ease-out',
-            }}
-          >
+          <div className="flex-[78] flex items-center justify-center p-6 pb-24 overflow-visible">
+          <div className="relative max-w-6xl w-full h-full flex items-center">
 
             {/* Glow Container */}
             <div className="relative w-full aspect-[16/10]">
