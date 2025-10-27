@@ -647,11 +647,11 @@ export function CitiesPage() {
           }}
         >
           {/* Left side: Preview - Flexible Width */}
-          <div className={`${isLandingMode ? 'w-full' : 'flex-[78]'} flex items-center justify-center p-6 pb-24 overflow-visible`}>
+          <div className={`${isLandingMode ? 'w-full' : 'flex-[78]'} flex items-center justify-center p-4 pb-20 overflow-visible`}>
           <div className={`relative ${isLandingMode ? 'w-full' : 'max-w-6xl'} w-full h-full flex items-center justify-center`}>
 
             {/* Glow Container */}
-            <div className={`relative w-full aspect-[16/10] ${isLandingMode ? 'max-w-6xl' : ''}`}>
+            <div className={`relative w-full aspect-[16/10] ${isLandingMode ? 'max-w-7xl' : ''}`}>
               {/* Atmospheric Glow Behind Preview - Phase 7b: Regional color with smooth transitions */}
               <div
                 className="absolute inset-0 rounded-2xl blur-2xl opacity-35 pointer-events-none"
