@@ -641,17 +641,17 @@ export function CitiesPage() {
         </div>
 
         {/* Phase 1b: Hero Section - 60/40 Split Container */}
-        <div className="flex flex-1 overflow-visible"
+        <div className="flex flex-1 overflow-visible justify-center"
           style={{
             clipPath: 'polygon(0 0, 100% 3%, 100% 97%, 0 100%)',
           }}
         >
           {/* Left side: Preview - Flexible Width */}
-          <div className={`${isLandingMode ? 'flex-[100]' : 'flex-[78]'} flex items-center justify-center p-6 pb-24 overflow-visible`}>
-          <div className={`relative ${isLandingMode ? 'max-w-none' : 'max-w-6xl'} w-full h-full flex items-center justify-center mx-auto`}>
+          <div className={`${isLandingMode ? 'w-full' : 'flex-[78]'} flex items-center justify-center p-6 pb-24 overflow-visible`}>
+          <div className={`relative ${isLandingMode ? 'w-full' : 'max-w-6xl'} w-full h-full flex items-center justify-center`}>
 
             {/* Glow Container */}
-            <div className="relative w-full aspect-[16/10]">
+            <div className={`relative w-full aspect-[16/10] ${isLandingMode ? 'max-w-6xl' : ''}`}>
               {/* Atmospheric Glow Behind Preview - Phase 7b: Regional color with smooth transitions */}
               <div
                 className="absolute inset-0 rounded-2xl blur-2xl opacity-35 pointer-events-none"
@@ -808,7 +808,7 @@ export function CitiesPage() {
         </div>
 
           {/* Right side: Store Preview Section - Real store data integration */}
-          <div className={`flex-[22] flex flex-col items-start justify-start p-2 overflow-hidden relative transition-all duration-300 ${isLandingMode ? 'opacity-0 pointer-events-none' : 'opacity-100'}`}
+          <div className={`flex-[22] flex flex-col items-start justify-start p-2 overflow-hidden relative transition-all duration-300 ${isLandingMode ? 'hidden' : 'flex-[22]'}`}
             style={{
               background: 'linear-gradient(135deg, rgba(0,0,0,0.3), rgba(0,0,0,0.2))',
               borderLeft: '3px solid rgba(34, 211, 238, 0.2)',
