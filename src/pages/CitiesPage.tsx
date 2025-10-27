@@ -931,8 +931,6 @@ export function CitiesPage() {
             </div>
           </div>
             </div>
-        </div>
-
           {/* Right side: Store Preview Section - Real store data integration */}
           <div className={`flex-[22] flex flex-col items-start justify-start px-2 py-0 relative transition-all duration-300 h-full ${isLandingMode ? '' : 'flex-[22]'}`}
             style={{
@@ -962,6 +960,7 @@ export function CitiesPage() {
               )}
             </div>
           </div>
+        </div>
         </div>
 
         {/* Train Line Carousel - Below Hero Section */}
