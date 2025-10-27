@@ -175,9 +175,9 @@ function StorePreviews({ cityName, hoveredCardIndex, handleCardMouseEnter, handl
     return (
       <div className="grid grid-cols-2 w-full overflow-hidden"
         style={{
-          gridTemplateRows: 'repeat(3, auto)',
+          gridTemplateRows: 'repeat(3, minmax(0, 1fr))',
           gap: '6px',
-          alignContent: 'start',
+          alignContent: 'stretch',
         }}
       >
         {[...Array(6)].map((_, i) => (
@@ -194,11 +194,11 @@ function StorePreviews({ cityName, hoveredCardIndex, handleCardMouseEnter, handl
   }
 
   return (
-    <div className="grid grid-cols-2 w-full overflow-hidden"
+    <div className="grid grid-cols-2 w-full flex-1 overflow-hidden"
       style={{
-        gridTemplateRows: 'repeat(3, auto)',
+        gridTemplateRows: 'repeat(3, minmax(0, 1fr))',
         gap: '6px',
-        alignContent: 'start',
+        alignContent: 'stretch',
       }}
     >
       {previews.map((preview, idx) => (
@@ -934,7 +934,7 @@ export function CitiesPage() {
         </div>
 
           {/* Right side: Store Preview Section - Real store data integration */}
-          <div className={`flex-[22] flex flex-col items-start justify-start px-2 py-4 relative transition-all duration-300 self-start ${isLandingMode ? '' : 'flex-[22]'}`}
+          <div className={`flex-[22] flex flex-col items-start justify-start px-2 py-0 relative transition-all duration-300 h-full ${isLandingMode ? '' : 'flex-[22]'}`}
             style={{
               background: 'linear-gradient(135deg, rgba(0,0,0,0.3), rgba(0,0,0,0.2))',
               borderLeft: '3px solid rgba(34, 211, 238, 0.2)',
@@ -946,7 +946,7 @@ export function CitiesPage() {
             }}
           >
             {/* Store Preview Grid - Now starts at top, aligned with preview panel */}
-            <div className="w-full flex flex-col self-start">
+            <div className="w-full flex flex-col flex-1">
               <h4 className="text-xs font-display uppercase tracking-widest text-cyan-300/40 pb-2 mb-2 flex-shrink-0">Featured</h4>
 
               {/* Fetch and display real store data */}
