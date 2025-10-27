@@ -11,6 +11,7 @@ import {
 } from '../lib/constants';
 import { getNeighborhoodStoreCounts } from '../utils/neighborhoodData';
 import { useCityStorePreviews } from '../hooks/useCityStorePreviews';
+import { useElementSize } from '../hooks/useElementSize';
 import type { Store } from '../types/store';
 
 interface CityData {
@@ -51,7 +52,7 @@ const StorePreviewCard = memo(function StorePreviewCard({
 }: StorePreviewCardProps) {
   return (
     <div
-      className="aspect-[1/1] rounded-lg overflow-hidden relative bg-black/20 cursor-pointer group"
+      className="rounded-lg overflow-hidden relative bg-black/20 cursor-pointer group w-full h-full"
       style={{
         clipPath: 'polygon(0 5%, 100% 0, 100% 95%, 0 100%)',
         willChange: 'transform, border-color, box-shadow',
@@ -166,24 +167,30 @@ interface StorePreviewsProps {
   handleCardMouseEnter: (index: number) => void;
   handleCardMouseLeave: () => void;
   cityColor: string;
+  tileSize: number; // computed square size in px
+  colGapPx: number; // horizontal gap in px
+  rowGapPx: number; // vertical gap in px
 }
 
-function StorePreviews({ cityName, hoveredCardIndex, handleCardMouseEnter, handleCardMouseLeave, cityColor }: StorePreviewsProps) {
+function StorePreviews({ cityName, hoveredCardIndex, handleCardMouseEnter, handleCardMouseLeave, cityColor, tileSize, colGapPx, rowGapPx }: StorePreviewsProps) {
   const { previews, loading } = useCityStorePreviews(cityName);
 
   if (loading) {
     return (
-      <div className="grid grid-cols-2 w-full overflow-hidden"
+      <div className="grid w-full overflow-hidden"
         style={{
-          gridTemplateRows: 'repeat(3, minmax(0, 1fr))',
-          gap: '6px',
-          alignContent: 'stretch',
+          gridTemplateColumns: `repeat(2, ${tileSize}px)`,
+          gridTemplateRows: `repeat(3, ${tileSize}px)`,
+          columnGap: `${colGapPx}px`,
+          rowGap: `${rowGapPx}px`,
+          alignContent: 'start',
+          justifyContent: 'start',
         }}
       >
         {[...Array(6)].map((_, i) => (
           <div
             key={i}
-            className="aspect-[1/1] rounded-lg bg-gradient-to-br from-cyan-400/20 to-cyan-400/5 border border-cyan-400/20 animate-pulse"
+            className="rounded-lg bg-gradient-to-br from-cyan-400/20 to-cyan-400/5 border border-cyan-400/20 animate-pulse w-full h-full"
             style={{
               clipPath: 'polygon(0 3%, 100% 0, 100% 97%, 0 100%)',
             }}
@@ -194,11 +201,14 @@ function StorePreviews({ cityName, hoveredCardIndex, handleCardMouseEnter, handl
   }
 
   return (
-    <div className="grid grid-cols-2 w-full flex-1 overflow-hidden"
+    <div className="grid w-full flex-1 overflow-hidden"
       style={{
-        gridTemplateRows: 'repeat(3, minmax(0, 1fr))',
-        gap: '6px',
-        alignContent: 'stretch',
+        gridTemplateColumns: `repeat(2, ${tileSize}px)`,
+        gridTemplateRows: `repeat(3, ${tileSize}px)`,
+        columnGap: `${colGapPx}px`,
+        rowGap: `${rowGapPx}px`,
+        alignContent: 'start',
+        justifyContent: 'start',
       }}
     >
       {previews.map((preview, idx) => (
@@ -226,6 +236,38 @@ export function CitiesPage() {
   const [currentPhotoIndex, setCurrentPhotoIndex] = useState(0);
   const [isTransitioning, setIsTransitioningState] = useState(false); // Phase 8: Travel transition state
   const [hoveredCardIndex, setHoveredCardIndex] = useState<number | null>(null); // New state for hovered card index
+
+  // Right panel measurement for precise 2x3 grid sizing
+  const [setRightContentRef, rightContentSize] = useElementSize<HTMLDivElement>();
+  const [setHeaderRef, headerSize] = useElementSize<HTMLHeadingElement>();
+  const COL_GAP = 10; // px horizontal spacing
+  const ROW_GAP_MIN = 6; // px minimal vertical spacing
+  const MIN_TILE = 96;
+  const MAX_TILE = 360;
+  const availableWidth = Math.max(0, rightContentSize.width);
+  const availableHeight = Math.max(0, rightContentSize.height - headerSize.height);
+  const tileSizeW = availableWidth > 0 ? Math.floor((availableWidth - COL_GAP) / 2) : 0;
+  // Compute row gap dynamically to use up height exactly
+  const baseTileH = availableHeight > 0 ? Math.floor(availableHeight / 3) : 0;
+  let rowGapPx = ROW_GAP_MIN;
+  if (baseTileH > 0) {
+    // Derive tile size from height using minimal row gap; later we will increase gap to absorb remainder
+    const candidateTileH = Math.floor((availableHeight - ROW_GAP_MIN * 2) / 3);
+    const remainder = availableHeight - candidateTileH * 3;
+    rowGapPx = Math.max(ROW_GAP_MIN, Math.floor(remainder / 2));
+  }
+  const tileSizeH = availableHeight > 0 ? Math.floor((availableHeight - rowGapPx * 2) / 3) : 0;
+  let tileSize = 0;
+  if (tileSizeW > 0 && tileSizeH > 0) {
+    tileSize = Math.min(tileSizeW, tileSizeH);
+  } else if (tileSizeW > 0) {
+    tileSize = tileSizeW; // fallback to width when height not measured yet
+  } else if (tileSizeH > 0) {
+    tileSize = tileSizeH; // fallback to height when width not measured yet
+  } else {
+    tileSize = 140; // safe default until measurements arrive
+  }
+  tileSize = Math.max(MIN_TILE, Math.min(tileSize, MAX_TILE));
 
   // Image loading state management
   const [imageLoading, setImageLoading] = useState(false);
@@ -757,14 +799,14 @@ export function CitiesPage() {
         </div>
 
         {/* Phase 1b: Hero Section - 60/40 Split Container */}
-        <div className="flex flex-1 overflow-visible justify-center items-start"
+        <div className="flex flex-1 overflow-visible items-start"
           style={{
             clipPath: 'polygon(0 0, 100% 3%, 100% 97%, 0 100%)',
           }}
         >
           {/* Left side: Preview - Flexible Width */}
-          <div className={`${isLandingMode ? 'w-full' : 'flex-[78]'} flex items-center justify-center p-4 pb-20 overflow-visible`}>
-          <div className={`relative ${isLandingMode ? 'w-full' : 'max-w-6xl'} w-full h-full flex items-center justify-center`}>
+          <div className={`${isLandingMode ? 'w-full' : 'flex-[78]'} flex min-w-0 items-start justify-center p-4 pb-20 overflow-visible`}>
+          <div className={`relative ${isLandingMode ? 'w-full' : 'max-w-6xl'} w-full h-full flex items-start justify-center`}>
 
             {/* Glow Container */}
             <div className={`relative w-full aspect-[16/10] ${isLandingMode ? 'max-w-7xl' : ''}`}
@@ -932,7 +974,7 @@ export function CitiesPage() {
           </div>
             </div>
           {/* Right side: Store Preview Section - Real store data integration */}
-          <div className={`flex-[22] flex flex-col items-start justify-start px-2 py-0 relative transition-all duration-300 h-full ${isLandingMode ? '' : 'flex-[22]'}`}
+          <div className={`flex-[22] flex flex-col items-start justify-start pl-2 pr-2 pt-4 pb-0 relative transition-all duration-300 h-full ${isLandingMode ? '' : 'flex-[22]'}`}
             style={{
               background: 'linear-gradient(135deg, rgba(0,0,0,0.3), rgba(0,0,0,0.2))',
               borderLeft: '3px solid rgba(34, 211, 238, 0.2)',
@@ -944,12 +986,12 @@ export function CitiesPage() {
             }}
           >
             {/* Store Preview Grid - Now starts at top, aligned with preview panel */}
-            <div className="w-full flex flex-col flex-1">
-              <h4 className="text-xs font-display uppercase tracking-widest text-cyan-300/40 pb-2 mb-2 flex-shrink-0">Featured</h4>
+            <div className="w-full flex flex-col flex-1 min-h-0" ref={setRightContentRef}>
+              <h4 className="text-xs font-display uppercase tracking-widest text-cyan-300/40 pb-2 mb-2 flex-shrink-0" ref={setHeaderRef}>Featured</h4>
 
               {/* Fetch and display real store data */}
               {displayCity && !displayCity.isRandom && (
-                <StorePreviews cityName={displayCity.name} hoveredCardIndex={hoveredCardIndex} handleCardMouseEnter={handleCardMouseEnter} handleCardMouseLeave={handleCardMouseLeave} cityColor={displayCity.regionColor || displayCity.color} />
+                <StorePreviews cityName={displayCity.name} hoveredCardIndex={hoveredCardIndex} handleCardMouseEnter={handleCardMouseEnter} handleCardMouseLeave={handleCardMouseLeave} cityColor={displayCity.regionColor || displayCity.color} tileSize={tileSize} colGapPx={COL_GAP} rowGapPx={rowGapPx} />
               )}
 
               {/* Mystery city - no stores */}
