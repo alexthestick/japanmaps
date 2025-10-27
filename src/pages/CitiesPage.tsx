@@ -355,6 +355,17 @@ export function CitiesPage() {
     }
   }, [currentPhotoIndex, selectedCity]);
 
+  // Landing mode slideshow - auto-cycle mystery city images
+  useEffect(() => {
+    if (isLandingMode && displayCity?.isRandom && displayCity?.images?.length > 1) {
+      const slideInterval = setInterval(() => {
+        setCurrentPhotoIndex((prev) => (prev + 1) % displayCity.images.length);
+      }, 4000); // 4 second interval for smooth slideshow
+      
+      return () => clearInterval(slideInterval);
+    }
+  }, [isLandingMode, displayCity]);
+
   // Handle city selection + auto-center
   const handleCitySelect = (city: CityData, clickedIndex?: number) => {
     setSelectedCity(city);
@@ -637,7 +648,7 @@ export function CitiesPage() {
         >
           {/* Left side: Preview - Flexible Width */}
           <div className={`${isLandingMode ? 'flex-[100]' : 'flex-[78]'} flex items-center justify-center p-6 pb-24 overflow-visible`}>
-          <div className="relative max-w-6xl w-full h-full flex items-center">
+          <div className={`relative ${isLandingMode ? 'max-w-none' : 'max-w-6xl'} w-full h-full flex items-center justify-center mx-auto`}>
 
             {/* Glow Container */}
             <div className="relative w-full aspect-[16/10]">
