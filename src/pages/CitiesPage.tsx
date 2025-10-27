@@ -763,7 +763,7 @@ export function CitiesPage() {
           }}
         >
           {/* Left side: Preview - Flexible Width */}
-          <div className={`${isLandingMode ? 'w-full' : 'flex-[75]'} flex items-center justify-center p-4 pb-20 overflow-visible`}>
+          <div className={`${isLandingMode ? 'w-full' : 'flex-[75]'} flex items-center justify-center p-4 pb-20 overflow-visible min-w-0`}>
           <div className={`relative w-full h-full flex items-center justify-center`}>
 
             {/* Glow Container */}
@@ -932,7 +932,7 @@ export function CitiesPage() {
           </div>
             </div>
           {/* Right side: Store Preview Section - Real store data integration */}
-          <div className={`flex-[25] flex flex-col items-start justify-start px-3 py-1 relative transition-all duration-300 h-full ${isLandingMode ? '' : 'flex-[25]'}`}
+          <div className={`flex-[25] flex flex-col items-start justify-start px-3 py-1 relative transition-all duration-300 h-full w-full ${isLandingMode ? '' : 'flex-[25]'}`}
             style={{
               background: 'linear-gradient(135deg, rgba(0,0,0,0.3), rgba(0,0,0,0.2))',
               borderLeft: '3px solid rgba(34, 211, 238, 0.2)',
