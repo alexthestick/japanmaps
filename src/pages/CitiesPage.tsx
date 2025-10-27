@@ -757,7 +757,7 @@ export function CitiesPage() {
         </div>
 
         {/* Phase 1b: Hero Section - 60/40 Split Container */}
-        <div className="flex flex-1 overflow-visible justify-center items-start"
+        <div className="flex flex-1 overflow-visible justify-start items-start"
           style={{
             clipPath: 'polygon(0 0, 100% 3%, 100% 97%, 0 100%)',
           }}
