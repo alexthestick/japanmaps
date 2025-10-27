@@ -659,7 +659,12 @@ export function CitiesPage() {
           <div className={`relative ${isLandingMode ? 'w-full' : 'max-w-6xl'} w-full h-full flex items-center justify-center`}>
 
             {/* Glow Container */}
-            <div className={`relative w-full aspect-[16/10] ${isLandingMode ? 'max-w-7xl' : ''}`}>
+            <div className={`relative w-full aspect-[16/10] ${isLandingMode ? 'max-w-7xl' : ''}`}
+              style={{
+                transform: `scale(${isLandingMode ? 1 : 0.95})`,
+                transition: 'transform 400ms ease-out',
+              }}
+            >
               {/* Atmospheric Glow Behind Preview - Phase 7b: Regional color with smooth transitions */}
               <div
                 className="absolute inset-0 rounded-2xl blur-2xl opacity-35 pointer-events-none"
@@ -789,7 +794,12 @@ export function CitiesPage() {
 
               {/* Landing Mode Message */}
               {isLandingMode && (
-                <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                <div className="absolute inset-0 flex items-center justify-center pointer-events-none"
+                  style={{
+                    opacity: isLandingMode ? 1 : 0,
+                    transition: 'opacity 300ms ease-out',
+                  }}
+                >
                   <div className="text-center">
                     <h2 className="text-5xl font-black text-white/90 mb-4">Select a City</h2>
                     <p className="text-xl text-white/70">to explore stores and neighborhoods</p>
@@ -816,10 +826,15 @@ export function CitiesPage() {
         </div>
 
           {/* Right side: Store Preview Section - Real store data integration */}
-          <div className={`flex-[22] flex flex-col items-start justify-start p-2 overflow-hidden relative transition-all duration-300 ${isLandingMode ? 'hidden' : 'flex-[22]'}`}
+          <div className={`flex-[22] flex flex-col items-start justify-start p-2 overflow-hidden relative transition-all duration-300 ${isLandingMode ? '' : 'flex-[22]'}`}
             style={{
               background: 'linear-gradient(135deg, rgba(0,0,0,0.3), rgba(0,0,0,0.2))',
               borderLeft: '3px solid rgba(34, 211, 238, 0.2)',
+              opacity: isLandingMode ? 0 : 1,
+              transform: isLandingMode ? 'translateX(40px)' : 'translateX(0)',
+              transition: 'all 400ms ease-out 200ms',
+              pointerEvents: isLandingMode ? 'none' : 'auto',
+              visibility: isLandingMode ? 'hidden' : 'visible',
             }}
           >
             {/* Info Card - Overlapping Preview - Phase 6: Kirby Ticket Style */}
