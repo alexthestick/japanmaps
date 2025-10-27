@@ -460,6 +460,14 @@ export function CitiesPage() {
       const actualCity = cities.find(c => c.id === actualCityId);
       if (actualCity) {
         setSelectedCity(actualCity);
+        
+        // Check if mystery card - enter landing mode or exit
+        if (actualCity.isRandom) {
+          setIsLandingMode(true);
+          setCurrentPhotoIndex(0);
+        } else {
+          setIsLandingMode(false);
+        }
       }
     }
 
