@@ -174,15 +174,14 @@ function StorePreviews({ cityName, hoveredCardIndex, handleCardMouseEnter, handl
 
   if (loading) {
     return (
-      <div className="grid grid-cols-2 gap-x-2 w-full h-full" style={{ gridTemplateRows: '1fr 1fr 1fr' }}>
+      <div className="grid grid-cols-2 gap-x-2 gap-y-8 w-full">
         {[...Array(6)].map((_, i) => (
           <div
             key={i}
-            className="w-full rounded-lg bg-gradient-to-br from-cyan-400/20 to-cyan-400/5 border border-cyan-400/20 animate-pulse"
+            className="aspect-square w-full rounded-lg bg-gradient-to-br from-cyan-400/20 to-cyan-400/5 border border-cyan-400/20 animate-pulse"
             style={{
               clipPath: 'polygon(0 3%, 100% 0, 100% 97%, 0 100%)',
               minWidth: '140px',
-              aspectRatio: '1',
             }}
           />
         ))}
@@ -191,7 +190,7 @@ function StorePreviews({ cityName, hoveredCardIndex, handleCardMouseEnter, handl
   }
 
   return (
-    <div className="grid grid-cols-2 gap-x-2 w-full h-full" style={{ gridTemplateRows: '1fr 1fr 1fr' }}>
+    <div className="grid grid-cols-2 gap-x-2 gap-y-8 w-full">
       {previews.slice(0, 6).map((preview, idx) => (
         <StorePreviewCard
           key={idx}
@@ -936,7 +935,7 @@ export function CitiesPage() {
             }}
           >
             {/* Store Preview Grid - Now starts at top, aligned with preview panel */}
-            <div className="w-full flex flex-col h-full">
+            <div className="w-full flex flex-col">
               <h4 className="text-xs font-display uppercase tracking-widest text-cyan-300/40 pb-2 mb-2 flex-shrink-0">Featured</h4>
 
               {/* Fetch and display real store data */}
