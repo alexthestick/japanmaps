@@ -767,7 +767,7 @@ export function CitiesPage() {
           <div className={`relative w-full h-full flex items-center justify-center`}>
 
             {/* Glow Container */}
-            <div className={`relative w-full aspect-[16/10] ${isLandingMode ? 'max-w-7xl' : ''}`}
+            <div className={`relative w-full ${isLandingMode ? 'max-w-7xl aspect-[16/10]' : 'max-h-[500px]'}`}
               style={{
                 transform: `scale(${isLandingMode ? 1 : 0.95})`,
                 transition: 'transform 400ms ease-out',
