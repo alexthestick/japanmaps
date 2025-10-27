@@ -174,7 +174,7 @@ function StorePreviews({ cityName, hoveredCardIndex, handleCardMouseEnter, handl
 
   if (loading) {
     return (
-      <div className="grid grid-cols-2 gap-2 w-full">
+      <div className="grid grid-cols-2 gap-x-2 gap-y-6 w-full">
         {[...Array(6)].map((_, i) => (
           <div
             key={i}
@@ -190,7 +190,7 @@ function StorePreviews({ cityName, hoveredCardIndex, handleCardMouseEnter, handl
   }
 
   return (
-    <div className="grid grid-cols-2 gap-2 w-full">
+    <div className="grid grid-cols-2 gap-x-2 gap-y-6 w-full">
       {previews.slice(0, 6).map((preview, idx) => (
         <StorePreviewCard
           key={idx}
