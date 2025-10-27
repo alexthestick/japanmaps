@@ -197,7 +197,7 @@ function StorePreviews({ cityName, hoveredCardIndex, handleCardMouseEnter, handl
     <div className="grid grid-cols-2 w-full flex-1 overflow-hidden"
       style={{
         gridTemplateRows: 'repeat(3, minmax(0, 1fr))',
-        gap: '6px',
+        gap: '8px',
         alignContent: 'stretch',
       }}
     >
@@ -763,8 +763,8 @@ export function CitiesPage() {
           }}
         >
           {/* Left side: Preview - Flexible Width */}
-          <div className={`${isLandingMode ? 'w-full' : 'flex-[78]'} flex items-center justify-center p-4 pb-20 overflow-visible`}>
-          <div className={`relative ${isLandingMode ? 'w-full' : 'max-w-6xl'} w-full h-full flex items-center justify-center`}>
+          <div className={`${isLandingMode ? 'w-full' : 'flex-[80]'} flex items-center justify-center p-4 pb-20 overflow-visible`}>
+          <div className={`relative w-full h-full flex items-center justify-center`}>
 
             {/* Glow Container */}
             <div className={`relative w-full aspect-[16/10] ${isLandingMode ? 'max-w-7xl' : ''}`}
@@ -932,7 +932,7 @@ export function CitiesPage() {
           </div>
             </div>
           {/* Right side: Store Preview Section - Real store data integration */}
-          <div className={`flex-[22] flex flex-col items-start justify-start px-2 py-0 relative transition-all duration-300 h-full ${isLandingMode ? '' : 'flex-[22]'}`}
+          <div className={`flex-[20] flex flex-col items-start justify-start px-3 py-1 relative transition-all duration-300 h-full ${isLandingMode ? '' : 'flex-[20]'}`}
             style={{
               background: 'linear-gradient(135deg, rgba(0,0,0,0.3), rgba(0,0,0,0.2))',
               borderLeft: '3px solid rgba(34, 211, 238, 0.2)',
