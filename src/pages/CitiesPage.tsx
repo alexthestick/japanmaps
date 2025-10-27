@@ -174,35 +174,40 @@ function StorePreviews({ cityName, hoveredCardIndex, handleCardMouseEnter, handl
 
   if (loading) {
     return (
-      <div className="grid grid-cols-2 gap-x-2 gap-y-8 w-full">
-        {[...Array(6)].map((_, i) => (
-          <div
-            key={i}
-            className="aspect-square w-full rounded-lg bg-gradient-to-br from-cyan-400/20 to-cyan-400/5 border border-cyan-400/20 animate-pulse"
-            style={{
-              clipPath: 'polygon(0 3%, 100% 0, 100% 97%, 0 100%)',
-              minWidth: '140px',
-            }}
-          />
-        ))}
+      <div className="flex flex-col justify-between w-full h-full">
+        <div className="grid grid-cols-2 gap-x-2 w-full" style={{ display: 'grid', gridTemplateRows: 'repeat(3, 1fr)', height: '100%' }}>
+          {[...Array(6)].map((_, i) => (
+            <div
+              key={i}
+              className="w-full rounded-lg bg-gradient-to-br from-cyan-400/20 to-cyan-400/5 border border-cyan-400/20 animate-pulse"
+              style={{
+                clipPath: 'polygon(0 3%, 100% 0, 100% 97%, 0 100%)',
+                minWidth: '140px',
+                aspectRatio: '1',
+              }}
+            />
+          ))}
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="grid grid-cols-2 gap-x-2 gap-y-8 w-full">
-      {previews.slice(0, 6).map((preview, idx) => (
-        <StorePreviewCard
-          key={idx}
-          store={preview.store}
-          category={preview.category}
-          icon={preview.icon}
-          isHovered={hoveredCardIndex === idx}
-          onMouseEnter={() => handleCardMouseEnter(idx)}
-          onMouseLeave={handleCardMouseLeave}
-          cityColor={cityColor}
-        />
-      ))}
+    <div className="flex flex-col justify-between w-full h-full">
+      <div className="grid grid-cols-2 gap-x-2 w-full" style={{ display: 'grid', gridTemplateRows: 'repeat(3, 1fr)', height: '100%' }}>
+        {previews.slice(0, 6).map((preview, idx) => (
+          <StorePreviewCard
+            key={idx}
+            store={preview.store}
+            category={preview.category}
+            icon={preview.icon}
+            isHovered={hoveredCardIndex === idx}
+            onMouseEnter={() => handleCardMouseEnter(idx)}
+            onMouseLeave={handleCardMouseLeave}
+            cityColor={cityColor}
+          />
+        ))}
+      </div>
     </div>
   );
 }
@@ -935,13 +940,15 @@ export function CitiesPage() {
             }}
           >
             {/* Store Preview Grid - Now starts at top, aligned with preview panel */}
-            <div className="w-full flex flex-col">
+            <div className="w-full flex flex-col" style={{ height: 'calc(100% - 60px)' }}>
               <h4 className="text-xs font-display uppercase tracking-widest text-cyan-300/40 pb-2 mb-2 flex-shrink-0">Featured</h4>
 
               {/* Fetch and display real store data */}
-              {displayCity && !displayCity.isRandom && (
-                <StorePreviews cityName={displayCity.name} hoveredCardIndex={hoveredCardIndex} handleCardMouseEnter={handleCardMouseEnter} handleCardMouseLeave={handleCardMouseLeave} cityColor={displayCity.regionColor || displayCity.color} />
-              )}
+              <div className="flex-1 flex flex-col">
+                {displayCity && !displayCity.isRandom && (
+                  <StorePreviews cityName={displayCity.name} hoveredCardIndex={hoveredCardIndex} handleCardMouseEnter={handleCardMouseEnter} handleCardMouseLeave={handleCardMouseLeave} cityColor={displayCity.regionColor || displayCity.color} />
+                )}
+              </div>
 
               {/* Mystery city - no stores */}
               {displayCity?.isRandom && (
