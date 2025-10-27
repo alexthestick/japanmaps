@@ -51,15 +51,15 @@ const StorePreviewCard = memo(function StorePreviewCard({
 }: StorePreviewCardProps) {
   return (
     <div
-      className="aspect-square rounded-lg overflow-hidden relative bg-black/20 cursor-pointer group"
+      className="aspect-[16/10] rounded-lg overflow-hidden relative bg-black/20 cursor-pointer group"
       style={{
         clipPath: 'polygon(0 5%, 100% 0, 100% 95%, 0 100%)',
         willChange: 'transform, border-color, box-shadow',
         WebkitBackfaceVisibility: 'hidden',
         backfaceVisibility: 'hidden',
         border: `3px solid ${cityColor}`,
-        boxShadow: isHovered 
-          ? `0 0 30px ${cityColor}80, 0 0 60px ${cityColor}40, inset 0 0 20px ${cityColor}20` 
+        boxShadow: isHovered
+          ? `0 0 30px ${cityColor}80, 0 0 60px ${cityColor}40, inset 0 0 20px ${cityColor}20`
           : `0 0 15px ${cityColor}40, inset 0 0 10px ${cityColor}15`,
         transition: 'border-color 200ms ease-out, box-shadow 200ms ease-out, transform 200ms ease-out',
         transform: isHovered ? 'scale(1.02) translateY(-2px)' : 'scale(1)',
@@ -175,14 +175,14 @@ function StorePreviews({ cityName, hoveredCardIndex, handleCardMouseEnter, handl
     return (
       <div className="grid grid-cols-2 w-full flex-1 overflow-hidden"
         style={{
-          gridTemplateRows: 'repeat(3, 1fr)',
-          gap: '12px',
+          gridTemplateRows: 'repeat(3, minmax(0, 1fr))',
+          gap: '6px',
         }}
       >
         {[...Array(6)].map((_, i) => (
           <div
             key={i}
-            className="aspect-square rounded-lg bg-gradient-to-br from-cyan-400/20 to-cyan-400/5 border border-cyan-400/20 animate-pulse"
+            className="aspect-[16/10] rounded-lg bg-gradient-to-br from-cyan-400/20 to-cyan-400/5 border border-cyan-400/20 animate-pulse"
             style={{
               clipPath: 'polygon(0 3%, 100% 0, 100% 97%, 0 100%)',
             }}
@@ -195,8 +195,8 @@ function StorePreviews({ cityName, hoveredCardIndex, handleCardMouseEnter, handl
   return (
     <div className="grid grid-cols-2 w-full flex-1 overflow-hidden"
       style={{
-        gridTemplateRows: 'repeat(3, 1fr)',
-        gap: '12px',
+        gridTemplateRows: 'repeat(3, minmax(0, 1fr))',
+        gap: '6px',
       }}
     >
       {previews.map((preview, idx) => (
@@ -599,53 +599,159 @@ export function CitiesPage() {
         }}
       >
 
-        {/* Phase 1a: CITIES Masthead Section - Branding Header - Phase 5: Enhanced with color blocking */}
-        <div className="relative z-20 px-8 pt-6 pb-3 overflow-hidden"
+        {/* Phase 1a: CITIES Masthead Section - Branding Header - Kirby UE RIDE Inspired */}
+        <div className="relative z-20 px-8 pt-2 pb-2 overflow-hidden"
           style={{
             clipPath: 'polygon(0 0, 100% 3%, 100% 100%, 0 97%)',
             background: 'linear-gradient(135deg, rgba(0,0,0,0.4), rgba(0,0,0,0.3))',
             backdropFilter: 'blur(10px)',
             borderBottom: '2px solid rgba(34, 211, 238, 0.3)',
+            minHeight: '140px',
           }}
         >
-          {/* Top Glow Effect */}
-          <div className="absolute top-0 left-0 right-0 h-1.5"
-            style={{
-              background: `linear-gradient(90deg, ${displayCity.regionColor || displayCity.color}40, ${displayCity.regionColor || displayCity.color}80, ${displayCity.regionColor || displayCity.color}40)`,
-              boxShadow: `0 0 20px ${displayCity.regionColor || displayCity.color}60, inset 0 0 10px ${displayCity.regionColor || displayCity.color}40`,
-              filter: 'blur(1px)',
-            }}
-          />
-
-          {/* Diagonal Color Block Accent - Much bigger and bolder */}
-          <div className="absolute top-0 right-0 pointer-events-none"
-            style={{
-              width: '600px',
-              height: '280px',
-              background: `linear-gradient(135deg, ${displayCity.regionColor || displayCity.color}40 0%, ${displayCity.regionColor || displayCity.color}60 40%, transparent 100%)`,
-              clipPath: 'polygon(100% 0, 100% 60%, 0 0)',
-              filter: 'blur(1px)',
-              boxShadow: `0 0 60px ${displayCity.regionColor || displayCity.color}40, inset 0 0 40px ${displayCity.regionColor || displayCity.color}20`,
-            }}
-          />
-
-          <div className="max-w-6xl mx-auto relative z-10">
-            <h1 className="text-9xl font-black tracking-widest text-white font-display"
+          <div className="max-w-6xl mx-auto relative z-10 h-full flex items-center justify-between">
+            {/* Left: Vertical Japanese Text */}
+            <div className="absolute left-0 top-1/2 -translate-y-1/2 text-cyan-300/40 font-serif text-sm tracking-wider"
               style={{
-                textShadow: `0 0 30px rgba(34, 211, 238, 0.4), 0 0 20px ${displayCity.regionColor || displayCity.color}40, 0 4px 12px rgba(0,0,0,0.6)`,
-                letterSpacing: '0.15em',
-                WebkitTextStroke: '1.5px rgba(34, 211, 238, 0.4)',
-                paintOrder: 'stroke fill',
+                writingMode: 'vertical-rl',
+                textOrientation: 'upright',
+                letterSpacing: '0.1em',
               }}
             >
-              CITIES
-            </h1>
-            <p className="text-lg text-cyan-300/70 font-serif italic mt-1 tracking-wide"
-              style={{ letterSpacing: '0.05em' }}
-            >
-              日本の街を巡る旅 • Journey Through Japanese Cities
-            </p>
+              日本の街を巡る旅
+            </div>
+
+            {/* Center: MASSIVE CITIES Text - Fills vertical space */}
+            <div className="flex-1 flex items-center pl-8">
+              <h1 className="font-black text-white font-display"
+                style={{
+                  fontSize: 'clamp(5rem, 11vw, 8.5rem)',
+                  textShadow: `0 0 30px rgba(34, 211, 238, 0.4), 0 0 20px ${displayCity.regionColor || displayCity.color}40, 0 4px 12px rgba(0,0,0,0.6)`,
+                  letterSpacing: '0.2em',
+                  WebkitTextStroke: '1.5px rgba(34, 211, 238, 0.4)',
+                  paintOrder: 'stroke fill',
+                  lineHeight: '0.95',
+                  margin: 0,
+                  padding: 0,
+                }}
+              >
+                CITIES
+              </h1>
+            </div>
+
+            {/* Right: Mini Carousel Ticket Card */}
+            {displayCity && (
+              <div
+                className="rounded-lg overflow-hidden transition-all duration-300 relative backdrop-blur-md flex-shrink-0"
+                style={{
+                  width: '240px',
+                  height: '130px',
+                  border: `3px solid ${displayCity.regionColor || displayCity.color}`,
+                  boxShadow: `0 0 30px ${displayCity.regionColor || displayCity.color}60, 0 0 15px ${displayCity.regionColor || displayCity.color}40, inset 0 0 20px rgba(0,0,0,0.4)`,
+                  backgroundColor: 'rgba(0,0,0,0.7)',
+                  transition: 'all 0.3s ease',
+                }}
+              >
+                {/* Perforated Edge (Left Side) */}
+                <div className="absolute left-0 top-0 bottom-0 w-2.5 flex flex-col justify-around py-1.5">
+                  {Array.from({ length: 10 }).map((_, i) => (
+                    <div key={i} className="w-1 h-1 rounded-full bg-white/20" />
+                  ))}
+                </div>
+
+                {/* Card Content */}
+                <div className="flex h-full">
+                  {/* Left: City Image (55%) */}
+                  <div className="flex-[55] relative ml-2.5 bg-gradient-to-br from-indigo-900 to-purple-900">
+                    <img
+                      src={displayCity.thumbnailImage}
+                      alt={displayCity.name}
+                      className="w-full h-full object-cover"
+                      loading="eager"
+                      onError={(e) => {
+                        if (!displayCity.isRandom) {
+                          const target = e.target as HTMLImageElement;
+                          target.style.display = 'none';
+                        }
+                      }}
+                    />
+                    <div className="absolute inset-0 bg-gradient-to-r from-transparent to-black/30 pointer-events-none" />
+                  </div>
+
+                  {/* Right: City Info (45%) */}
+                  <div className="flex-[45] flex flex-col justify-center items-start px-3 relative z-10">
+                    {!displayCity.isRandom ? (
+                      <>
+                        <div className="text-white font-black text-lg leading-tight mb-0.5 font-display uppercase"
+                          style={{
+                            textShadow: `0 0 12px ${displayCity.regionColor || displayCity.color}80, 0 1px 3px rgba(0,0,0,0.8)`,
+                            letterSpacing: '0.02em',
+                          }}
+                        >
+                          {displayCity.name}
+                        </div>
+                        <div className="text-xs font-medium mb-1.5 font-sans"
+                          style={{
+                            color: displayCity.regionColor || displayCity.color,
+                            textShadow: `0 0 8px ${displayCity.regionColor || displayCity.color}60`,
+                            letterSpacing: '0.05em',
+                          }}
+                        >
+                          {displayCity.nameJapanese}
+                        </div>
+                        <div className="flex flex-col gap-1 text-[10px] font-sans">
+                          <div className="px-2 py-0.5 rounded-full bg-black/50 border"
+                            style={{
+                              borderColor: `${displayCity.regionColor || displayCity.color}70`,
+                              color: displayCity.regionColor || displayCity.color,
+                              fontWeight: '700',
+                              textTransform: 'uppercase',
+                              letterSpacing: '0.05em',
+                              boxShadow: `0 0 8px ${displayCity.regionColor || displayCity.color}30`,
+                            }}
+                          >
+                            {displayCity.region}
+                          </div>
+                          <div className="px-2 py-0.5 rounded-full bg-black/50 border"
+                            style={{
+                              borderColor: `${displayCity.regionColor || displayCity.color}70`,
+                              color: displayCity.regionColor || displayCity.color,
+                              fontWeight: '700',
+                              letterSpacing: '0.05em',
+                              boxShadow: `0 0 8px ${displayCity.regionColor || displayCity.color}30`,
+                            }}
+                          >
+                            ⭐ {displayCity.storeCount}
+                          </div>
+                        </div>
+                      </>
+                    ) : (
+                      <div className="text-white font-black text-base font-display uppercase">Mystery</div>
+                    )}
+                  </div>
+                </div>
+
+                {/* Scan Line Effect */}
+                <div
+                  className="absolute inset-0 pointer-events-none"
+                  style={{
+                    background: `linear-gradient(transparent 50%, ${displayCity.regionColor || displayCity.color}08 50%)`,
+                    backgroundSize: '100% 3px',
+                  }}
+                />
+              </div>
+            )}
           </div>
+
+          {/* THICC Diagonal Accent Stripe - Bottom of masthead */}
+          <div className="absolute bottom-0 left-0 right-0 h-10"
+            style={{
+              background: `linear-gradient(90deg, ${displayCity.regionColor || displayCity.color}50, ${displayCity.regionColor || displayCity.color}90, ${displayCity.regionColor || displayCity.color}50)`,
+              boxShadow: `0 0 40px ${displayCity.regionColor || displayCity.color}80, 0 0 20px ${displayCity.regionColor || displayCity.color}60, inset 0 0 20px ${displayCity.regionColor || displayCity.color}40`,
+              transform: 'skewY(-2deg)',
+              transition: 'all 300ms ease-in-out',
+            }}
+          />
         </div>
 
         {/* Phase 1b: Hero Section - 60/40 Split Container */}
@@ -837,97 +943,15 @@ export function CitiesPage() {
               visibility: isLandingMode ? 'hidden' : 'visible',
             }}
           >
-            {/* Info Card - Overlapping Preview - Phase 6: Kirby Ticket Style */}
-            {displayCity && (
-              <div className="w-full rounded-lg p-5 mb-2 relative overflow-hidden"
-                style={{
-                  background: `linear-gradient(135deg, ${displayCity.regionColor || displayCity.color}30, ${displayCity.regionColor || displayCity.color}15)`,
-                  border: `2.5px solid ${displayCity.regionColor || displayCity.color}80`,
-                  boxShadow: `0 0 40px ${displayCity.regionColor || displayCity.color}50, 0 0 60px ${displayCity.regionColor || displayCity.color}20, inset 0 0 30px rgba(0,0,0,0.3)`,
-                  minHeight: '100px',
-                  flexShrink: 0,
-                  backdropFilter: 'blur(8px)',
-                }}
-              >
-                {/* Glossy Overlay Effect */}
-                <div className="absolute inset-0 pointer-events-none"
-                  style={{
-                    background: `linear-gradient(135deg, ${displayCity.regionColor || displayCity.color}20 0%, transparent 50%, ${displayCity.regionColor || displayCity.color}10 100%)`,
-                    mixBlendMode: 'screen',
-                  }}
-                />
-
-                {/* Shine effect */}
-                <div className="absolute top-0 left-0 right-0 h-8 pointer-events-none"
-                  style={{
-                    background: `linear-gradient(180deg, rgba(255,255,255,0.1) 0%, transparent 100%)`,
-                    filter: 'blur(1px)',
-                  }}
-                />
-
-                <div className="space-y-2 relative z-10">
-                  <div>
-                    <h3 className="text-3xl font-black text-white uppercase font-display"
-                      style={{
-                        textShadow: `0 0 20px ${displayCity.regionColor || displayCity.color}80, 0 4px 8px rgba(0,0,0,0.8)`,
-                        letterSpacing: '0.05em',
-                      }}
-                    >
-                      {displayCity.name}
-                    </h3>
-                    <div className="text-sm font-medium mt-1"
-                      style={{
-                        color: displayCity.regionColor || displayCity.color,
-                        textShadow: `0 0 12px ${displayCity.regionColor || displayCity.color}70`,
-                        letterSpacing: '0.02em',
-                      }}
-                    >
-                      {displayCity.nameJapanese}
-                    </div>
-                  </div>
-                  <div className="flex gap-2 flex-wrap pt-2">
-                    <div className="px-3 py-1 rounded-full bg-black/50 backdrop-blur-md border-2"
-                      style={{
-                        borderColor: `${displayCity.regionColor || displayCity.color}80`,
-                        boxShadow: `0 0 12px ${displayCity.regionColor || displayCity.color}40, inset 0 0 8px rgba(0,0,0,0.4)`,
-                        color: displayCity.regionColor || displayCity.color,
-                        fontSize: '0.75rem',
-                        fontWeight: '700',
-                        textTransform: 'uppercase',
-                        letterSpacing: '0.05em',
-                      }}
-                    >
-                      {displayCity.region}
-                    </div>
-                    {!displayCity.isRandom && (
-                      <div className="px-3 py-1 rounded-full bg-black/50 backdrop-blur-md border-2"
-                        style={{
-                          borderColor: `${displayCity.regionColor || displayCity.color}80`,
-                          boxShadow: `0 0 12px ${displayCity.regionColor || displayCity.color}40, inset 0 0 8px rgba(0,0,0,0.4)`,
-                          color: displayCity.regionColor || displayCity.color,
-                          fontSize: '0.75rem',
-                          fontWeight: '700',
-                          textTransform: 'uppercase',
-                          letterSpacing: '0.05em',
-                        }}
-                      >
-                        ⭐ {displayCity.storeCount}
-                      </div>
-                    )}
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {/* Store Preview Grid */}
+            {/* Store Preview Grid - Now starts at top, aligned with preview panel */}
             <div className="w-full flex-1 flex flex-col overflow-hidden">
               <h4 className="text-xs font-display uppercase tracking-widest text-cyan-300/40 pb-2 mb-2 flex-shrink-0">Featured</h4>
-              
+
               {/* Fetch and display real store data */}
               {displayCity && !displayCity.isRandom && (
                 <StorePreviews cityName={displayCity.name} hoveredCardIndex={hoveredCardIndex} handleCardMouseEnter={handleCardMouseEnter} handleCardMouseLeave={handleCardMouseLeave} cityColor={displayCity.regionColor || displayCity.color} />
               )}
-              
+
               {/* Mystery city - no stores */}
               {displayCity?.isRandom && (
                 <div className="w-full h-full flex items-center justify-center text-cyan-300/20 text-xs font-serif italic">
