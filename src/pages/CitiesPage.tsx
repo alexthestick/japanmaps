@@ -63,6 +63,7 @@ const StorePreviewCard = memo(function StorePreviewCard({
           : `0 0 15px ${cityColor}40, inset 0 0 10px ${cityColor}15`,
         transition: 'border-color 200ms ease-out, box-shadow 200ms ease-out, transform 200ms ease-out',
         transform: isHovered ? 'scale(1.02) translateY(-2px)' : 'scale(1)',
+        minWidth: '140px',
       }}
       onMouseEnter={onMouseEnter}
       onMouseLeave={onMouseLeave}
@@ -173,13 +174,14 @@ function StorePreviews({ cityName, hoveredCardIndex, handleCardMouseEnter, handl
 
   if (loading) {
     return (
-      <div className="grid grid-cols-2 gap-3 w-full">
+      <div className="grid grid-cols-2 gap-2 w-full">
         {[...Array(6)].map((_, i) => (
           <div
             key={i}
             className="aspect-square w-full rounded-lg bg-gradient-to-br from-cyan-400/20 to-cyan-400/5 border border-cyan-400/20 animate-pulse"
             style={{
               clipPath: 'polygon(0 3%, 100% 0, 100% 97%, 0 100%)',
+              minWidth: '140px',
             }}
           />
         ))}
@@ -188,7 +190,7 @@ function StorePreviews({ cityName, hoveredCardIndex, handleCardMouseEnter, handl
   }
 
   return (
-    <div className="grid grid-cols-2 gap-3 w-full">
+    <div className="grid grid-cols-2 gap-2 w-full">
       {previews.slice(0, 6).map((preview, idx) => (
         <StorePreviewCard
           key={idx}
@@ -929,6 +931,7 @@ export function CitiesPage() {
               transition: 'all 400ms ease-out 200ms',
               pointerEvents: isLandingMode ? 'none' : 'auto',
               visibility: isLandingMode ? 'hidden' : 'visible',
+              maxWidth: '380px',
             }}
           >
             {/* Store Preview Grid - Now starts at top, aligned with preview panel */}
