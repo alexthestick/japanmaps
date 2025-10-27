@@ -197,7 +197,7 @@ function StorePreviews({ cityName, hoveredCardIndex, handleCardMouseEnter, handl
     <div className="grid grid-cols-2 w-full flex-1 overflow-hidden"
       style={{
         gridTemplateRows: 'repeat(3, minmax(0, 1fr))',
-        gap: '8px',
+        gap: '6px',
         alignContent: 'stretch',
       }}
     >
@@ -757,17 +757,17 @@ export function CitiesPage() {
         </div>
 
         {/* Phase 1b: Hero Section - 60/40 Split Container */}
-        <div className="flex flex-1 overflow-visible justify-start items-start"
+        <div className="flex flex-1 overflow-visible justify-center items-start"
           style={{
             clipPath: 'polygon(0 0, 100% 3%, 100% 97%, 0 100%)',
           }}
         >
           {/* Left side: Preview - Flexible Width */}
-          <div className={`${isLandingMode ? 'w-full' : 'flex-[75]'} flex items-center justify-center p-4 pb-20 overflow-visible min-w-0`}>
-          <div className={`relative w-full h-full flex items-center justify-center`}>
+          <div className={`${isLandingMode ? 'w-full' : 'flex-[78]'} flex items-center justify-center p-4 pb-20 overflow-visible`}>
+          <div className={`relative ${isLandingMode ? 'w-full' : 'max-w-6xl'} w-full h-full flex items-center justify-center`}>
 
             {/* Glow Container */}
-            <div className={`relative w-full ${isLandingMode ? 'max-w-7xl aspect-[16/10]' : 'max-h-[500px]'}`}
+            <div className={`relative w-full aspect-[16/10] ${isLandingMode ? 'max-w-7xl' : ''}`}
               style={{
                 transform: `scale(${isLandingMode ? 1 : 0.95})`,
                 transition: 'transform 400ms ease-out',
@@ -932,7 +932,7 @@ export function CitiesPage() {
           </div>
             </div>
           {/* Right side: Store Preview Section - Real store data integration */}
-          <div className={`flex-[25] flex flex-col items-start justify-start px-3 py-1 relative transition-all duration-300 h-full w-full ${isLandingMode ? '' : 'flex-[25]'}`}
+          <div className={`flex-[22] flex flex-col items-start justify-start px-2 py-0 relative transition-all duration-300 h-full ${isLandingMode ? '' : 'flex-[22]'}`}
             style={{
               background: 'linear-gradient(135deg, rgba(0,0,0,0.3), rgba(0,0,0,0.2))',
               borderLeft: '3px solid rgba(34, 211, 238, 0.2)',
