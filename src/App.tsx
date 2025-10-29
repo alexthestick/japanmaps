@@ -16,6 +16,7 @@ import { NotFoundPage } from './pages/NotFoundPage';
 import { CityPage } from './pages/CityPage';
 import { CitiesPage } from './pages/CitiesPage';
 import { NeighborhoodsPage } from './pages/NeighborhoodsPage';
+import { ArchiveStoresJapan } from './pages/ArchiveStoresJapan';
 import { motion } from 'framer-motion';
 
 function AnimatedRoutes() {
@@ -88,6 +89,11 @@ function AnimatedRoutes() {
           <Route path="blog/:slug" element={
             <motion.div initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -6 }}>
               <BlogPostPage />
+            </motion.div>
+          } />
+          <Route path="archive-stores-japan" element={
+            <motion.div initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -6 }}>
+              <ArchiveStoresJapan />
             </motion.div>
           } />
           <Route path="about" element={
