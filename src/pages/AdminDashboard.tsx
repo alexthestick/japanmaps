@@ -9,6 +9,7 @@ import { EditStoreForm } from '../components/forms/EditStoreForm';
 import { StoreListTable } from '../components/admin/StoreListTable';
 import { MainCategoryMigration } from '../components/admin/MainCategoryMigration';
 import { NeighborhoodList } from '../components/admin/NeighborhoodList';
+import { BlogPostEditor } from '../components/admin/BlogPostEditor';
 import { Modal } from '../components/common/Modal';
 import type { StoreSuggestion, Store } from '../types/store';
 
@@ -24,12 +25,17 @@ export function AdminDashboard() {
   const [loadingStores, setLoadingStores] = useState(false);
   const [editingStore, setEditingStore] = useState<Store | null>(null);
   const [deletingStore, setDeletingStore] = useState<Store | null>(null);
-  const [activeTab, setActiveTab] = useState<'stores' | 'suggestions' | 'migration' | 'neighborhoods'>('stores');
+  const [blogPosts, setBlogPosts] = useState<any[]>([]);
+  const [loadingBlogPosts, setLoadingBlogPosts] = useState(false);
+  const [showBlogEditor, setShowBlogEditor] = useState(false);
+  const [editingPost, setEditingPost] = useState<any | null>(null);
+  const [activeTab, setActiveTab] = useState<'stores' | 'suggestions' | 'migration' | 'neighborhoods' | 'blog'>('stores');
 
   useEffect(() => {
     if (user) {
       fetchSuggestions();
       fetchStores();
+      fetchBlogPosts();
     }
   }, [user]);
 
@@ -153,6 +159,45 @@ export function AdminDashboard() {
     }
   }
 
+  async function fetchBlogPosts() {
+    try {
+      setLoadingBlogPosts(true);
+      const { data, error } = await supabase
+        .from('blog_posts')
+        .select('*')
+        .order('published_at', { ascending: false });
+
+      if (error) throw error;
+
+      setBlogPosts(data || []);
+    } catch (error) {
+      console.error('Error fetching blog posts:', error);
+    } finally {
+      setLoadingBlogPosts(false);
+    }
+  }
+
+  async function handleDeletePost(post: any) {
+    if (!confirm(`Are you sure you want to delete "${post.title}"? This cannot be undone.`)) {
+      return;
+    }
+
+    try {
+      const { error } = await supabase
+        .from('blog_posts')
+        .delete()
+        .eq('id', post.id);
+
+      if (error) throw error;
+
+      alert('Post deleted successfully!');
+      fetchBlogPosts();
+    } catch (error) {
+      console.error('Error deleting post:', error);
+      alert('Failed to delete post. Please try again.');
+    }
+  }
+
   if (authLoading) {
     return (
       <div className="max-w-7xl mx-auto px-4 py-8">
@@ -264,6 +309,16 @@ export function AdminDashboard() {
           }`}
         >
           📍 Neighborhoods
+        </button>
+        <button
+          onClick={() => setActiveTab('blog')}
+          className={`px-4 py-2 font-medium border-b-2 transition-colors ${
+            activeTab === 'blog'
+              ? 'border-purple-500 text-purple-600'
+              : 'border-transparent text-gray-600 hover:text-gray-900'
+          }`}
+        >
+          📝 Blog Posts ({blogPosts.length})
         </button>
       </div>
 
@@ -391,6 +446,83 @@ export function AdminDashboard() {
         <NeighborhoodList />
       )}
 
+      {/* Blog Posts Tab */}
+      {activeTab === 'blog' && (
+        <div className="bg-white rounded-lg shadow-md p-6">
+          <div className="flex items-center justify-between mb-6">
+            <h2 className="text-xl font-semibold text-gray-900">
+              Blog Posts
+              {loadingBlogPosts && <span className="text-sm text-gray-500 ml-2">(Loading...)</span>}
+            </h2>
+            <Button
+              onClick={() => {
+                setEditingPost(null);
+                setShowBlogEditor(true);
+              }}
+            >
+              + New Post
+            </Button>
+          </div>
+
+          {blogPosts.length === 0 ? (
+            <p className="text-gray-600 text-center py-12">
+              No blog posts yet. Create your first post to get started!
+            </p>
+          ) : (
+            <div className="space-y-4">
+              {blogPosts.map(post => (
+                <div
+                  key={post.id}
+                  className="border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow"
+                >
+                  <div className="flex items-start justify-between mb-2">
+                    <div className="flex-1">
+                      <h3 className="font-semibold text-gray-900 text-lg mb-1">
+                        {post.title}
+                      </h3>
+                      <div className="flex gap-4 text-sm text-gray-600 mb-2">
+                        <span>Slug: <code className="bg-gray-100 px-1 rounded">{post.slug}</code></span>
+                        <span>Published: {new Date(post.published_at).toLocaleDateString()}</span>
+                      </div>
+                      {post.hero_image && (
+                        <img 
+                          src={post.hero_image} 
+                          alt={post.title} 
+                          className="w-32 h-20 object-cover rounded-md mb-2"
+                        />
+                      )}
+                      <p className="text-sm text-gray-600 line-clamp-2">
+                        {post.content.slice(0, 200)}...
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="flex gap-2 mt-3">
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => {
+                        setEditingPost(post);
+                        setShowBlogEditor(true);
+                      }}
+                    >
+                      Edit
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => handleDeletePost(post)}
+                    >
+                      Delete
+                    </Button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+
       {/* Add Store Modal */}
       <Modal
         isOpen={showAddStoreForm}
@@ -424,6 +556,30 @@ export function AdminDashboard() {
             onCancel={() => setEditingStore(null)}
           />
         )}
+      </Modal>
+
+      {/* Blog Post Editor Modal */}
+      <Modal
+        isOpen={showBlogEditor}
+        onClose={() => {
+          setShowBlogEditor(false);
+          setEditingPost(null);
+        }}
+        title={editingPost ? `Edit: ${editingPost.title}` : 'Create New Blog Post'}
+        maxWidth="4xl"
+      >
+        <BlogPostEditor
+          post={editingPost}
+          onSuccess={() => {
+            setShowBlogEditor(false);
+            setEditingPost(null);
+            fetchBlogPosts();
+          }}
+          onCancel={() => {
+            setShowBlogEditor(false);
+            setEditingPost(null);
+          }}
+        />
       </Modal>
     </div>
   );
