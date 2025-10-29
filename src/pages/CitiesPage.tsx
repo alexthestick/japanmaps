@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo, useRef, memo, useCallback } from 'react';
+import { useState, useEffect, useMemo, memo, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ArrowLeft, Shuffle, Train } from 'lucide-react';
 import { motion } from 'framer-motion';
@@ -51,8 +51,9 @@ const StorePreviewCard = memo(function StorePreviewCard({
 }: StorePreviewCardProps) {
   return (
     <div
-      className="aspect-square w-full rounded-lg overflow-hidden relative bg-black/20 cursor-pointer group"
+      className="w-full h-full rounded-lg overflow-hidden relative bg-black/20 cursor-pointer group"
       style={{
+        aspectRatio: '1 / 1',
         clipPath: 'polygon(0 5%, 100% 0, 100% 95%, 0 100%)',
         willChange: 'transform, border-color, box-shadow',
         WebkitBackfaceVisibility: 'hidden',
@@ -63,7 +64,6 @@ const StorePreviewCard = memo(function StorePreviewCard({
           : `0 0 15px ${cityColor}40, inset 0 0 10px ${cityColor}15`,
         transition: 'border-color 200ms ease-out, box-shadow 200ms ease-out, transform 200ms ease-out',
         transform: isHovered ? 'scale(1.02) translateY(-2px)' : 'scale(1)',
-        minWidth: '140px',
       }}
       onMouseEnter={onMouseEnter}
       onMouseLeave={onMouseLeave}
@@ -172,26 +172,26 @@ interface StorePreviewsProps {
 function StorePreviews({ cityName, hoveredCardIndex, handleCardMouseEnter, handleCardMouseLeave, cityColor }: StorePreviewsProps) {
   const { previews, loading } = useCityStorePreviews(cityName);
 
+  // Always render exactly 6 items for consistent grid
+  const itemsToDisplay = previews.slice(0, 6);
+  const placeholderCount = 6 - itemsToDisplay.length;
+
   if (loading) {
-    return (
-      <div className="grid grid-cols-2 gap-x-2 gap-y-2 w-full">
-        {[...Array(8)].map((_, i) => (
-          <div
-            key={i}
-            className="aspect-square w-full rounded-lg bg-gradient-to-br from-cyan-400/20 to-cyan-400/5 border border-cyan-400/20 animate-pulse"
-            style={{
-              clipPath: 'polygon(0 3%, 100% 0, 100% 97%, 0 100%)',
-              minWidth: '140px',
-            }}
-          />
-        ))}
-      </div>
-    );
+    return [...Array(6)].map((_, i) => (
+      <div
+        key={i}
+        className="w-full h-full rounded-lg bg-gradient-to-br from-cyan-400/20 to-cyan-400/5 border border-cyan-400/20 animate-pulse"
+        style={{
+          clipPath: 'polygon(0 3%, 100% 0, 100% 97%, 0 100%)',
+        }}
+      />
+    ));
   }
 
   return (
-    <div className="grid grid-cols-2 gap-x-2 gap-y-2 w-full">
-      {previews.slice(0, 8).map((preview, idx) => (
+    <>
+      {/* Render actual store cards */}
+      {itemsToDisplay.map((preview, idx) => (
         <StorePreviewCard
           key={idx}
           store={preview.store}
@@ -203,7 +203,20 @@ function StorePreviews({ cityName, hoveredCardIndex, handleCardMouseEnter, handl
           cityColor={cityColor}
         />
       ))}
-    </div>
+      {/* Fill remaining slots with placeholders */}
+      {[...Array(placeholderCount)].map((_, i) => (
+        <StorePreviewCard
+          key={`placeholder-${i}`}
+          store={null}
+          category="placeholder"
+          icon="🏪"
+          isHovered={false}
+          onMouseEnter={() => {}}
+          onMouseLeave={() => {}}
+          cityColor={cityColor}
+        />
+      ))}
+    </>
   );
 }
 
@@ -218,7 +231,6 @@ export function CitiesPage() {
   const [hoveredCardIndex, setHoveredCardIndex] = useState<number | null>(null); // New state for hovered card index
 
   // Image loading state management
-  const [imageLoading, setImageLoading] = useState(false);
   const [imageError, setImageError] = useState(false);
 
   // Landing state management
@@ -746,212 +758,223 @@ export function CitiesPage() {
           />
         </div>
 
-        {/* Phase 1b: Hero Section - 60/40 Split Container */}
-        <div className="flex flex-1 overflow-visible items-start"
-          style={{
-            clipPath: 'polygon(0 0, 100% 3%, 100% 97%, 0 100%)',
-          }}
-        >
-          {/* Left side: Preview - Flexible Width */}
-          <div className={`${isLandingMode ? 'w-full' : 'flex-[78]'} flex min-w-0 items-start justify-center p-4 pb-20 overflow-visible`}>
-          <div className={`relative ${isLandingMode ? 'w-full' : 'max-w-6xl'} w-full h-full flex items-start justify-center`}>
+        {/* Phase 1b: Hero Section - REDESIGNED FOR PERFECT ALIGNMENT */}
+        <div className="flex-1 px-8 min-h-0">
+          <div className="max-w-7xl mx-auto h-full">
+            <div className="grid h-full gap-6" style={{ gridTemplateColumns: '3fr 1fr', alignItems: 'stretch' }}>
 
-            {/* Glow Container */}
-            <div className={`relative w-full aspect-[16/10] ${isLandingMode ? 'max-w-7xl' : ''}`}
-              style={{
-                transform: `scale(${isLandingMode ? 1 : 0.95})`,
-                transition: 'transform 400ms ease-out',
-              }}
-            >
-              {/* Atmospheric Glow Behind Preview - Phase 7b: Regional color with smooth transitions */}
-              <div
-                className="absolute inset-0 rounded-2xl blur-2xl opacity-35 pointer-events-none"
-                style={{
-                  background: `radial-gradient(ellipse at center, ${displayCity.regionColor || displayCity.color}60, transparent 70%)`,
-                  transition: 'background 0.3s ease-in-out',
-                }}
-              />
-
-              {/* Chunky Nintendo Border Glow - Phase 7b: Dynamic regional color */}
-              <div
-                className="absolute inset-1 rounded-2xl opacity-70 pointer-events-none"
-                style={{
-                  background: `linear-gradient(135deg, ${displayCity.regionColor || displayCity.color}, ${displayCity.regionColor || displayCity.color}80)`,
-                  filter: 'blur(4px)',
-                  transition: 'background 0.3s ease-in-out',
-                }}
-              />
-
-              {/* Large City Preview */}
-              <div className="absolute inset-0 rounded-2xl overflow-hidden shadow-2xl"
-                style={{
-                  border: `5px solid rgba(34, 211, 238, 0.9)`,
-                  boxShadow: `0 0 80px rgba(34, 211, 238, 0.5), 0 0 40px rgba(34, 211, 238, 0.3), inset 0 0 60px rgba(0,0,0,0.4), inset 0 6px 15px rgba(255,255,255,0.15)`,
-                  transition: 'border 300ms ease-in-out, box-shadow 300ms ease-in-out',
-                }}
-              >
-              {/* City Image with Ken Burns Effect */}
-              <img
-                src={currentImage}
-                alt={displayCity.name}
-                className="w-full h-full object-cover animate-ken-burns transition-opacity duration-500"
-                loading="eager"
-                fetchPriority="high"
-                style={{
-                  imageRendering: 'auto',
-                  opacity: imageError ? 0 : 1,
-                  transition: 'opacity 300ms ease-in-out',
-                }}
-                onError={(e) => {
-                  const target = e.target as HTMLImageElement;
-                  setImageError(true);
-                  target.style.opacity = '0';
-                  const container = target.parentElement;
-                  if (container && !container.querySelector('.placeholder-text')) {
-                    const placeholder = document.createElement('div');
-                    placeholder.className = 'placeholder-text w-full h-full flex items-center justify-center absolute inset-0 bg-gradient-to-br from-indigo-900 to-purple-900';
-                    placeholder.innerHTML = `
-                      <div class="text-center">
-                        <div class="text-8xl font-black text-white/20 mb-4">${displayCity.nameJapanese}</div>
-                        <div class="text-4xl font-bold text-white/40">${displayCity.name}</div>
-                        <div class="text-lg text-white/30 mt-4">Image Coming Soon</div>
-                      </div>
-                    `;
-                    container.appendChild(placeholder);
-                  }
-                }}
-                onLoad={(e) => {
-                  const target = e.target as HTMLImageElement;
-                  setImageError(false);
-                  setImageLoading(false);
-                  target.style.opacity = '1';
-                  const container = target.parentElement;
-                  if (container) {
-                    const placeholder = container.querySelector('.placeholder-text');
-                    if (placeholder) placeholder.remove();
-                  }
-                }}
-              />
-
-              {/* Film Grain Overlay */}
-              <div className="absolute inset-0 bg-[url('/film-grain.png')] opacity-[0.05] pointer-events-none mix-blend-overlay" />
-
-              {/* Gradient Overlay at Bottom */}
-              <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
-
-              {/* Train Travel Button - Bottom Center with Kirby Aesthetic - Visible for ALL cities */}
-              {selectedCity && (
-                <button
-                  onClick={() => handleTravel(selectedCity)}
-                  className="absolute text-white font-black uppercase tracking-wider text-lg font-display relative overflow-hidden group active:scale-95 disabled:opacity-50 px-12 py-4 transition-all duration-300"
-                  disabled={isTransitioning}
+              {/* Left Column: City Preview */}
+              <div className="relative min-h-0 h-full flex items-center justify-center">
+                <div className="relative w-full aspect-[16/10]"
                   style={{
-                    bottom: '60px',
-                    left: '50%',
-                    transform: isTransitioning ? 'scale(0.9) translateY(5px) translateX(-50%)' : 'scale(1) translateY(0) translateX(-50%)',
-                    clipPath: 'polygon(15% 0%, 85% 0%, 100% 50%, 85% 100%, 15% 100%, 0% 50%)',
-                    background: `linear-gradient(135deg, ${selectedCity.regionColor || selectedCity.color}, ${selectedCity.regionColor || selectedCity.color}dd)`,
-                    border: `4px solid ${selectedCity.regionColor || selectedCity.color}`,
-                    boxShadow: `0 0 60px ${selectedCity.regionColor || selectedCity.color}80, 0 0 30px ${selectedCity.regionColor || selectedCity.color}60, 0 12px 40px rgba(0,0,0,0.6), inset 0 0 40px rgba(255,255,255,0.15)`,
-                    transition: isTransitioning
-                      ? 'all 0.6s ease-in-out'
-                      : 'all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1)',
-                    opacity: isTransitioning ? 0.7 : 1,
-                    zIndex: 100,
-                  }}
-                  onMouseEnter={(e) => {
-                    if (!isTransitioning) {
-                      e.currentTarget.style.transform = 'scale(1.12) translateY(-5px) translateX(-50%)';
-                      e.currentTarget.style.boxShadow = `0 0 80px ${selectedCity.regionColor || selectedCity.color}90, 0 0 40px ${selectedCity.regionColor || selectedCity.color}80, 0 16px 50px rgba(0,0,0,0.7), inset 0 0 50px rgba(255,255,255,0.2)`;
-                    }
-                  }}
-                  onMouseLeave={(e) => {
-                    if (!isTransitioning) {
-                      e.currentTarget.style.transform = 'scale(1) translateY(0) translateX(-50%)';
-                      e.currentTarget.style.boxShadow = `0 0 60px ${selectedCity.regionColor || selectedCity.color}80, 0 0 30px ${selectedCity.regionColor || selectedCity.color}60, 0 12px 40px rgba(0,0,0,0.6), inset 0 0 40px rgba(255,255,255,0.15)`;
-                    }
+                    transform: `scale(${isLandingMode ? 1 : 0.95})`,
+                    transition: 'transform 400ms ease-out',
                   }}
                 >
-                  {/* Shimmer effect on hover */}
-                  <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/30 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-700" style={{ clipPath: 'polygon(15% 0%, 85% 0%, 100% 50%, 85% 100%, 15% 100%, 0% 50%)' }} />
-                  
-                  {/* Warp effect when transitioning */}
-                  {isTransitioning && (
-                    <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/40 to-transparent animate-pulse" style={{ clipPath: 'polygon(15% 0%, 85% 0%, 100% 50%, 85% 100%, 15% 100%, 0% 50%)' }} />
-                  )}
-                  
-                  {/* Button Content */}
-                  <div className="flex items-center justify-center gap-3 relative z-10">
-                    <Train className="w-6 h-6" style={{ filter: `drop-shadow(0 0 8px ${selectedCity.regionColor || selectedCity.color})` }} />
-                    <span style={{ textShadow: `0 0 12px ${selectedCity.regionColor || selectedCity.color}80, 0 3px 8px rgba(0,0,0,0.9)` }}>
-                      {isTransitioning ? 'DEPARTING...' : `TRAVEL TO ${selectedCity.name.toUpperCase()}`}
-                    </span>
-                  </div>
-                </button>
-              )}
 
-              {/* Landing Mode Message */}
-              {isLandingMode && (
-                <div className="absolute inset-0 flex items-center justify-center pointer-events-none"
-                  style={{
-                    opacity: isLandingMode ? 1 : 0,
-                    transition: 'opacity 300ms ease-out',
-                  }}
-                >
-                  <div className="text-center">
-                    <h2 className="text-5xl font-black text-white/90 mb-4">Select a City</h2>
-                    <p className="text-xl text-white/70">to explore stores and neighborhoods</p>
-                  </div>
-                </div>
-              )}
-
-              {/* Hint Text (only when no selection) */}
-              {!selectedCity && (
-                <div className="absolute bottom-10 left-1/2 transform -translate-x-1/2 text-center">
-                  <div className="bg-black/40 backdrop-blur-md border border-cyan-400/30 rounded-full px-6 py-3 text-cyan-300 text-sm font-medium font-sans"
+                  {/* Atmospheric Glow Behind Preview */}
+                  <div
+                    className="absolute inset-0 rounded-2xl blur-2xl opacity-35 pointer-events-none"
                     style={{
-                      boxShadow: '0 0 20px rgba(34, 211, 238, 0.2), inset 0 0 30px rgba(0,0,0,0.3)',
-                      animation: 'pulse-glow 3s ease-in-out infinite',
+                      background: `radial-gradient(ellipse at center, ${displayCity.regionColor || displayCity.color}60, transparent 70%)`,
+                      transition: 'background 0.3s ease-in-out',
+                    }}
+                  />
+
+                  {/* Chunky Nintendo Border Glow */}
+                  <div
+                    className="absolute inset-1 rounded-2xl opacity-70 pointer-events-none"
+                    style={{
+                      background: `linear-gradient(135deg, ${displayCity.regionColor || displayCity.color}, ${displayCity.regionColor || displayCity.color}80)`,
+                      filter: 'blur(4px)',
+                      transition: 'background 0.3s ease-in-out',
+                    }}
+                  />
+
+                  {/* Large City Preview */}
+                  <div className="absolute inset-0 rounded-2xl overflow-hidden shadow-2xl"
+                    style={{
+                      border: `5px solid rgba(34, 211, 238, 0.9)`,
+                      boxShadow: `0 0 80px rgba(34, 211, 238, 0.5), 0 0 40px rgba(34, 211, 238, 0.3), inset 0 0 60px rgba(0,0,0,0.4), inset 0 6px 15px rgba(255,255,255,0.15)`,
+                      transition: 'border 300ms ease-in-out, box-shadow 300ms ease-in-out',
                     }}
                   >
-                    Hover over a city ticket to preview • Click to select
+                    {/* City Image with Ken Burns Effect */}
+                    <img
+                      src={currentImage}
+                      alt={displayCity.name}
+                      className="w-full h-full object-cover animate-ken-burns transition-opacity duration-500"
+                      loading="eager"
+                      fetchPriority="high"
+                      style={{
+                        imageRendering: 'auto',
+                        opacity: imageError ? 0 : 1,
+                        transition: 'opacity 300ms ease-in-out',
+                      }}
+                      onError={(e) => {
+                        const target = e.target as HTMLImageElement;
+                        setImageError(true);
+                        target.style.opacity = '0';
+                        const container = target.parentElement;
+                        if (container && !container.querySelector('.placeholder-text')) {
+                          const placeholder = document.createElement('div');
+                          placeholder.className = 'placeholder-text w-full h-full flex items-center justify-center absolute inset-0 bg-gradient-to-br from-indigo-900 to-purple-900';
+                          placeholder.innerHTML = `
+                            <div class="text-center">
+                              <div class="text-8xl font-black text-white/20 mb-4">${displayCity.nameJapanese}</div>
+                              <div class="text-4xl font-bold text-white/40">${displayCity.name}</div>
+                              <div class="text-lg text-white/30 mt-4">Image Coming Soon</div>
+                            </div>
+                          `;
+                          container.appendChild(placeholder);
+                        }
+                      }}
+                      onLoad={(e) => {
+                        const target = e.target as HTMLImageElement;
+                        setImageError(false);
+                        target.style.opacity = '1';
+                        const container = target.parentElement;
+                        if (container) {
+                          const placeholder = container.querySelector('.placeholder-text');
+                          if (placeholder) placeholder.remove();
+                        }
+                      }}
+                    />
+
+                    {/* Film Grain Overlay */}
+                    <div className="absolute inset-0 bg-[url('/film-grain.png')] opacity-[0.05] pointer-events-none mix-blend-overlay" />
+
+                    {/* Gradient Overlay at Bottom */}
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
+
+                    {/* Train Travel Button - Bottom Center with Kirby Aesthetic */}
+                    {selectedCity && (
+                      <button
+                        onClick={() => handleTravel(selectedCity)}
+                        className="absolute text-white font-black uppercase tracking-wider text-lg font-display relative overflow-hidden group active:scale-95 disabled:opacity-50 px-12 py-4 transition-all duration-300"
+                        disabled={isTransitioning}
+                        style={{
+                          bottom: '60px',
+                          left: '50%',
+                          transform: isTransitioning ? 'scale(0.9) translateY(5px) translateX(-50%)' : 'scale(1) translateY(0) translateX(-50%)',
+                          clipPath: 'polygon(15% 0%, 85% 0%, 100% 50%, 85% 100%, 15% 100%, 0% 50%)',
+                          background: `linear-gradient(135deg, ${selectedCity.regionColor || selectedCity.color}, ${selectedCity.regionColor || selectedCity.color}dd)`,
+                          border: `4px solid ${selectedCity.regionColor || selectedCity.color}`,
+                          boxShadow: `0 0 60px ${selectedCity.regionColor || selectedCity.color}80, 0 0 30px ${selectedCity.regionColor || selectedCity.color}60, 0 12px 40px rgba(0,0,0,0.6), inset 0 0 40px rgba(255,255,255,0.15)`,
+                          transition: isTransitioning
+                            ? 'all 0.6s ease-in-out'
+                            : 'all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1)',
+                          opacity: isTransitioning ? 0.7 : 1,
+                          zIndex: 100,
+                        }}
+                        onMouseEnter={(e) => {
+                          if (!isTransitioning) {
+                            e.currentTarget.style.transform = 'scale(1.12) translateY(-5px) translateX(-50%)';
+                            e.currentTarget.style.boxShadow = `0 0 80px ${selectedCity.regionColor || selectedCity.color}90, 0 0 40px ${selectedCity.regionColor || selectedCity.color}80, 0 16px 50px rgba(0,0,0,0.7), inset 0 0 50px rgba(255,255,255,0.2)`;
+                          }
+                        }}
+                        onMouseLeave={(e) => {
+                          if (!isTransitioning) {
+                            e.currentTarget.style.transform = 'scale(1) translateY(0) translateX(-50%)';
+                            e.currentTarget.style.boxShadow = `0 0 60px ${selectedCity.regionColor || selectedCity.color}80, 0 0 30px ${selectedCity.regionColor || selectedCity.color}60, 0 12px 40px rgba(0,0,0,0.6), inset 0 0 40px rgba(255,255,255,0.15)`;
+                          }
+                        }}
+                      >
+                        {/* Shimmer effect on hover */}
+                        <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/30 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-700" style={{ clipPath: 'polygon(15% 0%, 85% 0%, 100% 50%, 85% 100%, 15% 100%, 0% 50%)' }} />
+
+                        {/* Warp effect when transitioning */}
+                        {isTransitioning && (
+                          <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/40 to-transparent animate-pulse" style={{ clipPath: 'polygon(15% 0%, 85% 0%, 100% 50%, 85% 100%, 15% 100%, 0% 50%)' }} />
+                        )}
+
+                        {/* Button Content */}
+                        <div className="flex items-center justify-center gap-3 relative z-10">
+                          <Train className="w-6 h-6" style={{ filter: `drop-shadow(0 0 8px ${selectedCity.regionColor || selectedCity.color})` }} />
+                          <span style={{ textShadow: `0 0 12px ${selectedCity.regionColor || selectedCity.color}80, 0 3px 8px rgba(0,0,0,0.9)` }}>
+                            {isTransitioning ? 'DEPARTING...' : `TRAVEL TO ${selectedCity.name.toUpperCase()}`}
+                          </span>
+                        </div>
+                      </button>
+                    )}
+
+                    {/* Landing Mode Message */}
+                    {isLandingMode && (
+                      <div className="absolute inset-0 flex items-center justify-center pointer-events-none"
+                        style={{
+                          opacity: isLandingMode ? 1 : 0,
+                          transition: 'opacity 300ms ease-out',
+                        }}
+                      >
+                        <div className="text-center">
+                          <h2 className="text-5xl font-black text-white/90 mb-4">Select a City</h2>
+                          <p className="text-xl text-white/70">to explore stores and neighborhoods</p>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Hint Text (only when no selection) */}
+                    {!selectedCity && (
+                      <div className="absolute bottom-10 left-1/2 transform -translate-x-1/2 text-center">
+                        <div className="bg-black/40 backdrop-blur-md border border-cyan-400/30 rounded-full px-6 py-3 text-cyan-300 text-sm font-medium font-sans"
+                          style={{
+                            boxShadow: '0 0 20px rgba(34, 211, 238, 0.2), inset 0 0 30px rgba(0,0,0,0.3)',
+                            animation: 'pulse-glow 3s ease-in-out infinite',
+                          }}
+                        >
+                          Hover over a city ticket to preview • Click to select
+                        </div>
+                      </div>
+                    )}
                   </div>
                 </div>
-              )}
-            </div>
-          </div>
-            </div>
-          {/* Right side: Store Preview Section - Real store data integration */}
-          <div className={`flex-[22] flex flex-col items-start justify-start pl-2 pr-2 pt-2 pb-0 relative transition-all duration-300 h-full ${isLandingMode ? '' : 'flex-[22]'}`}
-            style={{
-              background: 'linear-gradient(135deg, rgba(0,0,0,0.3), rgba(0,0,0,0.2))',
-              borderLeft: '3px solid rgba(34, 211, 238, 0.2)',
-              opacity: isLandingMode ? 0 : 1,
-              transform: isLandingMode ? 'translateX(40px)' : 'translateX(0)',
-              transition: 'all 400ms ease-out 200ms',
-              pointerEvents: isLandingMode ? 'none' : 'auto',
-              visibility: isLandingMode ? 'hidden' : 'visible',
-              maxWidth: '380px',
-            }}
-          >
-            {/* Store Preview Grid */}
-            <div className="w-full flex flex-col">
-              <h4 className="text-xs font-display uppercase tracking-widest text-cyan-300/40 pb-2 mb-2 flex-shrink-0">Featured</h4>
+              </div>
 
-              {/* Fetch and display real store data */}
-              {displayCity && !displayCity.isRandom && (
-                <StorePreviews cityName={displayCity.name} hoveredCardIndex={hoveredCardIndex} handleCardMouseEnter={handleCardMouseEnter} handleCardMouseLeave={handleCardMouseLeave} cityColor={displayCity.regionColor || displayCity.color} />
-              )}
+              {/* Right Column: Store Grid - PERFECT ALIGNMENT */}
+              <div
+                className="relative h-full flex flex-col transition-all duration-300"
+                style={{
+                  background: 'linear-gradient(135deg, rgba(0,0,0,0.3), rgba(0,0,0,0.2))',
+                  borderLeft: '3px solid rgba(34, 211, 238, 0.2)',
+                  opacity: isLandingMode ? 0 : 1,
+                  transform: isLandingMode ? 'translateX(40px)' : 'translateX(0)',
+                  transition: 'all 400ms ease-out 200ms',
+                  pointerEvents: isLandingMode ? 'none' : 'auto',
+                  visibility: isLandingMode ? 'hidden' : 'visible',
+                  maxWidth: '380px',
+                }}
+              >
+                <h4 className="text-xs font-display uppercase tracking-widest text-cyan-300/40 pb-2 mb-4 flex-shrink-0">
+                  Featured
+                </h4>
 
-              {/* Mystery city - no stores */}
-              {displayCity?.isRandom && (
-                <div className="w-full h-full flex items-center justify-center text-cyan-300/20 text-xs font-serif italic">
-                  Select a city to see stores
+                {/* CRITICAL: Perfect 2x3 Grid with Equal Cells */}
+                <div className="grid flex-1 gap-3" style={{ 
+                  gridTemplateRows: 'repeat(3, 1fr)',
+                  gridTemplateColumns: 'repeat(2, 1fr)',
+                }}>
+                  {/* Fetch and display real store data */}
+                  {displayCity && !displayCity.isRandom && (
+                    <StorePreviews
+                      cityName={displayCity.name}
+                      hoveredCardIndex={hoveredCardIndex}
+                      handleCardMouseEnter={handleCardMouseEnter}
+                      handleCardMouseLeave={handleCardMouseLeave}
+                      cityColor={displayCity.regionColor || displayCity.color}
+                    />
+                  )}
+
+                  {/* Mystery city - no stores */}
+                  {displayCity?.isRandom && (
+                    <div className="col-span-2 row-span-3 flex items-center justify-center text-cyan-300/20 text-xs font-serif italic">
+                      Select a city to see stores
+                    </div>
+                  )}
                 </div>
-              )}
+              </div>
+
             </div>
           </div>
-        </div>
         </div>
 
         {/* Train Line Carousel - Below Hero Section */}
