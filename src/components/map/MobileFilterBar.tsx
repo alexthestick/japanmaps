@@ -1,6 +1,8 @@
-import { Search } from 'lucide-react';
+import { useState } from 'react';
+import { Search, ShoppingBag, Utensils, Coffee, Home, Landmark, MapPin } from 'lucide-react';
 import { FilterPill } from './FilterPill';
 import type { MainCategory } from '../../types/store';
+import { FASHION_SUB_CATEGORIES, FOOD_SUB_CATEGORIES, HOME_GOODS_SUB_CATEGORIES } from '../../lib/constants';
 
 interface MobileFilterBarProps {
   // Category state
@@ -24,6 +26,15 @@ interface MobileFilterBarProps {
   onOpenCityDrawer: () => void;
 }
 
+// Category definitions with icons and subcategories
+const CATEGORIES = [
+  { id: 'Fashion' as MainCategory, label: 'Fashion', Icon: ShoppingBag, subcategories: FASHION_SUB_CATEGORIES },
+  { id: 'Food' as MainCategory, label: 'Food', Icon: Utensils, subcategories: FOOD_SUB_CATEGORIES },
+  { id: 'Coffee' as MainCategory, label: 'Coffee', Icon: Coffee, subcategories: [] },
+  { id: 'Home Goods' as MainCategory, label: 'Home Goods', Icon: Home, subcategories: HOME_GOODS_SUB_CATEGORIES },
+  { id: 'Museum' as MainCategory, label: 'Museum', Icon: Landmark, subcategories: [] },
+];
+
 /**
  * Mobile-only floating filter bar for map view
  * Floats over map like Google Maps with search bar + category pills
@@ -39,19 +50,8 @@ export function MobileFilterBar({
   onSearchChange,
   onOpenCityDrawer,
 }: MobileFilterBarProps) {
-
-  // Category mapping: Category name → Icons & subcategories
-  const categoryMap: Record<string, { icon: string; subcategories?: string[] }> = {
-    'Cities': { icon: '🏙️' },
-    'Fashion': { icon: '👔', subcategories: ['Vintage', 'Thrift', 'Designer', 'Streetwear', 'Boutique'] },
-    'Food': { icon: '🍜' },
-    'Coffee': { icon: '☕' },
-    'Home Goods': { icon: '🏠' },
-    'Museum': { icon: '🏛️' },
-  };
-
-  // Order: Cities first, then actual main categories
-  const categoryOrder = ['Cities', 'Fashion', 'Food', 'Coffee', 'Home Goods', 'Museum'];
+  // Track which category's subcategories are expanded
+  const [expandedCategory, setExpandedCategory] = useState<MainCategory | null>(null);
 
   return (
     <div className="fixed top-20 left-0 right-0 z-30 px-4 pointer-events-none">
@@ -75,23 +75,52 @@ export function MobileFilterBar({
 
         {/* Category Pills - Horizontal Scroll (Google Maps style) */}
         <div className="flex overflow-x-auto gap-2 scrollbar-hide pb-2">
-          {categoryOrder.map((categoryName) => {
-            const { icon, subcategories } = categoryMap[categoryName];
-            const isActive = categoryName === 'Cities'
-              ? !!(selectedCity || selectedNeighborhood)
-              : selectedMainCategory === categoryName;
+          {/* Cities pill first */}
+          <FilterPill
+            label={
+              <div className="flex items-center gap-1.5">
+                <MapPin className="w-4 h-4" />
+                <span>{selectedCity ? (selectedNeighborhood ? `${selectedCity} - ${selectedNeighborhood}` : selectedCity) : 'Cities'}</span>
+              </div>
+            }
+            active={!!(selectedCity || selectedNeighborhood)}
+            hasDropdown={true}
+            onClick={onOpenCityDrawer}
+          />
+
+          {/* Main category pills */}
+          {CATEGORIES.map((cat) => {
+            const Icon = cat.Icon;
+            const isActive = selectedMainCategory === cat.id;
+            const hasSubcategories = cat.subcategories.length > 0;
 
             return (
               <FilterPill
-                key={categoryName}
-                label={`${icon} ${categoryName}`}
+                key={cat.id}
+                label={
+                  <div className="flex items-center gap-1.5">
+                    <Icon className="w-4 h-4" />
+                    <span>{cat.label}</span>
+                  </div>
+                }
                 active={isActive}
-                hasDropdown={categoryName === 'Cities'}
+                hasDropdown={hasSubcategories}
                 onClick={() => {
-                  if (categoryName === 'Cities') {
-                    onOpenCityDrawer();
+                  // Option A: Tap anywhere on pill toggles subcategories
+                  if (hasSubcategories) {
+                    // Toggle both selection and expansion
+                    if (isActive && expandedCategory === cat.id) {
+                      // If already selected and expanded, deselect and collapse
+                      onMainCategoryChange(null);
+                      setExpandedCategory(null);
+                    } else {
+                      // Select and expand
+                      onMainCategoryChange(cat.id);
+                      setExpandedCategory(cat.id);
+                    }
                   } else {
-                    onMainCategoryChange(categoryName as MainCategory);
+                    // Categories without subcategories just toggle selection
+                    onMainCategoryChange(isActive ? null : cat.id);
                   }
                 }}
               />
@@ -99,10 +128,10 @@ export function MobileFilterBar({
           })}
         </div>
 
-        {/* Subcategory Pills - Show when Fashion is selected */}
-        {selectedMainCategory === 'Fashion' && categoryMap['Fashion'].subcategories && (
+        {/* Subcategory Pills - Show when a category is expanded */}
+        {expandedCategory && CATEGORIES.find(c => c.id === expandedCategory)?.subcategories && (
           <div className="flex overflow-x-auto gap-2 scrollbar-hide pb-2">
-            {categoryMap['Fashion'].subcategories!.map((subcat) => (
+            {CATEGORIES.find(c => c.id === expandedCategory)!.subcategories.map((subcat) => (
               <FilterPill
                 key={subcat}
                 label={subcat}

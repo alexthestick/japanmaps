@@ -1,7 +1,8 @@
 import { ChevronDown } from 'lucide-react';
+import type { ReactNode } from 'react';
 
 interface FilterPillProps {
-  label: string;
+  label: string | ReactNode;
   active?: boolean;
   hasDropdown?: boolean;
   onClick: () => void;
@@ -30,7 +31,7 @@ export function FilterPill({ label, active = false, hasDropdown = false, onClick
           : '0 2px 8px rgba(0, 0, 0, 0.3)',
       }}
     >
-      <span>{label}</span>
+      {typeof label === 'string' ? <span>{label}</span> : label}
       {hasDropdown && (
         <ChevronDown
           className={`w-3.5 h-3.5 ${active ? 'text-cyan-300' : 'text-gray-400'}`}
