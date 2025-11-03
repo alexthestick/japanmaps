@@ -4,7 +4,6 @@ import { AnimatePresence } from 'framer-motion';
 import { MapView } from '../components/map/MapView';
 import { StoreList } from '../components/store/StoreList';
 import { StoreDetail } from '../components/store/StoreDetail';
-import { Header } from '../components/layout/Header';
 import { ScrollingBanner } from '../components/layout/ScrollingBanner';
 // import { StoreDetailModal } from '../components/store/StoreDetailModal'; // Not needed in new design
 import { FloatingSearchBar } from '../components/map/FloatingSearchBar';
@@ -14,6 +13,7 @@ import { ViewToggleButton } from '../components/map/ViewToggleButton';
 import { MobileFilterBar } from '../components/map/MobileFilterBar';
 import { ListViewSidebar } from '../components/filters/ListViewSidebar';
 import { SortDropdown } from '../components/store/SortDropdown';
+import { BottomSheet } from '../components/common/BottomSheet';
 import { useStores } from '../hooks/useStores';
 import { useIsMobile } from '../hooks/useMediaQuery';
 import { Loader } from '../components/common/Loader';
@@ -21,6 +21,7 @@ import type { Store, MainCategory } from '../types/store';
 import { sortStores } from '../utils/helpers';
 import { getCityDataWithCounts, type CityData } from '../utils/cityData';
 import type { SearchSuggestion } from '../components/store/SearchAutocomplete';
+import { MAJOR_CITIES_JAPAN, LOCATIONS } from '../lib/constants';
 
 export function HomePage() {
   const [searchParams, setSearchParams] = useSearchParams();
@@ -221,9 +222,6 @@ export function HomePage() {
 
   return (
     <>
-      {/* Header - Always visible */}
-      <Header />
-
       {/* Scrolling Banner - Desktop only */}
       {!isMobile && <ScrollingBanner />}
 
@@ -312,6 +310,108 @@ export function HomePage() {
               </>
             )}
           </AnimatePresence>
+
+          {/* City/Neighborhood Selector Bottom Sheet (Mobile only) */}
+          {isMobile && (
+            <BottomSheet
+              isOpen={showCityDrawer}
+              onClose={() => setShowCityDrawer(false)}
+              title="Select Location"
+            >
+              <div className="space-y-6">
+                {/* City Selection */}
+                <div>
+                  <h3 className="text-xs font-black uppercase tracking-wider text-cyan-300 mb-3 italic" style={{ textShadow: '0 0 10px rgba(34, 217, 238, 0.3)' }}>
+                    City
+                  </h3>
+                  <div className="space-y-2">
+                    {/* All Cities option */}
+                    <button
+                      onClick={() => {
+                        handleCityChange(null);
+                        setShowCityDrawer(false);
+                      }}
+                      className={`w-full px-4 py-3 rounded-lg text-left transition-all ${
+                        !selectedCity
+                          ? 'bg-gradient-to-r from-cyan-500/20 to-blue-500/20 border-2 border-cyan-400/50 text-cyan-300'
+                          : 'bg-gray-800 border border-gray-700 text-gray-300 hover:bg-gray-700'
+                      }`}
+                      style={!selectedCity ? { boxShadow: '0 0 15px rgba(34, 217, 238, 0.2)' } : {}}
+                    >
+                      All Cities
+                    </button>
+
+                    {/* Individual cities */}
+                    {MAJOR_CITIES_JAPAN.map((city) => (
+                      <button
+                        key={city}
+                        onClick={() => {
+                          handleCityChange(city);
+                          // Don't close yet if city has neighborhoods
+                          if (!LOCATIONS[city] || LOCATIONS[city].length === 0) {
+                            setShowCityDrawer(false);
+                          }
+                        }}
+                        className={`w-full px-4 py-3 rounded-lg text-left transition-all ${
+                          selectedCity === city
+                            ? 'bg-gradient-to-r from-cyan-500/20 to-blue-500/20 border-2 border-cyan-400/50 text-cyan-300'
+                            : 'bg-gray-800 border border-gray-700 text-gray-300 hover:bg-gray-700'
+                        }`}
+                        style={selectedCity === city ? { boxShadow: '0 0 15px rgba(34, 217, 238, 0.2)' } : {}}
+                      >
+                        {city}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Neighborhood Selection (show if city selected and has neighborhoods) */}
+                {selectedCity && LOCATIONS[selectedCity] && LOCATIONS[selectedCity].length > 0 && (
+                  <div>
+                    <h3 className="text-xs font-black uppercase tracking-wider text-cyan-300 mb-3 italic" style={{ textShadow: '0 0 10px rgba(34, 217, 238, 0.3)' }}>
+                      Neighborhoods in {selectedCity}
+                    </h3>
+                    <div className="space-y-2">
+                      {/* All neighborhoods option */}
+                      <button
+                        onClick={() => {
+                          setSelectedNeighborhood(null);
+                          setShowCityDrawer(false);
+                        }}
+                        className={`w-full px-4 py-3 rounded-lg text-left transition-all ${
+                          !selectedNeighborhood
+                            ? 'bg-gradient-to-r from-cyan-500/20 to-blue-500/20 border-2 border-cyan-400/50 text-cyan-300'
+                            : 'bg-gray-800 border border-gray-700 text-gray-300 hover:bg-gray-700'
+                        }`}
+                        style={!selectedNeighborhood ? { boxShadow: '0 0 15px rgba(34, 217, 238, 0.2)' } : {}}
+                      >
+                        All Neighborhoods
+                      </button>
+
+                      {/* Individual neighborhoods */}
+                      {LOCATIONS[selectedCity].map((neighborhood) => (
+                        <button
+                          key={neighborhood}
+                          onClick={() => {
+                            setSelectedNeighborhood(neighborhood);
+                            setShowCityDrawer(false);
+                          }}
+                          className={`w-full px-4 py-3 rounded-lg text-left transition-all ${
+                            selectedNeighborhood === neighborhood
+                              ? 'bg-gradient-to-r from-cyan-500/20 to-blue-500/20 border-2 border-cyan-400/50 text-cyan-300'
+                              : 'bg-gray-800 border border-gray-700 text-gray-300 hover:bg-gray-700'
+                          }`}
+                          style={selectedNeighborhood === neighborhood ? { boxShadow: '0 0 15px rgba(34, 217, 238, 0.2)' } : {}}
+                        >
+                          {neighborhood}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+            </BottomSheet>
+          )}
         </div>
       ) : (
         // ========== LIST VIEW - Sidebar + Grid Layout ==========
