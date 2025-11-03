@@ -66,4 +66,30 @@ export function sortStores(stores: Store[], sortBy: string): Store[] {
   }
 }
 
+/**
+ * Throttle function - limits how often a function can be called
+ * Ensures function executes at most once every `limit` milliseconds
+ * Perfect for expensive operations like map position updates
+ */
+export function throttle<T extends (...args: any[]) => void>(
+  func: T,
+  limit: number
+): (...args: Parameters<T>) => void {
+  let inThrottle: boolean;
+  let lastResult: any;
+
+  return function(this: any, ...args: Parameters<T>) {
+    if (!inThrottle) {
+      inThrottle = true;
+      lastResult = func.apply(this, args);
+
+      setTimeout(() => {
+        inThrottle = false;
+      }, limit);
+    }
+
+    return lastResult;
+  };
+}
+
 

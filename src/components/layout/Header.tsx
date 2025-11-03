@@ -40,52 +40,88 @@ export function Header({ onCitiesClick }: HeaderProps) {
   }, [styleMode]);
 
   return (
-    <header className="bg-white border-b border-gray-200 sticky top-0 z-40">
-      <div className="w-full px-6">
+    <header className="relative bg-gradient-to-r from-gray-900 via-black to-gray-900 border-b-2 border-cyan-400/30 sticky top-0 z-40 overflow-hidden">
+      {/* Film grain */}
+      <div className="absolute inset-0 film-grain opacity-20 pointer-events-none" />
+
+      {/* Corner decorations */}
+      <div className="absolute top-2 left-4 w-3 h-3 border-t-2 border-l-2 border-cyan-400/40" />
+      <div className="absolute top-2 right-4 w-3 h-3 border-t-2 border-r-2 border-purple-400/40" />
+
+      <div className="w-full px-6 relative z-10">
         <div className="flex items-center justify-between h-16">
-          {/* Logo - Left aligned */}
-          <Link to="/" className="flex items-center gap-2 text-xl font-bold text-gray-900">
-            <MapPin className="w-6 h-6 text-blue-600" />
-            <span>Lost in Transit</span>
+          {/* Logo - Left aligned with Kirby style */}
+          <Link to="/" className="flex items-center gap-2 text-xl font-black italic text-white hover:scale-105 transition-transform">
+            <MapPin className="w-6 h-6 text-cyan-400" style={{ filter: 'drop-shadow(0 0 8px rgba(34, 217, 238, 0.6))' }} />
+            <span className="text-transparent bg-clip-text bg-gradient-to-r from-cyan-300 via-blue-300 to-purple-300" style={{ textShadow: '0 0 20px rgba(34, 217, 238, 0.3)' }}>
+              Lost in Transit
+            </span>
           </Link>
 
-          {/* Desktop Navigation */}
-          <nav className="hidden md:flex items-center gap-6">
-            <Link to="/map?view=map" className="text-gray-700 hover:text-gray-900 transition-colors">
-              Map
+          {/* Desktop Navigation - Kirby themed */}
+          <nav className="hidden md:flex items-center gap-3">
+            {/* Primary Navigation (Map, List, Cities, Neighborhoods) - More prominent */}
+            <Link
+              to="/map?view=map"
+              className="px-4 py-2 text-base font-bold text-cyan-300 hover:text-white transition-all rounded-lg hover:bg-gradient-to-r hover:from-cyan-500/20 hover:to-blue-500/20 border border-transparent hover:border-cyan-400/50 italic"
+              style={{ textShadow: '0 0 10px rgba(34, 217, 238, 0.3)' }}
+            >
+              MAP
             </Link>
-            <Link to="/map?view=list" className="text-gray-700 hover:text-gray-900 transition-colors">
-              List
+            <Link
+              to="/map?view=list"
+              className="px-4 py-2 text-base font-bold text-cyan-300 hover:text-white transition-all rounded-lg hover:bg-gradient-to-r hover:from-cyan-500/20 hover:to-blue-500/20 border border-transparent hover:border-cyan-400/50 italic"
+              style={{ textShadow: '0 0 10px rgba(34, 217, 238, 0.3)' }}
+            >
+              LIST
             </Link>
-            <Link to="/cities" className="text-gray-700 hover:text-gray-900 transition-colors">
-              Cities
+            <Link
+              to="/cities"
+              className="px-4 py-2 text-base font-bold text-cyan-300 hover:text-white transition-all rounded-lg hover:bg-gradient-to-r hover:from-cyan-500/20 hover:to-blue-500/20 border border-transparent hover:border-cyan-400/50 italic"
+              style={{ textShadow: '0 0 10px rgba(34, 217, 238, 0.3)' }}
+            >
+              CITIES
             </Link>
-            <Link to="/neighborhoods" className="text-gray-700 hover:text-gray-900 transition-colors">
-              Neighborhoods
+            <Link
+              to="/neighborhoods"
+              className="px-4 py-2 text-base font-bold text-cyan-300 hover:text-white transition-all rounded-lg hover:bg-gradient-to-r hover:from-cyan-500/20 hover:to-blue-500/20 border border-transparent hover:border-cyan-400/50 italic"
+              style={{ textShadow: '0 0 10px rgba(34, 217, 238, 0.3)' }}
+            >
+              NEIGHBORHOODS
             </Link>
-            <Link to="/blog" className="text-gray-700 hover:text-gray-900 transition-colors">
-              Blog
+
+            {/* Divider */}
+            <div className="w-px h-6 bg-cyan-400/30 mx-1" />
+
+            {/* Secondary Navigation */}
+            <Link to="/blog" className="px-4 py-2 text-base font-bold text-yellow-400 hover:text-yellow-300 transition-all rounded-lg hover:bg-yellow-500/20 border border-transparent hover:border-yellow-400/50 italic" style={{ textShadow: '0 0 10px rgba(250, 204, 21, 0.4)' }}>
+              BLOG
             </Link>
-            <Link to="/about" className="text-gray-700 hover:text-gray-900 transition-colors">
+            <Link to="/about" className="px-3 py-1 text-sm font-medium text-gray-400 hover:text-cyan-300 transition-colors">
               About
             </Link>
 
-            {/* Saved Stores */}
+            {/* Saved Stores - Kirby themed */}
             <Link
               to="/saved"
-              className="relative text-gray-700 hover:text-red-500 transition-all p-2 rounded-lg hover:bg-red-50"
+              className="relative text-cyan-400 hover:text-cyan-300 transition-all p-2 rounded-lg hover:bg-cyan-500/10"
               title="View saved stores"
             >
-              <Heart className={`w-5 h-5 transition-all ${savedCount > 0 ? 'fill-red-500 text-red-500' : ''}`} />
+              <Heart className={`w-5 h-5 transition-all ${savedCount > 0 ? 'fill-cyan-400 text-cyan-400' : ''}`} style={{ filter: savedCount > 0 ? 'drop-shadow(0 0 6px rgba(34, 217, 238, 0.6))' : '' }} />
               {savedCount > 0 && (
-                <span className="absolute -top-1 -right-1 min-w-[20px] h-5 px-1.5 bg-red-500 text-white text-xs rounded-full flex items-center justify-center font-bold shadow-lg animate-pulse">
+                <span className="absolute -top-1 -right-1 min-w-[20px] h-5 px-1.5 bg-gradient-to-r from-cyan-500 to-blue-500 text-white text-xs rounded-full flex items-center justify-center font-bold shadow-lg border border-cyan-300/50"
+                      style={{ boxShadow: '0 0 10px rgba(34, 217, 238, 0.5)' }}>
                   {savedCount}
                 </span>
               )}
             </Link>
 
+            {/* Suggest Store button - Kirby gradient */}
             <Link to="/suggest">
-              <Button size="sm">Suggest a Store</Button>
+              <button className="relative px-4 py-2 bg-gradient-to-r from-cyan-400 via-blue-500 to-purple-500 text-white text-sm font-bold rounded-lg hover:scale-105 transition-all border-2 border-cyan-300/50 overflow-hidden">
+                <div className="absolute inset-0 film-grain opacity-10" />
+                <span className="relative z-10">SUGGEST STORE</span>
+              </button>
             </Link>
 
             {/* Day/Night toggle in header */}
@@ -94,64 +130,77 @@ export function Header({ onCitiesClick }: HeaderProps) {
             </div>
           </nav>
 
-          {/* Mobile Menu Button */}
+          {/* Mobile Menu Button - Kirby themed */}
           <button
             onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-            className="md:hidden text-gray-700"
+            className="md:hidden text-cyan-400 hover:text-cyan-300 transition-colors"
           >
             {mobileMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
           </button>
         </div>
 
-        {/* Mobile Navigation */}
+        {/* Mobile Navigation - Kirby themed */}
         {mobileMenuOpen && (
-          <div className="md:hidden py-4 border-t border-gray-200">
-            <nav className="flex flex-col gap-4">
+          <div className="md:hidden py-4 border-t border-cyan-400/20">
+            <nav className="flex flex-col gap-3">
               <Link
-                to="/map"
+                to="/map?view=map"
                 onClick={() => setMobileMenuOpen(false)}
-                className="text-gray-700 hover:text-gray-900 transition-colors"
+                className="text-cyan-300 hover:text-white font-bold transition-colors px-3 py-2 rounded-lg hover:bg-gradient-to-r hover:from-cyan-500/20 hover:to-blue-500/20 italic"
               >
-                Map
+                MAP
+              </Link>
+              <Link
+                to="/map?view=list"
+                onClick={() => setMobileMenuOpen(false)}
+                className="text-cyan-300 hover:text-white font-bold transition-colors px-3 py-2 rounded-lg hover:bg-gradient-to-r hover:from-cyan-500/20 hover:to-blue-500/20 italic"
+              >
+                LIST
               </Link>
               <Link
                 to="/cities"
                 onClick={() => setMobileMenuOpen(false)}
-                className="text-gray-700 hover:text-gray-900 transition-colors"
+                className="text-cyan-300 hover:text-white font-bold transition-colors px-3 py-2 rounded-lg hover:bg-gradient-to-r hover:from-cyan-500/20 hover:to-blue-500/20 italic"
               >
-                Cities
+                CITIES
               </Link>
               <Link
                 to="/neighborhoods"
                 onClick={() => setMobileMenuOpen(false)}
-                className="text-gray-700 hover:text-gray-900 transition-colors"
+                className="text-cyan-300 hover:text-white font-bold transition-colors px-3 py-2 rounded-lg hover:bg-gradient-to-r hover:from-cyan-500/20 hover:to-blue-500/20 italic"
               >
-                Neighborhoods
+                NEIGHBORHOODS
               </Link>
+
+              <div className="h-px bg-cyan-400/30 my-1" />
+
               <Link
                 to="/blog"
                 onClick={() => setMobileMenuOpen(false)}
-                className="text-gray-700 hover:text-gray-900 transition-colors"
+                className="text-yellow-400 hover:text-yellow-300 font-bold transition-colors px-3 py-2 rounded-lg hover:bg-yellow-500/20 italic"
               >
-                Blog
+                BLOG
               </Link>
               <Link
                 to="/about"
                 onClick={() => setMobileMenuOpen(false)}
-                className="text-gray-700 hover:text-gray-900 transition-colors"
+                className="text-gray-400 hover:text-cyan-300 transition-colors px-3 py-1"
               >
                 About
               </Link>
               <Link
                 to="/saved"
                 onClick={() => setMobileMenuOpen(false)}
-                className="flex items-center gap-2 text-gray-700 hover:text-gray-900 transition-colors"
+                className="flex items-center gap-2 text-cyan-400 hover:text-cyan-300 transition-colors px-3 py-1"
               >
                 <Heart className="w-5 h-5" />
                 Saved Stores {savedCount > 0 && `(${savedCount})`}
               </Link>
               <Link to="/suggest" onClick={() => setMobileMenuOpen(false)}>
-                <Button size="sm" className="w-full">Suggest a Store</Button>
+                <button className="relative w-full px-4 py-2 bg-gradient-to-r from-cyan-400 via-blue-500 to-purple-500 text-white text-sm font-bold rounded-lg border-2 border-cyan-300/50 overflow-hidden">
+                  <div className="absolute inset-0 film-grain opacity-10" />
+                  <span className="relative z-10">SUGGEST STORE</span>
+                </button>
               </Link>
             </nav>
           </div>

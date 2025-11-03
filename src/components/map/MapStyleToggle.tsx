@@ -8,7 +8,7 @@ interface MapStyleToggleProps {
 }
 
 export function MapStyleToggle({ mode, onChange, placement = 'overlay', compact = true }: MapStyleToggleProps) {
-  const wrapperBase = 'pointer-events-auto bg-white/90 backdrop-blur-sm border border-gray-200 rounded-full shadow-md overflow-hidden inline-flex';
+  const wrapperBase = 'pointer-events-auto bg-gray-900/95 backdrop-blur-md border-2 border-cyan-400/40 rounded-full shadow-md overflow-hidden inline-flex relative';
   const overlayPos = 'absolute right-3 md:right-4 bottom-4 md:bottom-auto md:top-24 z-10';
   const inlinePos = '';
   const wrapperClass = placement === 'overlay' ? `${wrapperBase} ${overlayPos}` : `${wrapperBase} ${inlinePos}`;
@@ -20,10 +20,12 @@ export function MapStyleToggle({ mode, onChange, placement = 'overlay', compact 
   const showLabels = !compact;
 
   return (
-    <div className={wrapperClass}>
+    <div className={wrapperClass} style={{ boxShadow: '0 0 20px rgba(34, 217, 238, 0.3)' }}>
+      {/* Film grain */}
+      <div className="absolute inset-0 film-grain opacity-10 pointer-events-none rounded-full" />
       <button
         onClick={() => onChange('day')}
-        className={`${padX} ${padY} inline-flex items-center gap-1 ${textCls} ${mode === 'day' ? 'text-blue-600 bg-white' : 'text-gray-600 hover:bg-gray-50'}`}
+        className={`${padX} ${padY} inline-flex items-center gap-1 ${textCls} relative z-10 transition-all ${mode === 'day' ? 'text-white bg-gradient-to-r from-cyan-500/30 to-blue-500/30' : 'text-gray-300 hover:bg-gray-800'}`}
         aria-label="Day style"
         title="Day"
       >
@@ -32,7 +34,7 @@ export function MapStyleToggle({ mode, onChange, placement = 'overlay', compact 
       </button>
       <button
         onClick={() => onChange('night')}
-        className={`${padX} ${padY} inline-flex items-center gap-1 ${textCls} ${mode === 'night' ? 'text-blue-600 bg-white' : 'text-gray-600 hover:bg-gray-50'}`}
+        className={`${padX} ${padY} inline-flex items-center gap-1 ${textCls} relative z-10 transition-all ${mode === 'night' ? 'text-white bg-gradient-to-r from-cyan-500/30 to-blue-500/30' : 'text-gray-300 hover:bg-gray-800'}`}
         aria-label="Night style"
         title="Night"
       >

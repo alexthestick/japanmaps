@@ -74,7 +74,11 @@ export function PhotoLightbox({
         <img
           src={photos[currentIndex]}
           alt={`${storeName} - Photo ${currentIndex + 1}`}
-          className="max-h-full max-w-full object-contain"
+          className="object-contain"
+          style={{
+            maxWidth: '85vw',
+            maxHeight: '80vh',
+          }}
         />
 
         {/* Next Button */}

@@ -14,9 +14,9 @@ import BulkImportPage from './pages/BulkImportPage';
 import { DiagnosticPage } from './pages/DiagnosticPage';
 import { NotFoundPage } from './pages/NotFoundPage';
 import { CityPage } from './pages/CityPage';
+import { NeighborhoodPage } from './pages/NeighborhoodPage';
 import { CitiesPage } from './pages/CitiesPage';
 import { NeighborhoodsPage } from './pages/NeighborhoodsPage';
-import { ArchiveStoresJapan } from './pages/ArchiveStoresJapan';
 import { motion } from 'framer-motion';
 
 function AnimatedRoutes() {
@@ -66,6 +66,16 @@ function AnimatedRoutes() {
               <HomePage />
             </motion.div>
           } />
+          <Route path="city/:citySlug/:neighborhoodSlug" element={
+            <motion.div
+              initial={{ opacity: 0, x: 40 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0, x: -40 }}
+              transition={{ duration: 0.25, ease: 'easeOut' }}
+            >
+              <NeighborhoodPage />
+            </motion.div>
+          } />
           <Route path="city/:slug" element={
             <motion.div
               initial={{ opacity: 0, x: 40 }}
@@ -89,11 +99,6 @@ function AnimatedRoutes() {
           <Route path="blog/:slug" element={
             <motion.div initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -6 }}>
               <BlogPostPage />
-            </motion.div>
-          } />
-          <Route path="archive-stores-japan" element={
-            <motion.div initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -6 }}>
-              <ArchiveStoresJapan />
             </motion.div>
           } />
           <Route path="about" element={

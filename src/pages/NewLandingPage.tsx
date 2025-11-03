@@ -4,9 +4,9 @@ import Lenis from 'lenis';
 import { HeroSection } from '../components/landing/HeroSection';
 import { StatsBar } from '../components/landing/StatsBar';
 import { CitiesCarousel } from '../components/landing/CitiesCarousel';
-import { FeaturedStoresCarousel } from '../components/landing/FeaturedStoresCarousel';
+import { TrainTicketMenu } from '../components/landing/TrainTicketMenu';
 import { CategoryShowcase } from '../components/landing/CategoryShowcase';
-import { MapPreviewCTA } from '../components/landing/MapPreviewCTA';
+import { CompactFooter } from '../components/landing/CompactFooter';
 
 export function NewLandingPage() {
   const { scrollYProgress } = useScroll();
@@ -46,14 +46,14 @@ export function NewLandingPage() {
       {/* Cities Carousel */}
       <CitiesCarousel />
 
-      {/* Featured Stores Carousel */}
-      <FeaturedStoresCarousel />
-
       {/* Category Showcase */}
       <CategoryShowcase />
 
-      {/* Map Preview CTA */}
-      <MapPreviewCTA />
+      {/* Train Ticket Menu Cards */}
+      <TrainTicketMenu />
+
+      {/* Compact Footer */}
+      <CompactFooter />
     </div>
   );
 }

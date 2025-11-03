@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect, useRef } from 'react';
+import { useState, useCallback, useEffect, useRef, useImperativeHandle, forwardRef, useMemo } from 'react';
 import Map, { Marker, NavigationControl } from 'react-map-gl';
 import { MAPBOX_TOKEN, MAP_STYLE_DAY, MAP_STYLE_NIGHT, DEFAULT_CENTER, DEFAULT_ZOOM } from '../../lib/mapbox';
 import { CITY_COORDINATES } from '../../lib/constants';
@@ -22,7 +22,11 @@ interface MapViewProps {
   onStyleModeChange?: (mode: 'day' | 'night') => void;
 }
 
-export function MapView({ stores, onStoreClick, selectedCity, selectedNeighborhood, isSearchActive = false, activeMainCategory, activeSubCategory, styleMode: controlledStyleMode, onStyleModeChange }: MapViewProps) {
+export interface MapViewHandle {
+  flyToStore: (latitude: number, longitude: number) => void;
+}
+
+export const MapView = forwardRef<MapViewHandle, MapViewProps>(({ stores, onStoreClick, selectedCity, selectedNeighborhood, isSearchActive = false, activeMainCategory, activeSubCategory, styleMode: controlledStyleMode, onStyleModeChange }, ref) => {
   const [viewState, setViewState] = useState({
     longitude: DEFAULT_CENTER.longitude,
     latitude: DEFAULT_CENTER.latitude,
@@ -31,6 +35,49 @@ export function MapView({ stores, onStoreClick, selectedCity, selectedNeighborho
   
   const [hoveredStoreId, setHoveredStoreId] = useState<string | null>(null);
   const mapRef = useRef<MapboxMap | null>(null);
+
+  // 🎮 DISCOVERY LENS: Active Zone System
+  const activeZoneCenter = useMemo(() => {
+    if (!mapRef.current) return null;
+    const center = mapRef.current.getCenter();
+    return { lng: center.lng, lat: center.lat };
+  }, [viewState.longitude, viewState.latitude]);
+
+  // Calculate adaptive radius based on store density
+  // 🎬 OPTION 1: Activate at zoom 16 (sync with full pins)
+  const calculateActiveZoneRadius = useMemo(() => {
+    // Only activate at street-level zoom (> 16)
+    if (viewState.zoom <= 16) return null;
+
+    // Count stores in viewport
+    if (!mapRef.current) return 500; // Default 500m
+
+    const bounds = mapRef.current.getBounds();
+    const storesInView = stores.filter(store => {
+      return store.latitude >= bounds.getSouth() &&
+             store.latitude <= bounds.getNorth() &&
+             store.longitude >= bounds.getWest() &&
+             store.longitude <= bounds.getEast();
+    });
+
+    const density = storesInView.length;
+
+    // Dense area (40+ stores): 300m radius
+    // Medium area (20-40 stores): 500m radius
+    // Sparse area (< 20 stores): 800m radius
+    if (density >= 40) return 300;
+    if (density >= 20) return 500;
+    return 800;
+  }, [stores, viewState]);
+
+  // 🎬 OPTION 4: Progressive glow intensity (15-16 = subtle hint, 16+ = full)
+  const lensIntensity = useMemo(() => {
+    if (viewState.zoom < 15) return 0;
+    if (viewState.zoom >= 16) return 1;
+    // Gradual fade-in between 15-16
+    return (viewState.zoom - 15) / 1; // 0 to 1
+  }, [viewState.zoom]);
+
   const getInitialStyleMode = (): 'day' | 'night' => {
     try {
       const saved = typeof window !== 'undefined' ? localStorage.getItem('map-style-mode') : null;
@@ -155,8 +202,23 @@ export function MapView({ stores, onStoreClick, selectedCity, selectedNeighborho
 
   const handleMarkerClick = useCallback((e: any, store: Store) => {
     e.originalEvent.stopPropagation();
+    console.log('Marker clicked:', store.name);
     onStoreClick(store);
   }, [onStoreClick]);
+
+  // Expose flyToStore method via ref
+  useImperativeHandle(ref, () => ({
+    flyToStore: (latitude: number, longitude: number) => {
+      if (mapRef.current) {
+        mapRef.current.flyTo({
+          center: [longitude, latitude],
+          zoom: 16,
+          duration: 1500,
+          essential: true
+        });
+      }
+    }
+  }), []);
 
   // Debug logging
   console.log('MapView received stores:', stores);
@@ -210,8 +272,8 @@ export function MapView({ stores, onStoreClick, selectedCity, selectedNeighborho
         }}
       >
         <NavigationControl position="top-right" />
-        
-        {/* Store Markers */}
+
+        {/* Store Markers - All visible with zoom-based rendering */}
         {stores.map(store => (
           <Marker
             key={store.id}
@@ -225,6 +287,7 @@ export function MapView({ stores, onStoreClick, selectedCity, selectedNeighborho
               activeFilter={activeSubCategory}
               activeMainCategory={activeMainCategory}
               onHoverChange={setHoveredStoreId}
+              currentZoom={viewState.zoom}
             />
           </Marker>
         ))}
@@ -233,21 +296,148 @@ export function MapView({ stores, onStoreClick, selectedCity, selectedNeighborho
       {/* Map style toggle - Removed: Now only controlled by header */}
       {/* Map Legend - Removed: Now using FloatingMapLegend in HomePage */}
 
+      {/* 🎮 DISCOVERY LENS: Progressive glow with dramatic entrance */}
+      {lensIntensity > 0 && activeZoneCenter && mapRef.current && (
+        <div className="absolute inset-0 pointer-events-none overflow-hidden">
+          {(() => {
+            const centerPoint = mapRef.current!.project([activeZoneCenter.lng, activeZoneCenter.lat]);
+
+            // Calculate radius - if no active zone yet (zoom 15-16), use default for hint
+            const radiusMeters = calculateActiveZoneRadius || 500;
+            const metersToPixels = (radiusMeters / 1000) * (156543.03392 * Math.cos(activeZoneCenter.lat * Math.PI / 180) / Math.pow(2, viewState.zoom));
+
+            // 🎬 Subtle hint at zoom 15, full glow at zoom 16+
+            const isFullMode = lensIntensity >= 1;
+
+            return (
+              <>
+                {/* Main lens glow */}
+                <div
+                  className={`absolute ${isFullMode ? 'animate-in zoom-in-50 duration-500' : ''} ${isFullMode ? 'animate-pulse' : ''}`}
+                  style={{
+                    left: `${centerPoint.x}px`,
+                    top: `${centerPoint.y}px`,
+                    width: `${metersToPixels * 2}px`,
+                    height: `${metersToPixels * 2}px`,
+                    transform: 'translate(-50%, -50%)',
+                    borderRadius: '50%',
+                    background: `radial-gradient(circle, rgba(34, 217, 238, ${0.15 * lensIntensity}) 0%, rgba(59, 130, 246, ${0.1 * lensIntensity}) 40%, rgba(168, 85, 247, ${0.05 * lensIntensity}) 70%, transparent 100%)`,
+                    boxShadow: isFullMode ? `
+                      0 0 60px 20px rgba(34, 217, 238, ${0.3 * lensIntensity}),
+                      0 0 100px 40px rgba(59, 130, 246, ${0.2 * lensIntensity}),
+                      0 0 140px 60px rgba(168, 85, 247, ${0.1 * lensIntensity}),
+                      inset 0 0 60px rgba(34, 217, 238, ${0.1 * lensIntensity})
+                    ` : `0 0 40px 10px rgba(200, 200, 200, ${0.2 * lensIntensity})`,
+                    border: `2px solid rgba(${isFullMode ? '34, 217, 238' : '200, 200, 200'}, ${0.3 * lensIntensity})`,
+                    transition: 'all 0.6s cubic-bezier(0.4, 0, 0.2, 1)',
+                    opacity: lensIntensity,
+                  }}
+                >
+                  {/* Inner glow ring - only in full mode */}
+                  {isFullMode && (
+                    <div
+                      className="absolute inset-0 rounded-full animate-pulse"
+                      style={{
+                        border: '1px solid rgba(59, 130, 246, 0.4)',
+                        animationDelay: '0.3s',
+                        animationDuration: '2s',
+                      }}
+                    />
+                  )}
+                </div>
+
+                {/* 🎬 Cyan flash on activation (appears once at zoom 16) */}
+                {isFullMode && viewState.zoom >= 16 && viewState.zoom < 16.1 && (
+                  <div
+                    className="absolute animate-in fade-in duration-300"
+                    style={{
+                      left: `${centerPoint.x}px`,
+                      top: `${centerPoint.y}px`,
+                      width: `${metersToPixels * 2.2}px`,
+                      height: `${metersToPixels * 2.2}px`,
+                      transform: 'translate(-50%, -50%)',
+                      borderRadius: '50%',
+                      background: 'radial-gradient(circle, rgba(34, 217, 238, 0.4) 0%, transparent 60%)',
+                      animation: 'flash-fade 0.8s ease-out forwards',
+                    }}
+                  />
+                )}
+              </>
+            );
+          })()}
+        </div>
+      )}
+
+
       {/* Store Labels - Rendered outside Map component for absolute positioning */}
+      {/* PHASE 1.6: Limit to 50 closest stores to viewport center for performance */}
       <div className="absolute inset-0 pointer-events-none">
-        {stores.map((store, index) => (
-          <StoreLabel
-            key={`label-${store.id}`}
-            store={store}
-            map={mapRef.current}
-            isSearchActive={isSearchActive}
-            isHovered={hoveredStoreId === store.id}
-            index={index}
-          />
-        ))}
+        {(() => {
+          // If there are <= 50 stores, show all labels
+          if (stores.length <= 50) {
+            return stores.map((store, index) => (
+              <StoreLabel
+                key={`label-${store.id}`}
+                store={store}
+                map={mapRef.current}
+                isSearchActive={isSearchActive}
+                isHovered={hoveredStoreId === store.id}
+                index={index}
+                activeZoneCenter={activeZoneCenter}
+                activeZoneRadius={calculateActiveZoneRadius}
+              />
+            ));
+          }
+
+          // Calculate map center and sort stores by distance
+          const mapCenter = mapRef.current?.getCenter();
+          if (!mapCenter) {
+            // Fallback: show first 50 stores
+            return stores.slice(0, 50).map((store, index) => (
+              <StoreLabel
+                key={`label-${store.id}`}
+                store={store}
+                map={mapRef.current}
+                isSearchActive={isSearchActive}
+                isHovered={hoveredStoreId === store.id}
+                index={index}
+                activeZoneCenter={activeZoneCenter}
+                activeZoneRadius={calculateActiveZoneRadius}
+              />
+            ));
+          }
+
+          // Sort stores by distance to map center (closest first)
+          const storesWithDistance = stores.map(store => {
+            const dx = store.longitude - mapCenter.lng;
+            const dy = store.latitude - mapCenter.lat;
+            const distance = Math.sqrt(dx * dx + dy * dy);
+            return { store, distance };
+          });
+
+          storesWithDistance.sort((a, b) => a.distance - b.distance);
+
+          // Take closest 50 stores
+          const closestStores = storesWithDistance.slice(0, 50);
+
+          return closestStores.map(({ store }, index) => (
+            <StoreLabel
+              key={`label-${store.id}`}
+              store={store}
+              map={mapRef.current}
+              isSearchActive={isSearchActive}
+              isHovered={hoveredStoreId === store.id}
+              index={index}
+              activeZoneCenter={activeZoneCenter}
+              activeZoneRadius={calculateActiveZoneRadius}
+            />
+          ));
+        })()}
       </div>
     </div>
   );
-}
+});
+
+MapView.displayName = 'MapView';
 
 

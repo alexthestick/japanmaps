@@ -114,9 +114,16 @@ export function FloatingCategoryPanel({
   return (
     <>
       <div className="absolute top-5 left-[365px] z-20 scale-90 origin-top-left">
-        {/* Main Category Pills */}
-        <div className="bg-white/90 backdrop-blur-md rounded-xl shadow-lg border border-gray-200/50 px-2.5 py-1.5">
-          <div className="flex items-center gap-1.5">
+        {/* Main Category Pills with Kirby theme */}
+        <div className="relative bg-gray-900/95 backdrop-blur-md rounded-xl shadow-lg border-2 border-cyan-400/40 px-2.5 py-1.5 overflow-hidden" style={{ boxShadow: '0 0 20px rgba(34, 217, 238, 0.3)' }}>
+          {/* Film grain */}
+          <div className="absolute inset-0 film-grain opacity-10 pointer-events-none" />
+
+          {/* Corner decorations */}
+          <div className="absolute top-1 left-1 w-2 h-2 border-t-2 border-l-2 border-cyan-400/60 rounded-tl-lg z-0" />
+          <div className="absolute bottom-1 right-1 w-2 h-2 border-b-2 border-r-2 border-purple-400/60 rounded-br-lg z-0" />
+
+          <div className="flex items-center gap-1.5 relative z-10">
             {CATEGORIES.map((cat) => {
               const Icon = cat.icon;
               const isSelected = selectedMainCategory === cat.id;
@@ -128,10 +135,11 @@ export function FloatingCategoryPanel({
                   className={`
                     relative rounded-lg transition-all flex items-center
                     ${isSelected
-                      ? 'bg-gray-900 text-white shadow-sm'
-                      : 'bg-transparent text-gray-700 hover:bg-gray-100'
+                      ? 'bg-gradient-to-r from-cyan-500/30 to-blue-500/30 text-white shadow-sm border border-cyan-400/50'
+                      : 'bg-transparent text-gray-300 hover:bg-gray-800'
                     }
                   `}
+                  style={isSelected ? { boxShadow: '0 0 10px rgba(34, 217, 238, 0.2)' } : {}}
                 >
                   {/* Main button - Click to select category */}
                   <button
@@ -152,9 +160,9 @@ export function FloatingCategoryPanel({
                     </button>
                   )}
 
-                  {/* Blue indicator dot when subcategories are active */}
+                  {/* Cyan indicator dot when subcategories are active */}
                   {hasActiveSubcategories && isSelected && (
-                    <span className="absolute -top-1 -right-1 w-1.5 h-1.5 bg-blue-500 rounded-full" />
+                    <span className="absolute -top-1 -right-1 w-1.5 h-1.5 bg-cyan-400 rounded-full" style={{ boxShadow: '0 0 6px rgba(34, 217, 238, 0.8)' }} />
                   )}
                 </div>
               );
@@ -164,12 +172,13 @@ export function FloatingCategoryPanel({
             <button
               onClick={handleCitiesClick}
               className={`
-                px-3 py-1.5 rounded-lg text-sm font-medium transition-all flex items-center gap-1.5 border-l border-gray-300 ml-1 pl-2.5
+                px-3 py-1.5 rounded-lg text-sm font-medium transition-all flex items-center gap-1.5 border-l border-cyan-400/30 ml-1 pl-2.5
                 ${selectedCity
-                  ? 'bg-blue-600 text-white shadow-sm'
-                  : 'bg-transparent text-gray-700 hover:bg-gray-100'
+                  ? 'bg-gradient-to-r from-cyan-500/30 to-blue-500/30 text-white shadow-sm border border-cyan-400/50'
+                  : 'bg-transparent text-gray-300 hover:bg-gray-800'
                 }
               `}
+              style={selectedCity ? { boxShadow: '0 0 10px rgba(34, 217, 238, 0.2)' } : {}}
             >
               <MapPin className="w-3.5 h-3.5" />
               <span className="max-w-[120px] truncate">{citiesButtonText}</span>
@@ -195,9 +204,10 @@ export function FloatingCategoryPanel({
                 key={sub}
                 className={`flex items-center gap-3 px-4 py-3 rounded-lg cursor-pointer transition-all group border ${
                   isSelected
-                    ? 'bg-blue-50 border-blue-200 hover:bg-blue-100'
-                    : 'bg-white border-gray-200 hover:bg-gray-50 hover:border-gray-300'
+                    ? 'bg-gradient-to-r from-cyan-500/20 to-blue-500/20 border-cyan-400/50 hover:from-cyan-500/30 hover:to-blue-500/30'
+                    : 'bg-gray-800 border-gray-700 hover:bg-gray-700 hover:border-gray-600'
                 }`}
+                style={isSelected ? { boxShadow: '0 0 15px rgba(34, 217, 238, 0.2)' } : {}}
               >
                 <input
                   type="checkbox"
@@ -209,10 +219,10 @@ export function FloatingCategoryPanel({
                         : [...prev, sub]
                     );
                   }}
-                  className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-2 focus:ring-blue-500 focus:ring-offset-0"
+                  className="w-4 h-4 text-cyan-500 bg-gray-700 border-cyan-400/50 rounded focus:ring-2 focus:ring-cyan-500 focus:ring-offset-0 focus:ring-offset-gray-900"
                 />
-                <span className={`text-sm font-medium transition-colors ${
-                  isSelected ? 'text-blue-700' : 'text-gray-900 group-hover:text-gray-700'
+                <span className={`text-sm font-bold transition-colors ${
+                  isSelected ? 'text-cyan-300' : 'text-gray-300 group-hover:text-white'
                 }`}>
                   {sub}
                 </span>
@@ -232,12 +242,12 @@ export function FloatingCategoryPanel({
       >
         <div className="grid grid-cols-2 gap-6 min-h-[400px]">
           {/* Left Column - City Selection */}
-          <div className="border-r border-gray-200 pr-6">
-            <h3 className="text-xs font-bold uppercase tracking-wider text-gray-500 mb-4">
+          <div className="border-r border-cyan-400/20 pr-6">
+            <h3 className="text-xs font-black uppercase tracking-wider text-cyan-300 mb-4 italic" style={{ textShadow: '0 0 10px rgba(34, 217, 238, 0.3)' }}>
               City
             </h3>
             <div className="space-y-1 max-h-[450px] overflow-y-auto pr-2 custom-scrollbar">
-              <label className="flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-gray-50 cursor-pointer transition-all group">
+              <label className="flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-gray-800 cursor-pointer transition-all group">
                 <input
                   type="radio"
                   checked={tempCity === null}
@@ -245,16 +255,16 @@ export function FloatingCategoryPanel({
                     setTempCity(null);
                     setTempNeighborhoods([]);
                   }}
-                  className="w-4 h-4 text-blue-600 border-gray-300 focus:ring-2 focus:ring-blue-500 focus:ring-offset-0"
+                  className="w-4 h-4 text-cyan-500 bg-gray-700 border-cyan-400/50 focus:ring-2 focus:ring-cyan-500 focus:ring-offset-0 focus:ring-offset-gray-900"
                 />
-                <span className={`text-sm font-medium transition-colors ${tempCity === null ? 'text-blue-600' : 'text-gray-900 group-hover:text-gray-700'}`}>
+                <span className={`text-sm font-bold transition-colors ${tempCity === null ? 'text-cyan-300' : 'text-gray-400 group-hover:text-white'}`}>
                   All Cities
                 </span>
               </label>
               {MAJOR_CITIES_JAPAN.map((city) => (
                 <label
                   key={city}
-                  className="flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-gray-50 cursor-pointer transition-all group"
+                  className="flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-gray-800 cursor-pointer transition-all group"
                 >
                   <input
                     type="radio"
@@ -263,9 +273,9 @@ export function FloatingCategoryPanel({
                       setTempCity(city);
                       setTempNeighborhoods([]);
                     }}
-                    className="w-4 h-4 text-blue-600 border-gray-300 focus:ring-2 focus:ring-blue-500 focus:ring-offset-0"
+                    className="w-4 h-4 text-cyan-500 bg-gray-700 border-cyan-400/50 focus:ring-2 focus:ring-cyan-500 focus:ring-offset-0 focus:ring-offset-gray-900"
                   />
-                  <span className={`text-sm font-medium transition-colors ${tempCity === city ? 'text-blue-600' : 'text-gray-900 group-hover:text-gray-700'}`}>
+                  <span className={`text-sm font-bold transition-colors ${tempCity === city ? 'text-cyan-300' : 'text-gray-400 group-hover:text-white'}`}>
                     {city}
                   </span>
                 </label>
@@ -275,7 +285,7 @@ export function FloatingCategoryPanel({
 
           {/* Right Column - Neighborhood Selection */}
           <div className="pl-2">
-            <h3 className="text-xs font-bold uppercase tracking-wider text-gray-500 mb-4">
+            <h3 className="text-xs font-black uppercase tracking-wider text-cyan-300 mb-4 italic" style={{ textShadow: '0 0 10px rgba(34, 217, 238, 0.3)' }}>
               Neighborhoods {tempCity && `in ${tempCity}`}
             </h3>
             {tempCity && availableNeighborhoods.length > 0 ? (
@@ -283,7 +293,7 @@ export function FloatingCategoryPanel({
                 {availableNeighborhoods.map((neighborhood) => (
                   <label
                     key={neighborhood}
-                    className="flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-gray-50 cursor-pointer transition-all group"
+                    className="flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-gray-800 cursor-pointer transition-all group"
                   >
                     <input
                       type="checkbox"
@@ -295,9 +305,9 @@ export function FloatingCategoryPanel({
                             : [...prev, neighborhood]
                         );
                       }}
-                      className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-2 focus:ring-blue-500 focus:ring-offset-0"
+                      className="w-4 h-4 text-cyan-500 bg-gray-700 border-cyan-400/50 rounded focus:ring-2 focus:ring-cyan-500 focus:ring-offset-0 focus:ring-offset-gray-900"
                     />
-                    <span className={`text-sm font-medium transition-colors ${tempNeighborhoods.includes(neighborhood) ? 'text-blue-600' : 'text-gray-700 group-hover:text-gray-900'}`}>
+                    <span className={`text-sm font-bold transition-colors ${tempNeighborhoods.includes(neighborhood) ? 'text-cyan-300' : 'text-gray-400 group-hover:text-white'}`}>
                       {neighborhood}
                     </span>
                   </label>
@@ -305,7 +315,7 @@ export function FloatingCategoryPanel({
               </div>
             ) : (
               <div className="flex items-center justify-center h-[300px] text-center px-4">
-                <p className="text-sm text-gray-400">
+                <p className="text-sm text-gray-500 italic">
                   {tempCity ? 'No neighborhoods available' : 'Select a city to view neighborhoods'}
                 </p>
               </div>

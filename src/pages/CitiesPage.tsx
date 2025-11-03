@@ -11,6 +11,7 @@ import {
 } from '../lib/constants';
 import { getNeighborhoodStoreCounts } from '../utils/neighborhoodData';
 import { useCityStorePreviews } from '../hooks/useCityStorePreviews';
+import { cityToSlug } from '../utils/cityData';
 import type { Store } from '../types/store';
 
 interface CityData {
@@ -233,14 +234,14 @@ export function CitiesPage() {
   // Image loading state management
   const [imageError, setImageError] = useState(false);
 
-  // Landing state management
+  // Landing state management - start true since we default to Mystery
   const [isLandingMode, setIsLandingMode] = useState(true);
 
   // Carousel state (merged from hook)
   const CLONE_COUNT = 9;
   const CARD_WIDTH = 320; // 280px + 40px gap
   const TRANSITION_MS = 300;
-  const [displayIndex, setDisplayIndex] = useState(CLONE_COUNT); // Start at first real city (Random)
+  const [displayIndex, setDisplayIndex] = useState(CLONE_COUNT); // Start at Mystery/Random (first city)
   const [shouldTransition, setShouldTransition] = useState(true);
   const [isCarouselTransitioning, setIsCarouselTransitioning] = useState(false);
 
@@ -370,7 +371,7 @@ export function CitiesPage() {
     }
   }, [isLandingMode, displayCity]);
 
-  // Handle city selection + auto-center
+  // Handle city selection + auto-center (does NOT navigate, just selects)
   const handleCitySelect = (city: CityData, clickedIndex?: number) => {
     setSelectedCity(city);
     setIsLandingMode(false); // Exit landing mode on city selection
@@ -411,17 +412,15 @@ export function CitiesPage() {
     }
   };
 
-  // Handle travel/navigate to city - Phase 8: Cinematic transition
+  // Handle travel/navigate to city - Navigate to city page
   const handleTravel = (city: CityData) => {
     if (city.isRandom) return;
     setIsTransitioningState(true);
 
     // Trigger warp effect and fade out
     setTimeout(() => {
-      const params = new URLSearchParams();
-      params.set('view', 'map');
-      params.set('city', city.name);
-      navigate(`/map?${params.toString()}`);
+      const slug = cityToSlug(city.name);
+      navigate(`/city/${slug}`);
     }, 600); // Allow warp animation to play
   };
 
@@ -434,10 +433,11 @@ export function CitiesPage() {
     setHoveredCardIndex(null);
   }, []);
 
-  // Initialize selectedCity on mount (fix initial position)
+  // Initialize selectedCity on mount (set to Mystery/Random as default)
   useEffect(() => {
     if (cities.length > 0 && !selectedCity) {
-      setSelectedCity(cities[0]); // Set to Random
+      setSelectedCity(cities[0]); // Set to Random/Mystery
+      setIsLandingMode(true); // Start in landing mode
     }
   }, [cities.length, selectedCity, cities]);
 
@@ -613,7 +613,7 @@ export function CitiesPage() {
             minHeight: '140px',
           }}
         >
-          <div className="max-w-6xl mx-auto relative z-10 h-full flex items-center justify-between">
+          <div className="max-w-6xl mx-auto relative z-10 h-full flex items-center justify-center">
             {/* Left: Vertical Japanese Text */}
             <div className="absolute left-0 top-1/2 -translate-y-1/2 text-cyan-300/40 font-serif text-sm tracking-wider"
               style={{
@@ -625,8 +625,8 @@ export function CitiesPage() {
               日本の街を巡る旅
             </div>
 
-            {/* Center: MASSIVE CITIES Text - Fills vertical space */}
-            <div className="flex-1 flex items-center pl-8">
+            {/* Center: MASSIVE CITIES Text - Centered */}
+            <div className="flex-1 flex items-center justify-center">
               <h1 className="font-black text-white font-display"
                 style={{
                   fontSize: 'clamp(5rem, 11vw, 8.5rem)',
@@ -642,109 +642,6 @@ export function CitiesPage() {
                 CITIES
               </h1>
             </div>
-
-            {/* Right: Mini Carousel Ticket Card */}
-            {displayCity && (
-              <div
-                className="rounded-lg overflow-hidden transition-all duration-300 relative backdrop-blur-md flex-shrink-0"
-                style={{
-                  width: '240px',
-                  height: '130px',
-                  border: `3px solid ${displayCity.regionColor || displayCity.color}`,
-                  boxShadow: `0 0 30px ${displayCity.regionColor || displayCity.color}60, 0 0 15px ${displayCity.regionColor || displayCity.color}40, inset 0 0 20px rgba(0,0,0,0.4)`,
-                  backgroundColor: 'rgba(0,0,0,0.7)',
-                  transition: 'all 0.3s ease',
-                }}
-              >
-                {/* Perforated Edge (Left Side) */}
-                <div className="absolute left-0 top-0 bottom-0 w-2.5 flex flex-col justify-around py-1.5">
-                  {Array.from({ length: 10 }).map((_, i) => (
-                    <div key={i} className="w-1 h-1 rounded-full bg-white/20" />
-                  ))}
-                </div>
-
-                {/* Card Content */}
-                <div className="flex h-full">
-                  {/* Left: City Image (55%) */}
-                  <div className="flex-[55] relative ml-2.5 bg-gradient-to-br from-indigo-900 to-purple-900">
-                    <img
-                      src={displayCity.thumbnailImage}
-                      alt={displayCity.name}
-                      className="w-full h-full object-cover"
-                      loading="eager"
-                      onError={(e) => {
-                        if (!displayCity.isRandom) {
-                          const target = e.target as HTMLImageElement;
-                          target.style.display = 'none';
-                        }
-                      }}
-                    />
-                    <div className="absolute inset-0 bg-gradient-to-r from-transparent to-black/30 pointer-events-none" />
-                  </div>
-
-                  {/* Right: City Info (45%) */}
-                  <div className="flex-[45] flex flex-col justify-center items-start px-3 relative z-10">
-                    {!displayCity.isRandom ? (
-                      <>
-                        <div className="text-white font-black text-lg leading-tight mb-0.5 font-display uppercase"
-                          style={{
-                            textShadow: `0 0 12px ${displayCity.regionColor || displayCity.color}80, 0 1px 3px rgba(0,0,0,0.8)`,
-                            letterSpacing: '0.02em',
-                          }}
-                        >
-                          {displayCity.name}
-                        </div>
-                        <div className="text-xs font-medium mb-1.5 font-sans"
-                          style={{
-                            color: displayCity.regionColor || displayCity.color,
-                            textShadow: `0 0 8px ${displayCity.regionColor || displayCity.color}60`,
-                            letterSpacing: '0.05em',
-                          }}
-                        >
-                          {displayCity.nameJapanese}
-                        </div>
-                        <div className="flex flex-col gap-1 text-[10px] font-sans">
-                          <div className="px-2 py-0.5 rounded-full bg-black/50 border"
-                            style={{
-                              borderColor: `${displayCity.regionColor || displayCity.color}70`,
-                              color: displayCity.regionColor || displayCity.color,
-                              fontWeight: '700',
-                              textTransform: 'uppercase',
-                              letterSpacing: '0.05em',
-                              boxShadow: `0 0 8px ${displayCity.regionColor || displayCity.color}30`,
-                            }}
-                          >
-                            {displayCity.region}
-                          </div>
-                          <div className="px-2 py-0.5 rounded-full bg-black/50 border"
-                            style={{
-                              borderColor: `${displayCity.regionColor || displayCity.color}70`,
-                              color: displayCity.regionColor || displayCity.color,
-                              fontWeight: '700',
-                              letterSpacing: '0.05em',
-                              boxShadow: `0 0 8px ${displayCity.regionColor || displayCity.color}30`,
-                            }}
-                          >
-                            ⭐ {displayCity.storeCount}
-                          </div>
-                        </div>
-                      </>
-                    ) : (
-                      <div className="text-white font-black text-base font-display uppercase">Mystery</div>
-                    )}
-                  </div>
-                </div>
-
-                {/* Scan Line Effect */}
-                <div
-                  className="absolute inset-0 pointer-events-none"
-                  style={{
-                    background: `linear-gradient(transparent 50%, ${displayCity.regionColor || displayCity.color}08 50%)`,
-                    backgroundSize: '100% 3px',
-                  }}
-                />
-              </div>
-            )}
           </div>
 
           {/* THICC Diagonal Accent Stripe - Bottom of masthead */}
@@ -761,14 +658,20 @@ export function CitiesPage() {
         {/* Phase 1b: Hero Section - REDESIGNED FOR PERFECT ALIGNMENT */}
         <div className="flex-1 px-8 min-h-0">
           <div className="max-w-7xl mx-auto h-full">
-            <div className="grid h-full gap-6" style={{ gridTemplateColumns: '3fr 1fr', alignItems: 'stretch' }}>
+            <div className="grid h-full gap-6" style={{ gridTemplateColumns: isLandingMode ? '1fr' : '3fr 1fr', alignItems: 'stretch' }}>
 
-              {/* Left Column: City Preview */}
-              <div className="relative min-h-0 h-full flex items-center justify-center">
-                <div className="relative w-full aspect-[16/10]"
+              {/* Left Column: City Preview - Full width in landing mode */}
+              <div className="relative min-h-0 h-full flex items-center justify-center"
+                style={{
+                  gridColumn: isLandingMode ? '1 / -1' : 'auto',
+                }}
+              >
+                <div className="relative w-full"
                   style={{
+                    aspectRatio: isLandingMode ? '21/9' : '16/10',
                     transform: `scale(${isLandingMode ? 1 : 0.95})`,
-                    transition: 'transform 400ms ease-out',
+                    transition: 'transform 400ms ease-out, aspect-ratio 400ms ease-out',
+                    maxWidth: isLandingMode ? '100%' : 'auto',
                   }}
                 >
 
