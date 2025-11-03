@@ -161,6 +161,9 @@ export interface Database {
           referenced_stores: string[];
           published_at: string;
           updated_at: string;
+          article_type: 'standard' | 'parallax_store_guide';
+          intro_content: string | null;
+          sections_data: Json | null;
         };
         Insert: {
           id?: string;
@@ -172,6 +175,9 @@ export interface Database {
           referenced_stores?: string[];
           published_at?: string;
           updated_at?: string;
+          article_type?: 'standard' | 'parallax_store_guide';
+          intro_content?: string | null;
+          sections_data?: Json | null;
         };
         Update: {
           id?: string;
@@ -183,6 +189,9 @@ export interface Database {
           referenced_stores?: string[];
           published_at?: string;
           updated_at?: string;
+          article_type?: 'standard' | 'parallax_store_guide';
+          intro_content?: string | null;
+          sections_data?: Json | null;
         };
       };
     };

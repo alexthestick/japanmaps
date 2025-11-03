@@ -122,3 +122,11 @@ export function cityToSlug(name: string): string {
 export function slugToCity(slug: string): string {
   return decodeURIComponent(slug.replace(/-/g, ' ')).replace(/\b\w/g, (c) => c.toUpperCase());
 }
+
+export function neighborhoodToSlug(name: string): string {
+  return encodeURIComponent(name.toLowerCase().replace(/\s+/g, '-'));
+}
+
+export function slugToNeighborhood(slug: string): string {
+  return decodeURIComponent(slug.replace(/-/g, ' ')).replace(/\b\w/g, (c) => c.toUpperCase());
+}

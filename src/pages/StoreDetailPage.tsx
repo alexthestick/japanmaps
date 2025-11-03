@@ -100,7 +100,15 @@ export function StoreDetailPage() {
     : ['https://images.unsplash.com/photo-1441986300917-64674bd600d8?w=1200&h=800&fit=crop'];
 
   return (
-    <div className="min-h-screen bg-white">
+    <div className="min-h-screen bg-gradient-to-b from-gray-900 via-black to-gray-900 text-white">
+      {/* Film Grain Overlay */}
+      <div
+        className="fixed inset-0 opacity-[0.15] pointer-events-none z-0"
+        style={{
+          backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 400 400' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E")`,
+        }}
+      />
+
       {/* Back Button - Fixed */}
       <button
         onClick={() => {
@@ -115,17 +123,62 @@ export function StoreDetailPage() {
             navigate(fallback);
           }
         }}
-        className="fixed top-6 left-6 z-50 flex items-center gap-2 px-4 py-2 bg-white/90 backdrop-blur-sm text-gray-900 rounded-full shadow-lg hover:bg-white transition-all"
+        className="fixed top-6 left-6 z-50 flex items-center gap-2 px-4 py-2 bg-black/60 backdrop-blur-sm text-cyan-300 rounded-full shadow-lg hover:bg-black/80 transition-all border border-cyan-500/30 hover:border-cyan-500/50"
       >
         <ArrowLeft className="w-5 h-5" />
-        <span className="font-medium">Back</span>
+        <span className="font-bold">BACK</span>
       </button>
 
-      {/* Airbnb-Style Image Gallery */}
-      <div className="max-w-7xl mx-auto px-6 md:px-12 pt-24 pb-8">
+      {/* Hero Section with Breadcrumb */}
+      <div className="relative z-10 pt-24 pb-8 px-6 md:px-12">
+        <div className="max-w-7xl mx-auto">
+          {/* Breadcrumb */}
+          <div className="flex items-center gap-2 text-sm mb-6">
+            <button
+              onClick={() => navigate('/cities')}
+              className="text-gray-400 hover:text-cyan-300 transition-colors"
+            >
+              {store.city}
+            </button>
+            {store.neighborhood && (
+              <>
+                <span className="text-gray-600">/</span>
+                <span className="text-gray-400">{store.neighborhood}</span>
+              </>
+            )}
+            <span className="text-gray-600">/</span>
+            <span className="text-cyan-300 font-bold">{store.name}</span>
+          </div>
+
+          {/* Store Title */}
+          <div className="flex items-center gap-4 mb-3">
+            <h1
+              className="text-4xl md:text-6xl font-black italic uppercase tracking-tight"
+              style={{
+                textShadow: '0 0 30px rgba(34, 217, 238, 0.5), 0 0 60px rgba(34, 217, 238, 0.3)',
+                color: '#22D9EE'
+              }}
+            >
+              {store.name}
+            </h1>
+            {store.verified && (
+              <span className="px-3 py-1 bg-cyan-500/20 text-cyan-300 text-xs font-bold uppercase rounded-full border border-cyan-500/30">
+                Verified
+              </span>
+            )}
+          </div>
+
+          <p className="text-lg text-gray-400">
+            {store.neighborhood ? `${store.neighborhood}, ` : ''}{store.city}
+          </p>
+        </div>
+      </div>
+
+      {/* Photo Gallery with Kirby Theme */}
+      <div className="relative z-10 max-w-7xl mx-auto px-6 md:px-12 pb-8">
         {photos.length === 1 ? (
           /* Single Image */
-          <div className="relative h-[400px] rounded-xl overflow-hidden">
+          <div className="relative h-[400px] rounded-xl overflow-hidden border-2 border-cyan-500/30 shadow-[0_0_30px_rgba(34,217,238,0.2)]">
             <img
               src={photos[0]}
               alt={store.name}
@@ -134,24 +187,30 @@ export function StoreDetailPage() {
           </div>
         ) : photos.length === 2 ? (
           /* Two Images - Side by Side */
-          <div className="grid grid-cols-2 gap-2 h-[400px] rounded-xl overflow-hidden">
+          <div className="grid grid-cols-2 gap-3 h-[400px]">
             {photos.slice(0, 2).map((photo, index) => (
-              <div key={index} className="relative h-full cursor-pointer group">
+              <div
+                key={index}
+                className="relative h-full cursor-pointer group rounded-xl overflow-hidden border-2 border-cyan-500/30 hover:border-cyan-500/60 transition-all shadow-[0_0_20px_rgba(34,217,238,0.2)] hover:shadow-[0_0_40px_rgba(34,217,238,0.4)]"
+                onClick={() => {
+                  setCurrentImageIndex(index);
+                  setLightboxOpen(true);
+                }}
+              >
                 <img
                   src={photo}
                   alt={`${store.name} - ${index + 1}`}
                   className="w-full h-full object-cover transition-transform group-hover:scale-105"
-                  onClick={() => setCurrentImageIndex(index)}
                 />
               </div>
             ))}
           </div>
         ) : (
           /* Airbnb Layout - 1 Large + 4 Small Grid */
-          <div className="grid grid-cols-4 grid-rows-2 gap-2 h-[400px] rounded-xl overflow-hidden">
+          <div className="grid grid-cols-4 grid-rows-2 gap-3 h-[400px]">
             {/* Large Main Image - Takes up 2x2 grid */}
             <div
-              className="col-span-2 row-span-2 relative cursor-pointer group"
+              className="col-span-2 row-span-2 relative cursor-pointer group rounded-xl overflow-hidden border-2 border-cyan-500/30 hover:border-cyan-500/60 transition-all shadow-[0_0_20px_rgba(34,217,238,0.2)] hover:shadow-[0_0_40px_rgba(34,217,238,0.4)]"
               onClick={() => {
                 setCurrentImageIndex(0);
                 setLightboxOpen(true);
@@ -168,7 +227,7 @@ export function StoreDetailPage() {
             {photos.slice(1, 5).map((photo, index) => (
               <div
                 key={index + 1}
-                className="relative cursor-pointer group"
+                className="relative cursor-pointer group rounded-xl overflow-hidden border-2 border-cyan-500/30 hover:border-cyan-500/60 transition-all shadow-[0_0_20px_rgba(34,217,238,0.2)] hover:shadow-[0_0_40px_rgba(34,217,238,0.4)]"
                 onClick={() => {
                   setCurrentImageIndex(index + 1);
                   setLightboxOpen(true);
@@ -181,61 +240,60 @@ export function StoreDetailPage() {
                 />
                 {/* Show +X more on last image if there are more photos */}
                 {index === 3 && photos.length > 5 && (
-                  <div className="absolute inset-0 bg-black/50 flex items-center justify-center text-white text-xl font-semibold pointer-events-none">
-                    +{photos.length - 5} more
+                  <div className="absolute inset-0 bg-black/70 flex items-center justify-center text-cyan-300 text-xl font-bold italic pointer-events-none">
+                    +{photos.length - 5} MORE
                   </div>
                 )}
               </div>
             ))}
           </div>
         )}
-
-        {/* Store Name & Info Below Images */}
-        <div className="mt-8">
-          <div className="flex items-center gap-3 mb-2">
-            <h1 className="text-3xl md:text-4xl font-bold text-gray-900">
-              {store.name}
-            </h1>
-            {store.verified && (
-              <span className="px-3 py-1 bg-blue-500 text-white text-xs font-medium rounded-full">
-                Verified
-              </span>
-            )}
-          </div>
-          <p className="text-lg text-gray-600">
-            {store.neighborhood ? `${store.neighborhood}, ` : ''}{store.city}
-          </p>
-        </div>
       </div>
 
       {/* Content */}
-      <div className="max-w-6xl mx-auto px-6 md:px-12 py-12">
+      <div className="relative z-10 max-w-6xl mx-auto px-6 md:px-12 py-12">
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-12">
           {/* Main Content */}
           <div className="lg:col-span-2 space-y-8">
             {/* Description */}
             {store.description && (
-              <div>
-                <h2 className="text-2xl font-bold text-gray-900 mb-4">About</h2>
-                <p className="text-lg text-gray-700 leading-relaxed">
+              <div className="bg-gradient-to-br from-gray-800/50 to-gray-900/50 p-6 rounded-xl border border-cyan-500/20">
+                <h2
+                  className="text-2xl font-black italic uppercase mb-4"
+                  style={{
+                    color: '#22D9EE',
+                    textShadow: '0 0 20px rgba(34, 217, 238, 0.3)'
+                  }}
+                >
+                  ABOUT
+                </h2>
+                <p className="text-lg text-gray-300 leading-relaxed">
                   {store.description}
                 </p>
               </div>
             )}
 
             {/* Categories */}
-            <div>
-              <h2 className="text-2xl font-bold text-gray-900 mb-4">Categories</h2>
+            <div className="bg-gradient-to-br from-gray-800/50 to-gray-900/50 p-6 rounded-xl border border-cyan-500/20">
+              <h2
+                className="text-2xl font-black italic uppercase mb-4"
+                style={{
+                  color: '#22D9EE',
+                  textShadow: '0 0 20px rgba(34, 217, 238, 0.3)'
+                }}
+              >
+                CATEGORIES
+              </h2>
               <div className="flex flex-wrap gap-2">
                 {store.mainCategory && (
-                  <span className="px-4 py-2 bg-black text-white text-sm font-medium rounded-full">
+                  <span className="px-4 py-2 bg-cyan-500/20 text-cyan-300 text-sm font-bold uppercase rounded-full border border-cyan-500/30">
                     {store.mainCategory}
                   </span>
                 )}
                 {store.categories.map((category) => (
                   <span
                     key={category}
-                    className="px-4 py-2 bg-gray-100 text-gray-700 text-sm font-medium rounded-full"
+                    className="px-4 py-2 bg-gray-700/50 text-gray-300 text-sm font-medium rounded-full border border-gray-600/30"
                   >
                     {category}
                   </span>
@@ -244,9 +302,17 @@ export function StoreDetailPage() {
             </div>
 
             {/* Map */}
-            <div>
-              <h2 className="text-2xl font-bold text-gray-900 mb-4">Location</h2>
-              <div className="aspect-video bg-gray-100 rounded-lg overflow-hidden">
+            <div className="bg-gradient-to-br from-gray-800/50 to-gray-900/50 p-6 rounded-xl border border-cyan-500/20">
+              <h2
+                className="text-2xl font-black italic uppercase mb-4"
+                style={{
+                  color: '#22D9EE',
+                  textShadow: '0 0 20px rgba(34, 217, 238, 0.3)'
+                }}
+              >
+                LOCATION
+              </h2>
+              <div className="aspect-video bg-gray-900 rounded-lg overflow-hidden border-2 border-cyan-500/30 shadow-[0_0_30px_rgba(34,217,238,0.2)]">
                 <iframe
                   width="100%"
                   height="100%"
@@ -261,38 +327,62 @@ export function StoreDetailPage() {
           {/* Sidebar */}
           <div className="space-y-6">
             {/* Stats */}
-            <div className="bg-gray-50 rounded-lg p-6 space-y-4">
+            <div className="bg-gradient-to-br from-gray-800/50 to-gray-900/50 rounded-lg p-6 space-y-4 border border-cyan-500/20">
               <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2 text-gray-600">
-                  <Heart className="w-5 h-5" />
-                  <span>Saves</span>
+                <div className="flex items-center gap-2 text-gray-400">
+                  <Heart className="w-5 h-5 text-cyan-400" />
+                  <span className="font-bold uppercase">Saves</span>
                 </div>
-                <span className="text-2xl font-bold text-gray-900">{store.saveCount}</span>
+                <span
+                  className="text-3xl font-black italic"
+                  style={{
+                    color: '#22D9EE',
+                    textShadow: '0 0 20px rgba(34, 217, 238, 0.5)'
+                  }}
+                >
+                  {store.saveCount}
+                </span>
               </div>
               <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2 text-gray-600">
-                  <ShoppingBag className="w-5 h-5" />
-                  <span>Hauls</span>
+                <div className="flex items-center gap-2 text-gray-400">
+                  <ShoppingBag className="w-5 h-5 text-cyan-400" />
+                  <span className="font-bold uppercase">Hauls</span>
                 </div>
-                <span className="text-2xl font-bold text-gray-900">{store.haulCount}</span>
+                <span
+                  className="text-3xl font-black italic"
+                  style={{
+                    color: '#22D9EE',
+                    textShadow: '0 0 20px rgba(34, 217, 238, 0.5)'
+                  }}
+                >
+                  {store.haulCount}
+                </span>
               </div>
             </div>
 
             {/* Contact Info */}
-            <div className="space-y-4">
-              <h3 className="text-lg font-bold text-gray-900">Information</h3>
+            <div className="bg-gradient-to-br from-gray-800/50 to-gray-900/50 rounded-lg p-6 space-y-4 border border-cyan-500/20">
+              <h3
+                className="text-lg font-black italic uppercase mb-2"
+                style={{
+                  color: '#22D9EE',
+                  textShadow: '0 0 20px rgba(34, 217, 238, 0.3)'
+                }}
+              >
+                INFORMATION
+              </h3>
 
               {/* Address */}
               <div className="flex gap-3">
-                <MapPin className="w-5 h-5 text-gray-400 flex-shrink-0 mt-1" />
+                <MapPin className="w-5 h-5 text-cyan-400 flex-shrink-0 mt-1" />
                 <div>
-                  <p className="text-sm font-medium text-gray-900 mb-1">Address</p>
-                  <p className="text-sm text-gray-600">{store.address}</p>
+                  <p className="text-sm font-bold text-gray-300 mb-1">Address</p>
+                  <p className="text-sm text-gray-400">{store.address}</p>
                   <a
                     href={getGoogleMapsUrl(store.address)}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="text-sm text-blue-600 hover:text-blue-700 inline-flex items-center gap-1 mt-1"
+                    className="text-sm text-cyan-400 hover:text-cyan-300 inline-flex items-center gap-1 mt-1 font-medium"
                   >
                     Get Directions
                     <ExternalLink className="w-3 h-3" />
@@ -302,37 +392,37 @@ export function StoreDetailPage() {
 
               {/* Hours */}
               {store.hours && (
-                <div className="flex gap-3">
-                  <Clock className="w-5 h-5 text-gray-400 flex-shrink-0 mt-1" />
+                <div className="flex gap-3 pt-3 border-t border-gray-700/50">
+                  <Clock className="w-5 h-5 text-cyan-400 flex-shrink-0 mt-1" />
                   <div>
-                    <p className="text-sm font-medium text-gray-900 mb-1">Hours</p>
-                    <p className="text-sm text-gray-600 whitespace-pre-line">{store.hours}</p>
+                    <p className="text-sm font-bold text-gray-300 mb-1">Hours</p>
+                    <p className="text-sm text-gray-400 whitespace-pre-line">{store.hours}</p>
                   </div>
                 </div>
               )}
 
               {/* Price Range */}
               {store.priceRange && (
-                <div className="flex gap-3">
-                  <span className="w-5 h-5 text-gray-400 flex-shrink-0 mt-1 text-center">¥</span>
+                <div className="flex gap-3 pt-3 border-t border-gray-700/50">
+                  <span className="w-5 h-5 text-cyan-400 flex-shrink-0 mt-1 text-center font-bold">¥</span>
                   <div>
-                    <p className="text-sm font-medium text-gray-900 mb-1">Price Range</p>
-                    <p className="text-sm text-gray-600">{store.priceRange}</p>
+                    <p className="text-sm font-bold text-gray-300 mb-1">Price Range</p>
+                    <p className="text-sm text-gray-400">{store.priceRange}</p>
                   </div>
                 </div>
               )}
 
               {/* Website */}
               {store.website && (
-                <div className="flex gap-3">
-                  <Globe className="w-5 h-5 text-gray-400 flex-shrink-0 mt-1" />
+                <div className="flex gap-3 pt-3 border-t border-gray-700/50">
+                  <Globe className="w-5 h-5 text-cyan-400 flex-shrink-0 mt-1" />
                   <div>
-                    <p className="text-sm font-medium text-gray-900 mb-1">Website</p>
+                    <p className="text-sm font-bold text-gray-300 mb-1">Website</p>
                     <a
                       href={store.website}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="text-sm text-blue-600 hover:text-blue-700 inline-flex items-center gap-1"
+                      className="text-sm text-cyan-400 hover:text-cyan-300 inline-flex items-center gap-1 font-medium"
                     >
                       Visit Website
                       <ExternalLink className="w-3 h-3" />
@@ -343,15 +433,15 @@ export function StoreDetailPage() {
 
               {/* Instagram */}
               {store.instagram && (
-                <div className="flex gap-3">
-                  <Instagram className="w-5 h-5 text-gray-400 flex-shrink-0 mt-1" />
+                <div className="flex gap-3 pt-3 border-t border-gray-700/50">
+                  <Instagram className="w-5 h-5 text-cyan-400 flex-shrink-0 mt-1" />
                   <div>
-                    <p className="text-sm font-medium text-gray-900 mb-1">Instagram</p>
+                    <p className="text-sm font-bold text-gray-300 mb-1">Instagram</p>
                     <a
                       href={`https://instagram.com/${store.instagram.replace('@', '')}`}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="text-sm text-blue-600 hover:text-blue-700 inline-flex items-center gap-1"
+                      className="text-sm text-cyan-400 hover:text-cyan-300 inline-flex items-center gap-1 font-medium"
                     >
                       {store.instagram}
                       <ExternalLink className="w-3 h-3" />
@@ -364,7 +454,12 @@ export function StoreDetailPage() {
             {/* Action Buttons */}
             <div className="space-y-3">
               <SaveButton storeId={store.id} variant="button" className="w-full" />
-              <button className="w-full px-6 py-3 bg-gray-100 text-gray-900 font-medium rounded-lg hover:bg-gray-200 transition-colors flex items-center justify-center gap-2">
+              <button
+                className="w-full px-6 py-3 bg-gradient-to-r from-cyan-500/20 to-cyan-600/20 text-cyan-300 font-bold uppercase rounded-lg hover:from-cyan-500/30 hover:to-cyan-600/30 transition-all flex items-center justify-center gap-2 border border-cyan-500/30 hover:border-cyan-500/50"
+                style={{
+                  boxShadow: '0 0 20px rgba(34, 217, 238, 0.2)'
+                }}
+              >
                 <ShoppingBag className="w-5 h-5" />
                 Add to Haul
               </button>

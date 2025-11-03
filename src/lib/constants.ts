@@ -107,24 +107,26 @@ export const MAJOR_CITIES_JAPAN = [
   'Okayama',
   'Kojima',
   'Nagano',
+  'Toyama',
 ] as const;
 
-// Main category colors (default view)
+// Main category colors (default view) - Vibrant neon colors
 export const MAIN_CATEGORY_COLORS = {
-  Fashion: '#F59E0B', // amber
-  Food: '#3B82F6', // blue
-  Coffee: '#92400E', // brown
-  'Home Goods': '#6B7280', // grey
-  Museum: '#9CA3AF', // grey-400
+  Fashion: '#00D9FF', // Electric cyan/blue - vibrant and modern
+  Food: '#FF6B35', // Electric orange - appetizing and energetic
+  Coffee: '#8B4513', // Rich brown - classic coffee color
+  'Home Goods': '#FFD700', // Gold - luxurious and warm
+  Museum: '#9370DB', // Medium purple - cultured and elegant
 } as const;
 
-// Main category icons (emoji for now, can replace with custom SVG later)
+// Main category icons - Using icon names from Lucide React
+// Icons are rendered as components in the UI, not stored as emoji
 export const MAIN_CATEGORY_ICONS = {
-  Fashion: '👔',
-  Food: '🍜',
-  Coffee: '☕',
-  'Home Goods': '🏠',
-  Museum: '🏛️',
+  Fashion: 'Shirt',
+  Food: 'UtensilsCrossed',
+  Coffee: 'Coffee',
+  'Home Goods': 'Home',
+  Museum: 'Building2',
 } as const;
 
 // Sub-category colors (for Fashion - used when filter is active)
@@ -220,6 +222,18 @@ export const LOCATIONS = {
     'Yoyogi',
     'Sangenjaya',
     'Ginza',
+    'Asagaya',
+    'Chiyoda City',
+    'Ikejiri-Ohashi',
+    'Kinshicho',
+    'Koto City',
+    'Kyobashi',
+    'Roppongi',
+    'Shinagawa City',
+    'Tsukiji',
+    'Umegaoka',
+    'Yanaka Ginza',
+    'Yurakucho',
   ],
   Osaka: [
     'Shinsaibashi',
@@ -238,7 +252,10 @@ export const LOCATIONS = {
   ],
   Kyoto: [],
   Sapporo: [],
-  'Kanagawa / Yokohama': [],
+  'Kanagawa / Yokohama': [
+    'Atsugi',
+    'Hakone',
+  ],
   Hiroshima: [],
   Kanazawa: [],
   Kobe: [],
@@ -248,6 +265,7 @@ export const LOCATIONS = {
   Fukushima: [],
   Okayama: [],
   Kojima: [],
+  Toyama: [],
 } as const;
 
 // City coordinates for map centering
@@ -269,6 +287,7 @@ export const CITY_COORDINATES: Record<string, { latitude: number; longitude: num
   Okayama: { latitude: 34.6550, longitude: 133.9190, zoom: 12 },
   Kojima: { latitude: 34.4640, longitude: 133.8150, zoom: 12 },
   Nagano: { latitude: 36.6513, longitude: 138.1809, zoom: 12 },
+  Toyama: { latitude: 36.6959, longitude: 137.2137, zoom: 12 },
 };
 
 // City color accents for UI (cards, badges). Picked to be distinct but harmonious.
@@ -290,6 +309,7 @@ export const CITY_COLORS: Record<string, string> = {
   Okayama: '#84CC16', // lime-500
   Kojima: '#FCD34D', // amber-300
   Nagano: '#A855F7', // purple-500
+  Toyama: '#FB923C', // orange-400
 };
 
 // Japanese city names (for ticket cards)
@@ -311,6 +331,7 @@ export const CITY_NAMES_JAPANESE: Record<string, string> = {
   Okayama: '岡山',
   Kojima: '児島',
   Nagano: '長野',
+  Toyama: '富山',
 };
 
 // City regions (for ticket cards)
@@ -332,6 +353,7 @@ export const CITY_REGIONS: Record<string, string> = {
   Okayama: 'Chugoku',
   Kojima: 'Chugoku',
   Nagano: 'Chubu',
+  Toyama: 'Chubu',
 };
 
 

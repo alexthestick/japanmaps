@@ -1,162 +1,275 @@
-import { useMemo, useEffect, useState } from 'react';
-import { useParams, useNavigate, Link } from 'react-router-dom';
+import { useState, useEffect, useMemo } from 'react';
+import { useParams, useNavigate } from 'react-router-dom';
+import { ArrowLeft, MapPin } from 'lucide-react';
+import { motion } from 'framer-motion';
+import { StoreList } from '../components/store/StoreList';
+import { ListViewSidebar } from '../components/filters/ListViewSidebar';
+import { SortDropdown } from '../components/store/SortDropdown';
+import { StoreDetail } from '../components/store/StoreDetail';
+import { ScrollingBanner } from '../components/layout/ScrollingBanner';
 import { useStores } from '../hooks/useStores';
 import { Loader } from '../components/common/Loader';
-import { StoreList } from '../components/store/StoreList';
-import { CityFilterSidebar } from '../components/filters/CityFilterSidebar';
-import { WashiTexture } from '../components/common/WashiTexture';
-import { CITY_COORDINATES } from '../lib/constants';
-// import { getCityDataWithCounts } from '../utils/cityData';
-import { CITY_COLORS } from '../lib/constants';
-import { slugToCity } from '../utils/cityData';
-import { motion } from 'framer-motion';
-// import { useReducedMotion } from '../motion';
+import { sortStores } from '../utils/helpers';
+import { CITY_NAMES_JAPANESE, CITY_COLORS } from '../lib/constants';
+import { slugToCity, cityToSlug, neighborhoodToSlug } from '../utils/cityData';
+import type { Store, MainCategory } from '../types/store';
 
 export function CityPage() {
   const { slug } = useParams<{ slug: string }>();
   const navigate = useNavigate();
 
-  const [filters, setFilters] = useState({
-    mainCategories: [] as string[],
-    subcategories: [] as string[],
-  });
-
+  // Convert slug to city name
   const cityName = useMemo(() => (slug ? slugToCity(slug) : ''), [slug]);
 
-  // Build filters for this city
-  const { stores, loading, error } = useStores({
-    cities: cityName ? [cityName] : [],
+  // Filter state
+  const [searchQuery, setSearchQuery] = useState('');
+  const [selectedMainCategory, setSelectedMainCategory] = useState<MainCategory | null>(null);
+  const [selectedSubCategories, setSelectedSubCategories] = useState<string[]>([]);
+  const [selectedNeighborhood, setSelectedNeighborhood] = useState<string | null>(null);
+  const [sortBy, setSortBy] = useState<string>('alphabetical');
+
+  // Fetch stores for this city
+  const { stores, loading } = useStores({
     countries: [],
-    mainCategories: filters.mainCategories.length > 0 ? filters.mainCategories : [],
-    categories: filters.subcategories.length > 0 ? filters.subcategories : [],
+    cities: cityName ? [cityName] : [],
+    categories: [],
     priceRanges: [],
     searchQuery: '',
-    selectedCity: cityName,
+    selectedCity: cityName || null,
     selectedNeighborhood: null,
     selectedCategory: null,
-  } as any);
+  });
 
-  const cityColor = CITY_COLORS[cityName] || '#111827';
-  // const coords = CITY_COORDINATES[cityName] || CITY_COORDINATES.Tokyo;
-  // const prefersReducedMotion = useReducedMotion();
+  // Filter stores based on selected filters
+  const filteredStores = stores.filter((store) => {
+    // Search query
+    if (searchQuery && !store.name.toLowerCase().includes(searchQuery.toLowerCase())) {
+      return false;
+    }
 
-  // Shinkansen streak overlay on mount
-  const [showStreak, setShowStreak] = useState(true);
-  useEffect(() => {
-    const t = setTimeout(() => setShowStreak(false), 350);
-    return () => clearTimeout(t);
-  }, []);
+    // Main category
+    if (selectedMainCategory && store.mainCategory !== selectedMainCategory) {
+      return false;
+    }
 
-  if (!slug) {
-    return null;
-  }
+    // Sub-categories
+    if (selectedSubCategories.length > 0) {
+      const hasMatchingCategory = store.categories.some((cat) =>
+        selectedSubCategories.includes(cat)
+      );
+      if (!hasMatchingCategory) return false;
+    }
+
+    // Neighborhood
+    if (selectedNeighborhood && store.neighborhood !== selectedNeighborhood) {
+      return false;
+    }
+
+    return true;
+  });
+
+  // Sort stores
+  const sortedStores = sortStores(filteredStores, sortBy);
+
+  // Handle filter changes
+  const handleMainCategoryChange = (category: MainCategory | null) => {
+    setSelectedMainCategory(category);
+    if (category !== selectedMainCategory) {
+      setSelectedSubCategories([]);
+    }
+  };
+
+  const handleSubCategoryToggle = (subCategory: string) => {
+    setSelectedSubCategories((prev) =>
+      prev.includes(subCategory)
+        ? prev.filter((cat) => cat !== subCategory)
+        : [...prev, subCategory]
+    );
+  };
+
+  const handleNeighborhoodChange = (neighborhood: string | null) => {
+    if (!neighborhood) {
+      // Stay on city page if "All" is selected
+      setSelectedNeighborhood(null);
+    } else {
+      // Navigate to neighborhood page
+      const neighborhoodSlug = neighborhoodToSlug(neighborhood);
+      navigate(`/city/${slug}/${neighborhoodSlug}`);
+    }
+  };
+
+  const handleCityChange = (city: string | null) => {
+    if (!city) {
+      // Navigate to main map list view
+      navigate('/map?view=list');
+    } else {
+      // Navigate to different city
+      const newCitySlug = cityToSlug(city);
+      navigate(`/city/${newCitySlug}`);
+    }
+  };
+
+  const handleClearAll = () => {
+    setSelectedMainCategory(null);
+    setSelectedSubCategories([]);
+    setSelectedNeighborhood(null);
+    setSearchQuery('');
+  };
+
+  // Get city metadata
+  const cityJapaneseName = CITY_NAMES_JAPANESE[cityName] || cityName;
+  const cityColor = CITY_COLORS[cityName] || '#22D9EE';
+  const cityImageSlug = cityName.toLowerCase().replace(/\s+/g, '').replace(/\//g, '');
+
+  // City hero image (use preview image from cities page)
+  const heroImage = `/images/cities/preview/${cityImageSlug === 'kanagawayokohama' ? 'yokohama' : cityImageSlug}-preview.jpg`;
+
+  // City description/history - can be expanded later
+  const cityDescription = `Explore the best stores, restaurants, and hidden gems in ${cityName}. From traditional neighborhoods to modern shopping districts, discover what makes ${cityName} unique.`;
 
   if (loading) {
-    return (
-      <div className="flex items-center justify-center min-h-screen">
-        <Loader message="Loading city..." />
-      </div>
-    );
+    return <Loader />;
   }
-
-  if (error) {
-    return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="text-center">
-          <h2 className="text-2xl font-bold text-red-600 mb-2">Error Loading City</h2>
-          <p className="text-gray-600">{error.message}</p>
-        </div>
-      </div>
-    );
-  }
-
-  const storeCount = stores.length;
 
   return (
-    <div className="flex min-h-screen bg-white">
-      {/* Sidebar */}
-      <CityFilterSidebar
-        selectedFilters={filters}
-        onFilterChange={setFilters}
-      />
+    <div className="min-h-screen bg-gradient-to-b from-gray-900 via-black to-gray-900">
+      {/* Film grain overlay */}
+      <div className="fixed inset-0 film-grain opacity-20 pointer-events-none" />
 
-      {/* Main Content */}
-      <div className="flex-1 relative overflow-hidden">
-        {/* Bullet train streak overlay */}
-        {showStreak && (
-          <div
-            className="pointer-events-none fixed inset-0 animate-streak"
-            style={{
-              background: `linear-gradient(90deg, transparent, ${cityColor}, transparent)`,
-            }}
-          />
-        )}
-        {/* Hero */}
-        <div className="relative h-[40vh] md:h-[50vh] bg-gray-900 overflow-hidden">
-        <motion.div
-          className="absolute inset-0"
-          layoutId={`city-image-${cityName}`}
-          style={{ background: `linear-gradient(135deg, ${cityColor} 0%, rgba(0,0,0,0.6) 100%)` }}
+      {/* Scrolling Banner */}
+      <ScrollingBanner />
+
+      {/* Hero Section */}
+      <div className="relative h-[400px] overflow-hidden border-b-2 border-cyan-400/30">
+        {/* Hero Image */}
+        <img
+          src={heroImage}
+          alt={cityName}
+          className="w-full h-full object-cover"
+          onError={(e) => {
+            const target = e.target as HTMLImageElement;
+            target.style.display = 'none';
+          }}
         />
-        <WashiTexture opacity={0.06} />
-        <div className="relative max-w-7xl mx-auto h-full px-6 flex flex-col justify-end pb-10">
-          <div className="max-w-3xl">
-            <h1 className="text-4xl md:text-6xl font-extrabold text-white tracking-tight">
-              {cityName}
-            </h1>
-            <p className="mt-3 text-gray-200 uppercase tracking-wider text-sm">
-              {storeCount} {storeCount === 1 ? 'Store' : 'Stores'}
-            </p>
-            <div className="mt-6 flex flex-wrap gap-3">
-              <button
-                onClick={() => navigate(`/map?city=${encodeURIComponent(cityName)}&view=map`)}
-                className="px-5 py-2.5 bg-white text-gray-900 rounded-md font-semibold hover:bg-gray-100 transition"
+
+        {/* Gradient Overlay */}
+        <div className="absolute inset-0 bg-gradient-to-t from-black via-black/60 to-transparent" />
+
+        {/* Back Button */}
+        <button
+          onClick={() => navigate('/cities')}
+          className="absolute top-6 left-6 z-20 bg-black/40 backdrop-blur-md border border-cyan-400/30 rounded-lg px-4 py-2 flex items-center gap-2 text-cyan-300 hover:bg-cyan-500/20 hover:border-cyan-400/50 transition-all duration-200"
+          style={{
+            boxShadow: '0 0 20px rgba(34, 211, 238, 0.2)',
+          }}
+        >
+          <ArrowLeft className="w-5 h-5" />
+          <span className="font-semibold uppercase tracking-wide text-sm">Back to Cities</span>
+        </button>
+
+        {/* City Name & Info */}
+        <div className="absolute bottom-0 left-0 right-0 p-8">
+          <div className="max-w-7xl mx-auto">
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.1 }}
+            >
+              {/* City Name */}
+              <h1
+                className="text-6xl font-black text-white mb-2 italic uppercase"
+                style={{
+                  textShadow: `0 0 30px ${cityColor}80, 0 0 20px ${cityColor}60, 0 4px 12px rgba(0,0,0,0.8)`,
+                  letterSpacing: '0.05em',
+                }}
               >
-                Open on Map
-              </button>
-              <button
-                onClick={() => navigate(`/map?city=${encodeURIComponent(cityName)}&view=list`)}
-                className="px-5 py-2.5 bg-white/10 text-white rounded-md font-semibold hover:bg-white/20 transition border border-white/20"
+                {cityName}
+              </h1>
+
+              {/* Japanese Name */}
+              <div
+                className="text-2xl font-bold mb-4"
+                style={{
+                  color: cityColor,
+                  textShadow: `0 0 15px ${cityColor}80, 0 2px 8px rgba(0,0,0,0.8)`,
+                }}
               >
-                Browse List
-              </button>
-            </div>
+                {cityJapaneseName}
+              </div>
+
+              {/* Description */}
+              <p className="text-gray-300 text-lg max-w-3xl leading-relaxed">
+                {cityDescription}
+              </p>
+
+              {/* Store Count Badge */}
+              <div className="mt-4 inline-flex items-center gap-2 px-4 py-2 bg-black/60 backdrop-blur-md border-2 rounded-lg"
+                style={{
+                  borderColor: `${cityColor}60`,
+                  boxShadow: `0 0 20px ${cityColor}30`,
+                }}
+              >
+                <MapPin className="w-5 h-5" style={{ color: cityColor }} />
+                <span className="text-white font-bold">{stores.length} Places</span>
+              </div>
+            </motion.div>
           </div>
         </div>
       </div>
 
-      {/* Content */}
-      <div className="relative max-w-7xl mx-auto px-8 py-10">
-        <WashiTexture opacity={0.03} />
-        {storeCount === 0 ? (
-          <div className="text-center py-20">
-            <h3 className="text-xl font-semibold text-gray-900 mb-2">No stores yet</h3>
-            <p className="text-gray-600 mb-6">We haven't added spots in {cityName} yet. Explore the map to browse other cities.</p>
-            <button
-              onClick={() => navigate('/map?view=map')}
-              className="px-5 py-2.5 bg-gray-900 text-white rounded-md font-semibold hover:bg-gray-800 transition"
-            >
-              Explore the Map
-            </button>
-          </div>
-        ) : (
-          <>
-            <div className="mb-6 flex items-center justify-between">
-              <h2 className="text-xl font-bold text-gray-900">Top Spots</h2>
-              <Link
-                to={`/map?city=${encodeURIComponent(cityName)}&view=list`}
-                className="text-sm text-gray-600 hover:text-gray-900"
-              >
-                See all
-              </Link>
+      {/* Main Content - List View */}
+      <div className="flex min-h-screen relative">
+        {/* Sidebar Filters */}
+        <ListViewSidebar
+          selectedMainCategory={selectedMainCategory}
+          selectedSubCategories={selectedSubCategories}
+          selectedCity={cityName}
+          selectedNeighborhood={selectedNeighborhood}
+          onMainCategoryChange={handleMainCategoryChange}
+          onSubCategoryToggle={handleSubCategoryToggle}
+          onCityChange={handleCityChange}
+          onNeighborhoodChange={handleNeighborhoodChange}
+          onClearAll={handleClearAll}
+        />
+
+        {/* Store List Section */}
+        <div className="flex-1 p-8 relative">
+          {/* Corner decorations */}
+          <div className="absolute top-4 right-4 w-3 h-3 border-t-2 border-r-2 border-cyan-400/30" />
+
+          {/* Search & Sort Controls */}
+          <div className="mb-6 flex gap-4 items-center relative z-10">
+            {/* Search Bar */}
+            <div className="flex-1 relative">
+              <input
+                type="text"
+                placeholder="Search stores..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="w-full px-4 py-2.5 bg-gray-800 border-2 border-cyan-400/30 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:border-cyan-400/60 transition-all"
+                style={{
+                  boxShadow: '0 0 15px rgba(34, 217, 238, 0.1)',
+                }}
+              />
             </div>
-            <StoreList
-              stores={stores}
-              onStoreClick={(store) => navigate(`/store/${store.id}`, { state: { from: `/city/${slug}` } })}
-            />
-          </>
-        )}
-      </div>
+
+            {/* Sort Dropdown */}
+            <SortDropdown sortBy={sortBy} onSortChange={setSortBy} />
+          </div>
+
+          {/* Results Count */}
+          <div className="mb-4 text-sm text-gray-400">
+            Showing <span className="text-cyan-300 font-bold">{sortedStores.length}</span> of{' '}
+            <span className="text-white font-bold">{stores.length}</span> places
+          </div>
+
+          {/* Store Grid */}
+          <StoreList
+            stores={sortedStores}
+            loading={loading}
+            onStoreClick={(store) => navigate(`/store/${store.id}`)}
+          />
+        </div>
       </div>
     </div>
   );

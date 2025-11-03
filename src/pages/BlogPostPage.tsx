@@ -1,11 +1,9 @@
 import { useEffect, useState } from 'react';
-import { useParams, Link, useNavigate } from 'react-router-dom';
+import { useParams, Link } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
-import ReactMarkdown from 'react-markdown';
-import remarkGfm from 'remark-gfm';
-import rehypeRaw from 'rehype-raw';
 import { Loader } from '../components/common/Loader';
-import { ArchiveStoresJapan } from './ArchiveStoresJapan';
+import { ParallaxGuideSection } from '../components/common/ParallaxGuideSection';
+import type { ParallaxStoreSection } from '../types/blog';
 
 interface BlogPost {
   id: string;
@@ -17,24 +15,19 @@ interface BlogPost {
   referenced_stores: string[];
   published_at: string;
   updated_at: string;
+  article_type: 'standard' | 'parallax_store_guide';
+  intro_content: string | null;
+  sections_data: ParallaxStoreSection[] | null;
 }
 
 export function BlogPostPage() {
   const { slug } = useParams<{ slug: string }>();
-  const navigate = useNavigate();
   const [post, setPost] = useState<BlogPost | null>(null);
   const [loading, setLoading] = useState(true);
-  const [relatedPosts, setRelatedPosts] = useState<BlogPost[]>([]);
-
-  // Special handling for parallax editorial pages
-  if (slug === 'best-archive-clothing-stores-in-japan') {
-    return <ArchiveStoresJapan />;
-  }
 
   useEffect(() => {
     if (slug) {
       fetchPost(slug);
-      fetchRelatedPosts(slug);
     }
   }, [slug]);
 
@@ -53,22 +46,6 @@ export function BlogPostPage() {
       console.error('Error fetching blog post:', error);
     } finally {
       setLoading(false);
-    }
-  }
-
-  async function fetchRelatedPosts(currentSlug: string) {
-    try {
-      const { data, error } = await supabase
-        .from('blog_posts')
-        .select('*')
-        .neq('slug', currentSlug)
-        .order('published_at', { ascending: false })
-        .limit(3);
-
-      if (error) throw error;
-      setRelatedPosts(data || []);
-    } catch (error) {
-      console.error('Error fetching related posts:', error);
     }
   }
 
@@ -95,127 +72,327 @@ export function BlogPostPage() {
     );
   }
 
-  return (
-    <div className="max-w-5xl mx-auto">
-      {/* Hero Image */}
-      {post.hero_image && (
-        <div className="relative h-[60vh] -mt-16 mb-8">
-          <img 
-            src={post.hero_image} 
-            alt={post.title}
-            className="w-full h-full object-cover"
-          />
-          <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
-          <div className="absolute bottom-8 left-8 right-8">
-            <div className="flex items-center gap-3 mb-3">
-              <span className="text-white/80 text-sm">
-                {new Date(post.published_at).toLocaleDateString('en-US', { 
-                  month: 'long', 
-                  day: 'numeric', 
-                  year: 'numeric' 
-                })}
-              </span>
+  // Render Parallax Store Guide with Bulletin Board styling
+  if (post.article_type === 'parallax_store_guide') {
+    return (
+      <article className="min-h-screen relative py-12">
+        {/* Realistic Wood Grain Background */}
+        <div
+          className="absolute inset-0"
+          style={{
+            backgroundImage: `url("data:image/svg+xml,%3Csvg width='600' height='600' xmlns='http://www.w3.org/2000/svg'%3E%3Cdefs%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' /%3E%3CfeColorMatrix values='0 0 0 0 0, 0 0 0 0 0, 0 0 0 0 0, 0 0 0 0.03 0'/%3E%3C/filter%3E%3C/defs%3E%3Crect fill='%23B8956A' width='600' height='600'/%3E%3C!-- Main grain lines --%3E%3Cpath d='M0 30 Q150 28 300 30 T600 30' stroke='%23A17D50' stroke-width='3' fill='none' opacity='0.6'/%3E%3Cpath d='M0 32 Q150 30 300 32 T600 32' stroke='%238B6942' stroke-width='1' fill='none' opacity='0.4'/%3E%3Cpath d='M0 75 Q150 73 300 75 T600 75' stroke='%239A7B4F' stroke-width='4' fill='none' opacity='0.5'/%3E%3Cpath d='M0 78 Q150 76 300 78 T600 78' stroke='%237D5E3F' stroke-width='1.5' fill='none' opacity='0.35'/%3E%3Cpath d='M0 130 Q150 127 300 130 T600 130' stroke='%23A17D50' stroke-width='2.5' fill='none' opacity='0.55'/%3E%3Cpath d='M0 133 Q150 131 300 133 T600 133' stroke='%238B6942' stroke-width='1' fill='none' opacity='0.3'/%3E%3Cpath d='M0 185 Q150 183 300 185 T600 185' stroke='%239A7B4F' stroke-width='3.5' fill='none' opacity='0.6'/%3E%3Cpath d='M0 188 Q150 186 300 188 T600 188' stroke='%237D5E3F' stroke-width='1.2' fill='none' opacity='0.4'/%3E%3Cpath d='M0 245 Q150 242 300 245 T600 245' stroke='%23A17D50' stroke-width='2' fill='none' opacity='0.5'/%3E%3Cpath d='M0 305 Q150 303 300 305 T600 305' stroke='%239A7B4F' stroke-width='3' fill='none' opacity='0.55'/%3E%3Cpath d='M0 308 Q150 306 300 308 T600 308' stroke='%238B6942' stroke-width='1.5' fill='none' opacity='0.35'/%3E%3Cpath d='M0 370 Q150 368 300 370 T600 370' stroke='%23A17D50' stroke-width='2.8' fill='none' opacity='0.6'/%3E%3Cpath d='M0 435 Q150 432 300 435 T600 435' stroke='%239A7B4F' stroke-width='3.2' fill='none' opacity='0.5'/%3E%3Cpath d='M0 438 Q150 436 300 438 T600 438' stroke='%237D5E3F' stroke-width='1.3' fill='none' opacity='0.38'/%3E%3Cpath d='M0 500 Q150 498 300 500 T600 500' stroke='%23A17D50' stroke-width='2.5' fill='none' opacity='0.55'/%3E%3Cpath d='M0 565 Q150 563 300 565 T600 565' stroke='%239A7B4F' stroke-width='3' fill='none' opacity='0.52'/%3E%3C!-- Fine detail lines --%3E%3Cpath d='M0 50 Q150 49.5 300 50 T600 50' stroke='%238B6942' stroke-width='0.8' fill='none' opacity='0.25'/%3E%3Cpath d='M0 95 Q150 94.5 300 95 T600 95' stroke='%237D5E3F' stroke-width='0.6' fill='none' opacity='0.2'/%3E%3Cpath d='M0 155 Q150 154.5 300 155 T600 155' stroke='%238B6942' stroke-width='0.7' fill='none' opacity='0.22'/%3E%3Cpath d='M0 220 Q150 219.5 300 220 T600 220' stroke='%239A7B4F' stroke-width='0.9' fill='none' opacity='0.28'/%3E%3Cpath d='M0 280 Q150 279.5 300 280 T600 280' stroke='%237D5E3F' stroke-width='0.6' fill='none' opacity='0.2'/%3E%3Cpath d='M0 345 Q150 344.5 300 345 T600 345' stroke='%238B6942' stroke-width='0.8' fill='none' opacity='0.24'/%3E%3Cpath d='M0 405 Q150 404.5 300 405 T600 405' stroke='%239A7B4F' stroke-width='0.7' fill='none' opacity='0.26'/%3E%3Cpath d='M0 470 Q150 469.5 300 470 T600 470' stroke='%237D5E3F' stroke-width='0.6' fill='none' opacity='0.21'/%3E%3Cpath d='M0 535 Q150 534.5 300 535 T600 535' stroke='%238B6942' stroke-width='0.8' fill='none' opacity='0.23'/%3E%3C!-- Wood knots --%3E%3Cellipse cx='180' cy='110' rx='25' ry='12' fill='%237D5E3F' opacity='0.3'/%3E%3Cellipse cx='180' cy='110' rx='15' ry='7' fill='%236B4F3A' opacity='0.25'/%3E%3Cellipse cx='420' cy='280' rx='30' ry='15' fill='%237D5E3F' opacity='0.28'/%3E%3Cellipse cx='420' cy='280' rx='18' ry='9' fill='%236B4F3A' opacity='0.22'/%3E%3Cellipse cx='90' cy='390' rx='22' ry='11' fill='%237D5E3F' opacity='0.32'/%3E%3Cellipse cx='90' cy='390' rx='12' ry='6' fill='%236B4F3A' opacity='0.26'/%3E%3Crect width='600' height='600' filter='url(%23noise)' /%3E%3C/svg%3E")`,
+            backgroundColor: '#B8956A',
+          }}
+        />
+
+        {/* Content */}
+        <div className="relative z-10">
+          {/* Sage Green Frame */}
+          <div className="max-w-7xl mx-auto px-4 md:px-8">
+            <div
+              className="p-5 md:p-8"
+              style={{
+                background: 'linear-gradient(135deg, #9CAF88 0%, #8BA177 50%, #7A9B6C 100%)',
+                borderRadius: '12px',
+                boxShadow: '0 20px 60px rgba(0,0,0,0.5), inset 0 2px 4px rgba(255,255,255,0.15)',
+              }}
+            >
+              {/* Super Light Yellow Bulletin Board Background */}
+              <div
+                className="p-8 md:p-16 relative"
+                style={{
+                  backgroundImage: `url("data:image/svg+xml,%3Csvg width='200' height='200' xmlns='http://www.w3.org/2000/svg'%3E%3Crect fill='%23FFFACD' width='200' height='200'/%3E%3Ccircle cx='20' cy='20' r='1.5' fill='%23F5E6A8' opacity='0.7'/%3E%3Ccircle cx='45' cy='35' r='1' fill='%23EDD89E' opacity='0.6'/%3E%3Ccircle cx='80' cy='15' r='1.2' fill='%23F5E6A8' opacity='0.7'/%3E%3Ccircle cx='60' cy='50' r='0.8' fill='%23EDD89E' opacity='0.6'/%3E%3Ccircle cx='95' cy='45' r='1.3' fill='%23F5E6A8' opacity='0.7'/%3E%3Ccircle cx='25' cy='70' r='1.1' fill='%23EDD89E' opacity='0.6'/%3E%3Ccircle cx='120' cy='30' r='1' fill='%23F5E6A8' opacity='0.7'/%3E%3Ccircle cx='150' cy='60' r='1.4' fill='%23EDD89E' opacity='0.6'/%3E%3Ccircle cx='180' cy='25' r='0.9' fill='%23F5E6A8' opacity='0.7'/%3E%3Ccircle cx='110' cy='80' r='1.2' fill='%23EDD89E' opacity='0.6'/%3E%3C/svg%3E")`,
+                  backgroundColor: '#FFFACD',
+                  borderRadius: '4px',
+                  boxShadow: 'inset 0 2px 10px rgba(0,0,0,0.1)',
+                }}
+              >
+                {/* Decorative Pins Scattered on Green Cork - More visible */}
+                <div className="absolute top-12 left-16 w-5 h-5 rounded-full opacity-60" style={{ background: 'radial-gradient(circle at 30% 30%, #E63946, #B91C1C)', boxShadow: '0 3px 6px rgba(0,0,0,0.4)' }}>
+                  <div className="w-2 h-2 bg-white/60 rounded-full absolute top-1 left-1" />
+                </div>
+                <div className="absolute top-24 right-32 w-5 h-5 rounded-full opacity-60" style={{ background: 'radial-gradient(circle at 30% 30%, #FFC107, #FFA000)', boxShadow: '0 3px 6px rgba(0,0,0,0.4)' }}>
+                  <div className="w-2 h-2 bg-white/60 rounded-full absolute top-1 left-1" />
+                </div>
+                <div className="absolute bottom-32 left-24 w-5 h-5 rounded-full opacity-60" style={{ background: 'radial-gradient(circle at 30% 30%, #8BC34A, #689F38)', boxShadow: '0 3px 6px rgba(0,0,0,0.4)' }}>
+                  <div className="w-2 h-2 bg-white/60 rounded-full absolute top-1 left-1" />
+                </div>
+                <div className="absolute top-1/3 right-16 w-5 h-5 rounded-full opacity-60" style={{ background: 'radial-gradient(circle at 30% 30%, #2196F3, #1976D2)', boxShadow: '0 3px 6px rgba(0,0,0,0.4)' }}>
+                  <div className="w-2 h-2 bg-white/60 rounded-full absolute top-1 left-1" />
+                </div>
+                <div className="absolute bottom-1/4 right-1/4 w-5 h-5 rounded-full opacity-60" style={{ background: 'radial-gradient(circle at 30% 30%, #FF5722, #E64A19)', boxShadow: '0 3px 6px rgba(0,0,0,0.4)' }}>
+                  <div className="w-2 h-2 bg-white/60 rounded-full absolute top-1 left-1" />
+                </div>
+                <div className="absolute top-2/3 left-1/3 w-5 h-5 rounded-full opacity-60" style={{ background: 'radial-gradient(circle at 30% 30%, #9C27B0, #7B1FA2)', boxShadow: '0 3px 6px rgba(0,0,0,0.4)' }}>
+                  <div className="w-2 h-2 bg-white/60 rounded-full absolute top-1 left-1" />
+                </div>
+
+                {/* Dual Bulletin Board Hero Section - 70/30 Split */}
+                <div className="grid grid-cols-1 md:grid-cols-10 gap-8 md:gap-10 mb-16 md:mb-24 mt-6">
+                  {/* Right: Hero Image (HUGE - 70%) */}
+                  {post.hero_image && (
+                    <div className="md:col-span-7 relative order-1 md:order-2">
+                      <div
+                        className="bg-white p-3 pb-14 shadow-2xl relative"
+                        style={{
+                          transform: 'rotate(2deg)',
+                          boxShadow: '0 15px 60px rgba(0,0,0,0.4), 0 10px 30px rgba(0,0,0,0.3)',
+                        }}
+                      >
+                        {/* Washi Tape at top */}
+                        <div
+                          className="absolute -top-3 left-1/4 w-24 h-6 opacity-80"
+                          style={{
+                            background: 'linear-gradient(180deg, rgba(255,255,255,0.4), transparent), linear-gradient(90deg, #FFB6C1 0%, #FFB6C1 100%)',
+                            transform: 'rotate(-3deg)',
+                            boxShadow: '0 2px 4px rgba(0,0,0,0.2)',
+                          }}
+                        />
+                        <div
+                          className="absolute -top-3 right-1/4 w-24 h-6 opacity-80"
+                          style={{
+                            background: 'linear-gradient(180deg, rgba(255,255,255,0.4), transparent), linear-gradient(90deg, #87CEEB 0%, #87CEEB 100%)',
+                            transform: 'rotate(4deg)',
+                            boxShadow: '0 2px 4px rgba(0,0,0,0.2)',
+                          }}
+                        />
+
+                        {/* Hero Image */}
+                        <div className="overflow-hidden bg-gray-100">
+                          <img
+                            src={post.hero_image}
+                            alt={post.title}
+                            className="w-full h-[500px] md:h-[700px] object-cover"
+                          />
+                        </div>
+
+                        {/* Polaroid caption */}
+                        <div className="mt-4 text-center">
+                          <p
+                            className="text-sm italic"
+                            style={{
+                              color: '#666',
+                              fontFamily: 'Comic Sans MS, cursive',
+                            }}
+                          >
+                            {post.title}
+                          </p>
+                        </div>
+
+                        {/* Corner curl effect */}
+                        <div
+                          className="absolute bottom-2 right-2 w-8 h-8 bg-gray-200 opacity-50"
+                          style={{
+                            clipPath: 'polygon(100% 0, 100% 100%, 0 100%)',
+                            transform: 'rotate(0deg)',
+                          }}
+                        />
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Left: Title + Intro Text (30%) - WHITE */}
+                  <div className="md:col-span-3 relative order-2 md:order-1 mt-6">
+                    <div
+                      className="bg-white p-6 md:p-8 shadow-2xl relative"
+                      style={{
+                        transform: 'rotate(-2deg)',
+                        boxShadow: '0 15px 60px rgba(0,0,0,0.4), 0 10px 30px rgba(0,0,0,0.3)',
+                        backgroundImage: `url("data:image/svg+xml,%3Csvg width='100' height='100' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='paper'%3E%3CfeTurbulence baseFrequency='0.04' numOctaves='5' /%3E%3CfeColorMatrix values='0 0 0 0 0.96, 0 0 0 0 0.96, 0 0 0 0 0.96, 0 0 0 1 0'/%3E%3C/filter%3E%3Crect width='100' height='100' filter='url(%23paper)' opacity='0.25'/%3E%3C/svg%3E")`,
+                      }}
+                    >
+                      {/* Push Pin */}
+                      <div
+                        className="absolute -top-4 left-1/2 transform -translate-x-1/2 w-7 h-7 rounded-full shadow-lg z-10"
+                        style={{
+                          background: 'radial-gradient(circle at 30% 30%, #E63946, #B91C1C)',
+                          boxShadow: '0 4px 10px rgba(0,0,0,0.4), inset -2px -2px 4px rgba(0,0,0,0.3)'
+                        }}
+                      >
+                        <div className="w-2 h-2 bg-white/50 rounded-full absolute top-2 left-2" />
+                      </div>
+
+                      {/* Title */}
+                      <h1
+                        className="text-2xl md:text-3xl font-black mb-4"
+                        style={{
+                          color: '#2C1810',
+                          fontFamily: 'Georgia, serif',
+                          lineHeight: '1.2',
+                        }}
+                      >
+                        {post.title}
+                      </h1>
+
+                      {/* Date */}
+                      <p
+                        className="text-xs mb-4"
+                        style={{
+                          color: '#666',
+                          fontFamily: 'Comic Sans MS, cursive',
+                        }}
+                      >
+                        {new Date(post.published_at).toLocaleDateString('en-US', {
+                          month: 'long',
+                          day: 'numeric',
+                          year: 'numeric'
+                        })}
+                      </p>
+
+                      {/* Intro Content */}
+                      {post.intro_content && (
+                        <p
+                          className="text-sm md:text-base leading-relaxed whitespace-pre-line"
+                          style={{
+                            color: '#3C3C3C',
+                            fontFamily: 'Georgia, serif',
+                          }}
+                        >
+                          {post.intro_content}
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                </div>
+
+                {/* Parallax Store Sections */}
+                {post.sections_data && post.sections_data.map((section, index) => (
+                  <ParallaxGuideSection
+                    key={index}
+                    title={section.store_name}
+                    description={section.description}
+                    image={section.image}
+                    address={section.address}
+                    mapLink={section.map_link}
+                    reverse={section.reverse}
+                  />
+                ))}
+
+                {/* Back to Blog Button */}
+                <div className="mt-16 md:mt-24 text-center">
+                  <Link
+                    to="/blog"
+                    className="inline-block bg-yellow-100 px-8 py-4 font-bold hover:bg-yellow-200 transition-all shadow-lg hover:shadow-xl hover:-translate-y-1"
+                    style={{
+                      color: '#2C1810',
+                      fontFamily: 'Comic Sans MS, cursive',
+                      fontSize: '1.1rem',
+                      transform: 'rotate(-1.5deg)',
+                    }}
+                  >
+                    ← Back to All Articles
+                  </Link>
+                </div>
+              </div>
             </div>
-            <h1 className="text-5xl font-black text-white">
+          </div>
+        </div>
+      </article>
+    );
+  }
+
+  // Render Standard Article (bulletin board style - fallback)
+  return (
+    <div
+      className="min-h-screen relative"
+      style={{
+        background: 'linear-gradient(135deg, #D4A574 0%, #C69C6D 50%, #B8956A 100%)',
+      }}
+    >
+      <div
+        className="absolute inset-0 opacity-20 pointer-events-none"
+        style={{
+          backgroundImage: `url("data:image/svg+xml,%3Csvg width='100' height='100' viewBox='0 0 100 100' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M0 0h100v1H0zM0 20h100v1H0zM0 40h100v1H0zM0 60h100v1H0zM0 80h100v1H0z' fill='%23000' fill-opacity='0.1'/%3E%3C/svg%3E")`,
+          backgroundSize: '100px 100px',
+        }}
+      />
+
+      <div className="max-w-4xl mx-auto px-4 py-16 relative z-10">
+        <div
+          className="bg-gradient-to-br from-white to-gray-50 shadow-2xl p-12 relative"
+          style={{
+            boxShadow: '0 20px 60px rgba(0,0,0,0.4), 0 10px 30px rgba(0,0,0,0.3)',
+          }}
+        >
+          <div
+            className="absolute -top-4 left-12 w-7 h-7 rounded-full shadow-lg"
+            style={{
+              background: 'radial-gradient(circle at 30% 30%, #E63946, #B91C1C)',
+              boxShadow: '0 3px 8px rgba(0,0,0,0.4), inset -2px -2px 4px rgba(0,0,0,0.3)'
+            }}
+          >
+            <div className="w-2 h-2 bg-white/50 rounded-full absolute top-1.5 left-1.5" />
+          </div>
+          <div
+            className="absolute -top-4 right-12 w-7 h-7 rounded-full shadow-lg"
+            style={{
+              background: 'radial-gradient(circle at 30% 30%, #457B9D, #2C5F7C)',
+              boxShadow: '0 3px 8px rgba(0,0,0,0.4), inset -2px -2px 4px rgba(0,0,0,0.3)'
+            }}
+          >
+            <div className="w-2 h-2 bg-white/50 rounded-full absolute top-1.5 left-1.5" />
+          </div>
+
+          {post.hero_image && (
+            <div className="relative mb-8 -mx-12 -mt-12">
+              <img
+                src={post.hero_image}
+                alt={post.title}
+                className="w-full h-[50vh] object-cover"
+              />
+            </div>
+          )}
+
+          <div className="mb-8">
+            <p
+              className="text-sm mb-4"
+              style={{
+                color: '#666',
+                fontFamily: 'Comic Sans MS, cursive',
+              }}
+            >
+              {new Date(post.published_at).toLocaleDateString('en-US', {
+                month: 'long',
+                day: 'numeric',
+                year: 'numeric'
+              })}
+            </p>
+            <h1
+              className="text-4xl md:text-5xl font-black mb-6"
+              style={{
+                color: '#2C1810',
+                fontFamily: 'Georgia, serif',
+                lineHeight: '1.2',
+              }}
+            >
               {post.title}
             </h1>
           </div>
-        </div>
-      )}
 
-      {/* Article Content */}
-      <div className="px-4 py-12">
-        <div className="max-w-3xl mx-auto prose prose-lg prose-cyan">
-          {/* Meta info (if no hero image) */}
-          {!post.hero_image && (
-            <div className="mb-8">
-              <div className="flex items-center gap-3 mb-4">
-                <span className="text-gray-600 text-sm">
-                  {new Date(post.published_at).toLocaleDateString('en-US', { 
-                    month: 'long', 
-                    day: 'numeric', 
-                    year: 'numeric' 
-                  })}
-                </span>
-              </div>
-              <h1 className="text-5xl font-black text-gray-900 mb-6">
-                {post.title}
-              </h1>
-            </div>
-          )}
-
-          {/* Markdown Content */}
-          <div className="markdown-content prose prose-lg prose-cyan max-w-none">
-            <ReactMarkdown
-              remarkPlugins={[remarkGfm]}
-              rehypePlugins={[rehypeRaw]}
-            >
-              {post.content}
-            </ReactMarkdown>
-          </div>
-
-          {/* Referenced Stores (placeholder for future) */}
-          {post.referenced_stores && post.referenced_stores.length > 0 && (
-            <div className="mt-12 p-6 bg-gray-50 rounded-xl border-l-4 border-cyan-500">
-              <h3 className="text-xl font-bold text-gray-900 mb-4">
-                Related Stores
-              </h3>
-              <p className="text-gray-600">
-                Store linking feature coming soon!
-              </p>
-            </div>
-          )}
-        </div>
-
-        {/* Related Posts */}
-        {relatedPosts.length > 0 && (
-          <div className="mt-20 max-w-3xl mx-auto">
-            <h2 className="text-3xl font-bold text-gray-900 mb-8 text-center">
-              More Articles
-            </h2>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              {relatedPosts.map(relatedPost => (
-                <Link
-                  key={relatedPost.id}
-                  to={`/blog/${relatedPost.slug}`}
-                  className="group bg-white rounded-xl overflow-hidden shadow-lg hover:shadow-2xl transition-shadow border border-gray-200"
-                >
-                  {relatedPost.hero_image && (
-                    <div className="relative h-48 overflow-hidden">
-                      <img 
-                        src={relatedPost.hero_image} 
-                        alt={relatedPost.title}
-                        className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300"
-                      />
-                    </div>
-                  )}
-                  <div className="p-6">
-                    <div className="flex items-center gap-3 mb-2">
-                      <span className="text-gray-500 text-xs">
-                        {new Date(relatedPost.published_at).toLocaleDateString()}
-                      </span>
-                    </div>
-                    <h3 className="text-lg font-bold text-gray-900 mb-2 group-hover:text-cyan-500 transition-colors">
-                      {relatedPost.title}
-                    </h3>
-                    <p className="text-gray-600 text-sm line-clamp-2">
-                      {relatedPost.content.slice(0, 100)}...
-                    </p>
-                  </div>
-                </Link>
-              ))}
-            </div>
-          </div>
-        )}
-
-        {/* Back to Blog */}
-        <div className="mt-12 text-center">
-          <Link
-            to="/blog"
-            className="inline-flex items-center gap-2 px-6 py-3 bg-gray-100 text-gray-700 font-medium rounded-full hover:bg-gray-200 transition-colors"
+          <div
+            className="prose prose-lg max-w-none"
+            style={{
+              color: '#3C3C3C',
+              fontFamily: 'Georgia, serif',
+              lineHeight: '1.8',
+            }}
           >
-            ← Back to All Articles
-          </Link>
+            <p className="whitespace-pre-line">{post.content}</p>
+          </div>
+
+          <div className="mt-12 text-center">
+            <Link
+              to="/blog"
+              className="inline-block bg-yellow-100 px-6 py-3 font-bold hover:bg-yellow-200 transition-all shadow-md hover:shadow-lg"
+              style={{
+                color: '#2C1810',
+                fontFamily: 'Comic Sans MS, cursive',
+                transform: 'rotate(-1deg)',
+              }}
+            >
+              ← Back to All Articles
+            </Link>
+          </div>
         </div>
       </div>
     </div>

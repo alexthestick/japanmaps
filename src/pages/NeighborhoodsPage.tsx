@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { MapPin, Shuffle, ArrowLeft } from 'lucide-react';
 import { LOCATIONS, MAJOR_CITIES_JAPAN } from '../lib/constants';
 import { getNeighborhoodStoreCounts } from '../utils/neighborhoodData';
+import { cityToSlug, neighborhoodToSlug } from '../utils/cityData';
 
 interface NeighborhoodItem {
   id: string;
@@ -50,7 +51,9 @@ export function NeighborhoodsPage() {
       if (hoods.length > 0) {
         hoods.forEach((hood) => {
           const key = `${city}-${hood}`;
-          const slug = hood.toLowerCase().replace(/\s+/g, '');
+          // Generate slug: lowercase, replace spaces with nothing, keep dashes
+          // This matches how the image generation script processes names
+          const slug = hood.toLowerCase().replace(/\s+/g, '').replace(/\//g, '');
           items.push({
             id: key,
             name: hood,
@@ -115,15 +118,17 @@ export function NeighborhoodsPage() {
     const city = isCityOnly ? neighborhood.name : neighborhood.city;
     const hood = isCityOnly ? null : neighborhood.name;
 
-    // Always navigate to map page with filters
-    const params = new URLSearchParams();
-    params.set('view', 'map');
-    params.set('city', city);
-    if (hood) {
-      params.set('neighborhood', hood);
-    }
+    // Navigate to city page or neighborhood page
+    const citySlug = cityToSlug(city);
 
-    navigate(`/map?${params.toString()}`);
+    if (hood) {
+      // Navigate to neighborhood page
+      const neighborhoodSlug = neighborhoodToSlug(hood);
+      navigate(`/city/${citySlug}/${neighborhoodSlug}`);
+    } else {
+      // Navigate to city page
+      navigate(`/city/${citySlug}`);
+    }
   };
 
   if (loading) {
@@ -226,7 +231,16 @@ export function NeighborhoodsPage() {
                         alt={hoveredNeighborhood.name}
                         className="w-full h-full object-cover transition-transform duration-300 hover:scale-105"
                         onError={(e) => {
-                          e.currentTarget.style.display = 'none';
+                          // Show placeholder when image fails to load
+                          const target = e.target as HTMLImageElement;
+                          target.style.display = 'none';
+                          const container = target.parentElement;
+                          if (container && !container.querySelector('.preview-placeholder')) {
+                            const placeholder = document.createElement('div');
+                            placeholder.className = 'preview-placeholder absolute inset-0 flex items-center justify-center bg-gradient-to-br from-gray-800 to-gray-900 text-white/40';
+                            placeholder.innerHTML = `<div class="text-center"><div class="text-4xl font-bold mb-2">${hoveredNeighborhood.name}</div><div class="text-sm">Image Coming Soon</div></div>`;
+                            container.appendChild(placeholder);
+                          }
                         }}
                       />
                       {/* Film grain overlay */}
@@ -323,7 +337,17 @@ export function NeighborhoodsPage() {
                         alt={neighborhood.name}
                         className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-110"
                         onError={(e) => {
-                          e.currentTarget.style.display = 'none';
+                          // Hide broken image and show placeholder
+                          const target = e.target as HTMLImageElement;
+                          target.style.display = 'none';
+                          // Show placeholder text on parent
+                          const parent = target.parentElement;
+                          if (parent && !parent.querySelector('.image-placeholder')) {
+                            const placeholder = document.createElement('div');
+                            placeholder.className = 'image-placeholder absolute inset-0 flex items-center justify-center text-white/30 text-xs';
+                            placeholder.textContent = neighborhood.name;
+                            parent.appendChild(placeholder);
+                          }
                         }}
                       />
                     </div>
