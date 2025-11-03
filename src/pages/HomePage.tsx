@@ -4,6 +4,7 @@ import { AnimatePresence } from 'framer-motion';
 import { MapView } from '../components/map/MapView';
 import { StoreList } from '../components/store/StoreList';
 import { StoreDetail } from '../components/store/StoreDetail';
+import { Header } from '../components/layout/Header';
 import { ScrollingBanner } from '../components/layout/ScrollingBanner';
 // import { StoreDetailModal } from '../components/store/StoreDetailModal'; // Not needed in new design
 import { FloatingSearchBar } from '../components/map/FloatingSearchBar';
@@ -220,15 +221,18 @@ export function HomePage() {
 
   return (
     <>
-      {/* Scrolling Banner */}
-      <ScrollingBanner />
+      {/* Header - Always visible */}
+      <Header />
+
+      {/* Scrolling Banner - Desktop only */}
+      {!isMobile && <ScrollingBanner />}
 
       {view === 'map' ? (
         // ========== MAP VIEW - Full Screen with Floating Panels ==========
         <div className={`relative w-full ${
           isMobile
-            ? 'h-[calc(100vh-128px)] mt-[128px]' // Mobile: account for filter bar (128px)
-            : 'h-[calc(100vh-64px-48px)]'        // Desktop: account for header + banner
+            ? 'h-[calc(100vh-64px)]' // Mobile: just header (64px)
+            : 'h-[calc(100vh-64px-48px)]'  // Desktop: header + banner
         }`}>
           {/* Full-screen Map */}
           <MapView
@@ -241,7 +245,7 @@ export function HomePage() {
             activeSubCategory={selectedSubCategories[0] || null}
           />
 
-          {/* MOBILE: Top Filter Bar */}
+          {/* MOBILE: Floating Filter Bar (overlays map) */}
           {isMobile && (
             <MobileFilterBar
               selectedMainCategory={selectedMainCategory}
@@ -251,6 +255,8 @@ export function HomePage() {
               selectedCity={selectedCity}
               selectedNeighborhood={selectedNeighborhood}
               onCityChange={handleCityChange}
+              searchQuery={searchQuery}
+              onSearchChange={setSearchQuery}
               onOpenCityDrawer={() => setShowCityDrawer(true)}
             />
           )}
