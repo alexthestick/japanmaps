@@ -55,9 +55,6 @@ export function MobileFilterBar({
 
   return (
     <div className="fixed top-0 left-0 right-0 z-40 bg-gradient-to-b from-black/95 via-black/90 to-black/80 backdrop-blur-md border-b border-cyan-400/20">
-      {/* Film grain overlay */}
-      <div className="absolute inset-0 opacity-[0.03] pointer-events-none bg-[url('/film-grain.png')]" />
-
       <div className="relative z-10">
         {/* Main Categories - Horizontal Scroll */}
         <div className="flex overflow-x-auto gap-2 px-4 py-3 scrollbar-hide">
