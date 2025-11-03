@@ -1,20 +1,25 @@
-import { useState, useEffect, useRef, useMemo } from 'react';
+import { useState, useEffect, useRef, useMemo, useCallback } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
+import { AnimatePresence } from 'framer-motion';
 import { MapView } from '../components/map/MapView';
 import { StoreList } from '../components/store/StoreList';
 import { StoreDetail } from '../components/store/StoreDetail';
+import { ScrollingBanner } from '../components/layout/ScrollingBanner';
 // import { StoreDetailModal } from '../components/store/StoreDetailModal'; // Not needed in new design
 import { FloatingSearchBar } from '../components/map/FloatingSearchBar';
 import { FloatingCategoryPanel } from '../components/map/FloatingCategoryPanel';
 import { FloatingMapLegend } from '../components/map/FloatingMapLegend';
 import { ViewToggleButton } from '../components/map/ViewToggleButton';
+import { MobileFilterBar } from '../components/map/MobileFilterBar';
 import { ListViewSidebar } from '../components/filters/ListViewSidebar';
 import { SortDropdown } from '../components/store/SortDropdown';
 import { useStores } from '../hooks/useStores';
+import { useIsMobile } from '../hooks/useMediaQuery';
 import { Loader } from '../components/common/Loader';
 import type { Store, MainCategory } from '../types/store';
 import { sortStores } from '../utils/helpers';
 import { getCityDataWithCounts, type CityData } from '../utils/cityData';
+import type { SearchSuggestion } from '../components/store/SearchAutocomplete';
 
 export function HomePage() {
   const [searchParams, setSearchParams] = useSearchParams();
@@ -24,11 +29,7 @@ export function HomePage() {
   const initialView = (searchParams.get('view') as 'map' | 'list') || 'map';
   const [view, setView] = useState<'map' | 'list'>(initialView);
   const [selectedStore, setSelectedStore] = useState<Store | null>(null);
-  const [sortBy, setSortBy] = useState<string>(() => {
-    // Only randomize on first page load, never again
-    return 'random';
-  });
-  const sortByRef = useRef(true); // Track if we've already done the initial random sort
+  const [sortBy, setSortBy] = useState<string>('alphabetical');
   // City data no longer needed in this view
   // const [cities, setCities] = useState<CityData[]>([]);
   // useEffect(() => {
@@ -50,7 +51,12 @@ export function HomePage() {
     searchParams.get('neighborhood') || null
   );
 
-  // Debounce timer for URL updates
+  // Mobile state
+  const [showCityDrawer, setShowCityDrawer] = useState(false);
+  const isMobile = useIsMobile();
+
+  // Refs for map control and preventing refresh
+  const mapViewRef = useRef<any>(null);
   const debounceTimer = useRef<NodeJS.Timeout>();
 
   // Sync URL params to state when URL changes (e.g., from Cities menu navigation)
@@ -130,21 +136,8 @@ export function HomePage() {
     return true;
   });
 
-  // Sort stores - only randomize on initial load, then keep the sort option selected
+  // Sort stores
   const sortedStores = useMemo(() => {
-    // If this is the first load and sortBy is 'random', do the random sort
-    // Then never randomize again automatically
-    if (sortByRef.current && sortBy === 'random') {
-      sortByRef.current = false; // Mark that we've done the initial randomization
-      return sortStores(filteredStores, sortBy);
-    }
-
-    // For all other cases, if sortBy is 'random', don't reshuffle - keep current order
-    if (sortBy === 'random') {
-      return filteredStores; // Just return as-is, don't reshuffle
-    }
-
-    // For other sort options, apply them normally
     return sortStores(filteredStores, sortBy);
   }, [filteredStores, sortBy]);
 
@@ -178,6 +171,32 @@ export function HomePage() {
     setSelectedNeighborhood(null);
   };
 
+  // Handle autocomplete suggestion selection (CRITICAL: prevent refresh)
+  const handleSearchSuggestionSelect = useCallback((suggestion: SearchSuggestion) => {
+    if (suggestion.type === 'store') {
+      // Find the store in our list
+      const store = stores.find(s => s.id === suggestion.storeId);
+      if (store) {
+        // Open the store detail panel
+        setSelectedStore(store);
+
+        // Zoom to the store location using mapRef if available
+        if (mapViewRef.current?.flyToStore) {
+          mapViewRef.current.flyToStore(store.latitude, store.longitude);
+        }
+      }
+    } else if (suggestion.type === 'location') {
+      // Set location filters
+      if (suggestion.city) {
+        setSelectedCity(suggestion.city);
+      }
+      if (suggestion.neighborhood) {
+        setSelectedNeighborhood(suggestion.neighborhood);
+      }
+      // The MapView will auto-zoom based on the filter change
+    }
+  }, [stores]);
+
   // const hasActiveFilters = selectedMainCategory || selectedSubCategories.length > 0 || selectedCity || searchQuery;
 
   if (loading) {
@@ -201,11 +220,19 @@ export function HomePage() {
 
   return (
     <>
+      {/* Scrolling Banner */}
+      <ScrollingBanner />
+
       {view === 'map' ? (
         // ========== MAP VIEW - Full Screen with Floating Panels ==========
-        <div className="relative w-full h-[calc(100vh-64px)]">
+        <div className={`relative w-full ${
+          isMobile
+            ? 'h-[calc(100vh-128px)] mt-[128px]' // Mobile: account for filter bar (128px)
+            : 'h-[calc(100vh-64px-48px)]'        // Desktop: account for header + banner
+        }`}>
           {/* Full-screen Map */}
           <MapView
+            ref={mapViewRef}
             stores={filteredStores}
             onStoreClick={setSelectedStore}
             selectedCity={selectedCity}
@@ -214,15 +241,80 @@ export function HomePage() {
             activeSubCategory={selectedSubCategories[0] || null}
           />
 
-          {/* Floating Search Bar */}
-          <FloatingSearchBar
-            value={searchQuery}
-            onChange={setSearchQuery}
-            placeholder="Search stores, neighborhoods..."
-          />
+          {/* MOBILE: Top Filter Bar */}
+          {isMobile && (
+            <MobileFilterBar
+              selectedMainCategory={selectedMainCategory}
+              onMainCategoryChange={handleMainCategoryChange}
+              selectedSubCategories={selectedSubCategories}
+              onSubCategoryToggle={handleSubCategoryToggle}
+              selectedCity={selectedCity}
+              selectedNeighborhood={selectedNeighborhood}
+              onCityChange={handleCityChange}
+              onOpenCityDrawer={() => setShowCityDrawer(true)}
+            />
+          )}
 
-          {/* Floating Category Panel */}
-          <FloatingCategoryPanel
+          {/* DESKTOP: Floating Panels (hide on mobile) */}
+          {!isMobile && (
+            <>
+              {/* Floating Search Bar */}
+              <FloatingSearchBar
+                value={searchQuery}
+                onChange={setSearchQuery}
+                placeholder="Search stores, neighborhoods..."
+                stores={stores}
+                onSelectSuggestion={handleSearchSuggestionSelect}
+              />
+
+              {/* Floating Category Panel */}
+              <FloatingCategoryPanel
+                selectedMainCategory={selectedMainCategory}
+                selectedSubCategories={selectedSubCategories}
+                selectedCity={selectedCity}
+                selectedNeighborhood={selectedNeighborhood}
+                onMainCategoryChange={handleMainCategoryChange}
+                onSubCategoryToggle={handleSubCategoryToggle}
+                onCityChange={handleCityChange}
+                onNeighborhoodChange={setSelectedNeighborhood}
+              />
+
+              {/* Floating Map Legend */}
+              <FloatingMapLegend
+                selectedCategory={selectedMainCategory}
+                onCategoryClick={handleMainCategoryChange}
+              />
+
+              {/* View Toggle Button */}
+              <ViewToggleButton
+                currentView="map"
+                onToggle={(newView) => setView(newView)}
+              />
+            </>
+          )}
+
+          {/* Store Detail Panel (both mobile and desktop - will update in Phase 2) */}
+          <AnimatePresence mode="wait">
+            {selectedStore && (
+              <>
+                {console.log('Rendering StoreDetail for:', selectedStore.name)}
+                <StoreDetail
+                  key={selectedStore.id}
+                  store={selectedStore}
+                  onClose={() => setSelectedStore(null)}
+                />
+              </>
+            )}
+          </AnimatePresence>
+        </div>
+      ) : (
+        // ========== LIST VIEW - Sidebar + Grid Layout ==========
+        <div className="flex min-h-screen bg-gradient-to-b from-black via-gray-900 to-black relative">
+          {/* Film grain */}
+          <div className="absolute inset-0 film-grain opacity-20 pointer-events-none" />
+
+          {/* Left Sidebar */}
+          <ListViewSidebar
             selectedMainCategory={selectedMainCategory}
             selectedSubCategories={selectedSubCategories}
             selectedCity={selectedCity}
@@ -231,55 +323,67 @@ export function HomePage() {
             onSubCategoryToggle={handleSubCategoryToggle}
             onCityChange={handleCityChange}
             onNeighborhoodChange={setSelectedNeighborhood}
-          />
-
-          {/* Floating Map Legend */}
-          <FloatingMapLegend />
-
-          {/* View Toggle Button */}
-          <ViewToggleButton
-            currentView="map"
-            onToggle={(newView) => setView(newView)}
-          />
-
-          {/* Store Detail Panel */}
-          {selectedStore && (
-            <StoreDetail
-              store={selectedStore}
-              onClose={() => setSelectedStore(null)}
-            />
-          )}
-        </div>
-      ) : (
-        // ========== LIST VIEW - Sidebar + Grid Layout ==========
-        <div className="flex min-h-screen bg-white">
-          {/* Left Sidebar */}
-          <ListViewSidebar
-            selectedMainCategory={selectedMainCategory}
-            selectedCity={selectedCity}
-            onMainCategoryChange={handleMainCategoryChange}
-            onCityChange={handleCityChange}
             onClearAll={handleClearAll}
           />
 
           {/* Main Content Area */}
-          <div className="flex-1 p-8 bg-gray-50">
+          <div className="relative flex-1 p-8">
             {/* Header Bar */}
-            <div className="flex items-center justify-between mb-6">
-              <div className="text-sm text-gray-600">
-                <span className="font-semibold text-gray-900">{sortedStores.length}</span> stores
-              </div>
-              <div className="flex items-center gap-3">
-                <SortDropdown value={sortBy} onChange={setSortBy} />
-                <button
-                  onClick={() => setView('map')}
-                  className="px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700 transition-colors flex items-center gap-2"
+            <div className="space-y-4 mb-6">
+              {/* Search Bar */}
+              <div className="relative">
+                <input
+                  type="text"
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  placeholder="Search stores, neighborhoods..."
+                  className="w-full px-4 py-3 pl-11 bg-gray-900/80 backdrop-blur-sm border-2 border-cyan-400/50 rounded-xl text-sm placeholder-gray-400 text-white focus:outline-none focus:border-cyan-400/80 transition-all"
+                  style={{ boxShadow: '0 0 20px rgba(34, 217, 238, 0.2)' }}
+                />
+                <svg
+                  className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-cyan-300"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
                 >
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7" />
-                  </svg>
-                  Map View
-                </button>
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+                  />
+                </svg>
+                {searchQuery && (
+                  <button
+                    onClick={() => setSearchQuery('')}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 p-1 hover:bg-gray-800 rounded-full transition-colors"
+                  >
+                    <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                  </button>
+                )}
+              </div>
+
+              {/* Stats and Controls Row */}
+              <div className="flex items-center justify-between">
+                <div className="text-sm">
+                  <span className="font-bold text-white">{sortedStores.length}</span> <span className="text-gray-400">stores</span>
+                </div>
+                <div className="flex items-center gap-3">
+                  <SortDropdown value={sortBy} onChange={setSortBy} />
+                  <button
+                    onClick={() => setView('map')}
+                    className="relative px-4 py-2 bg-gradient-to-r from-cyan-400 via-blue-500 to-purple-500 text-white rounded-lg text-sm font-bold hover:scale-105 transition-all flex items-center gap-2 border-2 border-cyan-300/50 overflow-hidden"
+                    style={{ boxShadow: '0 0 20px rgba(34, 217, 238, 0.3)' }}
+                  >
+                    <div className="absolute inset-0 film-grain opacity-10" />
+                    <svg className="w-4 h-4 relative z-10" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7" />
+                    </svg>
+                    <span className="relative z-10">Map View</span>
+                  </button>
+                </div>
               </div>
             </div>
 
