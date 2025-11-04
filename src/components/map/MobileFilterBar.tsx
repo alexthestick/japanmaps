@@ -1,8 +1,9 @@
-import { useState } from 'react';
-import { Search, ShoppingBag, Utensils, Coffee, Home, Landmark, MapPin } from 'lucide-react';
+import { useState, useRef, useEffect } from 'react';
+import { Search, ShoppingBag, Utensils, Coffee, Home, Landmark, MapPin, X } from 'lucide-react';
 import { FilterPill } from './FilterPill';
-import type { MainCategory } from '../../types/store';
+import type { MainCategory, Store } from '../../types/store';
 import { FASHION_SUB_CATEGORIES, FOOD_SUB_CATEGORIES, HOME_GOODS_SUB_CATEGORIES } from '../../lib/constants';
+import { SearchAutocomplete, type SearchSuggestion } from '../store/SearchAutocomplete';
 
 interface MobileFilterBarProps {
   // Category state
@@ -24,6 +25,10 @@ interface MobileFilterBarProps {
 
   // Dropdown visibility
   onOpenCityDrawer: () => void;
+
+  // Stores for autocomplete
+  stores: Store[];
+  onSelectSuggestion: (suggestion: SearchSuggestion) => void;
 }
 
 // Category definitions with icons and subcategories
@@ -49,27 +54,100 @@ export function MobileFilterBar({
   searchQuery,
   onSearchChange,
   onOpenCityDrawer,
+  stores,
+  onSelectSuggestion,
 }: MobileFilterBarProps) {
   // Track which category's subcategories are expanded
   const [expandedCategory, setExpandedCategory] = useState<MainCategory | null>(null);
+  const [showAutocomplete, setShowAutocomplete] = useState(false);
+  const searchContainerRef = useRef<HTMLDivElement>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  // Close autocomplete when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (searchContainerRef.current && !searchContainerRef.current.contains(e.target as Node)) {
+        setShowAutocomplete(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const newValue = e.target.value;
+    onSearchChange(newValue);
+
+    // Show autocomplete if there's a query
+    if (newValue.length >= 2) {
+      setShowAutocomplete(true);
+    } else {
+      setShowAutocomplete(false);
+    }
+  };
+
+  const handleSelectSuggestion = (suggestion: SearchSuggestion) => {
+    onSelectSuggestion(suggestion);
+    setShowAutocomplete(false);
+
+    // Clear search or set to store name based on type
+    if (suggestion.type === 'store') {
+      onSearchChange(suggestion.name);
+    } else {
+      onSearchChange(''); // Clear search when selecting location
+    }
+  };
+
+  const handleClearSearch = () => {
+    onSearchChange('');
+    setShowAutocomplete(false);
+    inputRef.current?.focus();
+  };
 
   return (
     <div className="fixed top-20 left-0 right-0 z-30 px-4 pointer-events-none">
       <div className="max-w-7xl mx-auto space-y-2 pointer-events-auto">
         {/* Search Bar - Floating */}
-        <div className="relative">
+        <div className="relative" ref={searchContainerRef}>
           <div className="absolute -inset-1 bg-gradient-to-r from-cyan-500 via-blue-500 to-purple-500 rounded-2xl opacity-30 blur-md" />
-          <div className="relative bg-gray-900/95 backdrop-blur-xl rounded-2xl border-2 border-cyan-400/30 shadow-2xl overflow-hidden">
+          <div className="relative bg-gray-900/95 backdrop-blur-xl rounded-2xl border-2 border-cyan-400/30 shadow-2xl overflow-visible">
             <div className="flex items-center gap-3 px-4 py-3">
               <Search className="w-5 h-5 text-cyan-400 flex-shrink-0" />
               <input
+                ref={inputRef}
                 type="text"
                 value={searchQuery}
-                onChange={(e) => onSearchChange(e.target.value)}
+                onChange={handleInputChange}
+                onFocus={() => {
+                  if (searchQuery.length >= 2) setShowAutocomplete(true);
+                }}
                 placeholder="Search stores, neighborhoods..."
                 className="flex-1 bg-transparent text-white placeholder-gray-400 outline-none text-base"
+                autoComplete="off"
               />
+              {searchQuery && (
+                <button
+                  onClick={handleClearSearch}
+                  className="flex-shrink-0 p-1 hover:bg-gray-800 rounded-full transition-colors"
+                  type="button"
+                >
+                  <X className="w-4 h-4 text-gray-400 hover:text-cyan-300" />
+                </button>
+              )}
             </div>
+
+            {/* Autocomplete Dropdown */}
+            {showAutocomplete && searchQuery.length >= 2 && (
+              <div className="relative">
+                <SearchAutocomplete
+                  query={searchQuery}
+                  stores={stores}
+                  onSelect={handleSelectSuggestion}
+                  onClose={() => setShowAutocomplete(false)}
+                />
+              </div>
+            )}
           </div>
         </div>
 

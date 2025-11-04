@@ -245,18 +245,28 @@ export function HomePage() {
 
           {/* MOBILE: Floating Filter Bar (overlays map) */}
           {isMobile && (
-            <MobileFilterBar
-              selectedMainCategory={selectedMainCategory}
-              onMainCategoryChange={handleMainCategoryChange}
-              selectedSubCategories={selectedSubCategories}
-              onSubCategoryToggle={handleSubCategoryToggle}
-              selectedCity={selectedCity}
-              selectedNeighborhood={selectedNeighborhood}
-              onCityChange={handleCityChange}
-              searchQuery={searchQuery}
-              onSearchChange={setSearchQuery}
-              onOpenCityDrawer={() => setShowCityDrawer(true)}
-            />
+            <>
+              <MobileFilterBar
+                selectedMainCategory={selectedMainCategory}
+                onMainCategoryChange={handleMainCategoryChange}
+                selectedSubCategories={selectedSubCategories}
+                onSubCategoryToggle={handleSubCategoryToggle}
+                selectedCity={selectedCity}
+                selectedNeighborhood={selectedNeighborhood}
+                onCityChange={handleCityChange}
+                searchQuery={searchQuery}
+                onSearchChange={setSearchQuery}
+                onOpenCityDrawer={() => setShowCityDrawer(true)}
+                stores={stores}
+                onSelectSuggestion={handleSearchSuggestionSelect}
+              />
+
+              {/* View Toggle Button - Bottom Right */}
+              <ViewToggleButton
+                currentView="map"
+                onToggle={(newView) => setView(newView)}
+              />
+            </>
           )}
 
           {/* DESKTOP: Floating Panels (hide on mobile) */}
