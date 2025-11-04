@@ -228,18 +228,23 @@ export function MobileListView({
               <button
                 key={store.id}
                 onClick={() => onStoreClick(store)}
-                className="bg-gray-800/40 border border-gray-700/50 rounded-xl overflow-hidden hover:border-cyan-400/50 transition-all active:scale-95"
+                className="bg-gray-800/40 border border-gray-700/50 rounded-xl overflow-hidden hover:border-cyan-400/50 transition-all active:scale-95 text-left"
               >
                 {/* Store Image */}
-                {store.imageUrl && (
-                  <div className="aspect-square bg-gray-900 relative overflow-hidden flex items-center justify-center">
+                <div className="aspect-square bg-gray-900 relative overflow-hidden flex items-center justify-center">
+                  {store.photos && store.photos.length > 0 ? (
                     <img
-                      src={store.imageUrl}
+                      src={store.photos[0]}
                       alt={store.name}
                       className="w-full h-full object-contain"
+                      loading="lazy"
                     />
-                  </div>
-                )}
+                  ) : (
+                    <div className="flex items-center justify-center w-full h-full text-gray-600">
+                      <span className="text-4xl">📍</span>
+                    </div>
+                  )}
+                </div>
 
                 {/* Store Info */}
                 <div className="p-3">
