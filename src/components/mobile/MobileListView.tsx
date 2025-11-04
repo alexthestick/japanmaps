@@ -230,13 +230,13 @@ export function MobileListView({
                 onClick={() => onStoreClick(store)}
                 className="bg-gray-800/40 border border-gray-700/50 rounded-xl overflow-hidden hover:border-cyan-400/50 transition-all active:scale-95 text-left"
               >
-                {/* Store Image */}
-                <div className="aspect-square bg-gray-900 relative overflow-hidden flex items-center justify-center">
+                {/* Store Image - Full coverage */}
+                <div className="aspect-square bg-gray-900 relative overflow-hidden">
                   {store.photos && store.photos.length > 0 ? (
                     <img
                       src={store.photos[0]}
                       alt={store.name}
-                      className="w-full h-full object-contain"
+                      className="w-full h-full object-cover"
                       loading="lazy"
                     />
                   ) : (
@@ -247,17 +247,21 @@ export function MobileListView({
                 </div>
 
                 {/* Store Info */}
-                <div className="p-3">
-                  <h3 className="font-bold text-white text-sm mb-1 line-clamp-1">
+                <div className="p-3 space-y-1">
+                  <h3 className="font-bold text-white text-sm line-clamp-1">
                     {store.name}
                   </h3>
-                  {store.neighborhood && (
-                    <p className="text-xs text-gray-400 mb-1 line-clamp-1">
-                      {store.neighborhood}
-                    </p>
-                  )}
+
+                  {/* City and Neighborhood */}
+                  <p className="text-xs text-gray-400 line-clamp-1">
+                    {store.neighborhood && store.city
+                      ? `${store.neighborhood}, ${store.city}`
+                      : store.neighborhood || store.city || 'Location not specified'}
+                  </p>
+
+                  {/* Category Tag */}
                   {store.mainCategory && (
-                    <span className="inline-block px-2 py-0.5 bg-cyan-500/20 text-cyan-300 text-xs rounded-full border border-cyan-400/30">
+                    <span className="inline-block px-2 py-0.5 bg-cyan-500/20 text-cyan-300 text-xs rounded-full border border-cyan-400/30 mt-1">
                       {store.mainCategory}
                     </span>
                   )}
