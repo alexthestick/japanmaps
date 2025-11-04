@@ -167,7 +167,7 @@ export function MobileListView({
             {/* Cities Filter */}
             <button
               onClick={() => setShowCitySheet(true)}
-              className={`flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold transition-all ${
+              className={`flex-1 flex items-center justify-center gap-1.5 px-3 py-2.5 rounded-xl text-sm font-semibold transition-all min-w-0 ${
                 selectedCity
                   ? 'bg-cyan-500/30 text-white border-2 border-cyan-400/50'
                   : 'bg-gray-800/60 text-gray-300 border border-gray-600/40'
@@ -178,15 +178,15 @@ export function MobileListView({
                   : '0 2px 8px rgba(0, 0, 0, 0.3)',
               }}
             >
-              <MapPin className="w-4 h-4" />
-              <span className="truncate max-w-[80px]">{cityLabel}</span>
-              <ChevronDown className="w-3.5 h-3.5" />
+              <MapPin className="w-4 h-4 flex-shrink-0" />
+              <span className="truncate">{cityLabel}</span>
+              <ChevronDown className="w-3.5 h-3.5 flex-shrink-0" />
             </button>
 
             {/* Categories Filter */}
             <button
               onClick={() => setShowCategorySheet(true)}
-              className={`flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold transition-all ${
+              className={`flex-1 flex items-center justify-center gap-1.5 px-3 py-2.5 rounded-xl text-sm font-semibold transition-all min-w-0 ${
                 selectedMainCategory
                   ? 'bg-cyan-500/30 text-white border-2 border-cyan-400/50'
                   : 'bg-gray-800/60 text-gray-300 border border-gray-600/40'
@@ -197,20 +197,20 @@ export function MobileListView({
                   : '0 2px 8px rgba(0, 0, 0, 0.3)',
               }}
             >
-              <Tag className="w-4 h-4" />
-              <span className="truncate max-w-[80px]">{categoryLabel}</span>
-              <ChevronDown className="w-3.5 h-3.5" />
+              <Tag className="w-4 h-4 flex-shrink-0" />
+              <span className="truncate">{categoryLabel}</span>
+              <ChevronDown className="w-3.5 h-3.5 flex-shrink-0" />
             </button>
 
             {/* Sort Filter */}
             <button
               onClick={() => setShowSortSheet(true)}
-              className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold transition-all bg-gray-800/60 text-gray-300 border border-gray-600/40"
+              className="flex-1 flex items-center justify-center gap-1.5 px-3 py-2.5 rounded-xl text-sm font-semibold transition-all bg-gray-800/60 text-gray-300 border border-gray-600/40 min-w-0"
               style={{ boxShadow: '0 2px 8px rgba(0, 0, 0, 0.3)' }}
             >
-              <ArrowUpDown className="w-4 h-4" />
-              <span className="truncate max-w-[60px]">{sortLabel}</span>
-              <ChevronDown className="w-3.5 h-3.5" />
+              <ArrowUpDown className="w-4 h-4 flex-shrink-0" />
+              <span className="truncate">{sortLabel}</span>
+              <ChevronDown className="w-3.5 h-3.5 flex-shrink-0" />
             </button>
           </div>
 
@@ -232,11 +232,11 @@ export function MobileListView({
               >
                 {/* Store Image */}
                 {store.imageUrl && (
-                  <div className="aspect-square bg-gray-900 relative overflow-hidden">
+                  <div className="aspect-square bg-gray-900 relative overflow-hidden flex items-center justify-center">
                     <img
                       src={store.imageUrl}
                       alt={store.name}
-                      className="w-full h-full object-cover"
+                      className="w-full h-full object-contain"
                     />
                   </div>
                 )}
