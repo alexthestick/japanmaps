@@ -20,19 +20,20 @@ interface MapViewProps {
   activeSubCategory?: string | null;
   styleMode?: 'day' | 'night';
   onStyleModeChange?: (mode: 'day' | 'night') => void;
+  tappedStoreId?: string | null; // For mobile two-tap interaction
 }
 
 export interface MapViewHandle {
   flyToStore: (latitude: number, longitude: number) => void;
 }
 
-export const MapView = forwardRef<MapViewHandle, MapViewProps>(({ stores, onStoreClick, selectedCity, selectedNeighborhood, isSearchActive = false, activeMainCategory, activeSubCategory, styleMode: controlledStyleMode, onStyleModeChange }, ref) => {
+export const MapView = forwardRef<MapViewHandle, MapViewProps>(({ stores, onStoreClick, selectedCity, selectedNeighborhood, isSearchActive = false, activeMainCategory, activeSubCategory, styleMode: controlledStyleMode, onStyleModeChange, tappedStoreId }, ref) => {
   const [viewState, setViewState] = useState({
     longitude: DEFAULT_CENTER.longitude,
     latitude: DEFAULT_CENTER.latitude,
     zoom: DEFAULT_ZOOM,
   });
-  
+
   const [hoveredStoreId, setHoveredStoreId] = useState<string | null>(null);
   const mapRef = useRef<MapboxMap | null>(null);
 
@@ -381,7 +382,7 @@ export const MapView = forwardRef<MapViewHandle, MapViewProps>(({ stores, onStor
                 store={store}
                 map={mapRef.current}
                 isSearchActive={isSearchActive}
-                isHovered={hoveredStoreId === store.id}
+                isHovered={hoveredStoreId === store.id || tappedStoreId === store.id}
                 index={index}
                 activeZoneCenter={activeZoneCenter}
                 activeZoneRadius={calculateActiveZoneRadius}
@@ -399,7 +400,7 @@ export const MapView = forwardRef<MapViewHandle, MapViewProps>(({ stores, onStor
                 store={store}
                 map={mapRef.current}
                 isSearchActive={isSearchActive}
-                isHovered={hoveredStoreId === store.id}
+                isHovered={hoveredStoreId === store.id || tappedStoreId === store.id}
                 index={index}
                 activeZoneCenter={activeZoneCenter}
                 activeZoneRadius={calculateActiveZoneRadius}
@@ -426,7 +427,7 @@ export const MapView = forwardRef<MapViewHandle, MapViewProps>(({ stores, onStor
               store={store}
               map={mapRef.current}
               isSearchActive={isSearchActive}
-              isHovered={hoveredStoreId === store.id}
+              isHovered={hoveredStoreId === store.id || tappedStoreId === store.id}
               index={index}
               activeZoneCenter={activeZoneCenter}
               activeZoneRadius={calculateActiveZoneRadius}

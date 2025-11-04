@@ -55,11 +55,34 @@ export function HomePage() {
 
   // Mobile state
   const [showCityDrawer, setShowCityDrawer] = useState(false);
+  const [tappedStoreId, setTappedStoreId] = useState<string | null>(null); // Track first tap on mobile
   const isMobile = useIsMobile();
 
   // Refs for map control and preventing refresh
   const mapViewRef = useRef<any>(null);
   const debounceTimer = useRef<NodeJS.Timeout>();
+
+  // Handle store clicks with two-tap behavior on mobile
+  const handleStoreClick = useCallback((store: Store) => {
+    if (isMobile) {
+      // Mobile: Two-tap behavior
+      if (tappedStoreId === store.id) {
+        // Second tap on same store - open detail panel
+        setSelectedStore(store);
+        setTappedStoreId(null);
+      } else {
+        // First tap - just show store name label, don't open panel
+        setTappedStoreId(store.id);
+        // Clear the tapped state after 3 seconds if no second tap
+        setTimeout(() => {
+          setTappedStoreId(prev => prev === store.id ? null : prev);
+        }, 3000);
+      }
+    } else {
+      // Desktop: Single click opens detail panel immediately
+      setSelectedStore(store);
+    }
+  }, [isMobile, tappedStoreId]);
 
   // Sync URL params to state when URL changes (e.g., from Cities menu navigation)
   useEffect(() => {
@@ -236,11 +259,12 @@ export function HomePage() {
           <MapView
             ref={mapViewRef}
             stores={filteredStores}
-            onStoreClick={setSelectedStore}
+            onStoreClick={handleStoreClick}
             selectedCity={selectedCity}
             selectedNeighborhood={selectedNeighborhood}
             activeMainCategory={selectedMainCategory}
             activeSubCategory={selectedSubCategories[0] || null}
+            tappedStoreId={tappedStoreId}
           />
 
           {/* MOBILE: Floating Filter Bar (overlays map) */}
