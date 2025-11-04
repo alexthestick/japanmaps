@@ -11,6 +11,7 @@ import { FloatingCategoryPanel } from '../components/map/FloatingCategoryPanel';
 import { FloatingMapLegend } from '../components/map/FloatingMapLegend';
 import { ViewToggleButton } from '../components/map/ViewToggleButton';
 import { MobileFilterBar } from '../components/map/MobileFilterBar';
+import { MobileListView } from '../components/mobile/MobileListView';
 import { ListViewSidebar } from '../components/filters/ListViewSidebar';
 import { SortDropdown } from '../components/store/SortDropdown';
 import { BottomSheet } from '../components/common/BottomSheet';
@@ -454,8 +455,31 @@ export function HomePage() {
             </BottomSheet>
           )}
         </div>
+      ) : isMobile ? (
+        // ========== MOBILE LIST VIEW - Optimized for mobile ==========
+        <MobileListView
+          stores={sortedStores}
+          searchQuery={searchQuery}
+          onSearchChange={setSearchQuery}
+          selectedMainCategory={selectedMainCategory}
+          selectedSubCategories={selectedSubCategories}
+          selectedCity={selectedCity}
+          selectedNeighborhood={selectedNeighborhood}
+          sortBy={sortBy}
+          onMainCategoryChange={handleMainCategoryChange}
+          onSubCategoryToggle={handleSubCategoryToggle}
+          onCityChange={handleCityChange}
+          onNeighborhoodChange={setSelectedNeighborhood}
+          onSortChange={setSortBy}
+          onStoreClick={(store) => {
+            const params = Object.fromEntries(searchParams.entries());
+            navigate(`/store/${store.id}`, { state: { from: '/map', params } });
+          }}
+          onSelectSuggestion={handleSearchSuggestionSelect}
+          onBackToMap={() => setView('map')}
+        />
       ) : (
-        // ========== LIST VIEW - Sidebar + Grid Layout ==========
+        // ========== DESKTOP LIST VIEW - Sidebar + Grid Layout ==========
         <div className="flex min-h-screen bg-gradient-to-b from-black via-gray-900 to-black relative">
           {/* Film grain */}
           <div className="absolute inset-0 film-grain opacity-20 pointer-events-none" />
