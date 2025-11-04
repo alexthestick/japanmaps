@@ -119,7 +119,7 @@ export function MobileListView({
       {/* Content */}
       <div className="relative">
         {/* Search Bar */}
-        <div className="sticky top-16 z-20 bg-gradient-to-b from-black via-gray-900 to-transparent pb-4 px-4 pt-4">
+        <div className="bg-gradient-to-b from-black via-gray-900 to-transparent pb-4 px-4 pt-4">
           <div className="relative" ref={searchContainerRef}>
             <div className="absolute -inset-1 bg-gradient-to-r from-cyan-500 via-blue-500 to-purple-500 rounded-2xl opacity-30 blur-md" />
             <div className="relative bg-gray-900/95 backdrop-blur-xl rounded-2xl border-2 border-cyan-400/30 shadow-2xl overflow-visible">
@@ -202,15 +202,14 @@ export function MobileListView({
               <ChevronDown className="w-3.5 h-3.5 flex-shrink-0" />
             </button>
 
-            {/* Sort Filter */}
+            {/* Sort Filter - Icon Only */}
             <button
               onClick={() => setShowSortSheet(true)}
-              className="flex-1 flex items-center justify-center gap-1.5 px-3 py-2.5 rounded-xl text-sm font-semibold transition-all bg-gray-800/60 text-gray-300 border border-gray-600/40 min-w-0"
+              className="flex items-center justify-center px-3 py-2.5 rounded-xl text-sm font-semibold transition-all bg-gray-800/60 text-gray-300 border border-gray-600/40"
               style={{ boxShadow: '0 2px 8px rgba(0, 0, 0, 0.3)' }}
+              aria-label="Sort"
             >
-              <ArrowUpDown className="w-4 h-4 flex-shrink-0" />
-              <span className="truncate">{sortLabel}</span>
-              <ChevronDown className="w-3.5 h-3.5 flex-shrink-0" />
+              <ArrowUpDown className="w-4 h-4" />
             </button>
           </div>
 
