@@ -1,5 +1,18 @@
 import { MAIN_CATEGORIES, MAIN_CATEGORY_ICONS, FASHION_SUB_CATEGORIES, FOOD_SUB_CATEGORIES, HOME_GOODS_SUB_CATEGORIES } from '../../lib/constants';
+import { Shirt, UtensilsCrossed, Coffee, Home, Building2, LucideIcon } from 'lucide-react';
 import type { MainCategory } from '../../types/store';
+
+// Map icon names to actual icon components
+const getCategoryIcon = (iconName: string): LucideIcon => {
+  const iconMap: Record<string, LucideIcon> = {
+    'Shirt': Shirt,
+    'UtensilsCrossed': UtensilsCrossed,
+    'Coffee': Coffee,
+    'Home': Home,
+    'Building2': Building2,
+  };
+  return iconMap[iconName] || Shirt; // Default to Shirt if not found
+};
 
 interface CategoryPillsProps {
   selectedMainCategory: MainCategory | null;
@@ -50,7 +63,8 @@ export function CategoryPills({
 
           {/* Main category pills */}
           {MAIN_CATEGORIES.map((category) => {
-            const icon = MAIN_CATEGORY_ICONS[category];
+            const iconName = MAIN_CATEGORY_ICONS[category];
+            const Icon = getCategoryIcon(iconName);
             const count = storeCounts?.main?.[category];
             const isActive = isMainCategoryActive(category);
 
@@ -67,7 +81,7 @@ export function CategoryPills({
                   }
                 `}
               >
-                <span>{icon}</span>
+                <Icon className="w-4 h-4" />
                 <span>{category}</span>
                 {count !== undefined && (
                   <span className="ml-1 opacity-75">({count})</span>

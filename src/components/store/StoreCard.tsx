@@ -1,10 +1,22 @@
-import { ArrowRight } from 'lucide-react';
+import { ArrowRight, Shirt, UtensilsCrossed, Coffee, Home, Building2, LucideIcon } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { useState, memo } from 'react';
 import type { Store } from '../../types/store';
 import { MAIN_CATEGORY_ICONS, CITY_COLORS } from '../../lib/constants';
 import { SaveButton } from './SaveButton';
 import { WashiTexture } from '../common/WashiTexture';
+
+// Map icon names to actual icon components
+const getCategoryIcon = (iconName: string): LucideIcon => {
+  const iconMap: Record<string, LucideIcon> = {
+    'Shirt': Shirt,
+    'UtensilsCrossed': UtensilsCrossed,
+    'Coffee': Coffee,
+    'Home': Home,
+    'Building2': Building2,
+  };
+  return iconMap[iconName] || Shirt; // Default to Shirt if not found
+};
 
 interface StoreCardProps {
   store: Store;
@@ -15,7 +27,8 @@ function StoreCardComponent({ store, onClick }: StoreCardProps) {
   const [isHovered, setIsHovered] = useState(false);
 
   const mainCategory = store.mainCategory || 'Fashion';
-  const categoryIcon = MAIN_CATEGORY_ICONS[mainCategory as keyof typeof MAIN_CATEGORY_ICONS];
+  const iconName = MAIN_CATEGORY_ICONS[mainCategory as keyof typeof MAIN_CATEGORY_ICONS];
+  const Icon = getCategoryIcon(iconName);
 
   // Filter out generic categories like 'Shopping' and 'Fashion', prefer subcategories
   const categoryChips = store.categories
@@ -82,7 +95,7 @@ function StoreCardComponent({ store, onClick }: StoreCardProps) {
           {/* Category Icon - Bottom Left */}
           <div className="absolute bottom-3 left-3 text-2xl bg-gradient-to-br from-cyan-500/30 to-blue-500/30 backdrop-blur-sm w-10 h-10 rounded-full flex items-center justify-center shadow-sm border border-cyan-400/50 z-10"
                style={{ boxShadow: '0 0 15px rgba(34, 217, 238, 0.3)' }}>
-            {categoryIcon}
+            <Icon className="w-5 h-5 text-cyan-300" />
           </div>
 
           {/* Save Heart - Top Right */}
