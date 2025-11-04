@@ -1,8 +1,20 @@
 import { useState, useEffect } from 'react';
-import { X, ChevronLeft, ChevronRight, MapPin, Clock, ExternalLink, Instagram, Navigation } from 'lucide-react';
+import { X, ChevronLeft, ChevronRight, MapPin, Clock, ExternalLink, Instagram, Navigation, Shirt, UtensilsCrossed, Coffee, Home, Building2, LucideIcon } from 'lucide-react';
 import type { Store } from '../../types/store';
 import { getGoogleMapsUrl } from '../../utils/formatters';
 import { MAIN_CATEGORY_ICONS } from '../../lib/constants';
+
+// Map icon names to actual icon components
+const getCategoryIcon = (iconName: string): LucideIcon => {
+  const iconMap: Record<string, LucideIcon> = {
+    'Shirt': Shirt,
+    'UtensilsCrossed': UtensilsCrossed,
+    'Coffee': Coffee,
+    'Home': Home,
+    'Building2': Building2,
+  };
+  return iconMap[iconName] || Shirt; // Default to Shirt if not found
+};
 
 interface StoreDetailModalProps {
   store: Store;
@@ -34,7 +46,8 @@ export function StoreDetailModal({ store, onClose }: StoreDetailModalProps) {
 
   const images = store.photos.length > 0 ? store.photos : ['/placeholder.jpg'];
   const mainCategory = store.mainCategory || 'Fashion';
-  const categoryIcon = MAIN_CATEGORY_ICONS[mainCategory as keyof typeof MAIN_CATEGORY_ICONS];
+  const iconName = MAIN_CATEGORY_ICONS[mainCategory as keyof typeof MAIN_CATEGORY_ICONS];
+  const CategoryIcon = getCategoryIcon(iconName);
 
   const nextImage = () => {
     setCurrentImageIndex((prev) => (prev + 1) % images.length);
@@ -163,7 +176,7 @@ export function StoreDetailModal({ store, onClose }: StoreDetailModalProps) {
               <div className="p-8 space-y-8">
                 {/* Category Tags */}
                 <div className="flex items-center gap-3 text-xs uppercase tracking-wider text-gray-600">
-                  <span className="text-2xl">{categoryIcon}</span>
+                  <CategoryIcon className="w-6 h-6 text-gray-400" />
                   {store.categories.filter(cat => cat !== 'Shopping' && cat !== 'Fashion').slice(0, 3).map(cat => (
                     <span key={cat}>{cat.replace('-', ' ')}</span>
                   ))}
