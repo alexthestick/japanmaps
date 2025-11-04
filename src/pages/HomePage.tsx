@@ -84,6 +84,12 @@ export function HomePage() {
     }
   }, [isMobile, tappedStoreId]);
 
+  // Handle label clicks - opens detail panel directly
+  const handleLabelClick = useCallback((store: Store) => {
+    setSelectedStore(store);
+    setTappedStoreId(null); // Clear tapped state
+  }, []);
+
   // Sync URL params to state when URL changes (e.g., from Cities menu navigation)
   useEffect(() => {
     const viewFromUrl = (searchParams.get('view') as 'map' | 'list') || 'map';
@@ -265,6 +271,7 @@ export function HomePage() {
             activeMainCategory={selectedMainCategory}
             activeSubCategory={selectedSubCategories[0] || null}
             tappedStoreId={tappedStoreId}
+            onLabelClick={handleLabelClick}
           />
 
           {/* MOBILE: Floating Filter Bar (overlays map) */}

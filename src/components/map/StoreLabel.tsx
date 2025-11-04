@@ -11,9 +11,10 @@ interface StoreLabelProps {
   index?: number; // For staggered animation
   activeZoneCenter?: { lng: number; lat: number } | null; // 🎮 DISCOVERY LENS
   activeZoneRadius?: number | null; // 🎮 DISCOVERY LENS
+  onClick?: (store: Store) => void; // Click handler for mobile
 }
 
-export function StoreLabel({ store, map, isSearchActive, isHovered = false, index = 0, activeZoneCenter, activeZoneRadius }: StoreLabelProps) {
+export function StoreLabel({ store, map, isSearchActive, isHovered = false, index = 0, activeZoneCenter, activeZoneRadius, onClick }: StoreLabelProps) {
   const [position, setPosition] = useState<{ x: number; y: number } | null>(null);
   const [currentZoom, setCurrentZoom] = useState<number>(11);
   const [isInViewport, setIsInViewport] = useState<boolean>(true);
@@ -117,19 +118,26 @@ export function StoreLabel({ store, map, isSearchActive, isHovered = false, inde
 
   return (
     <div
-      className="absolute pointer-events-none whitespace-nowrap animate-in fade-in duration-200"
+      className="absolute whitespace-nowrap animate-in fade-in duration-200"
       style={{
         left: `${position.x}px`,
         top: `${position.y}px`,
         transform: 'translateY(-50%)', // Center vertically
         animationDelay,
+        pointerEvents: onClick ? 'auto' : 'none', // Enable pointer events only if onClick provided
       }}
     >
-      <div className="bg-white shadow-md rounded-full border border-gray-200 px-3 py-1.5">
+      <button
+        onClick={() => onClick?.(store)}
+        className={`bg-white shadow-md rounded-full border border-gray-200 px-3 py-1.5 ${
+          onClick ? 'cursor-pointer hover:bg-gray-50 hover:shadow-lg transition-all active:scale-95' : ''
+        }`}
+        disabled={!onClick}
+      >
         <span className="text-sm font-medium text-gray-900 truncate max-w-48 inline-block">
           {store.name}
         </span>
-      </div>
+      </button>
     </div>
   );
 }

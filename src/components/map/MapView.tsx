@@ -21,13 +21,14 @@ interface MapViewProps {
   styleMode?: 'day' | 'night';
   onStyleModeChange?: (mode: 'day' | 'night') => void;
   tappedStoreId?: string | null; // For mobile two-tap interaction
+  onLabelClick?: (store: Store) => void; // Direct click handler for labels
 }
 
 export interface MapViewHandle {
   flyToStore: (latitude: number, longitude: number) => void;
 }
 
-export const MapView = forwardRef<MapViewHandle, MapViewProps>(({ stores, onStoreClick, selectedCity, selectedNeighborhood, isSearchActive = false, activeMainCategory, activeSubCategory, styleMode: controlledStyleMode, onStyleModeChange, tappedStoreId }, ref) => {
+export const MapView = forwardRef<MapViewHandle, MapViewProps>(({ stores, onStoreClick, selectedCity, selectedNeighborhood, isSearchActive = false, activeMainCategory, activeSubCategory, styleMode: controlledStyleMode, onStyleModeChange, tappedStoreId, onLabelClick }, ref) => {
   const [viewState, setViewState] = useState({
     longitude: DEFAULT_CENTER.longitude,
     latitude: DEFAULT_CENTER.latitude,
@@ -386,6 +387,7 @@ export const MapView = forwardRef<MapViewHandle, MapViewProps>(({ stores, onStor
                 index={index}
                 activeZoneCenter={activeZoneCenter}
                 activeZoneRadius={calculateActiveZoneRadius}
+                onClick={onLabelClick}
               />
             ));
           }
@@ -404,6 +406,7 @@ export const MapView = forwardRef<MapViewHandle, MapViewProps>(({ stores, onStor
                 index={index}
                 activeZoneCenter={activeZoneCenter}
                 activeZoneRadius={calculateActiveZoneRadius}
+                onClick={onLabelClick}
               />
             ));
           }
@@ -431,6 +434,7 @@ export const MapView = forwardRef<MapViewHandle, MapViewProps>(({ stores, onStor
               index={index}
               activeZoneCenter={activeZoneCenter}
               activeZoneRadius={calculateActiveZoneRadius}
+              onClick={onLabelClick}
             />
           ));
         })()}
