@@ -34,11 +34,15 @@ export function useGeolocation(): UseGeolocationReturn {
       return;
     }
 
+    // Clear any previous errors and position
     setLoading(true);
     setError(null);
 
+    console.log('Requesting geolocation...');
+
     navigator.geolocation.getCurrentPosition(
       (pos) => {
+        console.log('Geolocation success:', pos.coords);
         setPosition({
           latitude: pos.coords.latitude,
           longitude: pos.coords.longitude,
@@ -48,6 +52,7 @@ export function useGeolocation(): UseGeolocationReturn {
         setLoading(false);
       },
       (err) => {
+        console.error('Geolocation error:', err);
         let message = 'Unable to retrieve your location';
 
         switch (err.code) {
@@ -55,7 +60,7 @@ export function useGeolocation(): UseGeolocationReturn {
             message = 'Location permission denied. Please enable location access in your browser settings.';
             break;
           case err.POSITION_UNAVAILABLE:
-            message = 'Location information is unavailable.';
+            message = 'Location information is unavailable. Please check your device settings.';
             break;
           case err.TIMEOUT:
             message = 'Location request timed out. Please try again.';
