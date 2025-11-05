@@ -8,7 +8,9 @@ import { StoreLabel } from './StoreLabel';
 import { MapStyleToggle } from './MapStyleToggle';
 import { UserLocationMarker } from './UserLocationMarker';
 import { LocateButton } from './LocateButton';
+import { Toast } from '../common/Toast';
 import { useGeolocation } from '../../hooks/useGeolocation';
+import { useToast } from '../../hooks/useToast';
 import type { Store } from '../../types/store';
 import type { Map as MapboxMap } from 'mapbox-gl';
 import 'mapbox-gl/dist/mapbox-gl.css';
@@ -43,6 +45,7 @@ export const MapView = forwardRef<MapViewHandle, MapViewProps>(({ stores, onStor
 
   // User location tracking
   const { position: userPosition, error: locationError, loading: locationLoading, requestLocation } = useGeolocation();
+  const { toast, showToast, hideToast } = useToast();
 
   // Handle locate button click - request location and fly to it
   const handleLocateClick = useCallback(() => {
@@ -58,16 +61,16 @@ export const MapView = forwardRef<MapViewHandle, MapViewProps>(({ stores, onStor
         duration: 1500,
         essential: true,
       });
+      showToast('Location found! 📍', 'success');
     }
-  }, [userPosition]);
+  }, [userPosition, showToast]);
 
   // Show error toast if location fails
   useEffect(() => {
     if (locationError) {
-      console.error('Location error:', locationError.message);
-      // You can add a toast notification here if you have one
+      showToast(locationError.message, 'error');
     }
-  }, [locationError]);
+  }, [locationError, showToast]);
 
   // 🎮 DISCOVERY LENS: Active Zone System
   const activeZoneCenter = useMemo(() => {
@@ -487,6 +490,14 @@ export const MapView = forwardRef<MapViewHandle, MapViewProps>(({ stores, onStor
         onClick={handleLocateClick}
         loading={locationLoading}
         hasLocation={!!userPosition}
+      />
+
+      {/* Toast Notifications */}
+      <Toast
+        message={toast.message}
+        type={toast.type}
+        isVisible={toast.isVisible}
+        onClose={hideToast}
       />
     </div>
   );
