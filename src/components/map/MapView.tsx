@@ -6,6 +6,9 @@ import { IconStoreMarker } from './IconStoreMarker';
 import { MapLegend } from './MapLegend';
 import { StoreLabel } from './StoreLabel';
 import { MapStyleToggle } from './MapStyleToggle';
+import { UserLocationMarker } from './UserLocationMarker';
+import { LocateButton } from './LocateButton';
+import { useGeolocation } from '../../hooks/useGeolocation';
 import type { Store } from '../../types/store';
 import type { Map as MapboxMap } from 'mapbox-gl';
 import 'mapbox-gl/dist/mapbox-gl.css';
@@ -37,6 +40,34 @@ export const MapView = forwardRef<MapViewHandle, MapViewProps>(({ stores, onStor
 
   const [hoveredStoreId, setHoveredStoreId] = useState<string | null>(null);
   const mapRef = useRef<MapboxMap | null>(null);
+
+  // User location tracking
+  const { position: userPosition, error: locationError, loading: locationLoading, requestLocation } = useGeolocation();
+
+  // Handle locate button click - request location and fly to it
+  const handleLocateClick = useCallback(() => {
+    requestLocation();
+  }, [requestLocation]);
+
+  // Fly to user location when position is received
+  useEffect(() => {
+    if (userPosition && mapRef.current) {
+      mapRef.current.flyTo({
+        center: [userPosition.longitude, userPosition.latitude],
+        zoom: 15,
+        duration: 1500,
+        essential: true,
+      });
+    }
+  }, [userPosition]);
+
+  // Show error toast if location fails
+  useEffect(() => {
+    if (locationError) {
+      console.error('Location error:', locationError.message);
+      // You can add a toast notification here if you have one
+    }
+  }, [locationError]);
 
   // 🎮 DISCOVERY LENS: Active Zone System
   const activeZoneCenter = useMemo(() => {
@@ -293,6 +324,17 @@ export const MapView = forwardRef<MapViewHandle, MapViewProps>(({ stores, onStor
             />
           </Marker>
         ))}
+
+        {/* User Location Marker */}
+        {userPosition && (
+          <Marker
+            longitude={userPosition.longitude}
+            latitude={userPosition.latitude}
+            anchor="center"
+          >
+            <UserLocationMarker accuracy={userPosition.accuracy} />
+          </Marker>
+        )}
       </Map>
 
       {/* Map style toggle - Removed: Now only controlled by header */}
@@ -439,6 +481,13 @@ export const MapView = forwardRef<MapViewHandle, MapViewProps>(({ stores, onStor
           ));
         })()}
       </div>
+
+      {/* Locate Me Button */}
+      <LocateButton
+        onClick={handleLocateClick}
+        loading={locationLoading}
+        hasLocation={!!userPosition}
+      />
     </div>
   );
 });
