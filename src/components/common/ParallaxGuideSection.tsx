@@ -59,11 +59,86 @@ export function ParallaxGuideSection({
       ref={ref}
       className={`relative flex flex-col ${
         reverse ? 'md:flex-row-reverse' : 'md:flex-row'
-      } items-start gap-8 md:gap-12 my-20 md:my-32 max-w-6xl mx-auto px-6`}
+      } items-start gap-4 md:gap-12 my-12 md:my-32 max-w-6xl mx-auto px-3 md:px-6`}
     >
-      {/* Text content - Colorful note card */}
+      {/* Parallax image - Shows FIRST on mobile */}
+      <div className="w-full md:w-1/2 relative">
+        <div
+          className="bg-white p-2 md:p-3 pb-8 md:pb-12 shadow-2xl relative"
+          style={{
+            transform: `rotate(${imageRotation})`,
+            boxShadow: '0 15px 60px rgba(0,0,0,0.4), 0 10px 30px rgba(0,0,0,0.3)',
+          }}
+        >
+          {useWashiTape ? (
+            // Washi Tape on image - hide on mobile
+            <>
+              <div
+                className="hidden md:block absolute -top-3 left-1/3 w-24 h-6 opacity-85 z-10"
+                style={{
+                  background: `linear-gradient(180deg, rgba(255,255,255,0.4), transparent), linear-gradient(90deg, ${tapeColor} 0%, ${tapeColor} 100%)`,
+                  transform: 'rotate(-5deg)',
+                  boxShadow: '0 2px 4px rgba(0,0,0,0.2)',
+                }}
+              />
+              <div
+                className="hidden md:block absolute -top-3 right-1/3 w-24 h-6 opacity-85 z-10"
+                style={{
+                  background: `linear-gradient(180deg, rgba(255,255,255,0.4), transparent), linear-gradient(90deg, ${tapeColor} 0%, ${tapeColor} 100%)`,
+                  transform: 'rotate(6deg)',
+                  boxShadow: '0 2px 4px rgba(0,0,0,0.2)',
+                }}
+              />
+            </>
+          ) : (
+            // Push Pin on image
+            <div
+              className="absolute -top-3 md:-top-4 left-1/2 transform -translate-x-1/2 w-6 md:w-7 h-6 md:h-7 rounded-full shadow-lg z-10"
+              style={{
+                background: `radial-gradient(circle at 30% 30%, ${pinColor}, ${pinColor}dd)`,
+                boxShadow: '0 4px 10px rgba(0,0,0,0.4), inset -2px -2px 4px rgba(0,0,0,0.3)'
+              }}
+            >
+              <div className="w-2 h-2 bg-white/50 rounded-full absolute top-1.5 md:top-2 left-1.5 md:left-2" />
+            </div>
+          )}
+
+          {/* Image with parallax - Landscape aspect ratio for mobile */}
+          <div className="overflow-hidden bg-gray-100" style={{ aspectRatio: '4/3' }}>
+            <motion.img
+              src={image}
+              alt={title}
+              style={{ y }}
+              className="w-full h-full object-cover"
+            />
+          </div>
+
+          {/* Polaroid caption area - smaller on mobile */}
+          <div className="mt-1.5 md:mt-3 text-center">
+            <p
+              className="text-xs md:text-sm italic"
+              style={{
+                color: '#666',
+                fontFamily: 'Comic Sans MS, cursive',
+              }}
+            >
+              {title}
+            </p>
+          </div>
+
+          {/* Corner curl effect */}
+          <div
+            className="absolute bottom-2 right-2 w-6 md:w-8 h-6 md:h-8 bg-gray-200 opacity-50"
+            style={{
+              clipPath: 'polygon(100% 0, 100% 100%, 0 100%)',
+            }}
+          />
+        </div>
+      </div>
+
+      {/* Text content - Shows SECOND on mobile */}
       <motion.div
-        className="md:w-1/2 relative mt-6"
+        className="w-full md:w-1/2 relative"
         style={{ opacity }}
         transition={{ duration: 0.6, ease: 'easeOut' }}
       >
@@ -77,10 +152,10 @@ export function ParallaxGuideSection({
           }}
         >
           {useWashiTape ? (
-            // Washi Tape
+            // Washi Tape - hide on mobile
             <>
               <div
-                className="absolute -top-3 left-1/4 w-20 h-6 opacity-80"
+                className="hidden md:block absolute -top-3 left-1/4 w-20 h-6 opacity-80"
                 style={{
                   background: `linear-gradient(180deg, rgba(255,255,255,0.4), transparent), linear-gradient(90deg, ${tapeColor} 0%, ${tapeColor} 100%)`,
                   transform: 'rotate(-4deg)',
@@ -88,7 +163,7 @@ export function ParallaxGuideSection({
                 }}
               />
               <div
-                className="absolute -top-3 right-1/4 w-20 h-6 opacity-80"
+                className="hidden md:block absolute -top-3 right-1/4 w-20 h-6 opacity-80"
                 style={{
                   background: `linear-gradient(180deg, rgba(255,255,255,0.4), transparent), linear-gradient(90deg, ${tapeColor} 0%, ${tapeColor} 100%)`,
                   transform: 'rotate(5deg)',
@@ -99,26 +174,26 @@ export function ParallaxGuideSection({
           ) : (
             // Push Pin
             <div
-              className="absolute -top-4 left-1/2 transform -translate-x-1/2 w-7 h-7 rounded-full shadow-lg z-10"
+              className="absolute -top-3 md:-top-4 left-1/2 transform -translate-x-1/2 w-6 md:w-7 h-6 md:h-7 rounded-full shadow-lg z-10"
               style={{
                 background: `radial-gradient(circle at 30% 30%, ${pinColor}, ${pinColor}dd)`,
                 boxShadow: '0 4px 10px rgba(0,0,0,0.4), inset -2px -2px 4px rgba(0,0,0,0.3)'
               }}
             >
-              <div className="w-2 h-2 bg-white/50 rounded-full absolute top-2 left-2" />
+              <div className="w-2 h-2 bg-white/50 rounded-full absolute top-1.5 md:top-2 left-1.5 md:left-2" />
             </div>
           )}
 
           {/* Store Name - White text on colored header bar */}
           <div
-            className="px-8 py-4 -mx-0 -mt-0 mb-6"
+            className="px-4 md:px-8 py-3 md:py-4 -mx-0 -mt-0 mb-4 md:mb-6"
             style={{
               background: 'linear-gradient(135deg, rgba(0,0,0,0.7) 0%, rgba(0,0,0,0.85) 100%)',
               boxShadow: '0 2px 8px rgba(0,0,0,0.2)',
             }}
           >
             <h2
-              className="text-2xl md:text-3xl font-black"
+              className="text-xl md:text-2xl lg:text-3xl font-black"
               style={{
                 color: '#FFFFFF',
                 fontFamily: 'Georgia, serif',
@@ -130,13 +205,14 @@ export function ParallaxGuideSection({
           </div>
 
           {/* Content area */}
-          <div className="px-8 pb-8">
+          <div className="px-4 md:px-8 pb-4 md:pb-8">
             {/* Description */}
             <p
-              className="text-base md:text-lg leading-relaxed whitespace-pre-line mb-6"
+              className="text-sm md:text-base lg:text-lg leading-relaxed whitespace-pre-line mb-4 md:mb-6"
               style={{
                 color: '#2C1810',
                 fontFamily: 'Georgia, serif',
+                lineHeight: '1.7',
               }}
             >
               {description}
@@ -144,13 +220,13 @@ export function ParallaxGuideSection({
 
             {/* Address - Green text */}
             {address && (
-              <div className="mb-4 p-3 bg-white/40 rounded"
+              <div className="mb-3 md:mb-4 p-2.5 md:p-3 bg-white/40 rounded"
                 style={{
                   boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
                 }}
               >
                 <p
-                  className="text-sm font-semibold"
+                  className="text-xs md:text-sm font-semibold"
                   style={{
                     color: '#2E7D32',
                     fontFamily: 'Arial, sans-serif',
@@ -167,11 +243,10 @@ export function ParallaxGuideSection({
                 href={mapLink}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="inline-block bg-yellow-300 px-4 py-2 mt-2 shadow-md hover:shadow-lg transition-all hover:-translate-y-0.5"
+                className="inline-block bg-yellow-300 px-3 md:px-4 py-2 mt-1 md:mt-2 shadow-md hover:shadow-lg transition-all hover:-translate-y-0.5 text-sm md:text-base"
                 style={{
                   color: '#2C1810',
                   fontFamily: 'Comic Sans MS, cursive',
-                  fontSize: '0.9rem',
                   fontWeight: 'bold',
                   transform: 'rotate(-1deg)',
                 }}
@@ -191,85 +266,6 @@ export function ParallaxGuideSection({
           />
         </div>
       </motion.div>
-
-      {/* Parallax image - Polaroid style */}
-      <div className="md:w-1/2 relative mt-6">
-        <div
-          className="bg-white p-3 pb-12 shadow-2xl relative"
-          style={{
-            transform: `rotate(${imageRotation})`,
-            boxShadow: '0 15px 60px rgba(0,0,0,0.4), 0 10px 30px rgba(0,0,0,0.3)',
-          }}
-        >
-          {useWashiTape ? (
-            // Washi Tape on image
-            <>
-              <div
-                className="absolute -top-3 left-1/3 w-24 h-6 opacity-85 z-10"
-                style={{
-                  background: `linear-gradient(180deg, rgba(255,255,255,0.4), transparent), linear-gradient(90deg, ${tapeColor} 0%, ${tapeColor} 100%)`,
-                  transform: 'rotate(-5deg)',
-                  boxShadow: '0 2px 4px rgba(0,0,0,0.2)',
-                }}
-              />
-              <div
-                className="absolute -top-3 right-1/3 w-24 h-6 opacity-85 z-10"
-                style={{
-                  background: `linear-gradient(180deg, rgba(255,255,255,0.4), transparent), linear-gradient(90deg, ${tapeColor} 0%, ${tapeColor} 100%)`,
-                  transform: 'rotate(6deg)',
-                  boxShadow: '0 2px 4px rgba(0,0,0,0.2)',
-                }}
-              />
-            </>
-          ) : (
-            // Push Pin on image
-            <div
-              className="absolute -top-4 left-1/2 transform -translate-x-1/2 w-7 h-7 rounded-full shadow-lg z-10"
-              style={{
-                background: `radial-gradient(circle at 30% 30%, ${pinColor}, ${pinColor}dd)`,
-                boxShadow: '0 4px 10px rgba(0,0,0,0.4), inset -2px -2px 4px rgba(0,0,0,0.3)'
-              }}
-            >
-              <div className="w-2 h-2 bg-white/50 rounded-full absolute top-2 left-2" />
-            </div>
-          )}
-
-          {/* Image with parallax - Dynamic height */}
-          <div className="overflow-hidden bg-gray-100">
-            <motion.img
-              src={image}
-              alt={title}
-              style={{ y }}
-              className="w-full object-cover"
-              style={{
-                y,
-                height: imageHeight,
-              }}
-            />
-          </div>
-
-          {/* Polaroid caption area */}
-          <div className="mt-3 text-center">
-            <p
-              className="text-sm italic"
-              style={{
-                color: '#666',
-                fontFamily: 'Comic Sans MS, cursive',
-              }}
-            >
-              {title}
-            </p>
-          </div>
-
-          {/* Corner curl effect */}
-          <div
-            className="absolute bottom-2 right-2 w-8 h-8 bg-gray-200 opacity-50"
-            style={{
-              clipPath: 'polygon(100% 0, 100% 100%, 0 100%)',
-            }}
-          />
-        </div>
-      </div>
     </section>
   );
 }
