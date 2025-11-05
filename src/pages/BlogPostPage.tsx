@@ -75,7 +75,7 @@ export function BlogPostPage() {
   // Render Parallax Store Guide with Bulletin Board styling
   if (post.article_type === 'parallax_store_guide') {
     return (
-      <article className="min-h-screen relative py-12">
+      <article className="min-h-screen relative py-6 md:py-12">
         {/* Realistic Wood Grain Background */}
         <div
           className="absolute inset-0"
@@ -88,18 +88,18 @@ export function BlogPostPage() {
         {/* Content */}
         <div className="relative z-10">
           {/* Sage Green Frame */}
-          <div className="max-w-7xl mx-auto px-4 md:px-8">
+          <div className="max-w-7xl mx-auto px-3 md:px-8">
             <div
-              className="p-5 md:p-8"
+              className="p-3 md:p-8"
               style={{
                 background: 'linear-gradient(135deg, #9CAF88 0%, #8BA177 50%, #7A9B6C 100%)',
-                borderRadius: '12px',
+                borderRadius: '8px',
                 boxShadow: '0 20px 60px rgba(0,0,0,0.5), inset 0 2px 4px rgba(255,255,255,0.15)',
               }}
             >
               {/* Super Light Yellow Bulletin Board Background */}
               <div
-                className="p-8 md:p-16 relative"
+                className="p-4 md:p-16 relative"
                 style={{
                   backgroundImage: `url("data:image/svg+xml,%3Csvg width='200' height='200' xmlns='http://www.w3.org/2000/svg'%3E%3Crect fill='%23FFFACD' width='200' height='200'/%3E%3Ccircle cx='20' cy='20' r='1.5' fill='%23F5E6A8' opacity='0.7'/%3E%3Ccircle cx='45' cy='35' r='1' fill='%23EDD89E' opacity='0.6'/%3E%3Ccircle cx='80' cy='15' r='1.2' fill='%23F5E6A8' opacity='0.7'/%3E%3Ccircle cx='60' cy='50' r='0.8' fill='%23EDD89E' opacity='0.6'/%3E%3Ccircle cx='95' cy='45' r='1.3' fill='%23F5E6A8' opacity='0.7'/%3E%3Ccircle cx='25' cy='70' r='1.1' fill='%23EDD89E' opacity='0.6'/%3E%3Ccircle cx='120' cy='30' r='1' fill='%23F5E6A8' opacity='0.7'/%3E%3Ccircle cx='150' cy='60' r='1.4' fill='%23EDD89E' opacity='0.6'/%3E%3Ccircle cx='180' cy='25' r='0.9' fill='%23F5E6A8' opacity='0.7'/%3E%3Ccircle cx='110' cy='80' r='1.2' fill='%23EDD89E' opacity='0.6'/%3E%3C/svg%3E")`,
                   backgroundColor: '#FFFACD',
@@ -128,12 +128,12 @@ export function BlogPostPage() {
                 </div>
 
                 {/* Dual Bulletin Board Hero Section - 70/30 Split */}
-                <div className="grid grid-cols-1 md:grid-cols-10 gap-8 md:gap-10 mb-16 md:mb-24 mt-6">
+                <div className="grid grid-cols-1 md:grid-cols-10 gap-6 md:gap-10 mb-12 md:mb-24 mt-4 md:mt-6">
                   {/* Right: Hero Image (HUGE - 70%) */}
                   {post.hero_image && (
                     <div className="md:col-span-7 relative order-1 md:order-2">
                       <div
-                        className="bg-white p-3 pb-14 shadow-2xl relative"
+                        className="bg-white p-2 md:p-3 pb-10 md:pb-14 shadow-2xl relative"
                         style={{
                           transform: 'rotate(2deg)',
                           boxShadow: '0 15px 60px rgba(0,0,0,0.4), 0 10px 30px rgba(0,0,0,0.3)',
@@ -141,7 +141,7 @@ export function BlogPostPage() {
                       >
                         {/* Washi Tape at top */}
                         <div
-                          className="absolute -top-3 left-1/4 w-24 h-6 opacity-80"
+                          className="absolute -top-3 left-1/4 w-16 md:w-24 h-5 md:h-6 opacity-80"
                           style={{
                             background: 'linear-gradient(180deg, rgba(255,255,255,0.4), transparent), linear-gradient(90deg, #FFB6C1 0%, #FFB6C1 100%)',
                             transform: 'rotate(-3deg)',
@@ -149,7 +149,7 @@ export function BlogPostPage() {
                           }}
                         />
                         <div
-                          className="absolute -top-3 right-1/4 w-24 h-6 opacity-80"
+                          className="absolute -top-3 right-1/4 w-16 md:w-24 h-5 md:h-6 opacity-80"
                           style={{
                             background: 'linear-gradient(180deg, rgba(255,255,255,0.4), transparent), linear-gradient(90deg, #87CEEB 0%, #87CEEB 100%)',
                             transform: 'rotate(4deg)',
@@ -162,14 +162,14 @@ export function BlogPostPage() {
                           <img
                             src={post.hero_image}
                             alt={post.title}
-                            className="w-full h-[500px] md:h-[700px] object-cover"
+                            className="w-full h-[300px] md:h-[500px] lg:h-[700px] object-cover"
                           />
                         </div>
 
                         {/* Polaroid caption */}
-                        <div className="mt-4 text-center">
+                        <div className="mt-2 md:mt-4 text-center">
                           <p
-                            className="text-sm italic"
+                            className="text-xs md:text-sm italic"
                             style={{
                               color: '#666',
                               fontFamily: 'Comic Sans MS, cursive',
@@ -192,9 +192,9 @@ export function BlogPostPage() {
                   )}
 
                   {/* Left: Title + Intro Text (30%) - WHITE */}
-                  <div className="md:col-span-3 relative order-2 md:order-1 mt-6">
+                  <div className="md:col-span-3 relative order-2 md:order-1 mt-0 md:mt-6">
                     <div
-                      className="bg-white p-6 md:p-8 shadow-2xl relative"
+                      className="bg-white p-4 md:p-6 lg:p-8 shadow-2xl relative"
                       style={{
                         transform: 'rotate(-2deg)',
                         boxShadow: '0 15px 60px rgba(0,0,0,0.4), 0 10px 30px rgba(0,0,0,0.3)',
@@ -203,18 +203,18 @@ export function BlogPostPage() {
                     >
                       {/* Push Pin */}
                       <div
-                        className="absolute -top-4 left-1/2 transform -translate-x-1/2 w-7 h-7 rounded-full shadow-lg z-10"
+                        className="absolute -top-3 md:-top-4 left-1/2 transform -translate-x-1/2 w-6 md:w-7 h-6 md:h-7 rounded-full shadow-lg z-10"
                         style={{
                           background: 'radial-gradient(circle at 30% 30%, #E63946, #B91C1C)',
                           boxShadow: '0 4px 10px rgba(0,0,0,0.4), inset -2px -2px 4px rgba(0,0,0,0.3)'
                         }}
                       >
-                        <div className="w-2 h-2 bg-white/50 rounded-full absolute top-2 left-2" />
+                        <div className="w-2 h-2 bg-white/50 rounded-full absolute top-1.5 md:top-2 left-1.5 md:left-2" />
                       </div>
 
                       {/* Title */}
                       <h1
-                        className="text-2xl md:text-3xl font-black mb-4"
+                        className="text-xl md:text-2xl lg:text-3xl font-black mb-3 md:mb-4"
                         style={{
                           color: '#2C1810',
                           fontFamily: 'Georgia, serif',
@@ -226,7 +226,7 @@ export function BlogPostPage() {
 
                       {/* Date */}
                       <p
-                        className="text-xs mb-4"
+                        className="text-xs mb-3 md:mb-4"
                         style={{
                           color: '#666',
                           fontFamily: 'Comic Sans MS, cursive',
@@ -246,6 +246,7 @@ export function BlogPostPage() {
                           style={{
                             color: '#3C3C3C',
                             fontFamily: 'Georgia, serif',
+                            lineHeight: '1.7',
                           }}
                         >
                           {post.intro_content}
@@ -269,14 +270,13 @@ export function BlogPostPage() {
                 ))}
 
                 {/* Back to Blog Button */}
-                <div className="mt-16 md:mt-24 text-center">
+                <div className="mt-12 md:mt-16 lg:mt-24 text-center">
                   <Link
                     to="/blog"
-                    className="inline-block bg-yellow-100 px-8 py-4 font-bold hover:bg-yellow-200 transition-all shadow-lg hover:shadow-xl hover:-translate-y-1"
+                    className="inline-block bg-yellow-100 px-6 md:px-8 py-3 md:py-4 font-bold hover:bg-yellow-200 transition-all shadow-lg hover:shadow-xl hover:-translate-y-1 text-base md:text-lg"
                     style={{
                       color: '#2C1810',
                       fontFamily: 'Comic Sans MS, cursive',
-                      fontSize: '1.1rem',
                       transform: 'rotate(-1.5deg)',
                     }}
                   >
@@ -307,15 +307,15 @@ export function BlogPostPage() {
         }}
       />
 
-      <div className="max-w-4xl mx-auto px-4 py-16 relative z-10">
+      <div className="max-w-4xl mx-auto px-3 md:px-4 py-8 md:py-16 relative z-10">
         <div
-          className="bg-gradient-to-br from-white to-gray-50 shadow-2xl p-12 relative"
+          className="bg-gradient-to-br from-white to-gray-50 shadow-2xl p-6 md:p-12 relative"
           style={{
             boxShadow: '0 20px 60px rgba(0,0,0,0.4), 0 10px 30px rgba(0,0,0,0.3)',
           }}
         >
           <div
-            className="absolute -top-4 left-12 w-7 h-7 rounded-full shadow-lg"
+            className="absolute -top-3 md:-top-4 left-6 md:left-12 w-6 md:w-7 h-6 md:h-7 rounded-full shadow-lg"
             style={{
               background: 'radial-gradient(circle at 30% 30%, #E63946, #B91C1C)',
               boxShadow: '0 3px 8px rgba(0,0,0,0.4), inset -2px -2px 4px rgba(0,0,0,0.3)'
@@ -324,7 +324,7 @@ export function BlogPostPage() {
             <div className="w-2 h-2 bg-white/50 rounded-full absolute top-1.5 left-1.5" />
           </div>
           <div
-            className="absolute -top-4 right-12 w-7 h-7 rounded-full shadow-lg"
+            className="absolute -top-3 md:-top-4 right-6 md:right-12 w-6 md:w-7 h-6 md:h-7 rounded-full shadow-lg"
             style={{
               background: 'radial-gradient(circle at 30% 30%, #457B9D, #2C5F7C)',
               boxShadow: '0 3px 8px rgba(0,0,0,0.4), inset -2px -2px 4px rgba(0,0,0,0.3)'
@@ -334,18 +334,18 @@ export function BlogPostPage() {
           </div>
 
           {post.hero_image && (
-            <div className="relative mb-8 -mx-12 -mt-12">
+            <div className="relative mb-6 md:mb-8 -mx-6 md:-mx-12 -mt-6 md:-mt-12">
               <img
                 src={post.hero_image}
                 alt={post.title}
-                className="w-full h-[50vh] object-cover"
+                className="w-full h-[40vh] md:h-[50vh] object-cover"
               />
             </div>
           )}
 
-          <div className="mb-8">
+          <div className="mb-6 md:mb-8">
             <p
-              className="text-sm mb-4"
+              className="text-xs md:text-sm mb-3 md:mb-4"
               style={{
                 color: '#666',
                 fontFamily: 'Comic Sans MS, cursive',
@@ -358,7 +358,7 @@ export function BlogPostPage() {
               })}
             </p>
             <h1
-              className="text-4xl md:text-5xl font-black mb-6"
+              className="text-2xl md:text-4xl lg:text-5xl font-black mb-4 md:mb-6"
               style={{
                 color: '#2C1810',
                 fontFamily: 'Georgia, serif',
@@ -370,20 +370,21 @@ export function BlogPostPage() {
           </div>
 
           <div
-            className="prose prose-lg max-w-none"
+            className="prose prose-sm md:prose-lg max-w-none"
             style={{
               color: '#3C3C3C',
               fontFamily: 'Georgia, serif',
-              lineHeight: '1.8',
+              lineHeight: '1.7',
+              fontSize: '1rem',
             }}
           >
-            <p className="whitespace-pre-line">{post.content}</p>
+            <p className="whitespace-pre-line text-base md:text-lg leading-relaxed">{post.content}</p>
           </div>
 
-          <div className="mt-12 text-center">
+          <div className="mt-8 md:mt-12 text-center">
             <Link
               to="/blog"
-              className="inline-block bg-yellow-100 px-6 py-3 font-bold hover:bg-yellow-200 transition-all shadow-md hover:shadow-lg"
+              className="inline-block bg-yellow-100 px-6 py-3 font-bold hover:bg-yellow-200 transition-all shadow-md hover:shadow-lg text-base"
               style={{
                 color: '#2C1810',
                 fontFamily: 'Comic Sans MS, cursive',
