@@ -44,7 +44,7 @@ export function Toast({ message, type = 'info', duration = 5000, onClose, isVisi
           animate={{ opacity: 1, y: 0, scale: 1 }}
           exit={{ opacity: 0, y: 20, scale: 0.95 }}
           transition={{ duration: 0.2, ease: 'easeOut' }}
-          className={`fixed bottom-6 left-1/2 transform -translate-x-1/2 z-50 max-w-md w-full mx-4`}
+          className={`fixed bottom-32 md:bottom-20 left-1/2 transform -translate-x-1/2 z-50 max-w-md w-full mx-4`}
         >
           <div
             className={`${bgColors[type]} ${textColors[type]} rounded-lg shadow-xl border-2 p-4 flex items-start gap-3`}
