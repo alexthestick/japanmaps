@@ -655,25 +655,29 @@ export function CitiesPage() {
           />
         </div>
 
-        {/* Phase 1b: Hero Section - REDESIGNED FOR PERFECT ALIGNMENT */}
-        <div className="flex-1 px-8 min-h-0">
+        {/* Phase 1b: Hero Section - Mobile Optimized */}
+        <div className="flex-1 px-4 md:px-8 min-h-0">
           <div className="max-w-7xl mx-auto h-full">
-            <div className="grid h-full gap-6" style={{ gridTemplateColumns: isLandingMode ? '1fr' : '3fr 1fr', alignItems: 'stretch' }}>
+            <div className={`grid h-full gap-4 md:gap-6 ${isLandingMode ? 'grid-cols-1' : 'grid-cols-1 md:grid-cols-[3fr_1fr]'}`} style={{ alignItems: 'stretch' }}>
 
-              {/* Left Column: City Preview - Full width in landing mode */}
-              <div className="relative min-h-0 h-full flex items-center justify-center"
-                style={{
-                  gridColumn: isLandingMode ? '1 / -1' : 'auto',
-                }}
-              >
-                <div className="relative w-full"
+              {/* Left Column: City Preview - Full width on mobile, adjusts on desktop */}
+              <div className="relative min-h-0 h-full flex items-center justify-center">
+                <div className="city-preview-container relative w-full"
                   style={{
-                    aspectRatio: isLandingMode ? '21/9' : '16/10',
+                    aspectRatio: isLandingMode ? '16/9' : '4/3',
                     transform: `scale(${isLandingMode ? 1 : 0.95})`,
                     transition: 'transform 400ms ease-out, aspect-ratio 400ms ease-out',
                     maxWidth: isLandingMode ? '100%' : 'auto',
                   }}
                 >
+                  {/* Desktop aspect ratio override */}
+                  <style>{`
+                    @media (min-width: 768px) {
+                      .city-preview-container {
+                        aspect-ratio: ${isLandingMode ? '21/9' : '16/10'} !important;
+                      }
+                    }
+                  `}</style>
 
                   {/* Atmospheric Glow Behind Preview */}
                   <div
@@ -754,10 +758,10 @@ export function CitiesPage() {
                     {selectedCity && (
                       <button
                         onClick={() => handleTravel(selectedCity)}
-                        className="absolute text-white font-black uppercase tracking-wider text-lg font-display relative overflow-hidden group active:scale-95 disabled:opacity-50 px-12 py-4 transition-all duration-300"
+                        className="absolute text-white font-black uppercase tracking-wider text-sm md:text-lg font-display relative overflow-hidden group active:scale-95 disabled:opacity-50 px-8 md:px-12 py-3 md:py-4 transition-all duration-300"
                         disabled={isTransitioning}
                         style={{
-                          bottom: '60px',
+                          bottom: '40px',
                           left: '50%',
                           transform: isTransitioning ? 'scale(0.9) translateY(5px) translateX(-50%)' : 'scale(1) translateY(0) translateX(-50%)',
                           clipPath: 'polygon(15% 0%, 85% 0%, 100% 50%, 85% 100%, 15% 100%, 0% 50%)',
@@ -833,9 +837,9 @@ export function CitiesPage() {
                 </div>
               </div>
 
-              {/* Right Column: Store Grid - PERFECT ALIGNMENT */}
+              {/* Right Column: Store Grid - DESKTOP ONLY */}
               <div
-                className="relative h-full flex flex-col transition-all duration-300"
+                className="hidden md:flex relative h-full flex-col transition-all duration-300"
                 style={{
                   background: 'linear-gradient(135deg, rgba(0,0,0,0.3), rgba(0,0,0,0.2))',
                   borderLeft: '3px solid rgba(34, 211, 238, 0.2)',
@@ -880,8 +884,31 @@ export function CitiesPage() {
           </div>
         </div>
 
+        {/* Mobile Store Grid - MOBILE ONLY */}
+        {displayCity && !displayCity.isRandom && !isLandingMode && (
+          <div className="md:hidden px-6 pb-8">
+            <div className="max-w-3xl mx-auto">
+              {/* Section Header */}
+              <h4 className="text-sm font-display uppercase tracking-widest text-cyan-300/60 mb-4">
+                Featured Stores in {displayCity.name}
+              </h4>
+
+              {/* 2x3 Grid */}
+              <div className="grid grid-cols-2 gap-4">
+                <StorePreviews
+                  cityName={displayCity.name}
+                  hoveredCardIndex={hoveredCardIndex}
+                  handleCardMouseEnter={handleCardMouseEnter}
+                  handleCardMouseLeave={handleCardMouseLeave}
+                  cityColor={displayCity.regionColor || displayCity.color}
+                />
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* Train Line Carousel - Below Hero Section */}
-        <div className="flex-none flex flex-col items-center justify-center px-8 pb-8 pt-8"
+        <div className="flex-none flex flex-col items-center justify-center px-4 md:px-8 pb-8 pt-8"
           style={{
             height: 'auto',
             minHeight: '300px',
