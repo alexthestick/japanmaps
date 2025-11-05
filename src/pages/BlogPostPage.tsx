@@ -128,7 +128,7 @@ export function BlogPostPage() {
                 </div>
 
                 {/* Dual Bulletin Board Hero Section - 70/30 Split */}
-                <div className="grid grid-cols-1 md:grid-cols-10 gap-6 md:gap-10 mb-12 md:mb-24 mt-4 md:mt-6">
+                <div className="grid grid-cols-1 md:grid-cols-10 gap-4 md:gap-10 mb-8 md:mb-24 mt-3 md:mt-6">
                   {/* Right: Hero Image (HUGE - 70%) */}
                   {post.hero_image && (
                     <div className="md:col-span-7 relative order-1 md:order-2">
@@ -157,12 +157,12 @@ export function BlogPostPage() {
                           }}
                         />
 
-                        {/* Hero Image */}
-                        <div className="overflow-hidden bg-gray-100">
+                        {/* Hero Image - Landscape aspect ratio for better mobile viewing */}
+                        <div className="overflow-hidden bg-gray-100" style={{ aspectRatio: '4/3' }}>
                           <img
                             src={post.hero_image}
                             alt={post.title}
-                            className="w-full h-[300px] md:h-[500px] lg:h-[700px] object-cover"
+                            className="w-full h-full object-cover"
                           />
                         </div>
 
@@ -334,11 +334,11 @@ export function BlogPostPage() {
           </div>
 
           {post.hero_image && (
-            <div className="relative mb-6 md:mb-8 -mx-6 md:-mx-12 -mt-6 md:-mt-12">
+            <div className="relative mb-4 md:mb-8 -mx-6 md:-mx-12 -mt-6 md:-mt-12 overflow-hidden" style={{ aspectRatio: '16/9' }}>
               <img
                 src={post.hero_image}
                 alt={post.title}
-                className="w-full h-[40vh] md:h-[50vh] object-cover"
+                className="w-full h-full object-cover"
               />
             </div>
           )}

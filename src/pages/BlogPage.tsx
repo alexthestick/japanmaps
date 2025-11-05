@@ -91,30 +91,30 @@ export function BlogPage() {
           >
             {/* Header Bar */}
             <div
-              className="bg-gradient-to-br from-yellow-50 to-yellow-100 p-4 md:p-6 mb-6 md:mb-8 shadow-lg flex flex-col md:flex-row items-start md:items-center justify-between gap-4"
+              className="bg-gradient-to-br from-yellow-50 to-yellow-100 p-3 md:p-6 mb-4 md:mb-8 shadow-lg"
               style={{
                 boxShadow: '0 8px 20px rgba(0,0,0,0.3)',
               }}
             >
               {/* Title */}
               <h1
-                className="text-2xl md:text-4xl font-black"
+                className="text-xl md:text-4xl font-black mb-3 md:mb-0"
                 style={{
                   color: '#2C1810',
                   fontFamily: 'Georgia, serif',
                   textShadow: '2px 2px 0px rgba(0,0,0,0.1)',
                 }}
               >
-                Lost In Transit Bulletin Board
+                Lost In Transit
               </h1>
 
               {/* Search */}
               <input
                 type="text"
-                placeholder="Search articles..."
+                placeholder="Search..."
                 value={searchQuery}
                 onChange={e => setSearchQuery(e.target.value)}
-                className="px-4 py-3 border-2 border-gray-300 rounded-lg focus:outline-none focus:border-yellow-600 w-full md:w-80 text-base"
+                className="px-3 py-2 border-2 border-gray-300 rounded-lg focus:outline-none focus:border-yellow-600 w-full md:w-80 text-sm md:text-base"
                 style={{
                   fontFamily: 'Arial, sans-serif',
                   color: '#2C1810',
@@ -140,7 +140,7 @@ export function BlogPage() {
                 </div>
               </div>
             ) : (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 md:gap-12">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 md:gap-12">
                 {filteredPosts.map((post, index) => {
                   const rotation = getRandomRotation();
                   const pinColor = getRandomPin();
@@ -148,7 +148,7 @@ export function BlogPage() {
                   return (
                     <article
                       key={post.id}
-                      className="bg-gradient-to-br from-white to-gray-50 shadow-xl hover:shadow-2xl transition-all duration-300 hover:-translate-y-2 cursor-pointer relative p-4 md:p-5"
+                      className="bg-gradient-to-br from-white to-gray-50 shadow-xl hover:shadow-2xl transition-all duration-300 hover:-translate-y-2 cursor-pointer relative p-3 md:p-5"
                       style={{
                         transform: `rotate(${rotation})`,
                         boxShadow: '0 10px 30px rgba(0,0,0,0.3), 0 3px 10px rgba(0,0,0,0.2)',
@@ -167,7 +167,7 @@ export function BlogPage() {
 
                       <Link to={`/blog/${post.slug}`} className="block">
                         {post.hero_image && (
-                          <div className="relative h-44 md:h-48 mb-4 overflow-hidden">
+                          <div className="relative w-full mb-3 overflow-hidden" style={{ aspectRatio: '16/9' }}>
                             <img
                               src={post.hero_image}
                               alt={post.title}
@@ -177,7 +177,7 @@ export function BlogPage() {
                         )}
                         <div>
                           <p
-                            className="text-xs mb-2"
+                            className="text-xs mb-1.5"
                             style={{
                               color: '#666',
                               fontFamily: 'Comic Sans MS, cursive',
@@ -186,7 +186,7 @@ export function BlogPage() {
                             {new Date(post.published_at).toLocaleDateString()}
                           </p>
                           <h3
-                            className="text-base md:text-lg font-bold mb-2 line-clamp-2"
+                            className="text-base md:text-lg font-bold mb-1.5 line-clamp-2"
                             style={{
                               color: '#2C1810',
                               fontFamily: 'Georgia, serif',
@@ -195,13 +195,13 @@ export function BlogPage() {
                             {post.title}
                           </h3>
                           <p
-                            className="text-sm line-clamp-3 leading-relaxed"
+                            className="text-sm line-clamp-2 leading-relaxed"
                             style={{
                               color: '#5C4033',
                               fontFamily: 'Arial, sans-serif',
                             }}
                           >
-                            {post.content.slice(0, 120)}...
+                            {post.content.slice(0, 100)}...
                           </p>
                         </div>
                       </Link>
