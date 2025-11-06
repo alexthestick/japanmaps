@@ -335,17 +335,30 @@ export function CitiesPage() {
   const currentImage = displayCity?.images?.[selectedCity ? currentPhotoIndex : 0] || 
                        (displayCity?.isRandom ? 'https://via.placeholder.com/1200x750/7c3aed/ffffff?text=???' : '');
 
-  // Photo cycling effect - only cycles when a city is SELECTED (not hovered)
+  // Photo cycling effect - slideshow with manual override
   useEffect(() => {
     setCurrentPhotoIndex(0); // Reset to first photo when selection changes
 
     if (selectedCity && selectedCity.images.length > 1) {
       const interval = setInterval(() => {
         setCurrentPhotoIndex((prev) => (prev + 1) % selectedCity.images.length);
-      }, 3000);
+      }, 4000); // 4 second slideshow
       return () => clearInterval(interval);
     }
   }, [selectedCity]);
+
+  // Handle manual photo navigation (swipe/drag)
+  const handlePhotoSwipe = (direction: 'left' | 'right') => {
+    if (!selectedCity || selectedCity.images.length <= 1) return;
+
+    if (direction === 'right') {
+      // Swipe right = previous photo
+      setCurrentPhotoIndex((prev) => (prev - 1 + selectedCity.images.length) % selectedCity.images.length);
+    } else {
+      // Swipe left = next photo
+      setCurrentPhotoIndex((prev) => (prev + 1) % selectedCity.images.length);
+    }
+  };
 
   // Preload next image in cycle for smooth transitions
   useEffect(() => {
@@ -577,18 +590,6 @@ export function CitiesPage() {
       {/* Film Grain */}
       <div className="fixed inset-0 bg-[url('/film-grain.png')] opacity-[0.03] pointer-events-none mix-blend-overlay" />
 
-      {/* Back Button - Enhanced HUD Style */}
-      <button
-        onClick={() => navigate(-1)}
-        className="fixed top-6 left-6 z-50 bg-black/40 backdrop-blur-md border border-cyan-400/30 rounded-lg px-4 py-2 flex items-center gap-2 text-cyan-300 hover:bg-cyan-500/20 hover:border-cyan-400/50 transition-all duration-200 font-display uppercase tracking-wide text-sm"
-        style={{
-          boxShadow: '0 0 20px rgba(34, 211, 238, 0.2), inset 0 0 30px rgba(0,0,0,0.3)',
-        }}
-      >
-        <ArrowLeft className="w-5 h-5" />
-        <span className="font-semibold">Back</span>
-      </button>
-
       {/* Main Content - Train Arrival Animation */}
       <motion.div
         className="relative z-10 min-h-screen flex flex-col"
@@ -698,19 +699,31 @@ export function CitiesPage() {
                     }}
                   />
 
-                  {/* Large City Preview */}
-                  <div className="absolute inset-0 rounded-2xl overflow-hidden shadow-2xl"
+                  {/* Large City Preview - Draggable Carousel */}
+                  <motion.div
+                    className="absolute inset-0 rounded-2xl overflow-hidden shadow-2xl cursor-grab active:cursor-grabbing"
                     style={{
                       border: `5px solid rgba(34, 211, 238, 0.9)`,
                       boxShadow: `0 0 80px rgba(34, 211, 238, 0.5), 0 0 40px rgba(34, 211, 238, 0.3), inset 0 0 60px rgba(0,0,0,0.4), inset 0 6px 15px rgba(255,255,255,0.15)`,
                       transition: 'border 300ms ease-in-out, box-shadow 300ms ease-in-out',
+                    }}
+                    drag="x"
+                    dragConstraints={{ left: 0, right: 0 }}
+                    dragElastic={0.2}
+                    onDragEnd={(e, { offset, velocity }) => {
+                      const swipeThreshold = 50;
+                      if (offset.x > swipeThreshold) {
+                        handlePhotoSwipe('right'); // Swiped right
+                      } else if (offset.x < -swipeThreshold) {
+                        handlePhotoSwipe('left'); // Swiped left
+                      }
                     }}
                   >
                     {/* City Image with Ken Burns Effect */}
                     <img
                       src={currentImage}
                       alt={displayCity.name}
-                      className="w-full h-full object-cover animate-ken-burns transition-opacity duration-500"
+                      className="w-full h-full object-cover animate-ken-burns transition-opacity duration-500 pointer-events-none"
                       loading="eager"
                       fetchPriority="high"
                       style={{
@@ -833,11 +846,37 @@ export function CitiesPage() {
                         </div>
                       </div>
                     )}
-                  </div>
+
+                    {/* Pagination Dots - Show photo indicator */}
+                    {selectedCity && selectedCity.images.length > 1 && (
+                      <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 flex gap-2 z-50">
+                        {selectedCity.images.map((_, idx) => (
+                          <button
+                            key={idx}
+                            onClick={() => setCurrentPhotoIndex(idx)}
+                            className="transition-all duration-300"
+                            style={{
+                              width: currentPhotoIndex === idx ? '32px' : '8px',
+                              height: '8px',
+                              borderRadius: '999px',
+                              backgroundColor: currentPhotoIndex === idx
+                                ? selectedCity.regionColor || selectedCity.color
+                                : 'rgba(255,255,255,0.3)',
+                              boxShadow: currentPhotoIndex === idx
+                                ? `0 0 12px ${selectedCity.regionColor || selectedCity.color}80`
+                                : 'none',
+                              cursor: 'pointer',
+                            }}
+                            aria-label={`Go to photo ${idx + 1}`}
+                          />
+                        ))}
+                      </div>
+                    )}
+                  </motion.div>
                 </div>
               </div>
 
-              {/* Right Column: Store Grid - DESKTOP ONLY */}
+              {/* Right Column: Store Grid - DESKTOP ONLY - 2 columns × 3 rows */}
               <div
                 className="hidden md:flex relative h-full flex-col transition-all duration-300"
                 style={{
@@ -852,13 +891,15 @@ export function CitiesPage() {
                 }}
               >
                 <h4 className="text-xs font-display uppercase tracking-widest text-cyan-300/40 pb-2 mb-4 flex-shrink-0">
-                  Featured
+                  Featured Stores in {displayCity?.name}
                 </h4>
 
-                {/* CRITICAL: Perfect 2x3 Grid with Equal Cells */}
-                <div className="grid flex-1 gap-3" style={{ 
-                  gridTemplateRows: 'repeat(3, 1fr)',
+                {/* 2 columns × 3 rows Grid - Kirby Style */}
+                <div className="grid flex-1 gap-3" style={{
+                  display: 'grid',
                   gridTemplateColumns: 'repeat(2, 1fr)',
+                  gridTemplateRows: 'repeat(3, 1fr)',
+                  gridAutoFlow: 'column', // Fill columns first, then rows
                 }}>
                   {/* Fetch and display real store data */}
                   {displayCity && !displayCity.isRandom && (
