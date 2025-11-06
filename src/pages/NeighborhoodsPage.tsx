@@ -179,37 +179,37 @@ export function NeighborhoodsPage() {
       {/* Melee-style Back Button - Top Left */}
       <button
         onClick={() => navigate(-1)}
-        className="absolute top-8 left-8 z-50 group"
+        className="absolute top-4 left-4 md:top-8 md:left-8 z-50 group"
       >
         <div className="relative">
           {/* Glowing border effect */}
           <div className="absolute -inset-1 bg-gradient-to-r from-cyan-500 via-blue-500 to-purple-500 rounded-xl opacity-50 blur group-hover:opacity-75 transition-opacity" />
 
           {/* Button content */}
-          <div className="relative bg-gradient-to-b from-gray-900/95 to-black/95 backdrop-blur-xl rounded-xl px-6 py-4 border-2 border-cyan-400/30 flex items-center gap-3 group-hover:border-cyan-400/60 transition-all">
-            <ArrowLeft className="w-6 h-6 text-cyan-400 group-hover:text-cyan-300 transition-colors" />
-            <span className="text-lg font-bold text-transparent bg-clip-text bg-gradient-to-r from-cyan-300 to-blue-300">
+          <div className="relative bg-gradient-to-b from-gray-900/95 to-black/95 backdrop-blur-xl rounded-xl px-4 py-2 md:px-6 md:py-4 border-2 border-cyan-400/30 flex items-center gap-2 md:gap-3 group-hover:border-cyan-400/60 transition-all">
+            <ArrowLeft className="w-5 h-5 md:w-6 md:h-6 text-cyan-400 group-hover:text-cyan-300 transition-colors" />
+            <span className="text-sm md:text-lg font-bold text-transparent bg-clip-text bg-gradient-to-r from-cyan-300 to-blue-300">
               BACK
             </span>
           </div>
 
           {/* Corner decorations */}
-          <div className="absolute top-0 left-0 w-8 h-8 border-t-2 border-l-2 border-cyan-400/60 rounded-tl-xl" />
-          <div className="absolute bottom-0 right-0 w-8 h-8 border-b-2 border-r-2 border-purple-400/60 rounded-br-xl" />
+          <div className="absolute top-0 left-0 w-6 h-6 md:w-8 md:h-8 border-t-2 border-l-2 border-cyan-400/60 rounded-tl-xl" />
+          <div className="absolute bottom-0 right-0 w-6 h-6 md:w-8 md:h-8 border-b-2 border-r-2 border-purple-400/60 rounded-br-xl" />
         </div>
       </button>
 
-      <div className="h-full flex flex-col px-6 py-6 pt-8 relative">
+      <div className="h-full flex flex-col px-4 md:px-6 py-4 md:py-6 md:pt-8 relative">
         {/* Header - Melee style */}
-        <div className="text-center mb-3">
-          <h1 className="text-5xl font-black text-transparent bg-clip-text bg-gradient-to-r from-cyan-300 via-blue-300 to-purple-300 tracking-tight italic transform -skew-x-6">
+        <div className="text-center mb-4 md:mb-3">
+          <h1 className="text-3xl md:text-5xl font-black text-transparent bg-clip-text bg-gradient-to-r from-cyan-300 via-blue-300 to-purple-300 tracking-tight italic transform -skew-x-6">
             SELECT YOUR NEIGHBORHOOD
           </h1>
         </div>
 
         <div className="flex gap-6 flex-1 relative min-h-0">
-          {/* LEFT PREVIEW PANE - Animated border frame */}
-          <div className="w-[480px] flex-shrink-0">
+          {/* LEFT PREVIEW PANE - Animated border frame - DESKTOP ONLY */}
+          <div className="hidden md:block w-[480px] flex-shrink-0">
             <div className="relative h-full flex items-center">
               {/* Animated border glow */}
               <div className="absolute -inset-1 bg-gradient-to-r from-cyan-500 via-blue-500 to-purple-500 rounded-2xl opacity-50 blur-lg animate-border-pulse" />
@@ -300,17 +300,15 @@ export function NeighborhoodsPage() {
             </div>
           </div>
 
-          {/* RIGHT GRID - Dynamic columns, scaled to fit */}
-          <div className="flex-1 relative flex items-center pr-32">
+          {/* RIGHT GRID - 3 cols mobile, 8 cols desktop */}
+          <div className="flex-1 relative flex items-center md:pr-32 pr-0">
             {/* Grid container with border glow */}
             <div className="relative w-full">
               <div className="absolute -inset-4 bg-gradient-to-r from-cyan-500/10 via-blue-500/10 to-purple-500/10 rounded-3xl blur-2xl" />
 
-              <div
-                className={`relative grid gap-2 p-4 bg-black/20 rounded-2xl backdrop-blur-sm border-2 border-cyan-400/20 h-fit`}
+              <div className="relative grid grid-cols-3 md:grid-cols-8 gap-3 md:gap-2 p-3 md:p-4 bg-black/20 rounded-2xl backdrop-blur-sm border-2 border-cyan-400/20 h-fit"
                 style={{
-                  gridTemplateColumns: `repeat(${gridCols}, minmax(0, 1fr))`,
-                  gridAutoRows: '90px'
+                  gridAutoRows: 'auto'
                 }}
               >
                 {neighborhoods.map((neighborhood) => (
@@ -321,10 +319,11 @@ export function NeighborhoodsPage() {
                     onClick={() => handleNeighborhoodClick(neighborhood)}
                     className={`relative overflow-hidden rounded-xl transition-all duration-200 group ${
                       hoveredNeighborhood?.id === neighborhood.id
-                        ? 'ring-4 ring-cyan-400 shadow-2xl shadow-cyan-500/50 scale-110 z-10 -translate-y-2'
-                        : 'hover:scale-105 hover:shadow-xl hover:-translate-y-1'
+                        ? 'ring-4 ring-cyan-400 shadow-2xl shadow-cyan-500/50 md:scale-110 z-10 md:-translate-y-2'
+                        : 'hover:scale-105 hover:shadow-xl md:hover:-translate-y-1'
                     }`}
                     style={{
+                      aspectRatio: '3/4', // Portrait aspect for mobile
                       animation: hoveredNeighborhood?.id === neighborhood.id
                         ? 'bounce-subtle 0.4s ease-out'
                         : 'none'
@@ -370,6 +369,25 @@ export function NeighborhoodsPage() {
                         ? 'border-cyan-300 shadow-inner shadow-cyan-300/50'
                         : 'border-transparent'
                     }`} />
+
+                    {/* Text Overlay - MOBILE ONLY */}
+                    {!neighborhood.isRandom && (
+                      <div className="md:hidden absolute inset-0 flex flex-col justify-end p-3 bg-gradient-to-t from-black/90 via-black/40 to-transparent">
+                        {/* City name */}
+                        <div className="text-xs text-cyan-300/80 font-medium mb-1">
+                          {neighborhood.city}
+                        </div>
+                        {/* Neighborhood name */}
+                        <div className="text-sm font-black text-white mb-2 leading-tight">
+                          {neighborhood.name}
+                        </div>
+                        {/* Store count */}
+                        <div className="flex items-center gap-1 text-xs text-cyan-200/90">
+                          <MapPin className="w-3 h-3" />
+                          <span className="font-semibold">{neighborhood.storeCount}</span>
+                        </div>
+                      </div>
+                    )}
                   </button>
                 ))}
               </div>
@@ -377,8 +395,8 @@ export function NeighborhoodsPage() {
           </div>
         </div>
 
-        {/* Japanese Neighborhood Select text - Melee style, bottom right corner */}
-        <div className="absolute bottom-6 right-8 pointer-events-none z-0">
+        {/* Japanese Neighborhood Select text - Melee style, bottom right corner - DESKTOP ONLY */}
+        <div className="hidden md:block absolute bottom-6 right-8 pointer-events-none z-0">
           <div className="relative">
             <div className="text-4xl font-black italic text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 via-blue-400 to-purple-400 opacity-50 tracking-wider transform skew-x-3">
               ネイバーフッド選択
