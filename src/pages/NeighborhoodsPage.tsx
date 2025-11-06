@@ -143,7 +143,7 @@ export function NeighborhoodsPage() {
   }
 
   return (
-    <div className="fixed inset-0 overflow-hidden">
+    <div className="min-h-screen overflow-y-auto">
       {/* Animated Background Layers */}
       <div className="fixed inset-0 -z-10">
         {/* Base gradient - Melee inspired */}
@@ -199,15 +199,15 @@ export function NeighborhoodsPage() {
         </div>
       </button>
 
-      <div className="h-full flex flex-col px-4 md:px-6 py-4 md:py-6 md:pt-8 relative">
-        {/* Header - Melee style */}
-        <div className="text-center mb-4 md:mb-3">
+      <div className="flex flex-col px-4 md:px-6 py-4 md:py-6 md:pt-8 pt-20 relative pb-8">
+        {/* Header - Melee style - Always visible */}
+        <div className="text-center mb-6 md:mb-6">
           <h1 className="text-3xl md:text-5xl font-black text-transparent bg-clip-text bg-gradient-to-r from-cyan-300 via-blue-300 to-purple-300 tracking-tight italic transform -skew-x-6">
             SELECT YOUR NEIGHBORHOOD
           </h1>
         </div>
 
-        <div className="flex gap-6 flex-1 relative min-h-0">
+        <div className="flex gap-6 flex-1 relative">
           {/* LEFT PREVIEW PANE - Animated border frame - DESKTOP ONLY */}
           <div className="hidden md:block w-[480px] flex-shrink-0">
             <div className="relative h-full flex items-center">
@@ -301,12 +301,10 @@ export function NeighborhoodsPage() {
           </div>
 
           {/* RIGHT GRID - 3 cols mobile, 8 cols desktop */}
-          <div className="flex-1 relative flex items-center md:pr-32 pr-0">
-            {/* Grid container with border glow */}
+          <div className="flex-1 relative md:pr-32 pr-0 w-full">
+            {/* Grid container - no border on mobile for cleaner look */}
             <div className="relative w-full">
-              <div className="absolute -inset-4 bg-gradient-to-r from-cyan-500/10 via-blue-500/10 to-purple-500/10 rounded-3xl blur-2xl" />
-
-              <div className="relative grid grid-cols-3 md:grid-cols-8 gap-3 md:gap-2 p-3 md:p-4 bg-black/20 rounded-2xl backdrop-blur-sm border-2 border-cyan-400/20 h-fit"
+              <div className="relative grid grid-cols-3 md:grid-cols-8 gap-3 md:gap-2 md:p-3 md:bg-black/20 md:rounded-2xl md:backdrop-blur-sm md:border-2 md:border-cyan-400/20"
                 style={{
                   gridAutoRows: 'auto'
                 }}
@@ -317,16 +315,15 @@ export function NeighborhoodsPage() {
                     onMouseEnter={() => setHoveredNeighborhood(neighborhood)}
                     onMouseLeave={() => setHoveredNeighborhood(null)}
                     onClick={() => handleNeighborhoodClick(neighborhood)}
-                    className={`relative overflow-hidden rounded-xl transition-all duration-200 group ${
-                      hoveredNeighborhood?.id === neighborhood.id
-                        ? 'ring-4 ring-cyan-400 shadow-2xl shadow-cyan-500/50 md:scale-110 z-10 md:-translate-y-2'
-                        : 'hover:scale-105 hover:shadow-xl md:hover:-translate-y-1'
-                    }`}
+                    className="relative overflow-hidden rounded-xl transition-all duration-200 group"
                     style={{
                       aspectRatio: '3/4', // Portrait aspect for mobile
-                      animation: hoveredNeighborhood?.id === neighborhood.id
-                        ? 'bounce-subtle 0.4s ease-out'
-                        : 'none'
+                      border: '2px solid rgba(34, 211, 238, 0.3)',
+                      boxShadow: hoveredNeighborhood?.id === neighborhood.id
+                        ? '0 0 30px rgba(34, 211, 238, 0.6), 0 0 15px rgba(34, 211, 238, 0.4), inset 0 0 20px rgba(34, 211, 238, 0.1)'
+                        : '0 0 15px rgba(34, 211, 238, 0.3), inset 0 0 10px rgba(0, 0, 0, 0.5)',
+                      transform: hoveredNeighborhood?.id === neighborhood.id ? 'scale(1.05)' : 'scale(1)',
+                      background: 'linear-gradient(to bottom, rgba(0, 0, 0, 0.7), rgba(0, 0, 0, 0.9))',
                     }}
                   >
                     {/* Background Image */}
@@ -370,21 +367,33 @@ export function NeighborhoodsPage() {
                         : 'border-transparent'
                     }`} />
 
-                    {/* Text Overlay - MOBILE ONLY */}
+                    {/* Text Overlay - MOBILE ONLY - Enhanced Kirby Style */}
                     {!neighborhood.isRandom && (
-                      <div className="md:hidden absolute inset-0 flex flex-col justify-end p-3 bg-gradient-to-t from-black/90 via-black/40 to-transparent">
+                      <div className="md:hidden absolute inset-0 flex flex-col justify-end p-3 bg-gradient-to-t from-black/95 via-black/60 to-transparent">
                         {/* City name */}
-                        <div className="text-xs text-cyan-300/80 font-medium mb-1">
+                        <div className="text-xs text-cyan-300 font-semibold mb-0.5 tracking-wide"
+                          style={{
+                            textShadow: '0 0 8px rgba(34, 211, 238, 0.6)'
+                          }}
+                        >
                           {neighborhood.city}
                         </div>
                         {/* Neighborhood name */}
-                        <div className="text-sm font-black text-white mb-2 leading-tight">
+                        <div className="text-sm font-black text-white mb-1.5 leading-tight"
+                          style={{
+                            textShadow: '0 2px 8px rgba(0, 0, 0, 0.8), 0 0 12px rgba(255, 255, 255, 0.3)'
+                          }}
+                        >
                           {neighborhood.name}
                         </div>
-                        {/* Store count */}
-                        <div className="flex items-center gap-1 text-xs text-cyan-200/90">
-                          <MapPin className="w-3 h-3" />
-                          <span className="font-semibold">{neighborhood.storeCount}</span>
+                        {/* Store count with glow */}
+                        <div className="flex items-center gap-1.5 px-2 py-1 rounded-md bg-cyan-500/20 border border-cyan-400/40 w-fit"
+                          style={{
+                            boxShadow: '0 0 10px rgba(34, 211, 238, 0.3)'
+                          }}
+                        >
+                          <MapPin className="w-3 h-3 text-cyan-300" />
+                          <span className="font-bold text-cyan-100 text-xs">{neighborhood.storeCount}</span>
                         </div>
                       </div>
                     )}
