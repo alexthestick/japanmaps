@@ -37,6 +37,16 @@ export function ParallaxGuideSection({
     return () => window.removeEventListener('resize', checkDesktop);
   }, []);
 
+  // Detect image orientation (horizontal/vertical)
+  const [imageOrientation, setImageOrientation] = useState<'horizontal' | 'vertical'>('horizontal');
+  useEffect(() => {
+    const img = new Image();
+    img.onload = () => {
+      setImageOrientation(img.width >= img.height ? 'horizontal' : 'vertical');
+    };
+    img.src = image;
+  }, [image]);
+
   // More dramatic rotations
   const imageRotation = reverse ? '2.5deg' : '-2deg';
   const textRotation = reverse ? '-1.5deg' : '1.5deg';
@@ -60,8 +70,17 @@ export function ParallaxGuideSection({
   // Randomly choose pin or tape
   const useWashiTape = Math.random() > 0.5;
 
-  // Variable image height for visual rhythm
-  const imageHeight = description.length > 500 ? '800px' : '700px';
+  // Variable image height based on orientation and description length
+  const getImageHeight = () => {
+    if (imageOrientation === 'vertical') {
+      // Vertical photos: taller sizes
+      return description.length > 500 ? '900px' : '800px';
+    } else {
+      // Horizontal photos: standard sizes
+      return description.length > 500 ? '650px' : '550px';
+    }
+  };
+  const imageHeight = getImageHeight();
 
   return (
     <section
