@@ -237,6 +237,15 @@ export function CitiesPage() {
   // Landing state management - start true since we default to Mystery
   const [isLandingMode, setIsLandingMode] = useState(true);
 
+  // Mobile detection - Phase 3
+  const [isMobile, setIsMobile] = useState(false);
+  useEffect(() => {
+    const checkMobile = () => setIsMobile(window.innerWidth < 768);
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    return () => window.removeEventListener('resize', checkMobile);
+  }, []);
+
   // Carousel state (merged from hook)
   const CLONE_COUNT = 9;
   const CARD_WIDTH = 320; // 280px + 40px gap
@@ -347,16 +356,35 @@ export function CitiesPage() {
     }
   }, [selectedCity]);
 
-  // Handle manual photo navigation (swipe/drag)
-  const handlePhotoSwipe = (direction: 'left' | 'right') => {
-    if (!selectedCity || selectedCity.images.length <= 1) return;
+  // Handle swipe on preview panel
+  const handlePreviewSwipe = (direction: 'left' | 'right') => {
+    if (isMobile) {
+      // MOBILE: Swipe between CITIES
+      const currentIndex = cities.findIndex(c => c.id === selectedCity?.id);
+      if (currentIndex === -1) return;
 
-    if (direction === 'right') {
-      // Swipe right = previous photo
-      setCurrentPhotoIndex((prev) => (prev - 1 + selectedCity.images.length) % selectedCity.images.length);
+      let newIndex;
+      if (direction === 'right') {
+        // Swipe right = previous city (with loop)
+        newIndex = (currentIndex - 1 + cities.length) % cities.length;
+      } else {
+        // Swipe left = next city (with loop)
+        newIndex = (currentIndex + 1) % cities.length;
+      }
+
+      const newCity = cities[newIndex];
+      setSelectedCity(newCity);
+      setIsLandingMode(newCity.isRandom || false);
+      setCurrentPhotoIndex(0);
     } else {
-      // Swipe left = next photo
-      setCurrentPhotoIndex((prev) => (prev + 1) % selectedCity.images.length);
+      // DESKTOP: Swipe between photos of same city
+      if (!selectedCity || selectedCity.images.length <= 1) return;
+
+      if (direction === 'right') {
+        setCurrentPhotoIndex((prev) => (prev - 1 + selectedCity.images.length) % selectedCity.images.length);
+      } else {
+        setCurrentPhotoIndex((prev) => (prev + 1) % selectedCity.images.length);
+      }
     }
   };
 
@@ -713,9 +741,9 @@ export function CitiesPage() {
                     onDragEnd={(e, { offset, velocity }) => {
                       const swipeThreshold = 50;
                       if (offset.x > swipeThreshold) {
-                        handlePhotoSwipe('right'); // Swiped right
+                        handlePreviewSwipe('right'); // Swiped right
                       } else if (offset.x < -swipeThreshold) {
-                        handlePhotoSwipe('left'); // Swiped left
+                        handlePreviewSwipe('left'); // Swiped left
                       }
                     }}
                   >
@@ -847,29 +875,58 @@ export function CitiesPage() {
                       </div>
                     )}
 
-                    {/* Pagination Dots - Show photo indicator */}
-                    {selectedCity && selectedCity.images.length > 1 && (
+                    {/* Pagination Dots - DESKTOP: Show photo indicator | MOBILE: Show city indicator */}
+                    {selectedCity && (
                       <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 flex gap-2 z-50">
-                        {selectedCity.images.map((_, idx) => (
-                          <button
-                            key={idx}
-                            onClick={() => setCurrentPhotoIndex(idx)}
-                            className="transition-all duration-300"
-                            style={{
-                              width: currentPhotoIndex === idx ? '32px' : '8px',
-                              height: '8px',
-                              borderRadius: '999px',
-                              backgroundColor: currentPhotoIndex === idx
-                                ? selectedCity.regionColor || selectedCity.color
-                                : 'rgba(255,255,255,0.3)',
-                              boxShadow: currentPhotoIndex === idx
-                                ? `0 0 12px ${selectedCity.regionColor || selectedCity.color}80`
-                                : 'none',
-                              cursor: 'pointer',
-                            }}
-                            aria-label={`Go to photo ${idx + 1}`}
-                          />
-                        ))}
+                        {isMobile ? (
+                          // Mobile: Show city dots
+                          cities.map((city, idx) => (
+                            <button
+                              key={city.id}
+                              onClick={() => {
+                                setSelectedCity(city);
+                                setIsLandingMode(city.isRandom || false);
+                                setCurrentPhotoIndex(0);
+                              }}
+                              className="transition-all duration-300"
+                              style={{
+                                width: selectedCity.id === city.id ? '32px' : '8px',
+                                height: '8px',
+                                borderRadius: '999px',
+                                backgroundColor: selectedCity.id === city.id
+                                  ? city.regionColor || city.color
+                                  : 'rgba(255,255,255,0.3)',
+                                boxShadow: selectedCity.id === city.id
+                                  ? `0 0 12px ${city.regionColor || city.color}80`
+                                  : 'none',
+                                cursor: 'pointer',
+                              }}
+                              aria-label={`Go to ${city.name}`}
+                            />
+                          ))
+                        ) : selectedCity.images.length > 1 ? (
+                          // Desktop: Show photo dots (only if multiple photos)
+                          selectedCity.images.map((_, idx) => (
+                            <button
+                              key={idx}
+                              onClick={() => setCurrentPhotoIndex(idx)}
+                              className="transition-all duration-300"
+                              style={{
+                                width: currentPhotoIndex === idx ? '32px' : '8px',
+                                height: '8px',
+                                borderRadius: '999px',
+                                backgroundColor: currentPhotoIndex === idx
+                                  ? selectedCity.regionColor || selectedCity.color
+                                  : 'rgba(255,255,255,0.3)',
+                                boxShadow: currentPhotoIndex === idx
+                                  ? `0 0 12px ${selectedCity.regionColor || selectedCity.color}80`
+                                  : 'none',
+                                cursor: 'pointer',
+                              }}
+                              aria-label={`Go to photo ${idx + 1}`}
+                            />
+                          ))
+                        ) : null}
                       </div>
                     )}
                   </motion.div>
@@ -925,7 +982,7 @@ export function CitiesPage() {
           </div>
         </div>
 
-        {/* Mobile Store Grid - MOBILE ONLY */}
+        {/* Mobile Store Grid - MOBILE ONLY - 2 rows × 3 columns */}
         {displayCity && !displayCity.isRandom && !isLandingMode && (
           <div className="md:hidden px-6 pb-8">
             <div className="max-w-3xl mx-auto">
@@ -934,8 +991,13 @@ export function CitiesPage() {
                 Featured Stores in {displayCity.name}
               </h4>
 
-              {/* 2x3 Grid */}
-              <div className="grid grid-cols-2 gap-4">
+              {/* 2 rows × 3 columns Grid - Kirby Style */}
+              <div className="grid gap-3" style={{
+                display: 'grid',
+                gridTemplateColumns: 'repeat(3, 1fr)',
+                gridTemplateRows: 'repeat(2, 1fr)',
+                gridAutoFlow: 'row', // Fill rows first (left to right, top to bottom)
+              }}>
                 <StorePreviews
                   cityName={displayCity.name}
                   hoveredCardIndex={hoveredCardIndex}
@@ -948,8 +1010,8 @@ export function CitiesPage() {
           </div>
         )}
 
-        {/* Train Line Carousel - Below Hero Section */}
-        <div className="flex-none flex flex-col items-center justify-center px-4 md:px-8 pb-8 pt-8"
+        {/* Train Line Carousel - DESKTOP ONLY */}
+        <div className="hidden md:flex flex-none flex-col items-center justify-center px-4 md:px-8 pb-8 pt-8"
           style={{
             height: 'auto',
             minHeight: '300px',
