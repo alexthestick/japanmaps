@@ -157,8 +157,16 @@ export function BlogPostPage() {
                           }}
                         />
 
-                        {/* Hero Image - Landscape aspect ratio for better mobile viewing */}
-                        <div className="overflow-hidden bg-gray-100" style={{ aspectRatio: '4/3' }}>
+                        {/* Hero Image - Responsive: 4:3 mobile, taller on desktop */}
+                        <div className="parallax-hero-image overflow-hidden bg-gray-100 md:h-[600px]" style={{ aspectRatio: '4/3' }}>
+                          <style>{`
+                            @media (min-width: 768px) {
+                              .parallax-hero-image {
+                                aspect-ratio: auto !important;
+                                height: 600px;
+                              }
+                            }
+                          `}</style>
                           <img
                             src={post.hero_image}
                             alt={post.title}
@@ -334,7 +342,16 @@ export function BlogPostPage() {
           </div>
 
           {post.hero_image && (
-            <div className="relative mb-4 md:mb-8 -mx-6 md:-mx-12 -mt-6 md:-mt-12 overflow-hidden" style={{ aspectRatio: '16/9' }}>
+            <div className="standard-hero-image relative mb-4 md:mb-8 -mx-6 md:-mx-12 -mt-6 md:-mt-12 overflow-hidden md:h-[50vh]" style={{ aspectRatio: '16/9' }}>
+              <style>{`
+                @media (min-width: 768px) {
+                  .standard-hero-image {
+                    aspect-ratio: auto !important;
+                    height: 50vh;
+                    min-height: 400px;
+                  }
+                }
+              `}</style>
               <img
                 src={post.hero_image}
                 alt={post.title}
