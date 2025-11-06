@@ -132,23 +132,18 @@ export function ParallaxGuideSection({
           )}
 
           {/* Image with parallax - 4:3 for mobile, dynamic height for desktop */}
-          <div className="parallax-store-image overflow-hidden bg-gray-100" style={{ aspectRatio: '4/3' }}>
-            <style>{`
-              @media (min-width: 768px) {
-                .parallax-store-image {
-                  aspect-ratio: auto !important;
-                  height: auto;
-                }
-              }
-            `}</style>
+          <div
+            className="overflow-hidden bg-gray-100"
+            style={{
+              aspectRatio: isDesktop ? 'auto' : '4/3',
+              height: isDesktop ? imageHeight : 'auto'
+            }}
+          >
             <motion.img
               src={image}
               alt={title}
-              style={{
-                y,
-                height: isDesktop ? imageHeight : '100%',
-              }}
-              className="w-full object-cover"
+              style={{ y }}
+              className="w-full h-full object-cover"
             />
           </div>
 
