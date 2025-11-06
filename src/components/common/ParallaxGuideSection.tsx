@@ -61,7 +61,7 @@ export function ParallaxGuideSection({
   const useWashiTape = Math.random() > 0.5;
 
   // Variable image height for visual rhythm
-  const imageHeight = description.length > 500 ? '850px' : '750px';
+  const imageHeight = description.length > 500 ? '800px' : '700px';
 
   return (
     <section
