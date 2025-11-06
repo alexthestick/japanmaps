@@ -167,11 +167,19 @@ export function BlogPage() {
 
                       <Link to={`/blog/${post.slug}`} className="block">
                         {post.hero_image && (
-                          <div className="relative w-full mb-3 overflow-hidden" style={{ aspectRatio: '16/9' }}>
+                          <div className="relative w-full mb-3 overflow-hidden md:h-64" style={{ aspectRatio: '16/9' }}>
+                            <style>{`
+                              @media (min-width: 768px) {
+                                .blog-card-image {
+                                  aspect-ratio: auto !important;
+                                  height: 16rem;
+                                }
+                              }
+                            `}</style>
                             <img
                               src={post.hero_image}
                               alt={post.title}
-                              className="w-full h-full object-cover"
+                              className="blog-card-image w-full h-full object-cover"
                             />
                           </div>
                         )}
