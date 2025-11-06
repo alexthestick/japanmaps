@@ -1,5 +1,5 @@
 import { motion, useScroll, useTransform } from 'framer-motion';
-import { useRef } from 'react';
+import { useRef, useState, useEffect } from 'react';
 
 interface ParallaxGuideSectionProps {
   title: string;
@@ -27,6 +27,15 @@ export function ParallaxGuideSection({
   // Parallax movement for the image (subtle)
   const y = useTransform(scrollYProgress, [0, 1], ['-5%', '5%']);
   const opacity = useTransform(scrollYProgress, [0.2, 0.4], [0, 1]);
+
+  // Check if desktop for image sizing
+  const [isDesktop, setIsDesktop] = useState(false);
+  useEffect(() => {
+    const checkDesktop = () => setIsDesktop(window.innerWidth >= 768);
+    checkDesktop();
+    window.addEventListener('resize', checkDesktop);
+    return () => window.removeEventListener('resize', checkDesktop);
+  }, []);
 
   // More dramatic rotations
   const imageRotation = reverse ? '2.5deg' : '-2deg';
@@ -103,26 +112,24 @@ export function ParallaxGuideSection({
             </div>
           )}
 
-          {/* Image with parallax - Landscape aspect ratio for mobile, natural height on desktop */}
-          <div className="parallax-store-image overflow-hidden bg-gray-100 md:h-auto" style={{ aspectRatio: '4/3' }}>
+          {/* Image with parallax - 4:3 for mobile, dynamic height for desktop */}
+          <div className="parallax-store-image overflow-hidden bg-gray-100" style={{ aspectRatio: '4/3' }}>
             <style>{`
               @media (min-width: 768px) {
                 .parallax-store-image {
                   aspect-ratio: auto !important;
                   height: auto;
                 }
-                .parallax-store-image img {
-                  max-height: ${imageHeight};
-                  width: 100%;
-                  object-fit: cover;
-                }
               }
             `}</style>
             <motion.img
               src={image}
               alt={title}
-              style={{ y }}
-              className="w-full h-full object-cover"
+              style={{
+                y,
+                height: isDesktop ? imageHeight : '100%',
+              }}
+              className="w-full object-cover"
             />
           </div>
 
