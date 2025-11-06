@@ -103,8 +103,21 @@ export function ParallaxGuideSection({
             </div>
           )}
 
-          {/* Image with parallax - Landscape aspect ratio for mobile */}
-          <div className="overflow-hidden bg-gray-100" style={{ aspectRatio: '4/3' }}>
+          {/* Image with parallax - Landscape aspect ratio for mobile, natural height on desktop */}
+          <div className="parallax-store-image overflow-hidden bg-gray-100 md:h-auto" style={{ aspectRatio: '4/3' }}>
+            <style>{`
+              @media (min-width: 768px) {
+                .parallax-store-image {
+                  aspect-ratio: auto !important;
+                  height: auto;
+                }
+                .parallax-store-image img {
+                  max-height: ${imageHeight};
+                  width: 100%;
+                  object-fit: cover;
+                }
+              }
+            `}</style>
             <motion.img
               src={image}
               alt={title}
