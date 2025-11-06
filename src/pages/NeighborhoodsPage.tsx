@@ -310,24 +310,32 @@ export function NeighborhoodsPage() {
                 }}
               >
                 {neighborhoods.map((neighborhood) => (
-                  <button
+                  <div
                     key={neighborhood.id}
-                    onMouseEnter={() => setHoveredNeighborhood(neighborhood)}
-                    onMouseLeave={() => setHoveredNeighborhood(null)}
-                    onClick={() => handleNeighborhoodClick(neighborhood)}
-                    className="relative overflow-hidden rounded-xl transition-all duration-200 group"
-                    style={{
-                      aspectRatio: '3/4', // Portrait aspect for mobile
-                      border: '2px solid rgba(34, 211, 238, 0.3)',
-                      boxShadow: hoveredNeighborhood?.id === neighborhood.id
-                        ? '0 0 30px rgba(34, 211, 238, 0.6), 0 0 15px rgba(34, 211, 238, 0.4), inset 0 0 20px rgba(34, 211, 238, 0.1)'
-                        : '0 0 15px rgba(34, 211, 238, 0.3), inset 0 0 10px rgba(0, 0, 0, 0.5)',
-                      transform: hoveredNeighborhood?.id === neighborhood.id ? 'scale(1.05)' : 'scale(1)',
-                      background: 'linear-gradient(to bottom, rgba(0, 0, 0, 0.7), rgba(0, 0, 0, 0.9))',
-                    }}
+                    className="relative"
                   >
-                    {/* Background Image */}
-                    <div className="absolute inset-0 bg-gradient-to-br from-gray-800 to-gray-900">
+                    {/* Animated border glow - like desktop preview panel */}
+                    <div
+                      className="absolute -inset-1 bg-gradient-to-r from-cyan-500 via-blue-500 to-purple-500 rounded-xl opacity-50 blur-lg transition-opacity duration-200"
+                      style={{
+                        opacity: hoveredNeighborhood?.id === neighborhood.id ? 0.75 : 0.5
+                      }}
+                    />
+
+                    <button
+                      onMouseEnter={() => setHoveredNeighborhood(neighborhood)}
+                      onMouseLeave={() => setHoveredNeighborhood(null)}
+                      onClick={() => handleNeighborhoodClick(neighborhood)}
+                      className="relative overflow-hidden rounded-xl transition-all duration-200 group w-full"
+                      style={{
+                        aspectRatio: '3/4',
+                        border: '2px solid rgba(34, 211, 238, 0.3)',
+                        boxShadow: '0 15px 60px rgba(0,0,0,0.4), 0 10px 30px rgba(0,0,0,0.3)',
+                        transform: hoveredNeighborhood?.id === neighborhood.id ? 'scale(1.05)' : 'scale(1)',
+                      }}
+                    >
+                      {/* Background Image */}
+                      <div className="absolute inset-0 bg-gradient-to-br from-gray-800 to-gray-900">
                       <img
                         src={neighborhood.image}
                         alt={neighborhood.name}
@@ -367,37 +375,44 @@ export function NeighborhoodsPage() {
                         : 'border-transparent'
                     }`} />
 
-                    {/* Text Overlay - MOBILE ONLY - Enhanced Kirby Style */}
-                    {!neighborhood.isRandom && (
-                      <div className="md:hidden absolute inset-0 flex flex-col justify-end p-3 bg-gradient-to-t from-black/95 via-black/60 to-transparent">
-                        {/* City name */}
-                        <div className="text-xs text-cyan-300 font-semibold mb-0.5 tracking-wide"
-                          style={{
-                            textShadow: '0 0 8px rgba(34, 211, 238, 0.6)'
-                          }}
-                        >
-                          {neighborhood.city}
+                      {/* Corner decorations - Melee style */}
+                      <div className="absolute top-0 left-0 w-8 h-8 border-t-2 border-l-2 border-cyan-400/60 rounded-tl-xl pointer-events-none" />
+                      <div className="absolute top-0 right-0 w-8 h-8 border-t-2 border-r-2 border-blue-400/60 rounded-tr-xl pointer-events-none" />
+                      <div className="absolute bottom-0 left-0 w-8 h-8 border-b-2 border-l-2 border-purple-400/60 rounded-bl-xl pointer-events-none" />
+                      <div className="absolute bottom-0 right-0 w-8 h-8 border-b-2 border-r-2 border-pink-400/60 rounded-br-xl pointer-events-none" />
+
+                      {/* Text Overlay - MOBILE ONLY - Minimal gradient for readability */}
+                      {!neighborhood.isRandom && (
+                        <div className="md:hidden absolute inset-0 flex flex-col justify-end p-3 bg-gradient-to-t from-black/90 via-transparent to-transparent">
+                          {/* City name */}
+                          <div className="text-xs text-cyan-300 font-semibold mb-0.5 tracking-wide"
+                            style={{
+                              textShadow: '0 0 8px rgba(34, 211, 238, 0.8), 0 2px 4px rgba(0, 0, 0, 1)'
+                            }}
+                          >
+                            {neighborhood.city}
+                          </div>
+                          {/* Neighborhood name */}
+                          <div className="text-sm font-black text-white mb-1.5 leading-tight"
+                            style={{
+                              textShadow: '0 2px 8px rgba(0, 0, 0, 1), 0 0 12px rgba(255, 255, 255, 0.4)'
+                            }}
+                          >
+                            {neighborhood.name}
+                          </div>
+                          {/* Store count with glow */}
+                          <div className="flex items-center gap-1.5 px-2 py-1 rounded-md bg-cyan-500/20 border border-cyan-400/40 w-fit backdrop-blur-sm"
+                            style={{
+                              boxShadow: '0 0 10px rgba(34, 211, 238, 0.4)'
+                            }}
+                          >
+                            <MapPin className="w-3 h-3 text-cyan-300" />
+                            <span className="font-bold text-cyan-100 text-xs">{neighborhood.storeCount}</span>
+                          </div>
                         </div>
-                        {/* Neighborhood name */}
-                        <div className="text-sm font-black text-white mb-1.5 leading-tight"
-                          style={{
-                            textShadow: '0 2px 8px rgba(0, 0, 0, 0.8), 0 0 12px rgba(255, 255, 255, 0.3)'
-                          }}
-                        >
-                          {neighborhood.name}
-                        </div>
-                        {/* Store count with glow */}
-                        <div className="flex items-center gap-1.5 px-2 py-1 rounded-md bg-cyan-500/20 border border-cyan-400/40 w-fit"
-                          style={{
-                            boxShadow: '0 0 10px rgba(34, 211, 238, 0.3)'
-                          }}
-                        >
-                          <MapPin className="w-3 h-3 text-cyan-300" />
-                          <span className="font-bold text-cyan-100 text-xs">{neighborhood.storeCount}</span>
-                        </div>
-                      </div>
-                    )}
-                  </button>
+                      )}
+                    </button>
+                  </div>
                 ))}
               </div>
             </div>
