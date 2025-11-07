@@ -243,10 +243,8 @@ export function NeighborhoodsPage() {
                           }
                         }}
                       />
-                      {/* Film grain overlay */}
-                      <div className="absolute inset-0 opacity-20 mix-blend-overlay film-grain" />
-                      {/* Gradient overlay */}
-                      <div className="absolute inset-0 bg-gradient-to-t from-black via-transparent to-transparent" />
+                      {/* Film grain overlay - reduced opacity */}
+                      <div className="absolute inset-0 opacity-5 mix-blend-overlay film-grain" />
 
                       {/* Random badge */}
                       {hoveredNeighborhood.isRandom && (
@@ -328,7 +326,7 @@ export function NeighborhoodsPage() {
                       onClick={() => handleNeighborhoodClick(neighborhood)}
                       className="relative overflow-hidden rounded-xl transition-all duration-200 group w-full"
                       style={{
-                        aspectRatio: '3/4',
+                        aspectRatio: '1/1',
                         border: '2px solid rgba(34, 211, 238, 0.3)',
                         boxShadow: '0 15px 60px rgba(0,0,0,0.4), 0 10px 30px rgba(0,0,0,0.3)',
                         transform: hoveredNeighborhood?.id === neighborhood.id ? 'scale(1.05)' : 'scale(1)',
