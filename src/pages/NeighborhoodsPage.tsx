@@ -214,8 +214,8 @@ export function NeighborhoodsPage() {
               {/* Animated border glow */}
               <div className="absolute -inset-1 bg-gradient-to-r from-cyan-500 via-blue-500 to-purple-500 rounded-2xl opacity-50 blur-lg animate-border-pulse" />
 
-              {/* Main preview card */}
-              <div className="relative bg-gradient-to-b from-gray-900/95 to-black/95 backdrop-blur-xl rounded-2xl overflow-hidden shadow-2xl border-2 border-cyan-400/30 w-full h-fit">
+              {/* Main preview card - Fixed height to prevent jumping */}
+              <div className="relative bg-gradient-to-b from-gray-900/95 to-black/95 backdrop-blur-xl rounded-2xl overflow-hidden shadow-2xl border-2 border-cyan-400/30 w-full h-[600px] flex flex-col">
                 {/* Corner decorations - Melee style */}
                 <div className="absolute top-0 left-0 w-16 h-16 border-t-4 border-l-4 border-cyan-400/60 rounded-tl-2xl" />
                 <div className="absolute top-0 right-0 w-16 h-16 border-t-4 border-r-4 border-blue-400/60 rounded-tr-2xl" />
@@ -224,8 +224,8 @@ export function NeighborhoodsPage() {
 
                 {hoveredNeighborhood ? (
                   <>
-                    {/* Preview Image with film grain */}
-                    <div className="h-[500px] bg-gray-900 relative overflow-hidden">
+                    {/* Preview Image with film grain - Flexible height */}
+                    <div className="flex-1 bg-gray-900 relative overflow-hidden">
                       <img
                         src={hoveredNeighborhood.previewImage}
                         alt={hoveredNeighborhood.name}
@@ -256,8 +256,8 @@ export function NeighborhoodsPage() {
                       )}
                     </div>
 
-                    {/* Info Section */}
-                    <div className="p-6 relative">
+                    {/* Info Section - Fixed height */}
+                    <div className="p-6 relative flex-shrink-0">
                       {/* Scan line effect */}
                       <div className="absolute inset-0 opacity-5 pointer-events-none"
                            style={{
@@ -304,7 +304,7 @@ export function NeighborhoodsPage() {
           <div className="flex-1 relative md:pr-32 pr-0 w-full">
             {/* Grid container - no border on mobile for cleaner look */}
             <div className="relative w-full">
-              <div className="relative grid grid-cols-3 md:grid-cols-8 gap-3 md:gap-2 md:p-3 md:bg-black/20 md:rounded-2xl md:backdrop-blur-sm md:border-2 md:border-cyan-400/20"
+              <div className="relative grid grid-cols-3 md:grid-cols-8 lg:grid-cols-10 xl:grid-cols-12 2xl:grid-cols-14 gap-3 md:gap-0.5 md:p-3 md:bg-black/20 md:rounded-2xl md:backdrop-blur-sm md:border-2 md:border-cyan-400/20"
                 style={{
                   gridAutoRows: 'auto'
                 }}
@@ -332,6 +332,7 @@ export function NeighborhoodsPage() {
                         border: '2px solid rgba(34, 211, 238, 0.3)',
                         boxShadow: '0 15px 60px rgba(0,0,0,0.4), 0 10px 30px rgba(0,0,0,0.3)',
                         transform: hoveredNeighborhood?.id === neighborhood.id ? 'scale(1.05)' : 'scale(1)',
+                        zIndex: hoveredNeighborhood?.id === neighborhood.id ? 20 : 1,
                       }}
                     >
                       {/* Background Image */}
