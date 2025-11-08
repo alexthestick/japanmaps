@@ -1,12 +1,13 @@
 import { useState, useEffect, useMemo } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { ArrowLeft, MapPin, Shirt, UtensilsCrossed, Coffee, Home, Building2 } from 'lucide-react';
+import { MapPin } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { StoreList } from '../components/store/StoreList';
 import { ListViewSidebar } from '../components/filters/ListViewSidebar';
 import { SortDropdown } from '../components/store/SortDropdown';
 import { StoreDetail } from '../components/store/StoreDetail';
 import { ScrollingBanner } from '../components/layout/ScrollingBanner';
+import { MobileLocationCategoryFilters } from '../components/filters/MobileLocationCategoryFilters';
 import { useStores } from '../hooks/useStores';
 import { Loader } from '../components/common/Loader';
 import { sortStores } from '../utils/helpers';
@@ -127,15 +128,6 @@ export function CityPage() {
   // City description/history - can be expanded later
   const cityDescription = `Explore the best stores, restaurants, and hidden gems in ${cityName}. From traditional neighborhoods to modern shopping districts, discover what makes ${cityName} unique.`;
 
-  // Category options for mobile filter
-  const MAIN_CATEGORIES = [
-    { id: 'Fashion' as MainCategory, label: 'Fashion', icon: Shirt },
-    { id: 'Food' as MainCategory, label: 'Food', icon: UtensilsCrossed },
-    { id: 'Coffee' as MainCategory, label: 'Coffee', icon: Coffee },
-    { id: 'Home Goods' as MainCategory, label: 'Home Goods', icon: Home },
-    { id: 'Museum' as MainCategory, label: 'Museum', icon: Building2 },
-  ];
-
   // Get unique neighborhoods from stores
   const neighborhoods = useMemo(() => {
     const unique = new Set(stores.map(s => s.neighborhood).filter(Boolean));
@@ -169,18 +161,6 @@ export function CityPage() {
 
         {/* Gradient Overlay */}
         <div className="absolute inset-0 bg-gradient-to-t from-black via-black/60 to-transparent" />
-
-        {/* Back Button */}
-        <button
-          onClick={() => navigate('/cities')}
-          className="absolute top-6 left-6 z-20 bg-black/40 backdrop-blur-md border border-cyan-400/30 rounded-lg px-4 py-2 flex items-center gap-2 text-cyan-300 hover:bg-cyan-500/20 hover:border-cyan-400/50 transition-all duration-200"
-          style={{
-            boxShadow: '0 0 20px rgba(34, 211, 238, 0.2)',
-          }}
-        >
-          <ArrowLeft className="w-5 h-5" />
-          <span className="font-semibold uppercase tracking-wide text-sm">Back to Cities</span>
-        </button>
 
         {/* City Name & Info */}
         <div className="absolute bottom-0 left-0 right-0 p-8">
@@ -233,131 +213,17 @@ export function CityPage() {
       </div>
 
       {/* Mobile Filter Bars - MOBILE ONLY */}
-      <div className="md:hidden px-4 py-6 space-y-4 bg-gradient-to-b from-black via-gray-900 to-black relative">
-        {/* Film grain */}
-        <div className="absolute inset-0 film-grain opacity-20 pointer-events-none" />
-
-        {/* Location Filter */}
-        <div className="relative">
-          <h3 className="text-xs font-black uppercase tracking-widest text-cyan-300/80 mb-2 italic ml-1"
-              style={{ textShadow: '0 0 10px rgba(34, 217, 238, 0.3)' }}>
-            LOCATION
-          </h3>
-          <div className="flex gap-2 overflow-x-auto scrollbar-hide pb-2">
-            {/* All Cities Pill */}
-            {MAJOR_CITIES_JAPAN.map((city) => {
-              const isActive = city === cityName;
-              return (
-                <button
-                  key={city}
-                  onClick={() => handleCityChange(city)}
-                  className="flex-shrink-0 px-4 py-2 rounded-full font-bold text-xs uppercase tracking-wide transition-all duration-200"
-                  style={{
-                    background: isActive
-                      ? `linear-gradient(135deg, ${cityColor}40, ${cityColor}20)`
-                      : 'rgba(0,0,0,0.4)',
-                    border: isActive
-                      ? `2px solid ${cityColor}`
-                      : '2px solid rgba(255,255,255,0.1)',
-                    color: isActive ? '#fff' : 'rgba(255,255,255,0.6)',
-                    boxShadow: isActive
-                      ? `0 0 20px ${cityColor}60, 0 0 10px ${cityColor}40`
-                      : 'none',
-                    textShadow: isActive ? `0 0 10px ${cityColor}80` : 'none',
-                  }}
-                >
-                  {city}
-                </button>
-              );
-            })}
-
-            {/* Neighborhoods if any */}
-            {neighborhoods.length > 0 && neighborhoods.map((neighborhood) => {
-              const isActive = neighborhood === selectedNeighborhood;
-              return (
-                <button
-                  key={neighborhood}
-                  onClick={() => handleNeighborhoodChange(neighborhood)}
-                  className="flex-shrink-0 px-4 py-2 rounded-full font-medium text-xs tracking-wide transition-all duration-200"
-                  style={{
-                    background: isActive
-                      ? `linear-gradient(135deg, ${cityColor}30, ${cityColor}15)`
-                      : 'rgba(0,0,0,0.3)',
-                    border: isActive
-                      ? `2px solid ${cityColor}80`
-                      : '2px solid rgba(255,255,255,0.08)',
-                    color: isActive ? '#fff' : 'rgba(255,255,255,0.5)',
-                    boxShadow: isActive
-                      ? `0 0 15px ${cityColor}40`
-                      : 'none',
-                  }}
-                >
-                  {neighborhood}
-                </button>
-              );
-            })}
-          </div>
-        </div>
-
-        {/* Category Filter */}
-        <div className="relative">
-          <h3 className="text-xs font-black uppercase tracking-widest text-purple-300/80 mb-2 italic ml-1"
-              style={{ textShadow: '0 0 10px rgba(168, 85, 247, 0.3)' }}>
-            CATEGORY
-          </h3>
-          <div className="flex gap-2 overflow-x-auto scrollbar-hide pb-2">
-            {/* All Categories */}
-            <button
-              onClick={() => handleMainCategoryChange(null)}
-              className="flex-shrink-0 px-4 py-2 rounded-full font-bold text-xs uppercase tracking-wide transition-all duration-200"
-              style={{
-                background: !selectedMainCategory
-                  ? 'linear-gradient(135deg, rgba(168, 85, 247, 0.4), rgba(168, 85, 247, 0.2))'
-                  : 'rgba(0,0,0,0.4)',
-                border: !selectedMainCategory
-                  ? '2px solid rgba(168, 85, 247, 0.8)'
-                  : '2px solid rgba(255,255,255,0.1)',
-                color: !selectedMainCategory ? '#fff' : 'rgba(255,255,255,0.6)',
-                boxShadow: !selectedMainCategory
-                  ? '0 0 20px rgba(168, 85, 247, 0.6), 0 0 10px rgba(168, 85, 247, 0.4)'
-                  : 'none',
-                textShadow: !selectedMainCategory ? '0 0 10px rgba(168, 85, 247, 0.8)' : 'none',
-              }}
-            >
-              All
-            </button>
-
-            {/* Individual Categories */}
-            {MAIN_CATEGORIES.map((cat) => {
-              const Icon = cat.icon;
-              const isActive = selectedMainCategory === cat.id;
-              return (
-                <button
-                  key={cat.id}
-                  onClick={() => handleMainCategoryChange(isActive ? null : cat.id)}
-                  className="flex-shrink-0 px-4 py-2 rounded-full font-bold text-xs uppercase tracking-wide transition-all duration-200 flex items-center gap-2"
-                  style={{
-                    background: isActive
-                      ? 'linear-gradient(135deg, rgba(168, 85, 247, 0.4), rgba(168, 85, 247, 0.2))'
-                      : 'rgba(0,0,0,0.4)',
-                    border: isActive
-                      ? '2px solid rgba(168, 85, 247, 0.8)'
-                      : '2px solid rgba(255,255,255,0.1)',
-                    color: isActive ? '#fff' : 'rgba(255,255,255,0.6)',
-                    boxShadow: isActive
-                      ? '0 0 20px rgba(168, 85, 247, 0.6), 0 0 10px rgba(168, 85, 247, 0.4)'
-                      : 'none',
-                    textShadow: isActive ? '0 0 10px rgba(168, 85, 247, 0.8)' : 'none',
-                  }}
-                >
-                  <Icon className="w-3.5 h-3.5" />
-                  {cat.label}
-                </button>
-              );
-            })}
-          </div>
-        </div>
-      </div>
+      <MobileLocationCategoryFilters
+        cities={MAJOR_CITIES_JAPAN}
+        neighborhoods={neighborhoods}
+        currentCity={cityName}
+        currentNeighborhood={null}
+        selectedCategory={selectedMainCategory}
+        onCityChange={handleCityChange}
+        onNeighborhoodChange={handleNeighborhoodChange}
+        onCategoryChange={handleMainCategoryChange}
+        cityColor={cityColor}
+      />
 
       {/* Main Content - List View */}
       <div className="flex min-h-screen relative">

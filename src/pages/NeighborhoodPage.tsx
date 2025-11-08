@@ -1,15 +1,16 @@
 import { useState, useEffect, useMemo } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { ArrowLeft, MapPin, ChevronRight } from 'lucide-react';
+import { MapPin, ChevronRight } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { StoreList } from '../components/store/StoreList';
 import { ListViewSidebar } from '../components/filters/ListViewSidebar';
 import { SortDropdown } from '../components/store/SortDropdown';
 import { ScrollingBanner } from '../components/layout/ScrollingBanner';
+import { MobileLocationCategoryFilters } from '../components/filters/MobileLocationCategoryFilters';
 import { useStores } from '../hooks/useStores';
 import { Loader } from '../components/common/Loader';
 import { sortStores } from '../utils/helpers';
-import { CITY_NAMES_JAPANESE, CITY_COLORS } from '../lib/constants';
+import { CITY_NAMES_JAPANESE, CITY_COLORS, MAJOR_CITIES_JAPAN } from '../lib/constants';
 import { slugToCity, slugToNeighborhood, cityToSlug, neighborhoodToSlug } from '../utils/cityData';
 import type { Store, MainCategory } from '../types/store';
 
@@ -124,6 +125,12 @@ export function NeighborhoodPage() {
   // Neighborhood description
   const neighborhoodDescription = `Discover the unique character of ${neighborhoodName} in ${cityName}. Explore local shops, restaurants, and hidden gems that make this neighborhood special.`;
 
+  // Get all neighborhoods for the current city (for mobile filter)
+  const allNeighborhoodsInCity = useMemo(() => {
+    const unique = new Set(stores.map(s => s.neighborhood).filter(Boolean));
+    return Array.from(unique).sort();
+  }, [stores]);
+
   if (loading) {
     return <Loader />;
   }
@@ -151,18 +158,6 @@ export function NeighborhoodPage() {
 
         {/* Gradient Overlay */}
         <div className="absolute inset-0 bg-gradient-to-t from-black via-black/60 to-transparent" />
-
-        {/* Back Button */}
-        <button
-          onClick={() => navigate(`/city/${citySlug}`)}
-          className="absolute top-6 left-6 z-20 bg-black/40 backdrop-blur-md border border-cyan-400/30 rounded-lg px-4 py-2 flex items-center gap-2 text-cyan-300 hover:bg-cyan-500/20 hover:border-cyan-400/50 transition-all duration-200"
-          style={{
-            boxShadow: '0 0 20px rgba(34, 211, 238, 0.2)',
-          }}
-        >
-          <ArrowLeft className="w-5 h-5" />
-          <span className="font-semibold uppercase tracking-wide text-sm">Back to {cityName}</span>
-        </button>
 
         {/* Neighborhood Name & Info */}
         <div className="absolute bottom-0 left-0 right-0 p-8">
@@ -227,28 +222,43 @@ export function NeighborhoodPage() {
         </div>
       </div>
 
+      {/* Mobile Filter Bars - MOBILE ONLY */}
+      <MobileLocationCategoryFilters
+        cities={MAJOR_CITIES_JAPAN}
+        neighborhoods={allNeighborhoodsInCity}
+        currentCity={cityName}
+        currentNeighborhood={neighborhoodName}
+        selectedCategory={selectedMainCategory}
+        onCityChange={handleCityChange}
+        onNeighborhoodChange={handleNeighborhoodChange}
+        onCategoryChange={handleMainCategoryChange}
+        cityColor={cityColor}
+      />
+
       {/* Main Content - List View */}
       <div className="flex min-h-screen relative">
-        {/* Sidebar Filters */}
-        <ListViewSidebar
-          selectedMainCategory={selectedMainCategory}
-          selectedSubCategories={selectedSubCategories}
-          selectedCity={cityName}
-          selectedNeighborhood={neighborhoodName}
-          onMainCategoryChange={handleMainCategoryChange}
-          onSubCategoryToggle={handleSubCategoryToggle}
-          onCityChange={handleCityChange}
-          onNeighborhoodChange={handleNeighborhoodChange}
-          onClearAll={handleClearAll}
-        />
+        {/* Sidebar Filters - DESKTOP ONLY */}
+        <div className="hidden md:block">
+          <ListViewSidebar
+            selectedMainCategory={selectedMainCategory}
+            selectedSubCategories={selectedSubCategories}
+            selectedCity={cityName}
+            selectedNeighborhood={neighborhoodName}
+            onMainCategoryChange={handleMainCategoryChange}
+            onSubCategoryToggle={handleSubCategoryToggle}
+            onCityChange={handleCityChange}
+            onNeighborhoodChange={handleNeighborhoodChange}
+            onClearAll={handleClearAll}
+          />
+        </div>
 
         {/* Store List Section */}
-        <div className="flex-1 p-8 relative">
+        <div className="flex-1 p-4 md:p-8 relative">
           {/* Corner decorations */}
           <div className="absolute top-4 right-4 w-3 h-3 border-t-2 border-r-2 border-cyan-400/30" />
 
-          {/* Search & Sort Controls */}
-          <div className="mb-6 flex gap-4 items-center relative z-10">
+          {/* Search & Sort Controls - DESKTOP ONLY */}
+          <div className="hidden md:flex mb-6 gap-4 items-center relative z-10">
             {/* Search Bar */}
             <div className="flex-1 relative">
               <input
