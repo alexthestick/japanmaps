@@ -31,8 +31,8 @@ export function StoreList({ stores, onStoreClick }: StoreListProps) {
 
   return (
     <div className="space-y-6">
-      {/* Product Grid */}
-      <div className={`grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 px-4 md:px-6`}>
+      {/* Product Grid - 2 columns on mobile, 2-3 columns on desktop */}
+      <div className={`grid grid-cols-2 md:grid-cols-2 lg:grid-cols-3 gap-3 md:gap-6 px-0 md:px-6`}>
         {visibleStores.map(store => (
           <StoreCard
             key={store.id}
