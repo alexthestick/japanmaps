@@ -1,6 +1,6 @@
 # 🗺️ Japan Clothing Map - Complete Project Status
 
-**Last Updated:** October 3, 2025
+**Last Updated:** November 7, 2025
 
 This document provides a comprehensive overview of the current state of the Japan Clothing Map project, including all implemented features, architecture details, and setup requirements.
 
@@ -11,10 +11,12 @@ This document provides a comprehensive overview of the current state of the Japa
 **Japan Clothing Map** is a production-ready web application that helps users discover archive, vintage, and streetwear stores across Japan through an interactive map interface with advanced filtering capabilities.
 
 ### Current Phase
-✅ **Phase 1 Complete (MVP + Polish)**
+✅ **Phase 1 Complete (MVP + Polish + Mobile Optimization)**
 - Core functionality fully implemented
-- Production-ready UI/UX
+- Production-ready UI/UX (Desktop & Mobile)
+- Kirby retro-futuristic aesthetic throughout
 - All features tested and working
+- Mobile-first filter system with modal selector
 
 ### Tech Stack
 - **Frontend:** React 18.3 + TypeScript 5.5 + Vite
@@ -196,6 +198,62 @@ This document provides a comprehensive overview of the current state of the Japa
 - Prevent auto-zoom on category change; only zoom on searches or single result
 - Subcategory coloring only when main category selected (Fashion/Home Goods)
 
+### 15. Mobile-First Features (November 2025)
+
+#### **Landing Page - Jukebox-Style Menu**
+- **Location:** `src/components/landing/TrainTicketMenu.tsx`
+- Transformed from scattered tickets to organized grid layout
+- Jukebox selection codes (A1-D2) for each ticket
+- Two sections: Navigation (Map, List, Cities, Neighborhoods, Blog) and Categories (Fashion, Food, Coffee, Home Goods, Museums)
+- 3-column grid on desktop, 1-column on mobile
+- Glowing borders and enhanced hover effects
+
+#### **Cities Page - Mobile Travel Button**
+- **Location:** `src/pages/CitiesPage.tsx`
+- Moved "Travel to City" button below preview panel on mobile (previously overlapping)
+- Desktop: Button overlays preview panel at bottom
+- Mobile: Button positioned below preview panel for better UX
+- Pagination dots now fully visible on mobile
+
+#### **City & Neighborhood Pages - Unified Mobile Filter System**
+- **Location:** `src/components/filters/MobileLocationCategoryFilters.tsx`
+- **Shared component** used by both CityPage and NeighborhoodPage
+- **Modal-based location selector** (better than horizontal scroll for many cities/neighborhoods)
+  - Tap button to open modal from bottom
+  - Organized sections: "Back to City" (when in neighborhood), Neighborhoods, All Cities
+  - Glowing active states with city colors
+  - Smooth slide-up animation
+- **Category filter** with horizontal scrollable pills
+  - All, Fashion, Food, Coffee, Home Goods, Museum
+  - Icons + glowing purple borders when active
+- **Removed back buttons** from both City and Neighborhood pages
+- **Desktop sidebar hidden on mobile**, replaced with mobile filters
+- **Search and sort controls** desktop-only
+- **2-column store grid** on mobile (consistent across all list views)
+
+#### **Neighborhoods Grid Page - Mobile Redesign**
+- **Location:** `src/pages/NeighborhoodsPage.tsx`
+- Glowing borders and corner decorations (Melee-style)
+- Animated border effects on hover
+- Category icons in corner badges
+- 2-column grid on mobile, responsive columns on desktop
+
+#### **Blog & Article Pages - Mobile Image Sizing**
+- **Location:** `src/pages/BlogPage.tsx`, `src/pages/BlogPostPage.tsx`, `src/components/common/ParallaxGuideSection.tsx`
+- Responsive image aspect ratios (16:9 mobile, fixed heights desktop)
+- Orientation-based sizing for parallax store photos (700-800px based on description length)
+- Improved photo visibility in articles
+
+### 16. Kirby Retro-Futuristic Aesthetic
+- **Film grain overlay** throughout application
+- **Glowing borders** with cyan/blue/purple gradients
+- **Text shadows** with neon glow effects
+- **Animated hover states** with scale and glow transitions
+- **Corner decorations** inspired by Super Smash Bros Melee
+- **Gradient backgrounds** from black through gray-900
+- **Category-based color theming** (city colors, category colors)
+- **Train ticket and jukebox-inspired** navigation elements
+
 ### 10. RPC Function (Critical!)
 - **File:** `supabase/004_rpc_functions.sql`
 - **Name:** `get_stores_with_coordinates()`
@@ -216,19 +274,42 @@ App.tsx
 ├── Layout.tsx
 │   ├── Header.tsx
 │   └── Footer.tsx
-├── HomePage.tsx
+├── NewLandingPage.tsx (no layout, full-screen)
+│   ├── TrainTicketMenu.tsx (jukebox-style grid)
+│   ├── CitiesCarousel.tsx
+│   └── StatsBar.tsx
+├── CitiesPage.tsx (no layout, full-screen transit card style)
+│   └── (city preview cards with swipe carousel)
+├── NeighborhoodsPage.tsx (no layout, full-screen Melee-style)
+│   └── (neighborhood grid with preview panel)
+├── CityPage.tsx (with layout)
+│   ├── MobileLocationCategoryFilters.tsx (mobile only)
+│   ├── ListViewSidebar.tsx (desktop only)
+│   ├── SortDropdown.tsx (desktop only)
+│   └── StoreList.tsx (2-col mobile, 2-3-col desktop)
+│       └── StoreCard.tsx (multiple)
+├── NeighborhoodPage.tsx (with layout)
+│   ├── MobileLocationCategoryFilters.tsx (mobile only)
+│   ├── ListViewSidebar.tsx (desktop only)
+│   ├── SortDropdown.tsx (desktop only)
+│   └── StoreList.tsx (2-col mobile, 2-3-col desktop)
+│       └── StoreCard.tsx (multiple)
+├── HomePage.tsx (map view, with layout)
 │   ├── StoreFilters.tsx (horizontal bar)
 │   ├── MapView.tsx
 │   │   └── StoreMarker.tsx (multiple)
 │   ├── StoreList.tsx
 │   │   └── StoreCard.tsx (multiple)
 │   └── StoreDetail.tsx (sidebar panel)
+├── BlogPage.tsx (with layout)
+│   └── (blog post cards with responsive images)
+├── BlogPostPage.tsx (with layout)
+│   └── ParallaxGuideSection.tsx (orientation-based sizing)
 ├── AboutPage.tsx
 ├── SuggestStorePage.tsx
 │   └── SuggestStoreForm.tsx
-├── AdminDashboard.tsx
-│   └── AddStoreForm.tsx
-└── BlogPage.tsx
+└── AdminDashboard.tsx
+    └── AddStoreForm.tsx
 ```
 
 ### Key Constants
@@ -483,11 +564,11 @@ All samples have:
 
 ## 🎯 Feature Status
 
-### ✅ Completed (Phase 1-4)
+### ✅ Completed (Phase 1-4 + Mobile Optimization)
 - [x] Interactive Mapbox map
 - [x] Color-coded store pins
 - [x] Pin hover effects
-- [x] Horizontal filter bar
+- [x] Horizontal filter bar (desktop)
 - [x] City filter dropdown
 - [x] Neighborhood cascading dropdown
 - [x] Category filter dropdown
@@ -498,10 +579,17 @@ All samples have:
 - [x] Smooth animations
 - [x] Empty state message
 - [x] Map/List toggle
-- [x] Responsive design
+- [x] Responsive design (desktop + mobile)
 - [x] PostGIS coordinate extraction
 - [x] RPC function for data fetching
 - [x] Production polish
+- [x] Mobile filter system with modal selector
+- [x] Jukebox-style landing page menu
+- [x] Kirby retro-futuristic aesthetic
+- [x] Mobile-optimized city/neighborhood pages
+- [x] 2-column mobile store grids
+- [x] Responsive blog image sizing
+- [x] Unified mobile navigation
 
 ### 🚧 Phase 2 (Planned)
 - [ ] User authentication
