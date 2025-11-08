@@ -690,7 +690,7 @@ export function CitiesPage() {
             <div className={`grid h-full gap-4 md:gap-6 ${isLandingMode ? 'grid-cols-1' : 'grid-cols-1 md:grid-cols-[3fr_1fr]'}`} style={{ alignItems: 'stretch' }}>
 
               {/* Left Column: City Preview - Full width on mobile, adjusts on desktop */}
-              <div className="relative min-h-0 h-full flex items-center justify-center">
+              <div className="relative min-h-0 h-full flex flex-col items-center justify-center gap-4 md:gap-0">
                 <div className="city-preview-container relative w-full"
                   style={{
                     aspectRatio: isLandingMode ? '16/9' : '4/3',
@@ -795,11 +795,11 @@ export function CitiesPage() {
                     {/* Gradient Overlay at Bottom */}
                     <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
 
-                    {/* Train Travel Button - Bottom Center with Kirby Aesthetic */}
+                    {/* Train Travel Button - DESKTOP ONLY - Bottom Center with Kirby Aesthetic */}
                     {selectedCity && (
                       <button
                         onClick={() => handleTravel(selectedCity)}
-                        className="absolute text-white font-black uppercase tracking-wider text-sm md:text-lg font-display relative overflow-hidden group active:scale-95 disabled:opacity-50 px-8 md:px-12 py-3 md:py-4 transition-all duration-300"
+                        className="hidden md:block absolute text-white font-black uppercase tracking-wider text-sm md:text-lg font-display relative overflow-hidden group active:scale-95 disabled:opacity-50 px-8 md:px-12 py-3 md:py-4 transition-all duration-300"
                         disabled={isTransitioning}
                         style={{
                           bottom: '40px',
@@ -931,6 +931,41 @@ export function CitiesPage() {
                     )}
                   </motion.div>
                 </div>
+
+                {/* Mobile Travel Button - MOBILE ONLY - Below preview panel */}
+                {selectedCity && !isLandingMode && (
+                  <button
+                    onClick={() => handleTravel(selectedCity)}
+                    className="md:hidden w-full max-w-md text-white font-black uppercase tracking-wider text-sm font-display relative overflow-hidden group active:scale-95 disabled:opacity-50 px-8 py-3 transition-all duration-300"
+                    disabled={isTransitioning}
+                    style={{
+                      clipPath: 'polygon(15% 0%, 85% 0%, 100% 50%, 85% 100%, 15% 100%, 0% 50%)',
+                      background: `linear-gradient(135deg, ${selectedCity.regionColor || selectedCity.color}, ${selectedCity.regionColor || selectedCity.color}dd)`,
+                      border: `4px solid ${selectedCity.regionColor || selectedCity.color}`,
+                      boxShadow: `0 0 60px ${selectedCity.regionColor || selectedCity.color}80, 0 0 30px ${selectedCity.regionColor || selectedCity.color}60, 0 12px 40px rgba(0,0,0,0.6), inset 0 0 40px rgba(255,255,255,0.15)`,
+                      transition: isTransitioning
+                        ? 'all 0.6s ease-in-out'
+                        : 'all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1)',
+                      opacity: isTransitioning ? 0.7 : 1,
+                    }}
+                  >
+                    {/* Shimmer effect on hover */}
+                    <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/30 to-transparent -translate-x-full group-active:translate-x-full transition-transform duration-700" style={{ clipPath: 'polygon(15% 0%, 85% 0%, 100% 50%, 85% 100%, 15% 100%, 0% 50%)' }} />
+
+                    {/* Warp effect when transitioning */}
+                    {isTransitioning && (
+                      <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/40 to-transparent animate-pulse" style={{ clipPath: 'polygon(15% 0%, 85% 0%, 100% 50%, 85% 100%, 15% 100%, 0% 50%)' }} />
+                    )}
+
+                    {/* Button Content */}
+                    <div className="flex items-center justify-center gap-3 relative z-10">
+                      <Train className="w-5 h-5" style={{ filter: `drop-shadow(0 0 8px ${selectedCity.regionColor || selectedCity.color})` }} />
+                      <span style={{ textShadow: `0 0 12px ${selectedCity.regionColor || selectedCity.color}80, 0 3px 8px rgba(0,0,0,0.9)` }}>
+                        {isTransitioning ? 'DEPARTING...' : `TRAVEL TO ${selectedCity.name.toUpperCase()}`}
+                      </span>
+                    </div>
+                  </button>
+                )}
               </div>
 
               {/* Right Column: Store Grid - DESKTOP ONLY - 2 columns × 3 rows */}
