@@ -28,4 +28,8 @@ dist-ssr
 .env.local
 .env.production
 
+# API keys and sensitive data
+stores/enrich_stores.py
+supabase/006_import_stores.sql
+
 
