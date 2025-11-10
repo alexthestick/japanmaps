@@ -18,11 +18,17 @@ import { NeighborhoodPage } from './pages/NeighborhoodPage';
 import { CitiesPage } from './pages/CitiesPage';
 import { NeighborhoodsPage } from './pages/NeighborhoodsPage';
 import { motion } from 'framer-motion';
+import { ScrollToTop } from './components/common/ScrollToTop';
 
 function AnimatedRoutes() {
   const location = useLocation();
   return (
-    <Routes location={location} key={location.pathname}>
+    <>
+      {/* Scroll to top on navigation, but preserve scroll on back button */}
+      {/* Exclude store detail pages to maintain list scroll position when user goes back */}
+      <ScrollToTop excludePaths={['/store/']} />
+
+      <Routes location={location} key={location.pathname}>
         {/* New Premium Landing Page (no layout) */}
         <Route path="/" element={
           <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} transition={{ duration: 0.18 }}>
@@ -129,6 +135,7 @@ function AnimatedRoutes() {
           <Route path="*" element={<NotFoundPage />} />
         </Route>
       </Routes>
+    </>
   );
 }
 
