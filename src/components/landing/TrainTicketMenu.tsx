@@ -14,9 +14,12 @@ function TicketCard({ title, icon, gradient, href, code }: TicketCardProps) {
   const navigate = useNavigate();
 
   const handleClick = () => {
-    // Force scroll to top before navigation
-    window.scrollTo({ top: 0, left: 0, behavior: 'auto' });
+    // Navigate first
     navigate(href);
+    // Force scroll to top after navigation with a slight delay
+    setTimeout(() => {
+      window.scrollTo({ top: 0, left: 0, behavior: 'auto' });
+    }, 10);
   };
 
   return (
