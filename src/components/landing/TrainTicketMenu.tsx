@@ -13,9 +13,15 @@ interface TicketCardProps {
 function TicketCard({ title, icon, gradient, href, code }: TicketCardProps) {
   const navigate = useNavigate();
 
+  const handleClick = () => {
+    // Force scroll to top before navigation
+    window.scrollTo({ top: 0, left: 0, behavior: 'auto' });
+    navigate(href);
+  };
+
   return (
     <motion.button
-      onClick={() => navigate(href)}
+      onClick={handleClick}
       initial={{ opacity: 0, scale: 0.9 }}
       whileInView={{ opacity: 1, scale: 1 }}
       viewport={{ once: true }}
@@ -211,7 +217,7 @@ export function TrainTicketMenu() {
               title="Museums"
               icon={<Layers className="w-6 h-6" />}
               gradient="from-indigo-400 to-purple-500"
-              href="/map?category=Museums"
+              href="/map?category=Museum"
               code="D2"
             />
           </div>
