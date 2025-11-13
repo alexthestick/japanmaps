@@ -8,8 +8,8 @@
  * - No secrets leaked in logs
  * - Supports Vercel preview URLs
  */
-const ImageKit = require('imagekit');
-const { createClient } = require('@supabase/supabase-js');
+import ImageKit from 'imagekit';
+import { createClient } from '@supabase/supabase-js';
 
 // Rate limiting
 const rateLimitMap = new Map();
@@ -17,10 +17,11 @@ const RATE_LIMIT_WINDOW = 60 * 1000; // 1 minute
 const MAX_REQUESTS_PER_WINDOW = 10;
 
 // Allowed origins
-const PRODUCTION_DOMAIN = process.env.PRODUCTION_URL || 'https://japan-maps.vercel.app';
+const PRODUCTION_DOMAIN = process.env.PRODUCTION_URL || 'https://japanmaps.vercel.app';
 const ALLOWED_ORIGINS = [
   'http://localhost:5173', // Vite dev server
   'http://localhost:3000',
+  'https://japanmaps.vercel.app',
   PRODUCTION_DOMAIN,
 ];
 
@@ -80,7 +81,7 @@ function setCorsHeaders(res, origin) {
   res.setHeader('Access-Control-Max-Age', '86400');
 }
 
-module.exports = async function handler(req, res) {
+export default async function handler(req, res) {
   const origin = req.headers.origin;
 
   if (origin && !isOriginAllowed(origin)) {
