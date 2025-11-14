@@ -33,3 +33,4 @@ stores/enrich_stores.py
 supabase/006_import_stores.sql
 
 
+.vercel

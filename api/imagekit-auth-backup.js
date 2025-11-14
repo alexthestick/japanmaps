@@ -8,8 +8,8 @@
  * - No secrets leaked in logs
  * - Supports Vercel preview URLs
  */
-import ImageKit from 'imagekit';
-import { createClient } from '@supabase/supabase-js';
+const ImageKit = require('imagekit');
+const { createClient } = require('@supabase/supabase-js');
 
 // Rate limiting
 const rateLimitMap = new Map();
@@ -17,11 +17,10 @@ const RATE_LIMIT_WINDOW = 60 * 1000; // 1 minute
 const MAX_REQUESTS_PER_WINDOW = 10;
 
 // Allowed origins
-const PRODUCTION_DOMAIN = process.env.PRODUCTION_URL || 'https://japanmaps.vercel.app';
+const PRODUCTION_DOMAIN = process.env.PRODUCTION_URL || 'https://japan-maps.vercel.app';
 const ALLOWED_ORIGINS = [
   'http://localhost:5173', // Vite dev server
   'http://localhost:3000',
-  'https://japanmaps.vercel.app',
   PRODUCTION_DOMAIN,
 ];
 
@@ -57,7 +56,7 @@ async function verifyAuth(req) {
   try {
     const supabase = createClient(
       process.env.VITE_SUPABASE_URL,
-      process.env.VITE_SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_SERVICE_ROLE_KEY
+      process.env.SUPABASE_SERVICE_ROLE_KEY
     );
 
     const { data: { user }, error } = await supabase.auth.getUser(token);
@@ -81,7 +80,7 @@ function setCorsHeaders(res, origin) {
   res.setHeader('Access-Control-Max-Age', '86400');
 }
 
-export default async function handler(req, res) {
+module.exports = async function handler(req, res) {
   const origin = req.headers.origin;
 
   if (origin && !isOriginAllowed(origin)) {
@@ -121,18 +120,16 @@ export default async function handler(req, res) {
   }
 
   try {
-    const publicKey = process.env.VITE_IMAGEKIT_PUBLIC_KEY;
-    const privateKey = process.env.VITE_IMAGEKIT_PRIVATE_KEY || process.env.IMAGEKIT_PRIVATE_KEY;
-    const urlEndpoint = process.env.VITE_IMAGEKIT_URL_ENDPOINT;
-
-    if (!publicKey || !privateKey || !urlEndpoint) {
+    if (!process.env.VITE_IMAGEKIT_PUBLIC_KEY ||
+        !process.env.IMAGEKIT_PRIVATE_KEY ||
+        !process.env.VITE_IMAGEKIT_URL_ENDPOINT) {
       throw new Error('ImageKit credentials not configured');
     }
 
     const imagekit = new ImageKit({
-      publicKey,
-      privateKey,
-      urlEndpoint,
+      publicKey: process.env.VITE_IMAGEKIT_PUBLIC_KEY,
+      privateKey: process.env.IMAGEKIT_PRIVATE_KEY,
+      urlEndpoint: process.env.VITE_IMAGEKIT_URL_ENDPOINT,
     });
 
     const authParams = imagekit.getAuthenticationParameters();

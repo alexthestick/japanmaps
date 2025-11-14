@@ -60,7 +60,7 @@ export function BulkPhotoMigration({
           count: photoUrls.length,
           message: dryRun
             ? `Validated ${photoUrls.length} photos successfully! Turn off Dry Run to upload.`
-            : `Successfully migrated ${photoUrls.length} photos to Supabase!`,
+            : `Successfully migrated ${photoUrls.length} photos to ImageKit!`,
         });
       } else {
         setResult({

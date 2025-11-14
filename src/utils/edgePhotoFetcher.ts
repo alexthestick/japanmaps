@@ -1,4 +1,5 @@
 import { supabase } from '../lib/supabase';
+import { uploadStorePhoto } from './upload';
 
 export interface PhotoFetchResult {
   success: boolean;
@@ -10,7 +11,7 @@ export interface PhotoFetchResult {
 }
 
 /**
- * Fetch Google Photos using Supabase Edge Function
+ * Fetch Google Photo and upload to ImageKit (client-side)
  * @param photoName - The photo name from Google Places API (e.g., "places/ChIJ.../photos/ATplDJa...")
  * @param storeId - Store ID for file naming
  * @param photoIndex - Index of the photo (0-based)
@@ -24,36 +25,52 @@ export async function fetchGooglePhotoViaEdge(
   dryRun: boolean = false
 ): Promise<PhotoFetchResult> {
   try {
-    const { data, error } = await supabase.functions.invoke('fetch-google-photo', {
-      body: {
-        photoName,
-        storeId,
-        photoIndex,
-        dryRun,
-      },
-    });
-
-    if (error) {
-      console.error('Edge function error:', error);
+    if (dryRun) {
+      console.log(`[DRY RUN] Would fetch photo: ${photoName}`);
       return {
-        success: false,
-        error: error.message || 'Failed to fetch photo',
+        success: true,
+        url: 'https://example.com/dry-run.jpg',
+        fileName: `dry-run-${photoIndex}.jpg`,
+        size: 0,
+        dryRun: true,
       };
     }
 
-    if (!data.success) {
-      return {
-        success: false,
-        error: data.error || 'Unknown error',
-      };
+    // Get Google Places API key
+    const apiKey = import.meta.env.VITE_GOOGLE_PLACES_API_KEY;
+    if (!apiKey) {
+      throw new Error('Google Places API key not configured');
+    }
+
+    // Fetch photo from Google Places API
+    // Max dimensions for free tier: 4800x4800
+    const photoUrl = `https://places.googleapis.com/v1/${photoName}/media?maxHeightPx=1600&maxWidthPx=1600&key=${apiKey}`;
+
+    const response = await fetch(photoUrl);
+    if (!response.ok) {
+      throw new Error(`Failed to fetch photo: ${response.status} ${response.statusText}`);
+    }
+
+    // Convert response to blob
+    const blob = await response.blob();
+
+    // Create File object for upload
+    const fileName = `google-place-${storeId}-${photoIndex}.jpg`;
+    const file = new File([blob], fileName, { type: 'image/jpeg' });
+
+    // Upload to ImageKit using our existing function
+    const uploadedUrl = await uploadStorePhoto(file);
+
+    if (!uploadedUrl) {
+      throw new Error('Failed to upload photo to ImageKit');
     }
 
     return {
       success: true,
-      url: data.url,
-      fileName: data.fileName,
-      size: data.size,
-      dryRun: data.dryRun,
+      url: uploadedUrl,
+      fileName: fileName,
+      size: blob.size,
+      dryRun: false,
     };
   } catch (err) {
     console.error('Unexpected error:', err);
@@ -65,7 +82,7 @@ export async function fetchGooglePhotoViaEdge(
 }
 
 /**
- * Fetch multiple photos from Google Places API and upload to Supabase
+ * Fetch multiple photos from Google Places API and upload to ImageKit
  * @param photos - Array of photo objects from Google Places API
  * @param storeId - Store ID for file naming
  * @param maxPhotos - Maximum number of photos to fetch (default 5)

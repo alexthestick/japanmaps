@@ -14,9 +14,9 @@ export default function handler(req, res) {
     timestamp: new Date().toISOString(),
     envCheck: {
       hasSupabaseUrl: !!process.env.VITE_SUPABASE_URL,
-      hasSupabaseKey: !!process.env.SUPABASE_SERVICE_ROLE_KEY,
+      hasSupabaseKey: !!(process.env.VITE_SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_SERVICE_ROLE_KEY),
       hasImageKitPublic: !!process.env.VITE_IMAGEKIT_PUBLIC_KEY,
-      hasImageKitPrivate: !!process.env.IMAGEKIT_PRIVATE_KEY,
+      hasImageKitPrivate: !!(process.env.VITE_IMAGEKIT_PRIVATE_KEY || process.env.IMAGEKIT_PRIVATE_KEY),
       hasImageKitEndpoint: !!process.env.VITE_IMAGEKIT_URL_ENDPOINT,
     }
   });

@@ -1,0 +1,11 @@
+{
+  "totalStores": 524,
+  "processedStores": 647,
+  "successfulStores": 647,
+  "failedStores": 0,
+  "migratedPhotos": 2794,
+  "failedPhotos": 29,
+  "skippedStores": [],
+  "failedStoreIds": [],
+  "startTime": "2025-11-13T07:49:29.589Z"
+}
