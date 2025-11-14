@@ -317,7 +317,7 @@ export function StoreDetailPage() {
                   width="100%"
                   height="100%"
                   frameBorder="0"
-                  src={`https://www.google.com/maps/embed/v1/place?key=${import.meta.env.VITE_GOOGLE_MAPS_API_KEY}&q=${encodeURIComponent(store.address)}`}
+                  src={`https://www.google.com/maps/embed/v1/place?key=${import.meta.env.VITE_GOOGLE_PLACES_API_KEY}&q=${encodeURIComponent(store.address)}`}
                   allowFullScreen
                 />
               </div>
