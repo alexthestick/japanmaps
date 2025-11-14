@@ -57,7 +57,7 @@ async function verifyAuth(req) {
   try {
     const supabase = createClient(
       process.env.VITE_SUPABASE_URL,
-      process.env.VITE_SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_SERVICE_ROLE_KEY
+      process.env.SUPABASE_SERVICE_ROLE_KEY
     );
 
     const { data: { user }, error } = await supabase.auth.getUser(token);
@@ -122,7 +122,7 @@ export default async function handler(req, res) {
 
   try {
     const publicKey = process.env.VITE_IMAGEKIT_PUBLIC_KEY;
-    const privateKey = process.env.VITE_IMAGEKIT_PRIVATE_KEY || process.env.IMAGEKIT_PRIVATE_KEY;
+    const privateKey = process.env.IMAGEKIT_PRIVATE_KEY;
     const urlEndpoint = process.env.VITE_IMAGEKIT_URL_ENDPOINT;
 
     if (!publicKey || !privateKey || !urlEndpoint) {
