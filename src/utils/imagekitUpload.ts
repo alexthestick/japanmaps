@@ -92,22 +92,17 @@ async function getAuthToken(): Promise<{
   return response.json();
 }
 
-let imagekitInstance: ImageKit | null = null;
-
 function getImageKitInstance(): ImageKit {
-  if (!imagekitInstance) {
-    imagekitInstance = new ImageKit({
-      publicKey: import.meta.env.VITE_IMAGEKIT_PUBLIC_KEY,
-      urlEndpoint: import.meta.env.VITE_IMAGEKIT_URL_ENDPOINT,
-      authenticator: async () => {
-        const authData = await getAuthToken();
-        const { signature, expire, token } = authData;
-        return { signature, expire, token };
-      },
-    });
-  }
-
-  return imagekitInstance;
+  // Always create a fresh instance to ensure authenticator works correctly
+  return new ImageKit({
+    publicKey: import.meta.env.VITE_IMAGEKIT_PUBLIC_KEY,
+    urlEndpoint: import.meta.env.VITE_IMAGEKIT_URL_ENDPOINT,
+    authenticator: async () => {
+      const authData = await getAuthToken();
+      const { signature, expire, token } = authData;
+      return { signature, expire, token };
+    },
+  });
 }
 
 async function uploadWithRetry(
