@@ -3,12 +3,16 @@
  *
  * Features:
  * - Image compression (70-90% reduction)
- * - Secure server-side authentication
+ * - Secure server-side upload proxy
  * - Retry logic with exponential backoff
  * - Progress tracking
  * - User-scoped folders
+ *
+ * Architecture:
+ * - Client compresses images (saves bandwidth)
+ * - Server handles ImageKit uploads (more reliable)
+ * - No client-side SDK authentication issues
  */
-import ImageKit from 'imagekit-javascript';
 import imageCompression from 'browser-image-compression';
 import { supabase } from '../lib/supabase';
 
@@ -55,61 +59,24 @@ async function compressImage(file: File): Promise<File> {
   }
 }
 
-async function getAuthToken(): Promise<{
-  signature: string;
-  expire: number;
-  token: string;
-  userId: string;
-}> {
-  const { data: { session }, error } = await supabase.auth.getSession();
+/**
+ * Upload file to server proxy with retry logic
+ */
+async function uploadToServerProxy(
+  file: File,
+  metadata: {
+    originalName: string;
+    originalSize: number;
+    compressedSize: number;
+  },
+  maxRetries = 2
+): Promise<UploadResult> {
+  const { data: { session }, error: sessionError } = await supabase.auth.getSession();
 
-  if (error || !session) {
+  if (sessionError || !session) {
     throw new Error('Please sign in to upload images');
   }
 
-  const response = await fetch('/api/imagekit-auth', {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'Authorization': `Bearer ${session.access_token}`,
-    },
-  });
-
-  if (!response.ok) {
-    const errorData = await response.json().catch(() => ({}));
-
-    if (response.status === 429) {
-      throw new Error('Too many uploads. Please wait a moment and try again.');
-    }
-
-    if (response.status === 401) {
-      throw new Error('Please sign in again to upload images.');
-    }
-
-    throw new Error(errorData.error || 'Failed to get upload authorization');
-  }
-
-  return response.json();
-}
-
-function getImageKitInstance(): ImageKit {
-  // Always create a fresh instance to ensure authenticator works correctly
-  return new ImageKit({
-    publicKey: import.meta.env.VITE_IMAGEKIT_PUBLIC_KEY,
-    urlEndpoint: import.meta.env.VITE_IMAGEKIT_URL_ENDPOINT,
-    authenticator: async () => {
-      const authData = await getAuthToken();
-      const { signature, expire, token } = authData;
-      return { signature, expire, token };
-    },
-  });
-}
-
-async function uploadWithRetry(
-  file: File,
-  options: any,
-  maxRetries = 2
-): Promise<any> {
   let lastError: Error;
 
   for (let attempt = 0; attempt <= maxRetries; attempt++) {
@@ -119,14 +86,43 @@ async function uploadWithRetry(
         await new Promise(resolve => setTimeout(resolve, 1000 * Math.pow(2, attempt - 1)));
       }
 
-      const imagekit = getImageKitInstance();
-      const result = await imagekit.upload(options);
+      // Create FormData for file upload
+      const formData = new FormData();
+      formData.append('file', file);
+      formData.append('metadata', JSON.stringify(metadata));
+
+      const response = await fetch('/api/imagekit-upload', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${session.access_token}`,
+        },
+        body: formData,
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+
+        if (response.status === 429) {
+          throw new Error('Too many uploads. Please wait a moment and try again.');
+        }
+
+        if (response.status === 401) {
+          throw new Error('Please sign in again to upload images.');
+        }
+
+        throw new Error(errorData.error || errorData.details || 'Upload failed');
+      }
+
+      const result: UploadResult = await response.json();
       return result;
+
     } catch (error) {
       lastError = error as Error;
       console.error(`❌ Upload attempt ${attempt + 1} failed:`, error);
 
+      // Don't retry on auth errors or validation errors
       if (lastError.message.includes('Unauthorized') ||
+          lastError.message.includes('sign in') ||
           lastError.message.includes('Invalid file')) {
         throw lastError;
       }
@@ -152,32 +148,17 @@ export async function uploadStorePhoto(file: File): Promise<UploadResult> {
     // Step 1: Validate
     validateFile(file);
 
-    // Step 2: Compress
+    // Step 2: Compress (client-side to save bandwidth)
     const compressedFile = await compressImage(file);
 
-    // Step 3: Get auth token
-    const authData = await getAuthToken();
-    const userId = authData.userId;
-
-    // Step 4: Upload
-    const timestamp = Date.now();
-    const sanitizedFilename = file.name.replace(/[^a-zA-Z0-9.-]/g, '_');
-
-    const uploadOptions = {
-      file: compressedFile,
-      fileName: `${timestamp}_${sanitizedFilename}`,
-      folder: `/stores/${userId}`,
-      useUniqueFileName: true,
-      tags: ['store', 'japan-maps', userId],
-      customMetadata: {
-        uploadedAt: new Date().toISOString(),
-        originalName: file.name,
-        originalSize: file.size.toString(),
-        compressedSize: compressedFile.size.toString(),
-      },
+    // Step 3: Upload via server proxy
+    const metadata = {
+      originalName: file.name,
+      originalSize: file.size,
+      compressedSize: compressedFile.size,
     };
 
-    const result = await uploadWithRetry(compressedFile, uploadOptions);
+    const result = await uploadToServerProxy(compressedFile, metadata);
 
     console.log('✅ Upload successful:', {
       url: result.url,
@@ -185,16 +166,7 @@ export async function uploadStorePhoto(file: File): Promise<UploadResult> {
       size: `${(result.size / 1024).toFixed(1)}KB`,
     });
 
-    return {
-      url: result.url,
-      fileId: result.fileId,
-      thumbnailUrl: result.thumbnailUrl,
-      width: result.width,
-      height: result.height,
-      size: result.size,
-      format: result.fileType,
-      provider: 'imagekit',
-    };
+    return result;
 
   } catch (error) {
     console.error('❌ Upload failed:', error);
