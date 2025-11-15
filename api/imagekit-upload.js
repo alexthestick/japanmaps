@@ -17,8 +17,7 @@
  */
 import ImageKit from 'imagekit';
 import { createClient } from '@supabase/supabase-js';
-import formidable from 'formidable';
-import fs from 'fs';
+import Busboy from 'busboy';
 
 // Rate limiting
 const rateLimitMap = new Map();
@@ -97,6 +96,47 @@ export const config = {
   },
 };
 
+function parseMultipartForm(req) {
+  return new Promise((resolve, reject) => {
+    const busboy = Busboy({ headers: req.headers });
+    const fields = {};
+    let fileData = null;
+
+    busboy.on('file', (fieldname, file, info) => {
+      const { filename, encoding, mimeType } = info;
+      const chunks = [];
+
+      file.on('data', (chunk) => {
+        chunks.push(chunk);
+      });
+
+      file.on('end', () => {
+        fileData = {
+          fieldname,
+          filename,
+          encoding,
+          mimeType,
+          buffer: Buffer.concat(chunks),
+        };
+      });
+    });
+
+    busboy.on('field', (fieldname, value) => {
+      fields[fieldname] = value;
+    });
+
+    busboy.on('finish', () => {
+      resolve({ fields, file: fileData });
+    });
+
+    busboy.on('error', (error) => {
+      reject(error);
+    });
+
+    req.pipe(busboy);
+  });
+}
+
 export default async function handler(req, res) {
   const origin = req.headers.origin;
 
@@ -138,20 +178,7 @@ export default async function handler(req, res) {
 
   try {
     // Parse multipart form data
-    const form = formidable({
-      maxFileSize: 10 * 1024 * 1024, // 10MB max
-      keepExtensions: true,
-    });
-
-    const [fields, files] = await new Promise((resolve, reject) => {
-      form.parse(req, (err, fields, files) => {
-        if (err) reject(err);
-        else resolve([fields, files]);
-      });
-    });
-
-    // Get uploaded file
-    const file = files.file?.[0] || files.file;
+    const { fields, file } = await parseMultipartForm(req);
 
     if (!file) {
       return res.status(400).json({ error: 'No file provided' });
@@ -159,7 +186,7 @@ export default async function handler(req, res) {
 
     // Validate file type
     const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
-    if (!allowedTypes.includes(file.mimetype)) {
+    if (!allowedTypes.includes(file.mimeType)) {
       return res.status(400).json({
         error: 'Invalid file type. Allowed: JPEG, PNG, WebP'
       });
@@ -169,10 +196,7 @@ export default async function handler(req, res) {
     let metadata = {};
     try {
       if (fields.metadata) {
-        const metadataStr = Array.isArray(fields.metadata)
-          ? fields.metadata[0]
-          : fields.metadata;
-        metadata = JSON.parse(metadataStr);
+        metadata = JSON.parse(fields.metadata);
       }
     } catch (e) {
       console.warn('Failed to parse metadata:', e);
@@ -193,35 +217,25 @@ export default async function handler(req, res) {
       urlEndpoint,
     });
 
-    // Read file buffer
-    const fileBuffer = fs.readFileSync(file.filepath);
-
     // Generate filename
     const timestamp = Date.now();
-    const sanitizedFilename = file.originalFilename?.replace(/[^a-zA-Z0-9.-]/g, '_') || 'upload.jpg';
+    const sanitizedFilename = file.filename?.replace(/[^a-zA-Z0-9.-]/g, '_') || 'upload.jpg';
     const fileName = `${timestamp}_${sanitizedFilename}`;
 
     // Upload to ImageKit
     const uploadResult = await imagekit.upload({
-      file: fileBuffer,
+      file: file.buffer,
       fileName: fileName,
       folder: `/stores/${user.id}`,
       useUniqueFileName: true,
       tags: ['store', 'japan-maps', user.id],
       customMetadata: {
         uploadedAt: new Date().toISOString(),
-        originalName: metadata.originalName || file.originalFilename || 'unknown',
-        originalSize: metadata.originalSize?.toString() || file.size.toString(),
-        compressedSize: metadata.compressedSize?.toString() || file.size.toString(),
+        originalName: metadata.originalName || file.filename || 'unknown',
+        originalSize: metadata.originalSize?.toString() || file.buffer.length.toString(),
+        compressedSize: metadata.compressedSize?.toString() || file.buffer.length.toString(),
       },
     });
-
-    // Clean up temp file
-    try {
-      fs.unlinkSync(file.filepath);
-    } catch (e) {
-      console.warn('Failed to delete temp file:', e);
-    }
 
     console.log(`✅ [Japan Maps] Photo uploaded for user: ${user.id}, fileId: ${uploadResult.fileId}`);
 
@@ -240,21 +254,10 @@ export default async function handler(req, res) {
   } catch (error) {
     console.error('❌ [Japan Maps] Upload error:', {
       message: error.message,
+      stack: error.stack,
       userId: user?.id,
       timestamp: new Date().toISOString(),
     });
-
-    // Clean up temp file on error
-    try {
-      if (files?.file) {
-        const file = files.file?.[0] || files.file;
-        if (file?.filepath) {
-          fs.unlinkSync(file.filepath);
-        }
-      }
-    } catch (e) {
-      // Ignore cleanup errors
-    }
 
     return res.status(500).json({
       error: 'Failed to upload image. Please try again.',
