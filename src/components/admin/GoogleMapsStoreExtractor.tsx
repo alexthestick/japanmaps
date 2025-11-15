@@ -457,7 +457,7 @@ async function fetchPlaceDetailsNew(placeId: string): Promise<any> {
     headers: {
       'Content-Type': 'application/json',
       'X-Goog-Api-Key': apiKey,
-      'X-Goog-FieldMask': 'displayName,formattedAddress,location,websiteUri,regularOpeningHours,priceLevel,types,rating,userRatingCount,editorialSummary,reviews'
+      'X-Goog-FieldMask': 'displayName,formattedAddress,location,websiteUri,regularOpeningHours,priceLevel,types,rating,userRatingCount,editorialSummary,reviews,photos'
     }
   });
 
