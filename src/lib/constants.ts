@@ -211,6 +211,7 @@ export const LOCATIONS = {
     'Kuramae',
     'Yutenji',
     'Gakugei-Daigaku',
+    'Toritsu-Daigaku',
     'Asakusa',
     'Asakusabashi',
     'Meguro City',

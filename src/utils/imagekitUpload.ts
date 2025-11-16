@@ -102,6 +102,13 @@ async function uploadToServerProxy(
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}));
 
+        // Log full error details for debugging
+        console.error('Server error response:', {
+          status: response.status,
+          statusText: response.statusText,
+          errorData: errorData,
+        });
+
         if (response.status === 429) {
           throw new Error('Too many uploads. Please wait a moment and try again.');
         }

@@ -15,7 +15,7 @@
  * 4. Server uploads to ImageKit using Node SDK
  * 5. Returns ImageKit URL to client
  */
-import ImageKit from 'imagekit';
+import ImageKit from '@imagekit/nodejs';
 import { createClient } from '@supabase/supabase-js';
 import Busboy from 'busboy';
 
@@ -184,6 +184,14 @@ export default async function handler(req, res) {
       return res.status(400).json({ error: 'No file provided' });
     }
 
+    // Verify buffer is valid
+    console.log(`📦 Parsed file:`, {
+      filename: file.filename,
+      mimeType: file.mimeType,
+      bufferSize: file.buffer?.length || 0,
+      isBuffer: Buffer.isBuffer(file.buffer),
+    });
+
     // Validate file type
     const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
     if (!allowedTypes.includes(file.mimeType)) {
@@ -222,19 +230,15 @@ export default async function handler(req, res) {
     const sanitizedFilename = file.filename?.replace(/[^a-zA-Z0-9.-]/g, '_') || 'upload.jpg';
     const fileName = `${timestamp}_${sanitizedFilename}`;
 
-    // Upload to ImageKit
+    // Upload to ImageKit using Buffer directly (no need for base64 conversion)
+    console.log(`📤 [ImageKit Upload] file: ${fileName}, size: ${file.buffer.length} bytes, type: ${file.mimeType}`);
+
     const uploadResult = await imagekit.upload({
-      file: file.buffer,
+      file: file.buffer, // Pass Buffer directly - SDK handles it
       fileName: fileName,
       folder: `/stores/${user.id}`,
       useUniqueFileName: true,
-      tags: ['store', 'japan-maps', user.id],
-      customMetadata: {
-        uploadedAt: new Date().toISOString(),
-        originalName: metadata.originalName || file.filename || 'unknown',
-        originalSize: metadata.originalSize?.toString() || file.buffer.length.toString(),
-        compressedSize: metadata.compressedSize?.toString() || file.buffer.length.toString(),
-      },
+      tags: ['store', 'japan-maps', String(user.id)], // Convert user.id to string!
     });
 
     console.log(`✅ [Japan Maps] Photo uploaded for user: ${user.id}, fileId: ${uploadResult.fileId}`);
@@ -252,16 +256,27 @@ export default async function handler(req, res) {
     });
 
   } catch (error) {
+    // Enhanced error logging for ImageKit SDK
     console.error('❌ [Japan Maps] Upload error:', {
+      name: error.name,
       message: error.message,
       stack: error.stack,
+      statusCode: error.statusCode || error.status,
+      response: error.response?.data || error.response,
+      help: error.help,
       userId: user?.id,
       timestamp: new Date().toISOString(),
     });
 
-    return res.status(500).json({
-      error: 'Failed to upload image. Please try again.',
-      details: error.message,
+    // Log raw error object for full debugging
+    console.error('Raw error object:', JSON.stringify(error, null, 2));
+
+    // Return more detailed error
+    const statusCode = error.statusCode || error.status || 500;
+    return res.status(statusCode).json({
+      error: error.message || 'Failed to upload image. Please try again.',
+      details: error.help || error.message,
+      statusCode: statusCode,
     });
   }
 }

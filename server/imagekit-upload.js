@@ -2,7 +2,7 @@
  * Local dev server handler for ImageKit uploads
  * Adapted from /api/imagekit-upload.js for Express + multer
  */
-import ImageKit from 'imagekit';
+import ImageKit from '@imagekit/nodejs';
 import { createClient } from '@supabase/supabase-js';
 
 async function verifyAuth(req) {
@@ -94,13 +94,7 @@ export default async function handler(req, res) {
       fileName: fileName,
       folder: `/stores/${user.id}`,
       useUniqueFileName: true,
-      tags: ['store', 'japan-maps', user.id],
-      customMetadata: {
-        uploadedAt: new Date().toISOString(),
-        originalName: metadata.originalName || file.originalname || 'unknown',
-        originalSize: metadata.originalSize?.toString() || file.size.toString(),
-        compressedSize: metadata.compressedSize?.toString() || file.size.toString(),
-      },
+      tags: ['store', 'japan-maps', String(user.id)], // Convert user.id to string!
     });
 
     console.log(`✅ [Local Dev] Photo uploaded for user: ${user.id}, fileId: ${uploadResult.fileId}`);
