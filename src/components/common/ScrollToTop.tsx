@@ -49,13 +49,15 @@ export function ScrollToTop({
       return;
     }
 
-    // Always scroll to top immediately for better UX
-    // This ensures when clicking from landing page, we start at top
-    window.scrollTo({
-      top: 0,
-      left: 0,
-      behavior: 'instant' // Use instant for immediate scroll
-    });
+    // Scroll immediately
+    window.scrollTo(0, 0);
+
+    // Also scroll after a small delay to catch any DOM updates
+    const timeout = setTimeout(() => {
+      window.scrollTo(0, 0);
+    }, 10);
+
+    return () => clearTimeout(timeout);
   }, [location.pathname, location.search, excludePaths]);
 
   return null;

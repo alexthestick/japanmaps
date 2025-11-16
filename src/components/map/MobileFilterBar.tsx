@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
-import { Search, ShoppingBag, Utensils, Coffee, Home, Landmark, MapPin, X } from 'lucide-react';
+import { Search, ShoppingBag, Utensils, Coffee, Home, Landmark, MapPin, X, Sun, Moon } from 'lucide-react';
 import { FilterPill } from './FilterPill';
 import type { MainCategory, Store } from '../../types/store';
 import { FASHION_SUB_CATEGORIES, FOOD_SUB_CATEGORIES, HOME_GOODS_SUB_CATEGORIES } from '../../lib/constants';
@@ -29,6 +29,10 @@ interface MobileFilterBarProps {
   // Stores for autocomplete
   stores: Store[];
   onSelectSuggestion: (suggestion: SearchSuggestion) => void;
+
+  // Map style mode
+  mapStyleMode?: 'day' | 'night';
+  onMapStyleChange?: (mode: 'day' | 'night') => void;
 }
 
 // Category definitions with icons and subcategories
@@ -56,6 +60,8 @@ export function MobileFilterBar({
   onOpenCityDrawer,
   stores,
   onSelectSuggestion,
+  mapStyleMode = 'day',
+  onMapStyleChange,
 }: MobileFilterBarProps) {
   // Track which category's subcategories are expanded
   const [expandedCategory, setExpandedCategory] = useState<MainCategory | null>(null);
@@ -204,6 +210,32 @@ export function MobileFilterBar({
               />
             );
           })}
+
+          {/* Map Style Toggle Pills - Mobile only */}
+          {onMapStyleChange && (
+            <>
+              <FilterPill
+                label={
+                  <div className="flex items-center gap-1.5">
+                    <Sun className="w-4 h-4" />
+                    <span>Light</span>
+                  </div>
+                }
+                active={mapStyleMode === 'day'}
+                onClick={() => onMapStyleChange('day')}
+              />
+              <FilterPill
+                label={
+                  <div className="flex items-center gap-1.5">
+                    <Moon className="w-4 h-4" />
+                    <span>Dark</span>
+                  </div>
+                }
+                active={mapStyleMode === 'night'}
+                onClick={() => onMapStyleChange('night')}
+              />
+            </>
+          )}
         </div>
 
         {/* Subcategory Pills - Show when a category is expanded */}

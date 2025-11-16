@@ -59,6 +59,26 @@ export function HomePage() {
   const [tappedStoreId, setTappedStoreId] = useState<string | null>(null); // Track first tap on mobile
   const isMobile = useIsMobile();
 
+  // Map style mode state
+  const getInitialStyleMode = (): 'day' | 'night' => {
+    try {
+      const saved = typeof window !== 'undefined' ? localStorage.getItem('map-style-mode') : null;
+      if (saved === 'day' || saved === 'night') return saved;
+      const hour = new Date().getHours();
+      return hour >= 18 || hour < 6 ? 'night' : 'day';
+    } catch {
+      return 'day';
+    }
+  };
+  const [mapStyleMode, setMapStyleMode] = useState<'day' | 'night'>(getInitialStyleMode);
+
+  // Persist map style mode to localStorage
+  useEffect(() => {
+    try {
+      localStorage.setItem('map-style-mode', mapStyleMode);
+    } catch {}
+  }, [mapStyleMode]);
+
   // Refs for map control and preventing refresh
   const mapViewRef = useRef<any>(null);
   const debounceTimer = useRef<NodeJS.Timeout>();
@@ -273,6 +293,8 @@ export function HomePage() {
             activeSubCategory={selectedSubCategories[0] || null}
             tappedStoreId={tappedStoreId}
             onLabelClick={handleLabelClick}
+            styleMode={mapStyleMode}
+            onStyleModeChange={setMapStyleMode}
           />
 
           {/* MOBILE: Floating Filter Bar (overlays map) */}
@@ -291,6 +313,8 @@ export function HomePage() {
                 onOpenCityDrawer={() => setShowCityDrawer(true)}
                 stores={stores}
                 onSelectSuggestion={handleSearchSuggestionSelect}
+                mapStyleMode={mapStyleMode}
+                onMapStyleChange={setMapStyleMode}
               />
 
               {/* View Toggle Button - Bottom Right */}
