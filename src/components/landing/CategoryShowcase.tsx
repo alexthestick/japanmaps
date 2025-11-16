@@ -9,7 +9,7 @@ const CATEGORIES = [
     name: 'Archive',
     icon: Archive,
     description: 'Rare designer pieces from past seasons',
-    image: 'https://images.unsplash.com/photo-1434389677669-e08b4cac3105?w=800&q=80',
+    image: '/images/archive.jpg',
     storeCount: 89,
   },
   {
@@ -17,7 +17,7 @@ const CATEGORIES = [
     name: 'Vintage',
     icon: Shirt,
     description: 'Timeless fashion from decades past',
-    image: 'https://images.unsplash.com/photo-1489987707025-afc232f7ea0f?w=800&q=80',
+    image: '/images/vintage.jpg',
     storeCount: 124,
   },
   {
@@ -25,7 +25,7 @@ const CATEGORIES = [
     name: 'Streetwear',
     icon: Footprints,
     description: 'Contemporary urban fashion culture',
-    image: 'https://images.unsplash.com/photo-1552346154-21d32810aba3?w=800&q=80',
+    image: '/images/streetwear.jpg',
     storeCount: 67,
   },
   {
@@ -33,7 +33,7 @@ const CATEGORIES = [
     name: 'Designer',
     icon: Sparkles,
     description: 'High-end contemporary fashion',
-    image: 'https://images.unsplash.com/photo-1483985988355-763728e1935b?w=800&q=80',
+    image: '/images/designer.jpg',
     storeCount: 52,
   },
 ];
