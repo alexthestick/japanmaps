@@ -18,18 +18,20 @@ export function Footer() {
             </p>
             <div className="flex gap-4">
               <a
-                href="https://instagram.com"
+                href="https://www.instagram.com/lostintransit.japan/"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="text-gray-400 hover:text-white transition-colors"
+                aria-label="Follow us on Instagram"
               >
                 <Instagram className="w-5 h-5" />
               </a>
               <a
-                href="https://youtube.com"
+                href="https://www.youtube.com/@alexcoluna"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="text-gray-400 hover:text-white transition-colors"
+                aria-label="Subscribe on YouTube"
               >
                 <Youtube className="w-5 h-5" />
               </a>
@@ -69,16 +71,11 @@ export function Footer() {
             <ul className="space-y-2">
               <li>
                 <a
-                  href="mailto:hello@example.com"
+                  href="mailto:alex91748@yahoo.com"
                   className="text-gray-400 hover:text-white transition-colors"
                 >
                   Email Us
                 </a>
-              </li>
-              <li>
-                <Link to="/admin" className="text-gray-400 hover:text-white transition-colors">
-                  Admin Login
-                </Link>
               </li>
             </ul>
           </div>

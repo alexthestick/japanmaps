@@ -2,13 +2,12 @@ import { motion } from 'framer-motion';
 import { Youtube, Instagram, Mail, Heart } from 'lucide-react';
 
 export function CompactFooter() {
-  // Placeholder links - user will provide later
   const links = {
-    youtube: '#',
-    instagram: '#',
+    youtube: 'https://www.youtube.com/@alexcoluna',
+    instagram: 'https://www.instagram.com/lostintransit.japan/',
     about: '/about',
-    contact: '#',
-    support: '#'
+    contact: 'alex91748@yahoo.com',
+    support: '/suggest'
   };
 
   return (

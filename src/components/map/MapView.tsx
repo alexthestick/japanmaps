@@ -294,6 +294,41 @@ export const MapView = forwardRef<MapViewHandle, MapViewProps>(({ stores, onStor
     } catch {}
   }, [styleMode]);
 
+  // Filter out POI labels when map loads to reduce clutter
+  const handleMapLoad = useCallback(() => {
+    if (!mapRef.current) return;
+
+    const map = mapRef.current;
+
+    // Wait for style to load
+    if (!map.isStyleLoaded()) {
+      map.once('styledata', () => handleMapLoad());
+      return;
+    }
+
+    // Hide POI labels that clutter the map
+    const layersToHide = [
+      'poi-label',
+      'transit-label',
+      'airport-label',
+      'settlement-subdivision-label',
+      'natural-point-label',
+      'natural-line-label',
+      'water-point-label',
+      'water-line-label',
+      'waterway-label',
+      'poi'
+    ];
+
+    layersToHide.forEach(layerId => {
+      if (map.getLayer(layerId)) {
+        map.setLayoutProperty(layerId, 'visibility', 'none');
+      }
+    });
+
+    console.log('Map POI labels hidden for cleaner appearance');
+  }, []);
+
   return (
     <div className="w-full h-full relative">
       <Map
@@ -301,6 +336,7 @@ export const MapView = forwardRef<MapViewHandle, MapViewProps>(({ stores, onStor
         onMove={evt => setViewState(evt.viewState)}
         mapStyle={styleMode === 'day' ? MAP_STYLE_DAY : MAP_STYLE_NIGHT}
         mapboxAccessToken={MAPBOX_TOKEN}
+        onLoad={handleMapLoad}
         ref={(ref) => {
           if (ref) {
             mapRef.current = ref.getMap();

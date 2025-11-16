@@ -79,10 +79,10 @@ export function AboutPage() {
             or just to say hi!
           </p>
           <a
-            href="mailto:hello@example.com"
+            href="mailto:alex91748@yahoo.com"
             className="text-blue-600 hover:text-blue-800 font-medium"
           >
-            Email: hello@example.com
+            Email: alex91748@yahoo.com
           </a>
         </div>
       </div>

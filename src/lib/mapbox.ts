@@ -1,11 +1,11 @@
 export const MAPBOX_TOKEN = import.meta.env.VITE_MAPBOX_TOKEN || '';
 
-// Map styles: allow overrides via env, provide sensible defaults
-// Using navigation styles as they are better for finding places
+// Map styles: Using light/dark styles for cleaner appearance
+// These show fewer POI labels than navigation styles, making custom pins more visible
 export const MAP_STYLE_DAY =
-  import.meta.env.VITE_MAPBOX_STYLE_DAY || 'mapbox://styles/mapbox/navigation-day-v1';
+  import.meta.env.VITE_MAPBOX_STYLE_DAY || 'mapbox://styles/mapbox/light-v11';
 export const MAP_STYLE_NIGHT =
-  import.meta.env.VITE_MAPBOX_STYLE_NIGHT || 'mapbox://styles/mapbox/navigation-night-v1';
+  import.meta.env.VITE_MAPBOX_STYLE_NIGHT || 'mapbox://styles/mapbox/dark-v11';
 
 // Default style (day)
 export const MAP_STYLE = MAP_STYLE_DAY;

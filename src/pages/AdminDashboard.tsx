@@ -14,7 +14,7 @@ import { Modal } from '../components/common/Modal';
 import type { StoreSuggestion, Store } from '../types/store';
 
 export function AdminDashboard() {
-  const { user, loading: authLoading, signIn, signOut } = useAuth();
+  const { user, loading: authLoading, isAdmin, checkingAdmin, signIn, signOut } = useAuth();
   const navigate = useNavigate();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -198,7 +198,7 @@ export function AdminDashboard() {
     }
   }
 
-  if (authLoading) {
+  if (authLoading || checkingAdmin) {
     return (
       <div className="max-w-7xl mx-auto px-4 py-8">
         <Loader message="Loading..." />
@@ -206,7 +206,7 @@ export function AdminDashboard() {
     );
   }
 
-  // Login form
+  // Not logged in - show login form
   if (!user) {
     return (
       <div className="max-w-md mx-auto px-4 py-12">
@@ -246,7 +246,29 @@ export function AdminDashboard() {
     );
   }
 
-  // Admin dashboard
+  // User is logged in but not an admin
+  if (user && !isAdmin) {
+    return (
+      <div className="max-w-md mx-auto px-4 py-12">
+        <div className="bg-white rounded-lg shadow-md p-8 text-center">
+          <h1 className="text-2xl font-bold text-gray-900 mb-4">Access Denied</h1>
+          <p className="text-gray-600 mb-6">
+            You do not have permission to access the admin dashboard.
+          </p>
+          <div className="flex flex-col gap-3">
+            <Button onClick={() => navigate('/')} variant="outline">
+              Go to Map
+            </Button>
+            <Button onClick={() => signOut()} variant="outline">
+              Sign Out
+            </Button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // User is logged in and is an admin - show admin dashboard
   return (
     <div className="max-w-7xl mx-auto px-4 py-8">
       <div className="flex items-center justify-between mb-8">
