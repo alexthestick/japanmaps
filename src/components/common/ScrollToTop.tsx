@@ -49,25 +49,14 @@ export function ScrollToTop({
       return;
     }
 
-    // Check if this is a back/forward navigation (POP action)
-    // We want to preserve scroll position for these
-    if (enableScrollRestoration && window.history.state?.scrollY !== undefined) {
-      // Browser will handle scroll restoration automatically
-      return;
-    }
-
-    // For new navigation (PUSH/REPLACE), scroll to top
-    // Use setTimeout to ensure DOM is ready
-    const scrollTimeout = setTimeout(() => {
-      window.scrollTo({
-        top: 0,
-        left: 0,
-        behavior: behavior
-      });
-    }, 0);
-
-    return () => clearTimeout(scrollTimeout);
-  }, [location.pathname, location.search, enableScrollRestoration, excludePaths, behavior]);
+    // Always scroll to top immediately for better UX
+    // This ensures when clicking from landing page, we start at top
+    window.scrollTo({
+      top: 0,
+      left: 0,
+      behavior: 'instant' // Use instant for immediate scroll
+    });
+  }, [location.pathname, location.search, excludePaths]);
 
   return null;
 }
