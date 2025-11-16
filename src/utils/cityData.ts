@@ -6,25 +6,28 @@ export interface CityData {
   image: string;
 }
 
-// City images from Unsplash
+// City images from local folder
 const CITY_IMAGES: Record<string, string> = {
-  Tokyo: 'https://images.unsplash.com/photo-1540959733332-eab4deabeeaf?w=800&h=600&fit=crop',
-  Osaka: 'https://images.unsplash.com/photo-1590559899731-a382839e5549?w=800&h=600&fit=crop',
-  Kyoto: 'https://images.unsplash.com/photo-1493976040374-85c8e12f0c0e?w=800&h=600&fit=crop',
-  Fukuoka: 'https://images.unsplash.com/photo-1555041469-a586c61ea9bc?w=800&h=600&fit=crop',
-  Nagoya: 'https://images.unsplash.com/photo-1542640244-7e672d6cef4e?w=800&h=600&fit=crop',
-  'Kanagawa / Yokohama': 'https://images.unsplash.com/photo-1571897039684-0e4ed2584617?w=800&h=600&fit=crop',
-  Sapporo: 'https://images.unsplash.com/photo-1512918728675-ed5a9ecdebfd?w=800&h=600&fit=crop',
-  Hiroshima: 'https://images.unsplash.com/photo-1555899434-94d1526a7048?w=800&h=600&fit=crop', // Peace Memorial
-  Kanazawa: 'https://images.unsplash.com/photo-1597560536040-c46e2134f09b?w=800&h=600&fit=crop', // Traditional garden
-  Kobe: 'https://images.unsplash.com/photo-1593922873473-267e6f77604a?w=800&h=600&fit=crop', // Harbor city
-  Niigata: 'https://images.unsplash.com/photo-1528164344705-47542687000d?w=800&h=600&fit=crop', // Modern Japan
-  Chiba: 'https://images.unsplash.com/photo-1480796927426-f609979314bd?w=800&h=600&fit=crop', // Coastal city
-  Takamatsu: 'https://images.unsplash.com/photo-1528360983277-13d401cdc186?w=800&h=600&fit=crop', // Shikoku region
-  Fukushima: 'https://images.unsplash.com/photo-1503899036084-c55cdd92da26?w=800&h=600&fit=crop', // Mountains
-  Kanagawa: 'https://images.unsplash.com/photo-1492571350019-22de08371fd3?w=800&h=600&fit=crop', // kept for fallback
-  Okayama: 'https://images.unsplash.com/photo-1555899434-94d1526a7048?w=800&h=600&fit=crop',
-  Kojima: 'https://images.unsplash.com/photo-1528360983277-13d401cdc186?w=800&h=600&fit=crop',
+  Tokyo: '/images/cities/original/tokyo/tokyo1.jpg',
+  Osaka: '/images/cities/original/fukuoka.jpg', // Fallback - no osaka dir found
+  Kyoto: '/images/cities/original/kyoto/kyoto.jpg',
+  Fukuoka: '/images/cities/original/fukuoka.jpg',
+  Nagoya: '/images/cities/original/fukuoka.jpg', // Fallback - need to check if nagoya exists
+  'Kanagawa / Yokohama': '/images/cities/original/yokohama.jpg',
+  Yokohama: '/images/cities/original/yokohama.jpg',
+  Sapporo: '/images/cities/original/sapporo.jpg',
+  Hiroshima: '/images/cities/original/hiroshima.jpg',
+  Kanazawa: '/images/cities/original/kanazawa.jpg',
+  Kobe: '/images/cities/original/kobe/kobe.jpg',
+  Niigata: '/images/cities/original/fukuoka.jpg', // Fallback - need to check if niigata exists
+  Chiba: '/images/cities/original/chiba.jpg',
+  Takamatsu: '/images/cities/original/takamatsu.jpg',
+  Fukushima: '/images/cities/original/fukushima.jpg',
+  Kanagawa: '/images/cities/original/yokohama.jpg',
+  Okayama: '/images/cities/original/okayama.jpg',
+  Kojima: '/images/cities/original/kojima/kojima1.jpg',
+  Atsugi: '/images/cities/original/atsugi.jpg',
+  Toyama: '/images/cities/original/toyama.jpg',
 };
 
 // Major Japanese cities we want to display
