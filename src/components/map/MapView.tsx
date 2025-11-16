@@ -1,5 +1,6 @@
 import { useState, useCallback, useEffect, useRef, useImperativeHandle, forwardRef, useMemo } from 'react';
 import Map, { Marker, NavigationControl } from 'react-map-gl';
+import MapboxLanguage from '@mapbox/mapbox-gl-language';
 import { MAPBOX_TOKEN, MAP_STYLE_DAY, MAP_STYLE_NIGHT, DEFAULT_CENTER, DEFAULT_ZOOM } from '../../lib/mapbox';
 import { CITY_COORDINATES } from '../../lib/constants';
 import { IconStoreMarker } from './IconStoreMarker';
@@ -308,15 +309,8 @@ export const MapView = forwardRef<MapViewHandle, MapViewProps>(({ stores, onStor
         }}
         onLoad={() => {
           if (mapRef.current) {
-            const map = mapRef.current;
-            map.once('styledata', () => {
-              const layers = map.getStyle().layers;
-              layers?.forEach((layer: any) => {
-                if (layer.layout && layer.layout['text-field']) {
-                  map.setLayoutProperty(layer.id, 'text-field', ['get', 'name_en']);
-                }
-              });
-            });
+            const language = new MapboxLanguage();
+            mapRef.current.addControl(language);
           }
         }}
       >
