@@ -2,9 +2,9 @@ export const MAPBOX_TOKEN = import.meta.env.VITE_MAPBOX_TOKEN || '';
 
 // Map styles: allow overrides via env, provide sensible defaults
 export const MAP_STYLE_DAY =
-  import.meta.env.VITE_MAPBOX_STYLE_DAY || 'mapbox://styles/mapbox/navigation-day-v1';
+  import.meta.env.VITE_MAPBOX_STYLE_DAY || 'mapbox://styles/mapbox/streets-v12?language=en';
 export const MAP_STYLE_NIGHT =
-  import.meta.env.VITE_MAPBOX_STYLE_NIGHT || 'mapbox://styles/mapbox/navigation-night-v1';
+  import.meta.env.VITE_MAPBOX_STYLE_NIGHT || 'mapbox://styles/mapbox/dark-v11?language=en';
 
 // Default style (day)
 export const MAP_STYLE = MAP_STYLE_DAY;
