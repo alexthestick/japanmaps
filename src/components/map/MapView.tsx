@@ -301,10 +301,22 @@ export const MapView = forwardRef<MapViewHandle, MapViewProps>(({ stores, onStor
         onMove={evt => setViewState(evt.viewState)}
         mapStyle={styleMode === 'day' ? MAP_STYLE_DAY : MAP_STYLE_NIGHT}
         mapboxAccessToken={MAPBOX_TOKEN}
-        language="en"
         ref={(ref) => {
           if (ref) {
             mapRef.current = ref.getMap();
+          }
+        }}
+        onLoad={() => {
+          if (mapRef.current) {
+            const map = mapRef.current;
+            map.once('styledata', () => {
+              const layers = map.getStyle().layers;
+              layers?.forEach((layer: any) => {
+                if (layer.layout && layer.layout['text-field']) {
+                  map.setLayoutProperty(layer.id, 'text-field', ['get', 'name_en']);
+                }
+              });
+            });
           }
         }}
       >
