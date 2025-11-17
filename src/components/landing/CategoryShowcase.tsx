@@ -44,7 +44,9 @@ export function CategoryShowcase() {
   const navigate = useNavigate();
 
   const handleCategoryClick = (categoryId: string) => {
-    navigate(`/map?category=${categoryId}`);
+    // Archive, Vintage, Streetwear, Designer are subcategories of Fashion
+    // Navigate with category=Fashion and styles={subcategory}
+    navigate(`/map?category=Fashion&styles=${categoryId}`);
   };
 
   return (

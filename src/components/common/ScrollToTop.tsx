@@ -49,15 +49,35 @@ export function ScrollToTop({
       return;
     }
 
-    // Scroll immediately
+    // Scroll immediately and multiple times to ensure it works
     window.scrollTo(0, 0);
+    document.documentElement.scrollTop = 0;
+    document.body.scrollTop = 0;
 
-    // Also scroll after a small delay to catch any DOM updates
-    const timeout = setTimeout(() => {
+    // Also scroll after delays to catch any layout shifts or DOM updates
+    const timeout1 = setTimeout(() => {
       window.scrollTo(0, 0);
-    }, 10);
+      document.documentElement.scrollTop = 0;
+      document.body.scrollTop = 0;
+    }, 0);
 
-    return () => clearTimeout(timeout);
+    const timeout2 = setTimeout(() => {
+      window.scrollTo(0, 0);
+      document.documentElement.scrollTop = 0;
+      document.body.scrollTop = 0;
+    }, 50);
+
+    const timeout3 = setTimeout(() => {
+      window.scrollTo(0, 0);
+      document.documentElement.scrollTop = 0;
+      document.body.scrollTop = 0;
+    }, 100);
+
+    return () => {
+      clearTimeout(timeout1);
+      clearTimeout(timeout2);
+      clearTimeout(timeout3);
+    };
   }, [location.pathname, location.search, excludePaths]);
 
   return null;
