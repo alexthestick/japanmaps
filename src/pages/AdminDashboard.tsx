@@ -252,9 +252,21 @@ export function AdminDashboard() {
       <div className="max-w-md mx-auto px-4 py-12">
         <div className="bg-white rounded-lg shadow-md p-8 text-center">
           <h1 className="text-2xl font-bold text-gray-900 mb-4">Access Denied</h1>
-          <p className="text-gray-600 mb-6">
+          <p className="text-gray-600 mb-4">
             You do not have permission to access the admin dashboard.
           </p>
+          <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-6 text-left">
+            <p className="text-sm text-gray-700 mb-2">
+              <strong>Logged in as:</strong> {user.email}
+            </p>
+            <p className="text-sm text-gray-700 mb-2">
+              <strong>User ID:</strong> {user.id}
+            </p>
+            <p className="text-sm text-gray-600">
+              To become an admin, you need to run the SQL migration in Supabase and set your account as admin.
+              Check the ADMIN_SETUP_INSTRUCTIONS.md file for details.
+            </p>
+          </div>
           <div className="flex flex-col gap-3">
             <Button onClick={() => navigate('/')} variant="outline">
               Go to Map

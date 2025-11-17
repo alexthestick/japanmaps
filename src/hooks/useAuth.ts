@@ -20,11 +20,20 @@ export function useAuth() {
 
       if (error) {
         console.error('Error checking admin status:', error);
+        console.error('Error details:', error.message);
+
+        // If profile doesn't exist or is_admin column doesn't exist, default to false
+        if (error.code === 'PGRST116' || error.message.includes('column')) {
+          console.warn('Profile not found or is_admin column missing. User is not admin.');
+        }
+
         setIsAdmin(false);
         return;
       }
 
-      setIsAdmin(data?.is_admin ?? false);
+      const adminStatus = data?.is_admin ?? false;
+      console.log('Admin status for user:', userId, '=', adminStatus);
+      setIsAdmin(adminStatus);
     } catch (error) {
       console.error('Error checking admin status:', error);
       setIsAdmin(false);
