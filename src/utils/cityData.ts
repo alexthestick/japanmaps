@@ -25,7 +25,7 @@ const CITY_IMAGES: Record<string, string> = {
   Fukushima: '/images/cities/original/fukushima.jpg',
   Kanagawa: '/images/cities/original/yokohama.jpg',
   Okayama: '/images/cities/original/okayama.jpg',
-  Kojima: '/images/cities/original/kojima/kojima1.jpg',
+  Kojima: '/images/cities/original/kojima/kojima.jpg',
   Atsugi: '/images/cities/original/atsugi.jpg',
   Toyama: '/images/cities/original/toyama.jpg',
 };

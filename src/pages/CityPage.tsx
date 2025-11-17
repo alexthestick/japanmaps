@@ -122,8 +122,20 @@ export function CityPage() {
   const cityColor = CITY_COLORS[cityName] || '#22D9EE';
   const cityImageSlug = cityName.toLowerCase().replace(/\s+/g, '').replace(/\//g, '');
 
-  // City hero image (use preview image from cities page)
-  const heroImage = `/images/cities/preview/${cityImageSlug === 'kanagawayokohama' ? 'yokohama' : cityImageSlug}-preview.jpg`;
+  // City hero image mapping (handle special cases)
+  const getCityHeroImage = (slug: string): string => {
+    const imageMap: Record<string, string> = {
+      'kanagawayokohama': 'yokohama',
+      'tokyo': 'tokyo1',
+      'osaka': 'fukuoka', // Fallback until osaka image is added
+      'nagoya': 'fukuoka', // Fallback until nagoya image is added
+      'atsugi': 'fukuoka', // Fallback
+      'toyama': 'fukuoka', // Fallback
+    };
+    return `/images/cities/preview/${imageMap[slug] || slug}-preview.jpg`;
+  };
+
+  const heroImage = getCityHeroImage(cityImageSlug);
 
   // City description/history - can be expanded later
   const cityDescription = `Explore the best stores, restaurants, and hidden gems in ${cityName}. From traditional neighborhoods to modern shopping districts, discover what makes ${cityName} unique.`;
