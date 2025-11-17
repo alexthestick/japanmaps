@@ -49,34 +49,23 @@ export function ScrollToTop({
       return;
     }
 
-    // Scroll immediately and multiple times to ensure it works
-    window.scrollTo(0, 0);
-    document.documentElement.scrollTop = 0;
-    document.body.scrollTop = 0;
-
-    // Also scroll after delays to catch any layout shifts or DOM updates
-    const timeout1 = setTimeout(() => {
+    // Aggressive scroll reset with multiple attempts
+    const scrollToTop = () => {
       window.scrollTo(0, 0);
       document.documentElement.scrollTop = 0;
       document.body.scrollTop = 0;
-    }, 0);
+    };
 
-    const timeout2 = setTimeout(() => {
-      window.scrollTo(0, 0);
-      document.documentElement.scrollTop = 0;
-      document.body.scrollTop = 0;
-    }, 50);
+    // Immediate scroll
+    scrollToTop();
 
-    const timeout3 = setTimeout(() => {
-      window.scrollTo(0, 0);
-      document.documentElement.scrollTop = 0;
-      document.body.scrollTop = 0;
-    }, 100);
+    // Multiple timed scrolls to catch layout shifts
+    const timeouts = [0, 10, 50, 100, 200, 300].map(delay =>
+      setTimeout(scrollToTop, delay)
+    );
 
     return () => {
-      clearTimeout(timeout1);
-      clearTimeout(timeout2);
-      clearTimeout(timeout3);
+      timeouts.forEach(clearTimeout);
     };
   }, [location.pathname, location.search, excludePaths]);
 
