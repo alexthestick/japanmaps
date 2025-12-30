@@ -223,9 +223,9 @@ export const MapView = forwardRef<MapViewHandle, MapViewProps>(({ stores, onStor
           zoom: 15, // Close zoom for single store
         });
       } else if (stores.length > 1) {
-        // Multiple stores: zoom if search is active OR neighborhood is selected
+        // Multiple stores: zoom if search is active (NOT neighborhood - we already zoomed via coordinates)
         // When changing category filter, stay at current location (don't auto-zoom)
-        const shouldZoom = isSearchActive || selectedNeighborhood;
+        const shouldZoom = isSearchActive;
 
         if (shouldZoom) {
           // Calculate bounds and fit all stores in view
