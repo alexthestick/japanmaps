@@ -1,4 +1,5 @@
 import { supabase } from '../lib/supabase';
+import { LOCATIONS } from '../lib/constants';
 
 export interface CityData {
   name: string;
@@ -130,6 +131,21 @@ export function neighborhoodToSlug(name: string): string {
   return encodeURIComponent(name.toLowerCase().replace(/\s+/g, '-'));
 }
 
+// Build a lookup map for neighborhood names (normalized slug -> actual name)
+const NEIGHBORHOOD_LOOKUP: Record<string, string> = {};
+Object.values(LOCATIONS).forEach((neighborhoods) => {
+  neighborhoods.forEach((neighborhood) => {
+    const slug = neighborhood.toLowerCase().replace(/\s+/g, '-');
+    NEIGHBORHOOD_LOOKUP[slug] = neighborhood;
+  });
+});
+
 export function slugToNeighborhood(slug: string): string {
-  return decodeURIComponent(slug.replace(/-/g, ' ')).replace(/\b\w/g, (c) => c.toUpperCase());
+  const decodedSlug = decodeURIComponent(slug);
+  // First try exact lookup from our defined neighborhoods
+  if (NEIGHBORHOOD_LOOKUP[decodedSlug]) {
+    return NEIGHBORHOOD_LOOKUP[decodedSlug];
+  }
+  // Fallback: capitalize each word (may not match exactly for hyphenated names)
+  return decodedSlug.replace(/-/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase());
 }

@@ -291,6 +291,70 @@ export const CITY_COORDINATES: Record<string, { latitude: number; longitude: num
   Toyama: { latitude: 36.6959, longitude: 137.2137, zoom: 12 },
 };
 
+// Neighborhood coordinates for map centering (zoom level 14-15 for neighborhood detail)
+export const NEIGHBORHOOD_COORDINATES: Record<string, { latitude: number; longitude: number; zoom: number }> = {
+  // Tokyo neighborhoods
+  'Harajuku': { latitude: 35.6702, longitude: 139.7026, zoom: 15 },
+  'Shibuya': { latitude: 35.6580, longitude: 139.7016, zoom: 15 },
+  'Shimokitazawa': { latitude: 35.6617, longitude: 139.6682, zoom: 15 },
+  'Shinjuku': { latitude: 35.6938, longitude: 139.7034, zoom: 14 },
+  'Daikanyama': { latitude: 35.6486, longitude: 139.7030, zoom: 15 },
+  'Ebisu': { latitude: 35.6467, longitude: 139.7103, zoom: 15 },
+  'Hiroo': { latitude: 35.6510, longitude: 139.7220, zoom: 15 },
+  'Omotesando': { latitude: 35.6654, longitude: 139.7121, zoom: 15 },
+  'Nakameguro': { latitude: 35.6441, longitude: 139.6986, zoom: 15 },
+  'Koenji': { latitude: 35.7052, longitude: 139.6494, zoom: 15 },
+  'Setagaya City': { latitude: 35.6464, longitude: 139.6532, zoom: 14 },
+  'Ueno': { latitude: 35.7141, longitude: 139.7774, zoom: 15 },
+  'Ikebukuro': { latitude: 35.7295, longitude: 139.7109, zoom: 14 },
+  'Kichijoji': { latitude: 35.7032, longitude: 139.5794, zoom: 15 },
+  'Aoyama': { latitude: 35.6718, longitude: 139.7199, zoom: 15 },
+  'Nakano': { latitude: 35.7074, longitude: 139.6659, zoom: 15 },
+  'Jinbocho': { latitude: 35.6959, longitude: 139.7577, zoom: 15 },
+  'Jiyugaoka': { latitude: 35.6076, longitude: 139.6686, zoom: 15 },
+  'Kuramae': { latitude: 35.7025, longitude: 139.7893, zoom: 15 },
+  'Yutenji': { latitude: 35.6336, longitude: 139.6862, zoom: 15 },
+  'Gakugei-Daigaku': { latitude: 35.6280, longitude: 139.6851, zoom: 15 },
+  'Toritsu-Daigaku': { latitude: 35.6175, longitude: 139.6775, zoom: 15 },
+  'Asakusa': { latitude: 35.7148, longitude: 139.7967, zoom: 15 },
+  'Asakusabashi': { latitude: 35.6986, longitude: 139.7832, zoom: 15 },
+  'Meguro City': { latitude: 35.6414, longitude: 139.6981, zoom: 14 },
+  'Kiyosumi-shirakawa': { latitude: 35.6817, longitude: 139.8011, zoom: 15 },
+  'Chofu': { latitude: 35.6505, longitude: 139.5407, zoom: 14 },
+  'Komae': { latitude: 35.6347, longitude: 139.5789, zoom: 15 },
+  'Odaiba': { latitude: 35.6267, longitude: 139.7756, zoom: 14 },
+  'Tokyo Dome': { latitude: 35.7056, longitude: 139.7519, zoom: 15 },
+  'Yoyogi': { latitude: 35.6833, longitude: 139.7020, zoom: 15 },
+  'Sangenjaya': { latitude: 35.6439, longitude: 139.6706, zoom: 15 },
+  'Ginza': { latitude: 35.6717, longitude: 139.7649, zoom: 15 },
+  'Asagaya': { latitude: 35.7044, longitude: 139.6358, zoom: 15 },
+  'Chiyoda City': { latitude: 35.6940, longitude: 139.7536, zoom: 14 },
+  'Ikejiri-Ohashi': { latitude: 35.6544, longitude: 139.6836, zoom: 15 },
+  'Kinshicho': { latitude: 35.6960, longitude: 139.8133, zoom: 15 },
+  'Koto City': { latitude: 35.6729, longitude: 139.8172, zoom: 14 },
+  'Kyobashi': { latitude: 35.6775, longitude: 139.7706, zoom: 15 },
+  'Roppongi': { latitude: 35.6628, longitude: 139.7315, zoom: 15 },
+  'Shinagawa City': { latitude: 35.6093, longitude: 139.7302, zoom: 14 },
+  'Tsukiji': { latitude: 35.6654, longitude: 139.7707, zoom: 15 },
+  'Umegaoka': { latitude: 35.6583, longitude: 139.6558, zoom: 15 },
+  'Yanaka Ginza': { latitude: 35.7274, longitude: 139.7665, zoom: 15 },
+  'Yurakucho': { latitude: 35.6750, longitude: 139.7630, zoom: 15 },
+  // Osaka neighborhoods
+  'Shinsaibashi': { latitude: 34.6751, longitude: 135.5009, zoom: 15 },
+  'Horie': { latitude: 34.6780, longitude: 135.4940, zoom: 15 },
+  'Umeda': { latitude: 34.7024, longitude: 135.4959, zoom: 15 },
+  'Nakazakicho': { latitude: 34.7081, longitude: 135.5054, zoom: 15 },
+  'Nakatsu': { latitude: 34.7136, longitude: 135.4998, zoom: 15 },
+  // Nagoya neighborhoods
+  'Osu': { latitude: 35.1592, longitude: 136.9026, zoom: 15 },
+  'Sakae': { latitude: 35.1681, longitude: 136.9085, zoom: 15 },
+  // Nagano neighborhoods
+  'Ueda': { latitude: 36.4017, longitude: 138.2490, zoom: 14 },
+  // Kanagawa / Yokohama neighborhoods
+  'Atsugi': { latitude: 35.4414, longitude: 139.3618, zoom: 14 },
+  'Hakone': { latitude: 35.2324, longitude: 139.1069, zoom: 13 },
+};
+
 // City color accents for UI (cards, badges). Picked to be distinct but harmonious.
 export const CITY_COLORS: Record<string, string> = {
   Tokyo: '#F97316', // orange-500

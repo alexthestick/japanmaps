@@ -67,9 +67,12 @@ function applyFilters(stores: Store[], filters?: StoreFilters): Store[] {
   }
 
   if (filters?.selectedNeighborhood) {
-    filtered = filtered.filter(store =>
-      store.neighborhood === filters.selectedNeighborhood
-    );
+    const normalizedFilter = filters.selectedNeighborhood.toLowerCase().replace(/[-\s]/g, '');
+    filtered = filtered.filter(store => {
+      if (!store.neighborhood) return false;
+      const normalizedNeighborhood = store.neighborhood.toLowerCase().replace(/[-\s]/g, '');
+      return normalizedNeighborhood === normalizedFilter;
+    });
   }
 
   // Filter by main categories (Food, Fashion, Coffee, etc)

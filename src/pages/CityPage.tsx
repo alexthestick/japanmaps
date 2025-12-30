@@ -61,9 +61,12 @@ export function CityPage() {
       if (!hasMatchingCategory) return false;
     }
 
-    // Neighborhood
-    if (selectedNeighborhood && store.neighborhood !== selectedNeighborhood) {
-      return false;
+    // Neighborhood (case-insensitive matching)
+    if (selectedNeighborhood) {
+      if (!store.neighborhood) return false;
+      const normalizedFilter = selectedNeighborhood.toLowerCase().replace(/[-\s]/g, '');
+      const normalizedNeighborhood = store.neighborhood.toLowerCase().replace(/[-\s]/g, '');
+      if (normalizedNeighborhood !== normalizedFilter) return false;
     }
 
     return true;

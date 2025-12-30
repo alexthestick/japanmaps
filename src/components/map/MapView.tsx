@@ -1,7 +1,7 @@
 import { useState, useCallback, useEffect, useRef, useImperativeHandle, forwardRef, useMemo } from 'react';
 import Map, { Marker, NavigationControl } from 'react-map-gl';
 import { MAPBOX_TOKEN, MAP_STYLE_DAY, MAP_STYLE_NIGHT, DEFAULT_CENTER, DEFAULT_ZOOM } from '../../lib/mapbox';
-import { CITY_COORDINATES } from '../../lib/constants';
+import { CITY_COORDINATES, NEIGHBORHOOD_COORDINATES } from '../../lib/constants';
 import { IconStoreMarker } from './IconStoreMarker';
 import { MapLegend } from './MapLegend';
 import { StoreLabel } from './StoreLabel';
@@ -141,13 +141,38 @@ export const MapView = forwardRef<MapViewHandle, MapViewProps>(({ stores, onStor
 
   const prevStoresIds = useRef<string>('');
   const prevSelectedCity = useRef<string | null>(null);
+  const prevSelectedNeighborhood = useRef<string | null>(null);
   const isInitialLoad = useRef<boolean>(true);
+
+  // Auto-zoom to neighborhood when neighborhood filter is selected (priority over city)
+  useEffect(() => {
+    if (selectedNeighborhood && selectedNeighborhood !== prevSelectedNeighborhood.current) {
+      prevSelectedNeighborhood.current = selectedNeighborhood;
+
+      const neighborhoodCoords = NEIGHBORHOOD_COORDINATES[selectedNeighborhood];
+      if (neighborhoodCoords) {
+        console.log('Zooming to neighborhood:', selectedNeighborhood, neighborhoodCoords);
+        setViewState({
+          longitude: neighborhoodCoords.longitude,
+          latitude: neighborhoodCoords.latitude,
+          zoom: neighborhoodCoords.zoom,
+        });
+        return; // Don't also zoom to city
+      }
+    } else if (!selectedNeighborhood && prevSelectedNeighborhood.current) {
+      // Neighborhood was cleared
+      prevSelectedNeighborhood.current = null;
+    }
+  }, [selectedNeighborhood]);
 
   // Auto-zoom to city when city filter is selected (even if no stores)
   useEffect(() => {
+    // Skip if we just zoomed to a neighborhood
+    if (selectedNeighborhood) return;
+
     if (selectedCity && selectedCity !== prevSelectedCity.current) {
       prevSelectedCity.current = selectedCity;
-      
+
       const cityCoords = CITY_COORDINATES[selectedCity];
       if (cityCoords) {
         console.log('Zooming to city:', selectedCity, cityCoords);
@@ -161,7 +186,7 @@ export const MapView = forwardRef<MapViewHandle, MapViewProps>(({ stores, onStor
       // Reset to default when city filter is cleared
       prevSelectedCity.current = null;
     }
-  }, [selectedCity]);
+  }, [selectedCity, selectedNeighborhood]);
 
   // Auto-zoom to stores when search results change
   useEffect(() => {
