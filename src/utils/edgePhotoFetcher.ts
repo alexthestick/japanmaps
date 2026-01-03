@@ -11,73 +11,50 @@ export interface PhotoFetchResult {
 }
 
 /**
- * Fetch Google Photo and upload to ImageKit (client-side)
- * @param photoName - The photo name from Google Places API (e.g., "places/ChIJ.../photos/ATplDJa...")
+ * Fetch Google Photos via Vercel serverless function (no auth required)
+ * This is a wrapper - the actual fetching happens server-side
+ * @param placeId - Google Place ID
  * @param storeId - Store ID for file naming
- * @param photoIndex - Index of the photo (0-based)
- * @param dryRun - If true, validates without uploading
- * @returns Photo fetch result with URL
+ * @param maxPhotos - Maximum number of photos to fetch (default 5)
+ * @returns Array of ImageKit URLs
  */
-export async function fetchGooglePhotoViaEdge(
-  photoName: string,
+export async function fetchGooglePhotosServerless(
+  placeId: string,
   storeId: string,
-  photoIndex: number,
-  dryRun: boolean = false
-): Promise<PhotoFetchResult> {
+  maxPhotos: number = 5
+): Promise<string[]> {
   try {
-    if (dryRun) {
-      console.log(`[DRY RUN] Would fetch photo: ${photoName}`);
-      return {
-        success: true,
-        url: 'https://example.com/dry-run.jpg',
-        fileName: `dry-run-${photoIndex}.jpg`,
-        size: 0,
-        dryRun: true,
-      };
-    }
+    console.log(`📸 Fetching photos via serverless function for place: ${placeId}`);
 
-    // Get Google Places API key
-    const apiKey = import.meta.env.VITE_GOOGLE_PLACES_API_KEY;
-    if (!apiKey) {
-      throw new Error('Google Places API key not configured');
-    }
+    const response = await fetch('/api/fetch-google-photos', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        placeId,
+        storeId,
+        maxPhotos,
+      }),
+    });
 
-    // Fetch photo from Google Places API
-    // Max dimensions for free tier: 4800x4800
-    const photoUrl = `https://places.googleapis.com/v1/${photoName}/media?maxHeightPx=1600&maxWidthPx=1600&key=${apiKey}`;
-
-    const response = await fetch(photoUrl);
     if (!response.ok) {
-      throw new Error(`Failed to fetch photo: ${response.status} ${response.statusText}`);
+      const errorData = await response.json().catch(() => ({}));
+      throw new Error(errorData.error || `Server error: ${response.status}`);
     }
 
-    // Convert response to blob
-    const blob = await response.blob();
+    const result = await response.json();
 
-    // Create File object for upload
-    const fileName = `google-place-${storeId}-${photoIndex}.jpg`;
-    const file = new File([blob], fileName, { type: 'image/jpeg' });
-
-    // Upload to ImageKit using our existing function
-    const uploadedUrl = await uploadStorePhoto(file);
-
-    if (!uploadedUrl) {
-      throw new Error('Failed to upload photo to ImageKit');
+    if (!result.success) {
+      throw new Error(result.error || 'Failed to fetch photos');
     }
 
-    return {
-      success: true,
-      url: uploadedUrl,
-      fileName: fileName,
-      size: blob.size,
-      dryRun: false,
-    };
+    console.log(`✅ Fetched ${result.count} photos successfully`);
+    return result.urls || [];
+
   } catch (err) {
-    console.error('Unexpected error:', err);
-    return {
-      success: false,
-      error: err instanceof Error ? err.message : 'Unexpected error occurred',
-    };
+    console.error('❌ Error fetching photos:', err);
+    throw err;
   }
 }
 
@@ -150,11 +127,10 @@ export async function fetchMultipleGooglePhotos(
 }
 
 /**
- * Migrate existing store photos from Google to Supabase
+ * Migrate store photos from Google Places to ImageKit (serverless)
  * @param storeId - Store ID
- * @param currentPhotos - Array of current photo URLs
  * @param placeId - Google Place ID
- * @param dryRun - If true, validates without uploading
+ * @param dryRun - If true, validates without uploading (not implemented for serverless)
  * @param onProgress - Callback for progress updates
  * @returns New photo URLs
  */
@@ -165,39 +141,21 @@ export async function migrateStorePhotosViaEdge(
   onProgress?: (current: number, total: number) => void
 ): Promise<string[]> {
   try {
-    // Fetch place details to get photos
-    const apiKey = import.meta.env.VITE_GOOGLE_PLACES_API_KEY;
-    const url = `https://places.googleapis.com/v1/places/${placeId}`;
-
-    const response = await fetch(url, {
-      method: 'GET',
-      headers: {
-        'Content-Type': 'application/json',
-        'X-Goog-Api-Key': apiKey,
-        'X-Goog-FieldMask': 'photos',
-      },
-    });
-
-    if (!response.ok) {
-      throw new Error('Failed to fetch place photos');
-    }
-
-    const data = await response.json();
-    const photos = data.photos || [];
-
-    if (photos.length === 0) {
-      console.log('No photos found for this place');
+    if (dryRun) {
+      console.log('[DRY RUN] Would fetch photos for:', placeId);
       return [];
     }
 
-    // Fetch photos via Edge Function
-    return await fetchMultipleGooglePhotos(
-      photos,
-      storeId,
-      5,
-      dryRun,
-      onProgress
-    );
+    console.log(`📸 Migrating photos for store ${storeId} from place ${placeId}`);
+
+    // Use the new serverless function
+    const photoUrls = await fetchGooglePhotosServerless(placeId, storeId, 5);
+
+    if (onProgress) {
+      onProgress(photoUrls.length, photoUrls.length);
+    }
+
+    return photoUrls;
   } catch (error) {
     console.error('Error migrating photos:', error);
     throw error;

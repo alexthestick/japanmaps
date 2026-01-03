@@ -1,7 +1,8 @@
 import { useState } from 'react';
 import { Sparkles, MapPin, AlertCircle, Download, Edit2, Loader, Image } from 'lucide-react';
 import type { Store } from '../../types/store';
-import { fetchMultipleGooglePhotos } from '../../utils/edgePhotoFetcher';
+import { importStoreFromGoogle, extractCity, extractNeighborhood, detectMainCategory } from '../../utils/importStore';
+import { fetchGooglePhotosServerless } from '../../utils/edgePhotoFetcher';
 
 interface GoogleMapsStoreExtractorProps {
   onApplyData: (data: ExtractedStoreData) => void;
@@ -10,6 +11,8 @@ interface GoogleMapsStoreExtractorProps {
 export interface ExtractedStoreData {
   name: string;
   address: string;
+  city: string;
+  neighborhood?: string;
   latitude: number;
   longitude: number;
   description: string;
@@ -18,6 +21,9 @@ export interface ExtractedStoreData {
   priceRange?: string;
   categories?: string[];
   photoUrls?: string[];
+  mainCategory?: string;
+  instagram?: string;
+  placeId?: string;
 }
 
 export function GoogleMapsStoreExtractor({ onApplyData }: GoogleMapsStoreExtractorProps) {
@@ -31,7 +37,7 @@ export function GoogleMapsStoreExtractor({ onApplyData }: GoogleMapsStoreExtract
 
   const handleExtract = async () => {
     if (!googleMapsUrl.trim()) {
-      setError('Please enter a Google Maps URL');
+      setError('Please enter a Google Maps URL or Place ID');
       return;
     }
 
@@ -40,75 +46,62 @@ export function GoogleMapsStoreExtractor({ onApplyData }: GoogleMapsStoreExtract
     setExtractedData(null);
 
     try {
-      // Step 1: Check if shortened URL and provide helpful message
-      if (googleMapsUrl.includes('goo.gl') || googleMapsUrl.includes('maps.app.goo.gl')) {
-        throw new Error('⚠️ Shortened URL detected!\n\n📋 Please do this:\n1. Click/open this link in your browser\n2. Wait for Google Maps to load\n3. Copy the FULL URL from your address bar\n4. Paste that full URL here instead\n\nThe full URL should look like: https://www.google.com/maps/place/...');
-      }
+      // Step 1: Import store from serverless function
+      console.log('🔄 Importing store via serverless function...');
+      const importResult = await importStoreFromGoogle(googleMapsUrl);
 
-      // Step 2: Extract place name and coordinates from URL
-      const placeName = extractPlaceNameFromUrl(googleMapsUrl);
-      const coords = extractCoordsFromUrl(googleMapsUrl);
+      console.log('✅ Import result:', importResult);
 
-      if (!placeName) {
-        throw new Error('Could not extract store name from URL.\n\nMake sure you copied the full Google Maps URL.');
-      }
-
-      console.log('Extracted place name:', placeName);
-      console.log('Extracted coords:', coords);
-
-      // Step 3: Search for place using Text Search to get ChI Place ID
-      const searchResults = await searchPlaceByName(placeName, coords);
-
-      if (!searchResults || searchResults.length === 0) {
-        throw new Error(`Could not find "${placeName}" in Google Places.\n\nTry a different URL or check the store name.`);
-      }
-
-      // Use first result
-      const place = searchResults[0];
-      console.log('Found place:', place);
-
-      // Step 4: Fetch full place details using the ChI Place ID
-      const placeDetails = await fetchPlaceDetailsNew(place.id);
-
-      console.log('Place details:', placeDetails);
-
-      // Step 5: Generate description from reviews
-      const description = await generateDescriptionFromReviews(placeDetails);
-
-      // Step 6: Fetch photos if enabled
+      // Step 2: Fetch photos if enabled
       let photoUrls: string[] = [];
-      if (fetchPhotos && placeDetails.photos && placeDetails.photos.length > 0) {
-        console.log(`${dryRun ? '[DRY RUN]' : ''} Fetching ${Math.min(placeDetails.photos.length, 5)} photos...`);
+      if (fetchPhotos && importResult.photoCount > 0) {
+        console.log(`📸 Fetching ${importResult.photoCount} photos...`);
+
+        setPhotoProgress({ current: 0, total: Math.min(importResult.photoCount, 5) });
 
         const tempStoreId = `temp-${Date.now()}`;
 
-        photoUrls = await fetchMultipleGooglePhotos(
-          placeDetails.photos,
-          tempStoreId,
-          5, // Max 5 photos
-          dryRun,
-          (current, total, url) => {
-            setPhotoProgress({ current, total });
-          }
-        );
+        try {
+          photoUrls = await fetchGooglePhotosServerless(
+            importResult.placeId,
+            tempStoreId,
+            5 // Max 5 photos
+          );
 
-        setPhotoProgress(null); // Reset progress
+          console.log(`✅ Fetched ${photoUrls.length} photos`);
+        } catch (photoError) {
+          console.error('⚠️ Photo fetch failed:', photoError);
+          // Continue without photos
+        } finally {
+          setPhotoProgress(null);
+        }
       }
 
-      // Step 7: Build extracted data
+      // Step 3: Extract city and neighborhood from address
+      const city = extractCity(importResult.address);
+      const neighborhood = extractNeighborhood(importResult.address);
+      const mainCategory = detectMainCategory(importResult.types);
+
+      // Step 4: Build extracted data
       const data: ExtractedStoreData = {
-        name: placeDetails.displayName?.text || '',
-        address: placeDetails.formattedAddress || '',
-        latitude: placeDetails.location?.latitude || 0,
-        longitude: placeDetails.location?.longitude || 0,
-        description,
-        hours: formatHours(placeDetails.regularOpeningHours),
-        website: placeDetails.websiteUri,
-        priceRange: convertPriceLevel(placeDetails.priceLevel),
+        name: importResult.name,
+        address: importResult.address,
+        city,
+        neighborhood,
+        latitude: importResult.location.latitude,
+        longitude: importResult.location.longitude,
+        description: importResult.description,
+        hours: importResult.hours,
+        website: importResult.website,
+        instagram: importResult.instagram,
+        mainCategory,
+        categories: importResult.suggestedCategories,
         photoUrls: photoUrls.length > 0 ? photoUrls : undefined,
+        placeId: importResult.placeId,
       };
 
       setExtractedData(data);
+      console.log('✅ Extracted data ready:', data);
     } catch (err: any) {
       console.error('Extraction error:', err);
       setError(err.message || 'Failed to extract store information. Please check the URL and try again.');

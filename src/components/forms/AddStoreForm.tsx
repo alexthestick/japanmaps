@@ -71,12 +71,29 @@ export function AddStoreForm({ onSuccess, onCancel }: AddStoreFormProps) {
   const handleApplyExtractedData = (data: ExtractedStoreData) => {
     setValue('name', data.name);
     setValue('address', data.address);
+
+    // @ts-ignore - city is a new field in ExtractedStoreData
+    setValue('city', data.city || 'Tokyo');
+    // @ts-ignore - neighborhood is a new field in ExtractedStoreData
+    setValue('neighborhood', data.neighborhood || '');
+
     setValue('latitude', data.latitude);
     setValue('longitude', data.longitude);
     setValue('description', data.description || '');
     setValue('hours', data.hours || '');
     setValue('website', data.website || '');
+    // @ts-ignore - instagram is a new field in ExtractedStoreData
+    setValue('instagram', data.instagram || '');
     setValue('priceRange', data.priceRange || '');
+
+    // Set main category if provided
+    // @ts-ignore - mainCategory is a new field in ExtractedStoreData
+    if (data.mainCategory) {
+      // @ts-ignore
+      setSelectedMainCategory(data.mainCategory);
+      // @ts-ignore
+      setValue('mainCategory', data.mainCategory);
+    }
 
     // Store extracted photos
     if (data.photoUrls && data.photoUrls.length > 0) {
