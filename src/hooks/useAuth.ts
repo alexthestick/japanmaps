@@ -96,8 +96,15 @@ export function useAuth() {
   }
 
   useEffect(() => {
-    // Get initial session
+    // Get initial session with timeout
+    const sessionTimeout = setTimeout(() => {
+      console.warn('Session fetch timed out, assuming no session');
+      setLoading(false);
+      setCheckingAdmin(false);
+    }, 5000);
+
     supabase.auth.getSession().then(async ({ data: { session } }) => {
+      clearTimeout(sessionTimeout);
       setUser(session?.user ?? null);
       if (session?.user) {
         await checkAdminStatus(session.user.id);
@@ -105,6 +112,11 @@ export function useAuth() {
         setCheckingAdmin(false);
       }
       setLoading(false);
+    }).catch((err) => {
+      clearTimeout(sessionTimeout);
+      console.error('Session fetch error:', err);
+      setLoading(false);
+      setCheckingAdmin(false);
     });
 
     // Listen for auth changes - only react to actual changes

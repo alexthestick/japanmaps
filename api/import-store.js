@@ -60,121 +60,155 @@ function setCorsHeaders(res, origin) {
 }
 
 /**
- * Extract Place ID from Google Maps URL
+ * Extract Place ID or search query from Google Maps URL
  */
-function extractPlaceIdFromUrl(url) {
+function extractFromUrl(url) {
   // Google Maps URLs can have Place ID in several formats:
   // https://maps.google.com/maps?cid=12345
   // https://www.google.com/maps/place/Name/@lat,lng,zoom/data=!3m1!4b1!4m6!3m5!1s0xABC:0xDEF!...
   // https://maps.app.goo.gl/abc123
+  // https://share.google.com/...
+  // https://www.google.com/maps/search/query
 
   try {
     const urlObj = new URL(url);
 
-    // Format 1: CID parameter
+    // Format 1: Place ID in data parameter (most reliable)
+    const pathMatch = url.match(/place\/([^\/]+)/);
+    if (pathMatch) {
+      // Decode the place name from URL
+      const placeName = decodeURIComponent(pathMatch[1].replace(/\+/g, ' '));
+      console.log(`📍 Extracted place name from URL: ${placeName}`);
+
+      // Check for Place ID in the data param
+      const dataParam = urlObj.searchParams.get('data');
+      if (dataParam) {
+        // Format: !1sChIJ... (Place ID starts with ChIJ)
+        const placeIdMatch = dataParam.match(/!1s(ChIJ[^!]+)/);
+        if (placeIdMatch) {
+          return { type: 'placeId', value: placeIdMatch[1] };
+        }
+      }
+
+      // Return place name for searching
+      return { type: 'searchQuery', value: placeName };
+    }
+
+    // Format 2: Search URL
+    const searchMatch = url.match(/maps\/search\/([^\/\?]+)/);
+    if (searchMatch) {
+      const query = decodeURIComponent(searchMatch[1].replace(/\+/g, ' '));
+      return { type: 'searchQuery', value: query };
+    }
+
+    // Format 3: Share URL - extract from q parameter
+    const qParam = urlObj.searchParams.get('q');
+    if (qParam) {
+      return { type: 'searchQuery', value: qParam };
+    }
+
+    // Format 4: CID parameter (business ID)
     const cid = urlObj.searchParams.get('cid');
     if (cid) {
-      // CID needs to be converted - we'll search by name instead
-      return null;
+      // We can't use CID directly, but we can try searching
+      return { type: 'unknown', value: null };
     }
 
-    // Format 2: Place ID in data parameter
-    const dataParam = urlObj.searchParams.get('data');
-    if (dataParam) {
-      // Try to extract Place ID from data parameter
-      const match = dataParam.match(/!1s([^!]+)/);
-      if (match && match[1].startsWith('0x') === false) {
-        return match[1];
-      }
-    }
-
-    // Format 3: Place ID in path
-    const pathMatch = url.match(/place\/[^\/]+\/([A-Za-z0-9_-]+)/);
-    if (pathMatch) {
-      return pathMatch[1];
-    }
-
-    return null;
+    return { type: 'unknown', value: null };
   } catch (e) {
     console.error('Failed to parse URL:', e);
-    return null;
+    return { type: 'unknown', value: null };
   }
 }
 
 /**
- * Search for Place ID using Text Search API
+ * Search for Place ID using Find Place API (legacy, more widely enabled)
  */
 async function searchPlaceId(query) {
   const apiKey = process.env.VITE_GOOGLE_PLACES_API_KEY;
 
-  const response = await fetch(
-    'https://places.googleapis.com/v1/places:searchText',
-    {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'X-Goog-Api-Key': apiKey,
-        'X-Goog-FieldMask': 'places.id,places.displayName,places.formattedAddress',
-      },
-      body: JSON.stringify({
-        textQuery: query,
-        languageCode: 'en',
-      }),
-    }
-  );
+  // Use Find Place from Text (legacy API) - more commonly enabled
+  const searchUrl = `https://maps.googleapis.com/maps/api/place/findplacefromtext/json?input=${encodeURIComponent(query)}&inputtype=textquery&fields=place_id,name,formatted_address&key=${apiKey}`;
+
+  console.log(`🔍 Searching for: ${query}`);
+
+  const response = await fetch(searchUrl);
 
   if (!response.ok) {
+    console.error(`Search API error: ${response.status}`);
     throw new Error(`Search failed: ${response.status}`);
   }
 
   const data = await response.json();
-  return data.places || [];
+
+  if (data.status === 'REQUEST_DENIED') {
+    console.error('API request denied:', data.error_message);
+    throw new Error(`API denied: ${data.error_message || 'Check API key permissions'}`);
+  }
+
+  if (data.status === 'ZERO_RESULTS' || !data.candidates || data.candidates.length === 0) {
+    return [];
+  }
+
+  // Convert to expected format
+  return data.candidates.map(c => ({
+    id: c.place_id,
+    displayName: { text: c.name },
+    formattedAddress: c.formatted_address,
+  }));
 }
 
 /**
- * Fetch place details from Google Places API
+ * Fetch place details from Google Places API (legacy)
  */
 async function fetchPlaceDetails(placeId) {
   const apiKey = process.env.VITE_GOOGLE_PLACES_API_KEY;
-  const resourceName = placeId.startsWith('places/') ? placeId : `places/${placeId}`;
 
-  console.log(`🔍 Fetching place details for: ${resourceName}`);
+  // Remove 'places/' prefix if present (legacy API uses raw place_id)
+  const cleanPlaceId = placeId.replace('places/', '');
 
-  const response = await fetch(
-    `https://places.googleapis.com/v1/${resourceName}`,
-    {
-      headers: {
-        'Content-Type': 'application/json',
-        'X-Goog-Api-Key': apiKey,
-        'X-Goog-FieldMask': 'id,displayName,formattedAddress,location,editorialSummary,regularOpeningHours,websiteUri,internationalPhoneNumber,rating,userRatingCount,photos,reviews,types,priceLevel',
-      },
-    }
-  );
+  console.log(`🔍 Fetching place details for: ${cleanPlaceId}`);
+
+  // Use legacy Place Details API
+  const detailsUrl = `https://maps.googleapis.com/maps/api/place/details/json?place_id=${cleanPlaceId}&fields=place_id,name,formatted_address,geometry,editorial_summary,opening_hours,website,international_phone_number,rating,user_ratings_total,photos,reviews,types,price_level&key=${apiKey}`;
+
+  const response = await fetch(detailsUrl);
 
   if (!response.ok) {
-    const errorText = await response.text();
-    console.error(`❌ Place details API error (${response.status}):`, errorText);
+    console.error(`❌ Place details API error (${response.status})`);
     throw new Error(`Failed to fetch place details: ${response.status}`);
   }
 
   const data = await response.json();
 
+  if (data.status === 'REQUEST_DENIED') {
+    console.error('API request denied:', data.error_message);
+    throw new Error(`API denied: ${data.error_message || 'Check API key permissions'}`);
+  }
+
+  if (data.status !== 'OK' || !data.result) {
+    console.error('Place not found:', data.status);
+    throw new Error(`Place not found: ${data.status}`);
+  }
+
+  const place = data.result;
+
   return {
-    placeId: data.id,
-    name: data.displayName?.text || '',
-    address: data.formattedAddress || '',
-    latitude: data.location?.latitude || 0,
-    longitude: data.location?.longitude || 0,
-    editorialSummary: data.editorialSummary?.text || '',
-    website: data.websiteUri || '',
-    phone: data.internationalPhoneNumber || '',
-    rating: data.rating || 0,
-    userRatingCount: data.userRatingCount || 0,
-    photos: data.photos || [],
-    reviews: data.reviews || [],
-    types: data.types || [],
-    priceLevel: data.priceLevel || '',
-    hours: data.regularOpeningHours?.weekdayDescriptions?.join('\n') || '',
+    placeId: place.place_id,
+    name: place.name || '',
+    address: place.formatted_address || '',
+    latitude: place.geometry?.location?.lat || 0,
+    longitude: place.geometry?.location?.lng || 0,
+    editorialSummary: place.editorial_summary?.overview || '',
+    website: place.website || '',
+    phone: place.international_phone_number || '',
+    rating: place.rating || 0,
+    userRatingCount: place.user_ratings_total || 0,
+    photos: place.photos || [],
+    reviews: place.reviews || [],
+    types: place.types || [],
+    priceLevel: place.price_level || '',
+    hours: place.opening_hours?.weekday_text?.join('\n') || '',
   };
 }
 
@@ -338,24 +372,30 @@ export default async function handler(req, res) {
     // Step 1: Extract or search for Place ID
     let placeId = input;
 
-    // If input looks like a URL, try to extract Place ID
+    // If input looks like a URL, try to extract Place ID or search query
     if (input.startsWith('http')) {
-      placeId = extractPlaceIdFromUrl(input);
+      const extracted = extractFromUrl(input);
+      console.log(`📍 Extracted from URL:`, extracted);
 
-      // If extraction failed, try searching
-      if (!placeId) {
-        console.log('📍 Could not extract Place ID from URL, searching...');
-        const searchResults = await searchPlaceId(input);
+      if (extracted.type === 'placeId') {
+        placeId = extracted.value;
+        console.log(`✓ Found Place ID in URL: ${placeId}`);
+      } else if (extracted.type === 'searchQuery' && extracted.value) {
+        console.log(`🔍 Searching for: ${extracted.value}`);
+        const searchResults = await searchPlaceId(extracted.value);
 
         if (!searchResults || searchResults.length === 0) {
           return res.status(404).json({
-            error: 'Could not find place. Try pasting the Place ID directly.',
+            error: `Could not find place: "${extracted.value}". Try a different search or paste the Place ID directly.`,
           });
         }
 
-        // Use first result
         placeId = searchResults[0].id;
         console.log(`✓ Found via search: ${searchResults[0].displayName.text}`);
+      } else {
+        return res.status(400).json({
+          error: 'Could not parse Google Maps URL. Try copying the URL from the place page or paste the Place ID directly.',
+        });
       }
     }
 
