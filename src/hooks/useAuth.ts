@@ -2,6 +2,34 @@ import { useState, useEffect, useRef } from 'react';
 import { supabase } from '../lib/supabase';
 import type { User } from '@supabase/supabase-js';
 
+// Session storage key for caching admin status
+const ADMIN_CACHE_KEY = 'lit_admin_status';
+
+// Cache admin status in sessionStorage to avoid repeated DB queries
+function getCachedAdminStatus(userId: string): boolean | null {
+  try {
+    const cached = sessionStorage.getItem(ADMIN_CACHE_KEY);
+    if (cached) {
+      const { id, isAdmin, timestamp } = JSON.parse(cached);
+      // Cache valid for 1 hour
+      if (id === userId && Date.now() - timestamp < 3600000) {
+        return isAdmin;
+      }
+    }
+  } catch {}
+  return null;
+}
+
+function setCachedAdminStatus(userId: string, isAdmin: boolean) {
+  try {
+    sessionStorage.setItem(ADMIN_CACHE_KEY, JSON.stringify({
+      id: userId,
+      isAdmin,
+      timestamp: Date.now(),
+    }));
+  } catch {}
+}
+
 export function useAuth() {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
@@ -16,33 +44,47 @@ export function useAuth() {
   async function checkAdminStatus(userId: string) {
     // Skip if we're already checking or already checked this user
     if (isCheckingRef.current || lastCheckedUserId.current === userId) {
+      setCheckingAdmin(false);
+      return;
+    }
+
+    // Check cache first
+    const cachedStatus = getCachedAdminStatus(userId);
+    if (cachedStatus !== null) {
+      setIsAdmin(cachedStatus);
+      setCheckingAdmin(false);
+      lastCheckedUserId.current = userId;
       return;
     }
 
     try {
       isCheckingRef.current = true;
       setCheckingAdmin(true);
+
+      // Add timeout to prevent hanging
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 5000);
+
       const { data, error } = await supabase
         .from('profiles')
         .select('is_admin')
         .eq('id', userId)
-        .single();
+        .single()
+        .abortSignal(controller.signal);
+
+      clearTimeout(timeoutId);
 
       if (error) {
         console.error('Error checking admin status:', error);
-
-        // If profile doesn't exist or is_admin column doesn't exist, default to false
-        if (error.code === 'PGRST116' || error.message.includes('column')) {
-          console.warn('Profile not found or is_admin column missing. User is not admin.');
-        }
-
         setIsAdmin(false);
+        setCachedAdminStatus(userId, false);
         lastCheckedUserId.current = userId;
         return;
       }
 
       const adminStatus = data?.is_admin ?? false;
       setIsAdmin(adminStatus);
+      setCachedAdminStatus(userId, adminStatus);
       lastCheckedUserId.current = userId;
     } catch (error) {
       console.error('Error checking admin status:', error);
