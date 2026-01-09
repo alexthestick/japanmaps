@@ -34,13 +34,18 @@ export function AdminDashboard() {
   const [editingPost, setEditingPost] = useState<any | null>(null);
   const [activeTab, setActiveTab] = useState<'stores' | 'suggestions' | 'migration' | 'neighborhoods' | 'blog'>('stores');
 
+  // Track if we've already fetched data to prevent re-fetching on tab switch
+  const [hasFetchedData, setHasFetchedData] = useState(false);
+
   useEffect(() => {
-    if (user) {
+    // Only fetch data once when user is first confirmed
+    if (user && isAdmin && !hasFetchedData) {
+      setHasFetchedData(true);
       fetchSuggestions();
       fetchStores();
       fetchBlogPosts();
     }
-  }, [user]);
+  }, [user, isAdmin, hasFetchedData]);
 
   async function fetchSuggestions() {
     try {
