@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { supabase } from '../lib/supabase';
 import type { User } from '@supabase/supabase-js';
 
@@ -8,9 +8,19 @@ export function useAuth() {
   const [isAdmin, setIsAdmin] = useState(false);
   const [checkingAdmin, setCheckingAdmin] = useState(true);
 
+  // Track the last checked user ID to prevent duplicate admin checks
+  const lastCheckedUserId = useRef<string | null>(null);
+  const isCheckingRef = useRef(false);
+
   // Check if user is admin
   async function checkAdminStatus(userId: string) {
+    // Skip if we're already checking or already checked this user
+    if (isCheckingRef.current || lastCheckedUserId.current === userId) {
+      return;
+    }
+
     try {
+      isCheckingRef.current = true;
       setCheckingAdmin(true);
       const { data, error } = await supabase
         .from('profiles')
@@ -20,7 +30,6 @@ export function useAuth() {
 
       if (error) {
         console.error('Error checking admin status:', error);
-        console.error('Error details:', error.message);
 
         // If profile doesn't exist or is_admin column doesn't exist, default to false
         if (error.code === 'PGRST116' || error.message.includes('column')) {
@@ -28,17 +37,19 @@ export function useAuth() {
         }
 
         setIsAdmin(false);
+        lastCheckedUserId.current = userId;
         return;
       }
 
       const adminStatus = data?.is_admin ?? false;
-      console.log('Admin status for user:', userId, '=', adminStatus);
       setIsAdmin(adminStatus);
+      lastCheckedUserId.current = userId;
     } catch (error) {
       console.error('Error checking admin status:', error);
       setIsAdmin(false);
     } finally {
       setCheckingAdmin(false);
+      isCheckingRef.current = false;
     }
   }
 
@@ -54,14 +65,24 @@ export function useAuth() {
       setLoading(false);
     });
 
-    // Listen for auth changes
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event, session) => {
-      setUser(session?.user ?? null);
-      if (session?.user) {
-        await checkAdminStatus(session.user.id);
-      } else {
-        setIsAdmin(false);
-        setCheckingAdmin(false);
+    // Listen for auth changes - only react to actual changes
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+      // Only process actual auth changes, not visibility events
+      if (event === 'SIGNED_IN' || event === 'SIGNED_OUT' || event === 'TOKEN_REFRESHED') {
+        const newUser = session?.user ?? null;
+
+        // Only update if user actually changed
+        if (newUser?.id !== user?.id) {
+          setUser(newUser);
+
+          if (newUser) {
+            await checkAdminStatus(newUser.id);
+          } else {
+            setIsAdmin(false);
+            setCheckingAdmin(false);
+            lastCheckedUserId.current = null;
+          }
+        }
       }
     });
 

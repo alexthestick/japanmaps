@@ -1,18 +1,29 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Outlet, useNavigate } from 'react-router-dom';
 import { Header } from './Header';
 import { Footer } from './Footer';
 import { CityGridMenu } from '../navigation/CityGridMenu';
 import { getCityDataWithCounts, type CityData } from '../../utils/cityData';
 
+// Module-level cache for city data to prevent refetching across mounts
+let cityDataCache: CityData[] | null = null;
+
 export function Layout() {
   const [isCityMenuOpen, setIsCityMenuOpen] = useState(false);
-  const [cities, setCities] = useState<CityData[]>([]);
+  const [cities, setCities] = useState<CityData[]>(cityDataCache || []);
   const navigate = useNavigate();
+  const hasFetched = useRef(false);
 
-  // Fetch actual city counts on mount
+  // Fetch actual city counts on mount - only once per session
   useEffect(() => {
-    getCityDataWithCounts().then(setCities);
+    if (hasFetched.current || cityDataCache) {
+      return;
+    }
+    hasFetched.current = true;
+    getCityDataWithCounts().then((data) => {
+      cityDataCache = data;
+      setCities(data);
+    });
   }, []);
 
   const handleCitySelect = (cityName: string) => {
