@@ -66,7 +66,7 @@ function setCorsHeaders(res, origin) {
  * Fetch place photos from Google Places API
  */
 async function fetchPlacePhotos(placeId) {
-  const apiKey = process.env.VITE_GOOGLE_PLACES_API_KEY;
+  const apiKey = process.env.GOOGLE_PLACES_SERVER_KEY || process.env.VITE_GOOGLE_PLACES_API_KEY;
 
   if (!apiKey) {
     throw new Error('Google Places API key not configured');
@@ -205,7 +205,7 @@ export default async function handler(req, res) {
     // Step 2: Download and upload photos (up to maxPhotos)
     const photoUrls = [];
     const photosToProcess = photos.slice(0, maxPhotos);
-    const apiKey = process.env.VITE_GOOGLE_PLACES_API_KEY;
+    const apiKey = process.env.GOOGLE_PLACES_SERVER_KEY || process.env.VITE_GOOGLE_PLACES_API_KEY;
 
     for (let i = 0; i < photosToProcess.length; i++) {
       const photo = photosToProcess[i];

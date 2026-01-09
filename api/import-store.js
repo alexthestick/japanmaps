@@ -125,7 +125,7 @@ function extractFromUrl(url) {
  * Search for Place ID using Find Place API (legacy, more widely enabled)
  */
 async function searchPlaceId(query) {
-  const apiKey = process.env.VITE_GOOGLE_PLACES_API_KEY;
+  const apiKey = process.env.GOOGLE_PLACES_SERVER_KEY || process.env.VITE_GOOGLE_PLACES_API_KEY;
 
   // Use Find Place from Text (legacy API) - more commonly enabled
   const searchUrl = `https://maps.googleapis.com/maps/api/place/findplacefromtext/json?input=${encodeURIComponent(query)}&inputtype=textquery&fields=place_id,name,formatted_address&key=${apiKey}`;
@@ -162,7 +162,7 @@ async function searchPlaceId(query) {
  * Fetch place details from Google Places API (legacy)
  */
 async function fetchPlaceDetails(placeId) {
-  const apiKey = process.env.VITE_GOOGLE_PLACES_API_KEY;
+  const apiKey = process.env.GOOGLE_PLACES_SERVER_KEY || process.env.VITE_GOOGLE_PLACES_API_KEY;
 
   // Remove 'places/' prefix if present (legacy API uses raw place_id)
   const cleanPlaceId = placeId.replace('places/', '');
