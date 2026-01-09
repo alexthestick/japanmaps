@@ -14,10 +14,13 @@ import { Modal } from '../components/common/Modal';
 import type { StoreSuggestion, Store } from '../types/store';
 
 export function AdminDashboard() {
-  const { user, loading: authLoading, isAdmin, checkingAdmin, signIn, signOut } = useAuth();
+  const { user, loading: authLoading, isAdmin, checkingAdmin, signIn, signInWithMagicLink, signOut } = useAuth();
   const navigate = useNavigate();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [useMagicLink, setUseMagicLink] = useState(true); // Default to magic link
+  const [magicLinkSent, setMagicLinkSent] = useState(false);
+  const [loginLoading, setLoginLoading] = useState(false);
   const [suggestions, setSuggestions] = useState<StoreSuggestion[]>([]);
   const [loadingSuggestions, setLoadingSuggestions] = useState(false);
   const [showAddStoreForm, setShowAddStoreForm] = useState(false);
@@ -74,9 +77,26 @@ export function AdminDashboard() {
 
   async function handleSignIn(e: React.FormEvent) {
     e.preventDefault();
-    const { error } = await signIn(email, password);
-    if (error) {
-      alert('Login failed: ' + error.message);
+    setLoginLoading(true);
+
+    try {
+      if (useMagicLink) {
+        // Magic link login (email only)
+        const { error } = await signInWithMagicLink(email);
+        if (error) {
+          alert('Failed to send magic link: ' + error.message);
+        } else {
+          setMagicLinkSent(true);
+        }
+      } else {
+        // Password login
+        const { error } = await signIn(email, password);
+        if (error) {
+          alert('Login failed: ' + error.message);
+        }
+      }
+    } finally {
+      setLoginLoading(false);
     }
   }
 
@@ -208,10 +228,69 @@ export function AdminDashboard() {
 
   // Not logged in - show login form
   if (!user) {
+    // Magic link sent confirmation
+    if (magicLinkSent) {
+      return (
+        <div className="max-w-md mx-auto px-4 py-12">
+          <div className="bg-white rounded-lg shadow-md p-8 text-center">
+            <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
+              <svg className="w-8 h-8 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+              </svg>
+            </div>
+            <h1 className="text-2xl font-bold text-gray-900 mb-2">Check your email!</h1>
+            <p className="text-gray-600 mb-4">
+              We sent a login link to <strong>{email}</strong>
+            </p>
+            <p className="text-sm text-gray-500 mb-6">
+              Click the link in the email to sign in. The link will redirect you back here.
+            </p>
+            <Button
+              variant="outline"
+              onClick={() => {
+                setMagicLinkSent(false);
+                setEmail('');
+              }}
+              className="w-full"
+            >
+              Try a different email
+            </Button>
+          </div>
+        </div>
+      );
+    }
+
     return (
       <div className="max-w-md mx-auto px-4 py-12">
         <div className="bg-white rounded-lg shadow-md p-8">
           <h1 className="text-2xl font-bold text-gray-900 mb-6">Admin Login</h1>
+
+          {/* Toggle between magic link and password */}
+          <div className="flex gap-2 mb-6 p-1 bg-gray-100 rounded-lg">
+            <button
+              type="button"
+              onClick={() => setUseMagicLink(true)}
+              className={`flex-1 py-2 px-4 rounded-md text-sm font-medium transition-colors ${
+                useMagicLink
+                  ? 'bg-white text-gray-900 shadow-sm'
+                  : 'text-gray-600 hover:text-gray-900'
+              }`}
+            >
+              Magic Link
+            </button>
+            <button
+              type="button"
+              onClick={() => setUseMagicLink(false)}
+              className={`flex-1 py-2 px-4 rounded-md text-sm font-medium transition-colors ${
+                !useMagicLink
+                  ? 'bg-white text-gray-900 shadow-sm'
+                  : 'text-gray-600 hover:text-gray-900'
+              }`}
+            >
+              Password
+            </button>
+          </div>
+
           <form onSubmit={handleSignIn} className="space-y-4">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -222,24 +301,40 @@ export function AdminDashboard() {
                 value={email}
                 onChange={e => setEmail(e.target.value)}
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                placeholder="your@email.com"
                 required
               />
             </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Password
-              </label>
-              <input
-                type="password"
-                value={password}
-                onChange={e => setPassword(e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                required
-              />
-            </div>
-            <Button type="submit" className="w-full">
-              Sign In
+
+            {!useMagicLink && (
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Password
+                </label>
+                <input
+                  type="password"
+                  value={password}
+                  onChange={e => setPassword(e.target.value)}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  required={!useMagicLink}
+                />
+              </div>
+            )}
+
+            <Button type="submit" className="w-full" disabled={loginLoading}>
+              {loginLoading
+                ? 'Loading...'
+                : useMagicLink
+                  ? 'Send Magic Link'
+                  : 'Sign In'
+              }
             </Button>
+
+            {useMagicLink && (
+              <p className="text-xs text-gray-500 text-center">
+                We'll send you an email with a link to sign in instantly.
+              </p>
+            )}
           </form>
         </div>
       </div>

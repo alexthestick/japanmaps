@@ -76,6 +76,16 @@ export function useAuth() {
     return { data, error };
   }
 
+  async function signInWithMagicLink(email: string) {
+    const { data, error } = await supabase.auth.signInWithOtp({
+      email,
+      options: {
+        emailRedirectTo: `${window.location.origin}/admin`,
+      },
+    });
+    return { data, error };
+  }
+
   async function signUp(email: string, password: string) {
     const { data, error } = await supabase.auth.signUp({
       email,
@@ -95,6 +105,7 @@ export function useAuth() {
     isAdmin,
     checkingAdmin,
     signIn,
+    signInWithMagicLink,
     signUp,
     signOut,
   };
