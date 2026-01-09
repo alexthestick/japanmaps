@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
 import { supabase } from '../lib/supabase';
@@ -13,6 +13,19 @@ import { BlogPostEditor } from '../components/admin/BlogPostEditor';
 import { Modal } from '../components/common/Modal';
 import type { StoreSuggestion, Store } from '../types/store';
 
+// Module-level cache to persist data across component remounts
+let adminDataCache: {
+  stores: Store[];
+  suggestions: StoreSuggestion[];
+  blogPosts: any[];
+  hasFetched: boolean;
+} = {
+  stores: [],
+  suggestions: [],
+  blogPosts: [],
+  hasFetched: false,
+};
+
 export function AdminDashboard() {
   const { user, loading: authLoading, isAdmin, checkingAdmin, signIn, signInWithMagicLink, signOut } = useAuth();
   const navigate = useNavigate();
@@ -21,31 +34,31 @@ export function AdminDashboard() {
   const [useMagicLink, setUseMagicLink] = useState(true); // Default to magic link
   const [magicLinkSent, setMagicLinkSent] = useState(false);
   const [loginLoading, setLoginLoading] = useState(false);
-  const [suggestions, setSuggestions] = useState<StoreSuggestion[]>([]);
+  const [suggestions, setSuggestions] = useState<StoreSuggestion[]>(adminDataCache.suggestions);
   const [loadingSuggestions, setLoadingSuggestions] = useState(false);
   const [showAddStoreForm, setShowAddStoreForm] = useState(false);
-  const [stores, setStores] = useState<Store[]>([]);
+  const [stores, setStores] = useState<Store[]>(adminDataCache.stores);
   const [loadingStores, setLoadingStores] = useState(false);
   const [editingStore, setEditingStore] = useState<Store | null>(null);
   const [deletingStore, setDeletingStore] = useState<Store | null>(null);
-  const [blogPosts, setBlogPosts] = useState<any[]>([]);
+  const [blogPosts, setBlogPosts] = useState<any[]>(adminDataCache.blogPosts);
   const [loadingBlogPosts, setLoadingBlogPosts] = useState(false);
   const [showBlogEditor, setShowBlogEditor] = useState(false);
   const [editingPost, setEditingPost] = useState<any | null>(null);
   const [activeTab, setActiveTab] = useState<'stores' | 'suggestions' | 'migration' | 'neighborhoods' | 'blog'>('stores');
 
-  // Track if we've already fetched data to prevent re-fetching on tab switch
-  const [hasFetchedData, setHasFetchedData] = useState(false);
+  const isFetchingRef = useRef(false);
 
   useEffect(() => {
-    // Only fetch data once when user is first confirmed
-    if (user && isAdmin && !hasFetchedData) {
-      setHasFetchedData(true);
+    // Only fetch data once per session when user is admin
+    if (user && isAdmin && !adminDataCache.hasFetched && !isFetchingRef.current) {
+      isFetchingRef.current = true;
+      adminDataCache.hasFetched = true;
       fetchSuggestions();
       fetchStores();
       fetchBlogPosts();
     }
-  }, [user, isAdmin, hasFetchedData]);
+  }, [user, isAdmin]);
 
   async function fetchSuggestions() {
     try {
@@ -73,6 +86,7 @@ export function AdminDashboard() {
       }));
 
       setSuggestions(transformedSuggestions);
+      adminDataCache.suggestions = transformedSuggestions;
     } catch (error) {
       console.error('Error fetching suggestions:', error);
     } finally {
@@ -139,6 +153,7 @@ export function AdminDashboard() {
       }));
 
       setStores(transformedStores);
+      adminDataCache.stores = transformedStores;
     } catch (error) {
       console.error('Error fetching stores:', error);
     } finally {
@@ -195,6 +210,7 @@ export function AdminDashboard() {
       if (error) throw error;
 
       setBlogPosts(data || []);
+      adminDataCache.blogPosts = data || [];
     } catch (error) {
       console.error('Error fetching blog posts:', error);
     } finally {
