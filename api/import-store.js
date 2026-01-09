@@ -20,11 +20,12 @@ const RATE_LIMIT_WINDOW = 60 * 1000; // 1 minute
 const MAX_REQUESTS_PER_WINDOW = 5;
 
 // Allowed origins
-const PRODUCTION_DOMAIN = process.env.PRODUCTION_URL || 'https://japanmaps.vercel.app';
+const PRODUCTION_DOMAIN = process.env.PRODUCTION_URL || 'https://lostintransitjp.com';
 const ALLOWED_ORIGINS = [
   'http://localhost:5173',
   'http://localhost:3000',
-  'https://japanmaps.vercel.app',
+  'https://lostintransitjp.com',
+  'https://www.lostintransitjp.com',
   PRODUCTION_DOMAIN,
 ];
 
@@ -32,6 +33,7 @@ function isOriginAllowed(origin) {
   if (!origin) return false;
   if (ALLOWED_ORIGINS.includes(origin)) return true;
   if (origin.endsWith('.vercel.app')) return true;
+  if (origin.includes('lostintransitjp.com')) return true;
   return false;
 }
 
