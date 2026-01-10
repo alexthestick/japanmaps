@@ -20,7 +20,15 @@ export const runtime = 'nodejs';
 
 // Safe import for ESM + Vercel bundling
 import ImageKitSDK from '@imagekit/nodejs';
+
+console.log('🔍 ImageKitSDK type:', typeof ImageKitSDK);
+console.log('🔍 ImageKitSDK:', ImageKitSDK);
+console.log('🔍 ImageKitSDK.default:', ImageKitSDK.default);
+
 const ImageKit = ImageKitSDK.default || ImageKitSDK;
+
+console.log('🔍 Final ImageKit type:', typeof ImageKit);
+console.log('🔍 Final ImageKit:', ImageKit);
 
 // Rate limiting
 const rateLimitMap = new Map();
@@ -150,6 +158,11 @@ async function uploadToImageKit(buffer, fileName, storeId) {
     privateKey,
     urlEndpoint,
   });
+
+  console.log('🔍 imagekit instance type:', typeof imagekit);
+  console.log('🔍 imagekit.upload type:', typeof imagekit.upload);
+  console.log('🔍 imagekit keys:', Object.keys(imagekit).slice(0, 10));
+  console.log('🔍 imagekit prototype:', Object.getPrototypeOf(imagekit));
 
   const uploadResult = await imagekit.upload({
     file: buffer,
