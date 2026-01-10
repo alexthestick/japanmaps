@@ -15,7 +15,7 @@
  * - BulkImportQueue.tsx
  * - Single store import flow
  */
-import ImageKit from 'imagekit';
+import ImageKit from '@imagekit/nodejs';
 
 // Rate limiting
 const rateLimitMap = new Map();

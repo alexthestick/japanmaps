@@ -298,7 +298,14 @@ Return JSON:
     );
 
     if (!response.ok) {
-      throw new Error(`Gemini API error: ${response.status}`);
+      const status = response.status;
+      console.warn(`Gemini API error: ${status} - falling back to basic description`);
+
+      // Return fallback instead of throwing
+      return {
+        description: placeDetails.editorialSummary || `${placeDetails.name} is located at ${placeDetails.address}.`,
+        suggestedCategories: [],
+      };
     }
 
     const data = await response.json();
