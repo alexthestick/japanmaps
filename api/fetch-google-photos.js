@@ -21,8 +21,9 @@ export const runtime = 'nodejs';
 // Use createRequire to bypass ESM bundling issues with CommonJS packages
 import { createRequire } from 'module';
 const require = createRequire(import.meta.url);
-// Force the real SDK entry point (not the base HTTP client)
-const ImageKit = require('@imagekit/nodejs/dist/index.js');
+
+// Import from client.js which exports the ImageKit class
+const { ImageKit } = require('@imagekit/nodejs/client.js');
 
 // Rate limiting
 const rateLimitMap = new Map();
