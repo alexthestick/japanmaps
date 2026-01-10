@@ -18,17 +18,8 @@
 // Force Node.js runtime (ImageKit SDK requires Node APIs)
 export const runtime = 'nodejs';
 
-// Safe import for ESM + Vercel bundling
-import ImageKitSDK from '@imagekit/nodejs';
-
-console.log('🔍 ImageKitSDK type:', typeof ImageKitSDK);
-console.log('🔍 ImageKitSDK:', ImageKitSDK);
-console.log('🔍 ImageKitSDK.default:', ImageKitSDK.default);
-
-const ImageKit = ImageKitSDK.default || ImageKitSDK;
-
-console.log('🔍 Final ImageKit type:', typeof ImageKit);
-console.log('🔍 Final ImageKit:', ImageKit);
+// Try named import (ImageKit is exported as a named export)
+import { ImageKit } from '@imagekit/nodejs';
 
 // Rate limiting
 const rateLimitMap = new Map();
