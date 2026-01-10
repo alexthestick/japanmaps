@@ -63,7 +63,7 @@ function setCorsHeaders(res, origin) {
 }
 
 /**
- * Fetch place photos from Google Places API
+ * Fetch place photos from Google Places API (legacy)
  */
 async function fetchPlacePhotos(placeId) {
   const apiKey = process.env.GOOGLE_PLACES_SERVER_KEY || process.env.VITE_GOOGLE_PLACES_API_KEY;
@@ -72,37 +72,42 @@ async function fetchPlacePhotos(placeId) {
     throw new Error('Google Places API key not configured');
   }
 
-  // Ensure placeId has correct format
-  const resourceName = placeId.startsWith('places/') ? placeId : `places/${placeId}`;
+  // Remove 'places/' prefix if present (legacy API uses raw place_id)
+  const cleanPlaceId = placeId.replace('places/', '');
 
-  console.log(`🔍 Fetching photos for: ${resourceName}`);
+  console.log(`🔍 Fetching photos for: ${cleanPlaceId}`);
 
-  const response = await fetch(
-    `https://places.googleapis.com/v1/${resourceName}`,
-    {
-      headers: {
-        'Content-Type': 'application/json',
-        'X-Goog-Api-Key': apiKey,
-        'X-Goog-FieldMask': 'photos',
-      },
-    }
-  );
+  // Use legacy Place Details API to get photo references
+  const detailsUrl = `https://maps.googleapis.com/maps/api/place/details/json?place_id=${cleanPlaceId}&fields=photos&key=${apiKey}`;
+
+  const response = await fetch(detailsUrl);
 
   if (!response.ok) {
-    const errorText = await response.text();
-    console.error(`❌ Google Places API error (${response.status}):`, errorText);
+    console.error(`❌ Google Places API error (${response.status})`);
     throw new Error(`Failed to fetch place photos: ${response.status}`);
   }
 
   const data = await response.json();
-  return data.photos || [];
+
+  if (data.status === 'REQUEST_DENIED') {
+    console.error('API request denied:', data.error_message);
+    throw new Error(`API denied: ${data.error_message || 'Check API key permissions'}`);
+  }
+
+  if (data.status !== 'OK' || !data.result) {
+    console.error('Place not found:', data.status);
+    return [];
+  }
+
+  return data.result.photos || [];
 }
 
 /**
- * Download photo from Google Places API
+ * Download photo from Google Places API (legacy)
  */
-async function downloadGooglePhoto(photoName, apiKey) {
-  const photoUrl = `https://places.googleapis.com/v1/${photoName}/media?maxHeightPx=1600&maxWidthPx=1600&key=${apiKey}`;
+async function downloadGooglePhoto(photoReference, apiKey) {
+  // Legacy API uses photo_reference instead of photo name
+  const photoUrl = `https://maps.googleapis.com/maps/api/place/photo?maxwidth=1600&photoreference=${photoReference}&key=${apiKey}`;
 
   const response = await fetch(photoUrl);
 
@@ -213,8 +218,8 @@ export default async function handler(req, res) {
       try {
         console.log(`📥 Processing photo ${i + 1}/${photosToProcess.length}...`);
 
-        // Download from Google
-        const buffer = await downloadGooglePhoto(photo.name, apiKey);
+        // Download from Google (legacy API uses photo_reference)
+        const buffer = await downloadGooglePhoto(photo.photo_reference, apiKey);
         console.log(`✓ Downloaded ${(buffer.length / 1024).toFixed(1)}KB`);
 
         // Upload to ImageKit
