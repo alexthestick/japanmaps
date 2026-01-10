@@ -89,17 +89,26 @@ async function fetchPlacePhotos(placeId) {
 
   const data = await response.json();
 
+  console.log('📊 Places API response status:', data.status);
+
   if (data.status === 'REQUEST_DENIED') {
     console.error('API request denied:', data.error_message);
     throw new Error(`API denied: ${data.error_message || 'Check API key permissions'}`);
   }
 
   if (data.status !== 'OK' || !data.result) {
-    console.error('Place not found:', data.status);
+    console.error('Place not found or no result:', data.status, data);
     return [];
   }
 
-  return data.result.photos || [];
+  const photos = data.result.photos || [];
+  console.log(`📸 Found ${photos.length} photos in API response`);
+
+  if (photos.length > 0) {
+    console.log('📸 Sample photo object:', JSON.stringify(photos[0], null, 2));
+  }
+
+  return photos;
 }
 
 /**
