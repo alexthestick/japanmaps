@@ -18,17 +18,11 @@
 // Force Node.js runtime (ImageKit SDK requires Node APIs)
 export const runtime = 'nodejs';
 
-// Use createRequire to bypass ESM bundling issues with CommonJS packages
-import { createRequire } from 'module';
-const require = createRequire(import.meta.url);
-
-// Import ImageKit SDK - use named export 'ImageKit', NOT default (which is the low-level REST client)
-const ImageKitPkg = require('@imagekit/nodejs');
-const ImageKit = ImageKitPkg.ImageKit;
+// Import ImageKit SDK v7 - uses ESM with default export
+import ImageKit, { toFile } from '@imagekit/nodejs';
 
 // Verification: Log what we're getting
-console.log('📦 ImageKit package keys:', Object.keys(ImageKitPkg));
-console.log('📦 Using ImageKit =', ImageKit?.name);
+console.log('📦 ImageKit SDK loaded, has files?', !!ImageKit.prototype);
 
 // Rate limiting
 const rateLimitMap = new Map();
@@ -153,19 +147,18 @@ async function uploadToImageKit(buffer, fileName, storeId) {
     throw new Error('ImageKit credentials not configured');
   }
 
+  // v7 SDK only requires privateKey
   const imagekit = new ImageKit({
-    publicKey,
     privateKey,
-    urlEndpoint,
   });
 
-  // Verification: Check that upload method exists
-  const methods = Object.getOwnPropertyNames(Object.getPrototypeOf(imagekit));
-  console.log('✅ ImageKit instance methods:', methods.slice(0, 20));
-  console.log('✅ Has upload?', typeof imagekit.upload);
+  // v7 SDK: upload is on imagekit.files.upload(), and buffers need toFile() helper
+  const file = await toFile(buffer, fileName);
 
-  const uploadResult = await imagekit.upload({
-    file: buffer,
+  console.log('📤 Uploading to ImageKit...');
+
+  const uploadResult = await imagekit.files.upload({
+    file: file,
     fileName: fileName,
     folder: `/stores/imports/${storeId}`,
     useUniqueFileName: true,
