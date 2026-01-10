@@ -402,7 +402,7 @@ export function AdminDashboard() {
       <div className="flex items-center justify-between mb-8">
         <h1 className="text-3xl font-bold text-gray-900">Admin Dashboard</h1>
         <div className="flex gap-3">
-          <Button 
+          <Button
             onClick={(e) => {
               e.preventDefault();
               e.stopPropagation();
@@ -411,6 +411,13 @@ export function AdminDashboard() {
             type="button"
           >
             Add New Store
+          </Button>
+          <Button
+            onClick={() => navigate('/admin/bulk-import')}
+            variant="outline"
+            type="button"
+          >
+            Bulk Import
           </Button>
           <Button variant="outline" onClick={() => signOut()} type="button">
             Sign Out
