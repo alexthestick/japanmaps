@@ -176,54 +176,37 @@ export function BulkImportQueue({
   };
 
   /**
-   * Fetch place details from Google Places API
+   * Fetch place details via serverless function (bypasses referrer restrictions)
    */
   const fetchPlaceDetails = async (placeId: string): Promise<PlaceDetails> => {
-    const apiKey = import.meta.env.VITE_GOOGLE_PLACES_API_KEY;
+    // Clean up placeId - remove 'places/' prefix if present
+    const cleanPlaceId = placeId.replace('places/', '');
 
-    // The new Places API returns IDs in format "places/ChIJ..."
-    // If it already has "places/" prefix, use as-is, otherwise add it
-    const resourceName = placeId.startsWith('places/') ? placeId : `places/${placeId}`;
+    console.log(`🔍 Fetching place details via serverless for: ${cleanPlaceId}`);
 
-    console.log(`🔍 Fetching place details for: ${resourceName}`);
-
-    const response = await fetch(
-      `https://places.googleapis.com/v1/${resourceName}`,
-      {
-        headers: {
-          'Content-Type': 'application/json',
-          'X-Goog-Api-Key': apiKey,
-          'X-Goog-FieldMask': 'id,displayName,formattedAddress,location,editorialSummary,regularOpeningHours,websiteUri,internationalPhoneNumber,rating,userRatingCount,photos,reviews,types,priceLevel',
-        },
-      }
-    );
+    const response = await fetch('/api/fetch-place-details', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ placeId: cleanPlaceId }),
+    });
 
     if (!response.ok) {
-      const errorText = await response.text();
-      console.error(`❌ Place details API error (${response.status}):`, errorText);
-      throw new Error(`Failed to fetch place details: ${response.status}`);
+      const errorData = await response.json().catch(() => ({}));
+      console.error(`❌ Place details API error (${response.status}):`, errorData);
+      throw new Error(errorData.error || `Failed to fetch place details: ${response.status}`);
     }
 
-    const data = await response.json();
+    const result = await response.json();
 
-    return {
-      placeId: data.id || placeId,
-      name: data.displayName?.text || '',
-      address: data.formattedAddress || '',
-      latitude: data.location?.latitude || 0,
-      longitude: data.location?.longitude || 0,
-      editorialSummary: data.editorialSummary?.text || '',
-      website: data.websiteUri || '',
-      phone: data.internationalPhoneNumber || '',
-      rating: data.rating || 0,
-      userRatingCount: data.userRatingCount || 0,
-      photos: data.photos || [],
-      reviews: data.reviews || [],
-      types: data.types || [],
-      priceLevel: data.priceLevel || '',
-      description: data.editorialSummary?.text || '',
-      hours: data.regularOpeningHours?.weekdayDescriptions?.join('\n') || '',
-    };
+    if (!result.success) {
+      throw new Error(result.error || 'Failed to fetch place details');
+    }
+
+    console.log(`✅ Place details fetched: ${result.placeDetails.name}`);
+
+    return result.placeDetails;
   };
 
   /**
