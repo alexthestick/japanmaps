@@ -1,6 +1,6 @@
 /**
  * Fetch Place ID from Google Places API using store name
- * Used when CSV only contains URLs without Place IDs
+ * Uses serverless function to bypass referrer restrictions
  */
 
 export interface PlaceIdSearchResult {
@@ -12,18 +12,12 @@ export interface PlaceIdSearchResult {
 
 /**
  * Search for a place and return top candidates
- * Reuses logic from FetchPlaceIdButton but with bias for exact matches
+ * Routes through serverless function to avoid referrer blocks
  */
 export async function searchPlaceId(
   storeName: string,
   location?: string
 ): Promise<PlaceIdSearchResult[]> {
-  const apiKey = import.meta.env.VITE_GOOGLE_PLACES_API_KEY;
-
-  if (!apiKey || apiKey === 'YOUR_KEY_HERE') {
-    throw new Error('Google Places API key not configured');
-  }
-
   try {
     // Build search query
     let query = storeName;
@@ -34,38 +28,26 @@ export async function searchPlaceId(
 
     console.log(`🔍 Searching Place ID for: "${query}"`);
 
-    const response = await fetch(
-      'https://places.googleapis.com/v1/places:searchText',
-      {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'X-Goog-Api-Key': apiKey,
-          'X-Goog-FieldMask': 'places.id,places.displayName,places.formattedAddress,places.types',
-        },
-        body: JSON.stringify({
-          textQuery: query,
-          languageCode: 'en',
-          locationBias: {
-            circle: {
-              center: {
-                latitude: 35.6762,
-                longitude: 139.6503,
-              },
-              radius: 50000.0, // 50km radius around Tokyo (API max is 50000)
-            },
-          },
-        }),
-      }
-    );
+    const response = await fetch('/api/search-place', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ query }),
+    });
 
     if (!response.ok) {
-      const errorText = await response.text();
-      throw new Error(`Places API error: ${response.status} - ${errorText}`);
+      const errorData = await response.json().catch(() => ({}));
+      throw new Error(errorData.error || `Places API error: ${response.status}`);
     }
 
-    const data = await response.json();
-    const places = data.places || [];
+    const result = await response.json();
+
+    if (!result.success) {
+      throw new Error(result.error || 'Failed to search places');
+    }
+
+    const places = result.places || [];
 
     if (places.length === 0) {
       console.warn(`⚠️ No places found for "${storeName}"`);
@@ -74,9 +56,9 @@ export async function searchPlaceId(
 
     // Convert to results with confidence scoring
     const results: PlaceIdSearchResult[] = places.slice(0, 5).map((place: any) => {
-      const placeId = place.id || '';
-      const name = place.displayName?.text || '';
-      const address = place.formattedAddress || '';
+      const placeId = place.placeId || '';
+      const name = place.name || '';
+      const address = place.address || '';
 
       // Calculate confidence based on name similarity
       const confidence = calculateConfidence(storeName, name);
