@@ -22,6 +22,16 @@ export const runtime = 'nodejs';
 import { createRequire } from 'module';
 const require = createRequire(import.meta.url);
 
+// DEBUG: Dump package structure to find real SDK file
+const fs = require('fs');
+const path = require('path');
+
+const pkgPath = require.resolve('@imagekit/nodejs/package.json');
+const baseDir = path.dirname(pkgPath);
+
+console.log('📦 ImageKit baseDir:', baseDir);
+console.log('📁 ImageKit files:', fs.readdirSync(baseDir));
+
 // Import from client.js which exports the ImageKit class
 const { ImageKit } = require('@imagekit/nodejs/client.js');
 
