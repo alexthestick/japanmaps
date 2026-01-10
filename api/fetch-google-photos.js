@@ -22,18 +22,13 @@ export const runtime = 'nodejs';
 import { createRequire } from 'module';
 const require = createRequire(import.meta.url);
 
-// DEBUG: Dump package structure to find real SDK file
-const fs = require('fs');
-const path = require('path');
+// Import ImageKit SDK - must use .default export due to ESM/CJS interop
+const ImageKitPkg = require('@imagekit/nodejs');
+const ImageKit = ImageKitPkg.default || ImageKitPkg;
 
-const pkgPath = require.resolve('@imagekit/nodejs/package.json');
-const baseDir = path.dirname(pkgPath);
-
-console.log('📦 ImageKit baseDir:', baseDir);
-console.log('📁 ImageKit files:', fs.readdirSync(baseDir));
-
-// Import from client.js which exports the ImageKit class
-const { ImageKit } = require('@imagekit/nodejs/client.js');
+// Verification: Log what we're getting
+console.log('📦 ImageKit package keys:', Object.keys(ImageKitPkg).slice(0, 10));
+console.log('📦 ImageKit type:', typeof ImageKit);
 
 // Rate limiting
 const rateLimitMap = new Map();
@@ -165,7 +160,9 @@ async function uploadToImageKit(buffer, fileName, storeId) {
   });
 
   // Verification: Check that upload method exists
-  console.log('✅ ImageKit methods:', Object.getOwnPropertyNames(Object.getPrototypeOf(imagekit)).slice(0, 15));
+  const methods = Object.getOwnPropertyNames(Object.getPrototypeOf(imagekit));
+  console.log('✅ ImageKit instance methods:', methods.slice(0, 20));
+  console.log('✅ Has upload?', typeof imagekit.upload);
 
   const uploadResult = await imagekit.upload({
     file: buffer,
