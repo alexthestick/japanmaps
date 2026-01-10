@@ -18,8 +18,10 @@
 // Force Node.js runtime (ImageKit SDK requires Node APIs)
 export const runtime = 'nodejs';
 
-// Try named import (ImageKit is exported as a named export)
-import { ImageKit } from '@imagekit/nodejs';
+// Use createRequire to bypass ESM bundling issues with CommonJS packages
+import { createRequire } from 'module';
+const require = createRequire(import.meta.url);
+const ImageKit = require('@imagekit/nodejs');
 
 // Rate limiting
 const rateLimitMap = new Map();
@@ -150,10 +152,8 @@ async function uploadToImageKit(buffer, fileName, storeId) {
     urlEndpoint,
   });
 
-  console.log('🔍 imagekit instance type:', typeof imagekit);
-  console.log('🔍 imagekit.upload type:', typeof imagekit.upload);
-  console.log('🔍 imagekit keys:', Object.keys(imagekit).slice(0, 10));
-  console.log('🔍 imagekit prototype:', Object.getPrototypeOf(imagekit));
+  // Verification: Check that upload method exists
+  console.log('✅ ImageKit methods:', Object.getOwnPropertyNames(Object.getPrototypeOf(imagekit)).slice(0, 15));
 
   const uploadResult = await imagekit.upload({
     file: buffer,
