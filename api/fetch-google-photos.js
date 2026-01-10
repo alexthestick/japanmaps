@@ -146,6 +146,10 @@ async function uploadToImageKit(buffer, fileName, storeId) {
     urlEndpoint,
   });
 
+  console.log('🔍 ImageKit instance type:', typeof imagekit);
+  console.log('🔍 ImageKit.upload type:', typeof imagekit.upload);
+  console.log('🔍 ImageKit keys:', Object.keys(imagekit));
+
   const uploadResult = await imagekit.upload({
     file: buffer,
     fileName: fileName,
