@@ -22,13 +22,13 @@ export const runtime = 'nodejs';
 import { createRequire } from 'module';
 const require = createRequire(import.meta.url);
 
-// Import ImageKit SDK - must use .default export due to ESM/CJS interop
+// Import ImageKit SDK - use named export 'ImageKit', NOT default (which is the low-level REST client)
 const ImageKitPkg = require('@imagekit/nodejs');
-const ImageKit = ImageKitPkg.default || ImageKitPkg;
+const ImageKit = ImageKitPkg.ImageKit;
 
 // Verification: Log what we're getting
-console.log('📦 ImageKit package keys:', Object.keys(ImageKitPkg).slice(0, 10));
-console.log('📦 ImageKit type:', typeof ImageKit);
+console.log('📦 ImageKit package keys:', Object.keys(ImageKitPkg));
+console.log('📦 Using ImageKit =', ImageKit?.name);
 
 // Rate limiting
 const rateLimitMap = new Map();
