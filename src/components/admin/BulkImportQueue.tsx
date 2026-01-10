@@ -282,9 +282,9 @@ export function BulkImportQueue({
 
       console.log(`✅ Store inserted with ID: ${store.id}`);
 
-      // Migrate photos
-      if (currentItem.placeId && currentItem.placeDetails?.photos?.length > 0) {
-        console.log(`📸 Migrating ${currentItem.placeDetails.photos.length} photos...`);
+      // Migrate photos - always try if we have a placeId (serverless function fetches from Google directly)
+      if (currentItem.placeId) {
+        console.log(`📸 Fetching photos from Google for place: ${currentItem.placeId}...`);
 
         try {
           const photoUrls = await migrateStorePhotosViaEdge(
@@ -293,15 +293,19 @@ export function BulkImportQueue({
             false // Not a dry run
           );
 
-          // Update store with photo URLs
-          await supabase
-            .from('stores')
-            .update({ photos: photoUrls })
-            .eq('id', store.id);
+          if (photoUrls.length > 0) {
+            // Update store with photo URLs
+            await supabase
+              .from('stores')
+              .update({ photos: photoUrls })
+              .eq('id', store.id);
 
-          console.log(`✅ Photos migrated: ${photoUrls.length} URLs`);
+            console.log(`✅ Photos uploaded: ${photoUrls.length} URLs`);
+          } else {
+            console.log('ℹ️ No photos found for this place');
+          }
         } catch (photoError) {
-          console.error('⚠️ Photo migration failed (continuing anyway):', photoError);
+          console.error('⚠️ Photo fetch failed (continuing anyway):', photoError);
         }
       }
 
