@@ -15,7 +15,12 @@
  * - BulkImportQueue.tsx
  * - Single store import flow
  */
-import ImageKit from '@imagekit/nodejs';
+// Force Node.js runtime (ImageKit SDK requires Node APIs)
+export const runtime = 'nodejs';
+
+// Safe import for ESM + Vercel bundling
+import ImageKitSDK from '@imagekit/nodejs';
+const ImageKit = ImageKitSDK.default || ImageKitSDK;
 
 // Rate limiting
 const rateLimitMap = new Map();
@@ -145,10 +150,6 @@ async function uploadToImageKit(buffer, fileName, storeId) {
     privateKey,
     urlEndpoint,
   });
-
-  console.log('🔍 ImageKit instance type:', typeof imagekit);
-  console.log('🔍 ImageKit.upload type:', typeof imagekit.upload);
-  console.log('🔍 ImageKit keys:', Object.keys(imagekit));
 
   const uploadResult = await imagekit.upload({
     file: buffer,
