@@ -15,7 +15,13 @@
  * - BulkImportQueue.tsx
  * - Single store import flow
  */
-import ImageKit from '@imagekit/nodejs';
+// Try both CommonJS formats for ImageKit SDK
+let ImageKit;
+try {
+  ImageKit = require('imagekit').default;
+} catch {
+  ImageKit = require('imagekit');
+}
 
 // Rate limiting
 const rateLimitMap = new Map();
