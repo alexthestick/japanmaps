@@ -82,7 +82,7 @@ async function searchPlaces(query, locationBias) {
     requestBody.locationBias = {
       circle: {
         center: { latitude: 35.6762, longitude: 139.6503 }, // Tokyo
-        radius: 500000, // 500km radius covers most of Japan
+        radius: 50000, // 50km radius (API max)
       },
     };
   }
