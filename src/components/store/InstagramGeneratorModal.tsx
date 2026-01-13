@@ -18,6 +18,7 @@ export function InstagramGeneratorModal({ store, isOpen, onClose }: InstagramGen
 
   const [selectedPhotoIndex, setSelectedPhotoIndex] = useState(0);
   const [format, setFormat] = useState<'story' | 'post'>('post');
+  const [template, setTemplate] = useState<'topBar' | 'minimal'>('minimal');
   const [isGenerating, setIsGenerating] = useState(false);
   const cardRef = useRef<HTMLDivElement>(null);
 
@@ -105,6 +106,33 @@ export function InstagramGeneratorModal({ store, isOpen, onClose }: InstagramGen
             </div>
           </div>
 
+          {/* Template Selection */}
+          <div>
+            <h3 className="text-lg font-semibold text-gray-900 mb-3">Style</h3>
+            <div className="flex gap-3">
+              <button
+                onClick={() => setTemplate('minimal')}
+                className={`flex-1 py-3 px-6 rounded-lg border-2 font-medium transition-all ${
+                  template === 'minimal'
+                    ? 'border-cyan-500 bg-cyan-50 text-cyan-700'
+                    : 'border-gray-300 text-gray-700 hover:border-gray-400'
+                }`}
+              >
+                Minimal
+              </button>
+              <button
+                onClick={() => setTemplate('topBar')}
+                className={`flex-1 py-3 px-6 rounded-lg border-2 font-medium transition-all ${
+                  template === 'topBar'
+                    ? 'border-cyan-500 bg-cyan-50 text-cyan-700'
+                    : 'border-gray-300 text-gray-700 hover:border-gray-400'
+                }`}
+              >
+                Top Bar
+              </button>
+            </div>
+          </div>
+
           {/* Format Selection */}
           <div>
             <h3 className="text-lg font-semibold text-gray-900 mb-3">Format</h3>
@@ -149,48 +177,48 @@ export function InstagramGeneratorModal({ store, isOpen, onClose }: InstagramGen
                     alt="Preview"
                     className="w-full h-full object-cover"
                   />
-                  <div className="absolute inset-0 bg-gradient-to-t from-slate-900 via-slate-900/60 to-transparent" />
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-black/20" />
 
-                  {/* Corner decorations */}
-                  <div className="absolute inset-0 pointer-events-none p-2">
-                    <svg className="absolute top-2 left-2 w-6 h-6 text-cyan-400" viewBox="0 0 64 64" fill="none" stroke="currentColor" strokeWidth="3">
-                      <path d="M 8 32 L 8 8 L 32 8" />
-                    </svg>
-                    <svg className="absolute top-2 right-2 w-6 h-6 text-cyan-400" viewBox="0 0 64 64" fill="none" stroke="currentColor" strokeWidth="3">
-                      <path d="M 32 8 L 56 8 L 56 32" />
-                    </svg>
-                    <svg className="absolute bottom-2 left-2 w-6 h-6 text-cyan-400" viewBox="0 0 64 64" fill="none" stroke="currentColor" strokeWidth="3">
-                      <path d="M 8 32 L 8 56 L 32 56" />
-                    </svg>
-                    <svg className="absolute bottom-2 right-2 w-6 h-6 text-cyan-400" viewBox="0 0 64 64" fill="none" stroke="currentColor" strokeWidth="3">
-                      <path d="M 56 32 L 56 56 L 32 56" />
-                    </svg>
-                  </div>
-
-                  {/* Content */}
-                  <div className="absolute bottom-0 left-0 right-0 p-3">
-                    <div className="bg-slate-900/95 backdrop-blur-sm rounded-lg p-3 border border-cyan-400/30">
-                      <h3 className="text-lg font-bold text-white mb-1">'{store.name}</h3>
-                      <div className="flex items-center gap-1 mb-2">
-                        <div className="w-2 h-2 bg-orange-500 rounded-full" />
-                        <p className="text-xs text-gray-300 uppercase tracking-wide">
-                          {store.city} {store.neighborhood && `• ${store.neighborhood}`}
+                  {template === 'topBar' ? (
+                    // Top Bar Template Preview
+                    <>
+                      <div className="absolute top-0 left-0 right-0 px-3 py-2 bg-gradient-to-b from-black/40 to-transparent">
+                        <div className="flex items-center justify-between">
+                          <span className="text-[10px] font-black text-cyan-400" style={{ textShadow: '0 1px 4px rgba(0,0,0,0.8)' }}>
+                            LOST IN TRANSIT
+                          </span>
+                          <svg className="w-3 h-3 text-cyan-400/60" viewBox="0 0 64 64" fill="none" stroke="currentColor" strokeWidth="4">
+                            <path d="M 32 8 L 56 8 L 56 32" />
+                          </svg>
+                        </div>
+                      </div>
+                      <div className="absolute bottom-3 left-3 right-3">
+                        <h3 className="text-2xl font-black text-white mb-1 uppercase" style={{ textShadow: '0 2px 8px rgba(0,0,0,0.9)' }}>
+                          {store.name}
+                        </h3>
+                        <p className="text-xs text-cyan-400 font-bold" style={{ textShadow: '0 1px 4px rgba(0,0,0,0.9)' }}>
+                          {store.neighborhood ? `${store.neighborhood}, ` : ''}{store.city}
                         </p>
                       </div>
-                      {store.categories && store.categories.length > 0 && (
-                        <div className="flex gap-1 mb-2">
-                          {store.categories.slice(0, 2).map((cat, idx) => (
-                            <div key={idx} className="px-2 py-1 bg-cyan-500/20 border border-cyan-400 rounded-full">
-                              <span className="text-[10px] font-semibold text-cyan-300">{cat}</span>
-                            </div>
-                          ))}
-                        </div>
-                      )}
-                      <p className="text-[10px] text-cyan-400 font-medium border-t border-cyan-400/20 pt-2">
-                        lostintransitjp.com
-                      </p>
-                    </div>
-                  </div>
+                    </>
+                  ) : (
+                    // Minimal Template Preview
+                    <>
+                      <div className="absolute top-2 right-2">
+                        <span className="text-[8px] font-black text-white/80" style={{ textShadow: '0 1px 3px rgba(0,0,0,0.8)' }}>
+                          L✈T
+                        </span>
+                      </div>
+                      <div className="absolute bottom-3 left-3 right-3">
+                        <h3 className="text-2xl font-black text-white mb-1 uppercase" style={{ textShadow: '0 2px 8px rgba(0,0,0,0.9)' }}>
+                          {store.name}
+                        </h3>
+                        <p className="text-xs text-white/90 font-bold" style={{ textShadow: '0 1px 4px rgba(0,0,0,0.9)' }}>
+                          {store.city}{store.neighborhood ? ` • ${store.neighborhood}` : ''}
+                        </p>
+                      </div>
+                    </>
+                  )}
                 </div>
               </div>
             </div>
@@ -220,6 +248,7 @@ export function InstagramGeneratorModal({ store, isOpen, onClose }: InstagramGen
             store={store}
             photoUrl={photos[selectedPhotoIndex]}
             format={format}
+            template={template}
           />
         </div>
       </div>
