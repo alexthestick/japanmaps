@@ -3,9 +3,10 @@ import { useEffect, useState } from 'react';
 import { supabase } from '../lib/supabase';
 import { Loader } from '../components/common/Loader';
 import { PhotoLightbox } from '../components/common/PhotoLightbox';
-import { MapPin, ExternalLink, Instagram, Clock, Navigation, ArrowLeft, ShoppingBag, Globe, Heart } from 'lucide-react';
+import { MapPin, ExternalLink, Instagram, Clock, Navigation, ArrowLeft, ShoppingBag, Globe, Heart, Share2 } from 'lucide-react';
 import { Button } from '../components/common/Button';
 import { SaveButton } from '../components/store/SaveButton';
+import { InstagramGeneratorModal } from '../components/store/InstagramGeneratorModal';
 import type { Store } from '../types/store';
 import { getGoogleMapsUrl } from '../utils/formatters';
 import { parseLocation } from '../utils/helpers';
@@ -19,6 +20,7 @@ export function StoreDetailPage() {
   const [error, setError] = useState<Error | null>(null);
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [lightboxOpen, setLightboxOpen] = useState(false);
+  const [instagramModalOpen, setInstagramModalOpen] = useState(false);
 
   useEffect(() => {
     if (id) {
@@ -455,6 +457,16 @@ export function StoreDetailPage() {
             <div className="space-y-3">
               <SaveButton storeId={store.id} variant="button" className="w-full" />
               <button
+                onClick={() => setInstagramModalOpen(true)}
+                className="w-full px-6 py-3 bg-gradient-to-r from-pink-500/20 to-purple-600/20 text-pink-300 font-bold uppercase rounded-lg hover:from-pink-500/30 hover:to-purple-600/30 transition-all flex items-center justify-center gap-2 border border-pink-500/30 hover:border-pink-500/50"
+                style={{
+                  boxShadow: '0 0 20px rgba(236, 72, 153, 0.2)'
+                }}
+              >
+                <Share2 className="w-5 h-5" />
+                Share to Instagram
+              </button>
+              <button
                 className="w-full px-6 py-3 bg-gradient-to-r from-cyan-500/20 to-cyan-600/20 text-cyan-300 font-bold uppercase rounded-lg hover:from-cyan-500/30 hover:to-cyan-600/30 transition-all flex items-center justify-center gap-2 border border-cyan-500/30 hover:border-cyan-500/50"
                 style={{
                   boxShadow: '0 0 20px rgba(34, 217, 238, 0.2)'
@@ -479,6 +491,13 @@ export function StoreDetailPage() {
           onPrevious={() => setCurrentImageIndex((i) => (i === 0 ? photos.length - 1 : i - 1))}
         />
       )}
+
+      {/* Instagram Generator Modal */}
+      <InstagramGeneratorModal
+        store={store}
+        isOpen={instagramModalOpen}
+        onClose={() => setInstagramModalOpen(false)}
+      />
     </div>
   );
 }
