@@ -5,6 +5,7 @@ export const MAIN_CATEGORIES = [
   'Coffee',
   'Home Goods',
   'Museum',
+  'Spots',
 ] as const;
 
 // Sub-categories for Fashion stores
@@ -21,6 +22,8 @@ export const FASHION_SUB_CATEGORIES = [
   'stationery',
   'flagship',
   'concept store',
+  'womenswear',
+  'select shop',
 ] as const;
 
 // Sub-categories for Food stores
@@ -47,6 +50,7 @@ export const FOOD_SUB_CATEGORIES = [
   'Japanese',
   'Western',
   'Asian',
+  'Foreign',
 ] as const;
 
 // Coffee has no sub-categories (as per user request)
@@ -60,10 +64,14 @@ export const HOME_GOODS_SUB_CATEGORIES = [
   'Art',
   'General Stores',
   'Stationery',
+  'Toys',
 ] as const;
 
 // Museum has no sub-categories
 export const MUSEUM_SUB_CATEGORIES = [] as const;
+
+// Spots has no sub-categories
+export const SPOTS_SUB_CATEGORIES = [] as const;
 
 // All categories combined (for backward compatibility and store selection)
 export const STORE_CATEGORIES = [
@@ -72,11 +80,13 @@ export const STORE_CATEGORIES = [
   ...COFFEE_SUB_CATEGORIES,
   ...HOME_GOODS_SUB_CATEGORIES,
   ...MUSEUM_SUB_CATEGORIES,
+  ...SPOTS_SUB_CATEGORIES,
   'Fashion',
   'Food',
   'Coffee',
   'Home Goods',
   'Museum',
+  'Spots',
   'Shopping',
 ] as const;
 
@@ -117,6 +127,7 @@ export const MAIN_CATEGORY_COLORS = {
   Coffee: '#8B4513', // Rich brown - classic coffee color
   'Home Goods': '#FFD700', // Gold - luxurious and warm
   Museum: '#9370DB', // Medium purple - cultured and elegant
+  Spots: '#10B981', // Emerald green - natural and exploratory
 } as const;
 
 // Main category icons - Using icon names from Lucide React
@@ -127,6 +138,7 @@ export const MAIN_CATEGORY_ICONS = {
   Coffee: 'Coffee',
   'Home Goods': 'Home',
   Museum: 'Building2',
+  Spots: 'MapPin',
 } as const;
 
 // Sub-category colors (for Fashion - used when filter is active)
@@ -143,6 +155,8 @@ export const FASHION_COLORS = {
   stationery: '#EC4899', // pink
   flagship: '#6366F1', // indigo
   'concept store': '#14B8A6', // teal
+  womenswear: '#F472B6', // pink-400
+  'select shop': '#22D3EE', // cyan-400
 } as const;
 
 // Sub-category colors for Food
@@ -169,6 +183,7 @@ export const FOOD_COLORS = {
   Japanese: '#DC2626', // red-600
   Western: '#3B82F6', // blue
   Asian: '#F97316', // orange
+  Foreign: '#06B6D4', // cyan-500
 } as const;
 
 // Sub-category colors for Home Goods
@@ -179,6 +194,7 @@ export const HOME_GOODS_COLORS = {
   Art: '#A855F7', // purple-500
   'General Stores': '#64748B', // slate-600
   Stationery: '#EC4899', // pink
+  Toys: '#F472B6', // pink-400
 } as const;
 
 // Legacy PIN_COLORS - kept for backward compatibility

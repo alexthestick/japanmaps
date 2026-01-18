@@ -1,4 +1,4 @@
-import type { STORE_CATEGORIES, PRICE_RANGES, MAIN_CATEGORIES, FASHION_SUB_CATEGORIES, FOOD_SUB_CATEGORIES, COFFEE_SUB_CATEGORIES, HOME_GOODS_SUB_CATEGORIES } from '../lib/constants';
+import type { STORE_CATEGORIES, PRICE_RANGES, MAIN_CATEGORIES, FASHION_SUB_CATEGORIES, FOOD_SUB_CATEGORIES, COFFEE_SUB_CATEGORIES, HOME_GOODS_SUB_CATEGORIES, SPOTS_SUB_CATEGORIES } from '../lib/constants';
 
 export type StoreCategory = typeof STORE_CATEGORIES[number];
 export type PriceRange = typeof PRICE_RANGES[number];
@@ -7,7 +7,8 @@ export type FashionSubCategory = typeof FASHION_SUB_CATEGORIES[number];
 export type FoodSubCategory = typeof FOOD_SUB_CATEGORIES[number];
 export type CoffeeSubCategory = typeof COFFEE_SUB_CATEGORIES[number];
 export type HomeGoodsSubCategory = typeof HOME_GOODS_SUB_CATEGORIES[number];
-export type SubCategory = FashionSubCategory | FoodSubCategory | CoffeeSubCategory | HomeGoodsSubCategory;
+export type SpotsSubCategory = typeof SPOTS_SUB_CATEGORIES[number];
+export type SubCategory = FashionSubCategory | FoodSubCategory | CoffeeSubCategory | HomeGoodsSubCategory | SpotsSubCategory;
 
 export interface Store {
   id: string;
