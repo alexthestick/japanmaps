@@ -29,8 +29,8 @@ export function RandomStoreModal({
         onClick={onClose}
       />
 
-      {/* Modal - Image-first design */}
-      <div className="relative bg-gradient-to-b from-gray-900 to-black rounded-2xl border-2 border-cyan-400/50 shadow-2xl max-w-lg w-full overflow-hidden"
+      {/* Modal - Image-first design, taller aspect ratio */}
+      <div className="relative bg-gradient-to-b from-gray-900 to-black rounded-2xl border-2 border-cyan-400/50 shadow-2xl max-w-md w-full overflow-hidden"
            style={{ boxShadow: '0 0 40px rgba(34, 217, 238, 0.3)' }}>
         {/* Film grain */}
         <div className="absolute inset-0 film-grain opacity-20 pointer-events-none z-10" />
@@ -38,17 +38,17 @@ export function RandomStoreModal({
         {/* Hero Image Section */}
         <div className="relative">
           {hasImage ? (
-            <div className="relative h-72">
+            <div className="relative h-96">
               <img
                 src={store.photos![0]}
                 alt={store.name}
                 className="w-full h-full object-cover"
               />
               {/* Gradient overlay for text readability */}
-              <div className="absolute inset-0 bg-gradient-to-t from-gray-900 via-gray-900/40 to-transparent" />
+              <div className="absolute inset-0 bg-gradient-to-t from-gray-900 via-gray-900/30 to-transparent" />
             </div>
           ) : (
-            <div className="h-48 bg-gradient-to-br from-gray-800 to-gray-900 flex items-center justify-center">
+            <div className="h-64 bg-gradient-to-br from-gray-800 to-gray-900 flex items-center justify-center">
               <span className="text-6xl opacity-30">📍</span>
             </div>
           )}
