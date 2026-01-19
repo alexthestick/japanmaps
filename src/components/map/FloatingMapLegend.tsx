@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { ChevronDown, Shirt, UtensilsCrossed, Coffee, Home, Building2, LucideIcon } from 'lucide-react';
+import { ChevronDown, Shirt, UtensilsCrossed, Coffee, Home, Building2, MapPin, LucideIcon } from 'lucide-react';
 import { MAIN_CATEGORY_COLORS, MAIN_CATEGORY_ICONS } from '../../lib/constants';
 import type { MainCategory } from '../../types/store';
 
@@ -18,6 +18,7 @@ export function FloatingMapLegend({ selectedCategory, onCategoryClick }: Floatin
       'Coffee': Coffee,
       'Home': Home,
       'Building2': Building2,
+      'MapPin': MapPin,
     };
     return iconMap[iconName] || Shirt;
   };
@@ -29,8 +30,8 @@ export function FloatingMapLegend({ selectedCategory, onCategoryClick }: Floatin
         {/* Animated glow effect */}
         <div className="absolute -inset-1 bg-gradient-to-r from-cyan-500 via-blue-500 to-purple-500 rounded-xl opacity-40 blur-md animate-pulse"></div>
 
-        {/* Main card */}
-        <div className="relative bg-gradient-to-b from-gray-900/98 to-black/98 backdrop-blur-xl rounded-xl shadow-2xl border-2 border-cyan-400/50 p-4 min-w-[220px]">
+        {/* Main card - Increased opacity for better readability on light maps */}
+        <div className="relative bg-gradient-to-b from-gray-950 to-black backdrop-blur-xl rounded-xl shadow-2xl border-2 border-cyan-400/50 p-4 min-w-[220px]">
           {/* Film grain */}
           <div className="absolute inset-0 film-grain opacity-15 pointer-events-none rounded-xl" />
 

@@ -1,5 +1,5 @@
 import { MAIN_CATEGORIES, MAIN_CATEGORY_ICONS, FASHION_SUB_CATEGORIES, FOOD_SUB_CATEGORIES, HOME_GOODS_SUB_CATEGORIES } from '../../lib/constants';
-import { Shirt, UtensilsCrossed, Coffee, Home, Building2, LucideIcon } from 'lucide-react';
+import { Shirt, UtensilsCrossed, Coffee, Home, Building2, MapPin, LucideIcon } from 'lucide-react';
 import type { MainCategory } from '../../types/store';
 
 // Map icon names to actual icon components
@@ -10,6 +10,7 @@ const getCategoryIcon = (iconName: string): LucideIcon => {
     'Coffee': Coffee,
     'Home': Home,
     'Building2': Building2,
+    'MapPin': MapPin,
   };
   return iconMap[iconName] || Shirt; // Default to Shirt if not found
 };

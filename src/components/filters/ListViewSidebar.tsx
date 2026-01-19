@@ -1,5 +1,5 @@
 import { HierarchicalLocationList } from './HierarchicalLocationList';
-import { Shirt, UtensilsCrossed, Coffee, Home, Building2 } from 'lucide-react';
+import { Shirt, UtensilsCrossed, Coffee, Home, Building2, MapPin } from 'lucide-react';
 import type { MainCategory } from '../../types/store';
 import { FASHION_SUB_CATEGORIES, FOOD_SUB_CATEGORIES, HOME_GOODS_SUB_CATEGORIES } from '../../lib/constants';
 
@@ -21,6 +21,7 @@ const MAIN_CATEGORIES = [
   { id: 'Coffee' as MainCategory, label: 'Coffee', icon: Coffee },
   { id: 'Home Goods' as MainCategory, label: 'Home Goods', icon: Home },
   { id: 'Museum' as MainCategory, label: 'Museum', icon: Building2 },
+  { id: 'Spots' as MainCategory, label: 'Spots', icon: MapPin },
 ];
 
 export function ListViewSidebar({
