@@ -5,6 +5,7 @@ import { MapPin, ExternalLink, ChevronLeft, ChevronRight } from 'lucide-react';
 import useEmblaCarousel from 'embla-carousel-react';
 import { supabase } from '../../lib/supabase';
 import type { Store } from '../../types/store';
+import { generateSlug } from '../../utils/slugify';
 
 export function FeaturedStoresCarousel() {
   const sectionRef = useRef<HTMLElement>(null);
@@ -33,6 +34,7 @@ export function FeaturedStoresCarousel() {
       if (data && !error) {
         setStores(data.map(store => ({
           ...store,
+          slug: store.slug || generateSlug(store.name, store.city),
           mainCategory: store.main_category,
           priceRange: store.price_range,
           createdAt: store.created_at,
@@ -55,10 +57,10 @@ export function FeaturedStoresCarousel() {
     if (emblaApi) emblaApi.scrollNext();
   }, [emblaApi]);
 
-  const handleStoreClick = (storeId: string, e: React.MouseEvent) => {
+  const handleStoreClick = (store: Store, e: React.MouseEvent) => {
     // Prevent navigation if dragging
     if (emblaApi && emblaApi.clickAllowed()) {
-      navigate(`/store/${storeId}`);
+      navigate(`/store/${store.slug || store.id}`);
     }
   };
 
@@ -135,7 +137,7 @@ export function FeaturedStoresCarousel() {
                       ease: [0.22, 1, 0.36, 1],
                     }}
                     className="group relative min-w-0 flex-[0_0_85%] cursor-pointer md:flex-[0_0_45%] lg:flex-[0_0_30%]"
-                    onClick={(e) => handleStoreClick(store.id, e)}
+                    onClick={(e) => handleStoreClick(store, e)}
                   >
                     {/* Image Container */}
                     <div className="relative aspect-[4/5] w-full overflow-hidden rounded-lg">

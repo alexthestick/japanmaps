@@ -511,7 +511,7 @@ export function HomePage() {
           onSortChange={setSortBy}
           onStoreClick={(store) => {
             const params = Object.fromEntries(searchParams.entries());
-            navigate(`/store/${store.id}`, { state: { from: '/map', params } });
+            navigate(`/store/${store.slug || store.id}`, { state: { from: '/map', params } });
           }}
           onSelectSuggestion={handleSearchSuggestionSelect}
           onBackToMap={() => setView('map')}
@@ -617,7 +617,7 @@ export function HomePage() {
               stores={sortedStores}
               onStoreClick={(store) => {
                 const params = Object.fromEntries(searchParams.entries());
-                navigate(`/store/${store.id}`, { state: { from: '/map', params } });
+                navigate(`/store/${store.slug || store.id}`, { state: { from: '/map', params } });
               }}
             />
 
@@ -632,7 +632,7 @@ export function HomePage() {
                 }}
                 onViewStore={() => {
                   const params = Object.fromEntries(searchParams.entries());
-                  navigate(`/store/${randomStore.id}`, { state: { from: '/map', params } });
+                  navigate(`/store/${randomStore.slug || randomStore.id}`, { state: { from: '/map', params } });
                 }}
               />
             )}

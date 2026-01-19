@@ -184,7 +184,7 @@ export function SavedStoresPage() {
                     <div className="flex gap-4 p-4">
                       {/* Thumbnail - Enhanced with shadow and hover effect */}
                       <div
-                        onClick={() => navigate(`/store/${store.id}`)}
+                        onClick={() => navigate(`/store/${store.slug || store.id}`)}
                         className="relative flex-shrink-0 w-28 h-28 rounded-xl overflow-hidden cursor-pointer shadow-sm hover:shadow-md transition-all"
                       >
                         <img
@@ -208,7 +208,7 @@ export function SavedStoresPage() {
                       {/* Store Info */}
                       <div className="flex-1 min-w-0">
                         <h3
-                          onClick={() => navigate(`/store/${store.id}`)}
+                          onClick={() => navigate(`/store/${store.slug || store.id}`)}
                           className="font-bold text-gray-900 mb-1 cursor-pointer hover:text-blue-600 transition-colors truncate"
                         >
                           {store.name}
@@ -299,7 +299,7 @@ export function SavedStoresPage() {
                     longitude={store.longitude}
                     latitude={store.latitude}
                     anchor="bottom"
-                    onClick={() => navigate(`/store/${store.id}`)}
+                    onClick={() => navigate(`/store/${store.slug || store.id}`)}
                   >
                     <div
                       className={`cursor-pointer transition-transform ${isHovered ? 'scale-125' : 'scale-100'}`}

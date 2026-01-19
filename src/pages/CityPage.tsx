@@ -292,7 +292,7 @@ export function CityPage() {
           <StoreList
             stores={sortedStores}
             loading={loading}
-            onStoreClick={(store) => navigate(`/store/${store.id}`)}
+            onStoreClick={(store) => navigate(`/store/${store.slug || store.id}`)}
           />
         </div>
       </div>

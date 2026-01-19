@@ -12,7 +12,9 @@ export type SubCategory = FashionSubCategory | FoodSubCategory | CoffeeSubCatego
 
 export interface Store {
   id: string;
+  slug?: string; // SEO-friendly URL slug
   name: string;
+  nameJapanese?: string; // Japanese name
   address: string;
   city: string;
   neighborhood?: string;
@@ -20,6 +22,7 @@ export interface Store {
   latitude: number;
   longitude: number;
   mainCategory?: MainCategory; // Optional until migration runs
+  category?: string; // Primary subcategory
   categories: StoreCategory[];
   priceRange?: PriceRange;
   description?: string;

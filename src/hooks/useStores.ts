@@ -1,6 +1,7 @@
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '../lib/supabase';
 import type { Store, StoreFilters } from '../types/store';
+import { generateSlug } from '../utils/slugify';
 
 /**
  * Fetch all stores from database
@@ -22,7 +23,9 @@ async function fetchAllStores(): Promise<Store[]> {
   // Transform data to match Store type
   const transformedStores: Store[] = data.map((store: any) => ({
     id: store.id,
+    slug: store.slug || generateSlug(store.name, store.city), // Use DB slug or generate one
     name: store.name,
+    nameJapanese: store.name_japanese || undefined,
     address: store.address,
     city: store.city,
     neighborhood: store.neighborhood || undefined,
@@ -30,6 +33,7 @@ async function fetchAllStores(): Promise<Store[]> {
     latitude: store.latitude,
     longitude: store.longitude,
     mainCategory: store.main_category || 'Fashion',
+    category: store.category || (store.categories && store.categories[0]) || undefined,
     categories: store.categories as any,
     priceRange: store.price_range as any,
     description: store.description || undefined,

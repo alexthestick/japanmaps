@@ -10,6 +10,7 @@ import { InstagramGeneratorModal } from '../components/store/InstagramGeneratorM
 import type { Store } from '../types/store';
 import { getGoogleMapsUrl } from '../utils/formatters';
 import { parseLocation } from '../utils/helpers';
+import { isUUID, generateSlug } from '../utils/slugify';
 
 export function StoreDetailPage() {
   const { id } = useParams<{ id: string }>();
@@ -28,30 +29,59 @@ export function StoreDetailPage() {
     }
   }, [id]);
 
-  async function fetchStore(storeId: string) {
+  async function fetchStore(idOrSlug: string) {
     try {
       setLoading(true);
-      const { data, error: fetchError } = await supabase
-        .from('stores')
-        .select('*')
-        .eq('id', storeId)
-        .single();
 
-      if (fetchError) throw fetchError;
+      // Determine if we're looking up by ID (UUID) or slug
+      const lookupField = isUUID(idOrSlug) ? 'id' : 'slug';
+
+      let query = supabase
+        .from('stores')
+        .select('*');
+
+      if (lookupField === 'id') {
+        query = query.eq('id', idOrSlug);
+      } else {
+        // Try slug first, fall back to generated slug match
+        query = query.eq('slug', idOrSlug);
+      }
+
+      let { data, error: fetchError } = await query.single();
+
+      // If slug lookup failed, try matching by generated slug from name
+      if (fetchError && lookupField === 'slug') {
+        const { data: allStores } = await supabase
+          .from('stores')
+          .select('*');
+
+        if (allStores) {
+          data = allStores.find((s: any) =>
+            generateSlug(s.name, s.city) === idOrSlug
+          );
+          if (data) fetchError = null;
+        }
+      }
+
+      if (fetchError || !data) throw fetchError || new Error('Store not found');
 
       const { latitude, longitude } = parseLocation((data as any).location);
 
       const storeData = data as any;
-      
+
       const transformedStore: Store = {
         id: storeData.id,
+        slug: storeData.slug || generateSlug(storeData.name, storeData.city),
         name: storeData.name,
+        nameJapanese: storeData.name_japanese || undefined,
         address: storeData.address,
         city: storeData.city,
         neighborhood: storeData.neighborhood || undefined,
         country: storeData.country,
         latitude,
         longitude,
+        mainCategory: storeData.main_category || undefined,
+        category: storeData.category || (storeData.categories && storeData.categories[0]) || undefined,
         categories: storeData.categories as any,
         priceRange: storeData.price_range as any,
         description: storeData.description || undefined,
@@ -68,6 +98,11 @@ export function StoreDetailPage() {
       };
 
       setStore(transformedStore);
+
+      // If accessed via UUID and we have a slug, redirect to SEO-friendly URL
+      if (isUUID(idOrSlug) && transformedStore.slug) {
+        navigate(`/store/${transformedStore.slug}`, { replace: true });
+      }
     } catch (err) {
       setError(err as Error);
     } finally {
