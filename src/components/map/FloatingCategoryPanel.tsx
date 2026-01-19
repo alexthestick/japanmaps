@@ -22,6 +22,7 @@ const CATEGORIES = [
   { id: 'Coffee' as MainCategory, label: 'Coffee', icon: Coffee, hasSubcategories: false },
   { id: 'Home Goods' as MainCategory, label: 'Home Goods', icon: Home, hasSubcategories: true },
   { id: 'Museum' as MainCategory, label: 'Museum', icon: Landmark, hasSubcategories: false },
+  { id: 'Spots' as MainCategory, label: 'Spots', icon: MapPin, hasSubcategories: false },
 ];
 
 const SUBCATEGORY_MAP: Record<string, readonly string[]> = {

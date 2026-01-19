@@ -18,13 +18,14 @@ interface CityFilterSidebarProps {
   }) => void;
 }
 
-const MAIN_CATEGORIES = ['Fashion', 'Food', 'Coffee', 'Home Goods', 'Museum'];
+const MAIN_CATEGORIES = ['Fashion', 'Food', 'Coffee', 'Home Goods', 'Museum', 'Spots'];
 const CATEGORY_ICONS = {
   Fashion: '👔',
   Food: '🍜',
   Coffee: '☕',
   'Home Goods': '🏠',
   Museum: '🏛️',
+  Spots: '📍',
 };
 
 // Subcategories for expandable categories - using actual constants from the system
