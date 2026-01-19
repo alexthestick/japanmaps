@@ -213,7 +213,7 @@ export function FloatingCategoryPanel({
             {onClearAll && (selectedMainCategory || selectedSubCategories.length > 0 || selectedCity || selectedNeighborhood) && (
               <button
                 onClick={onClearAll}
-                className="p-1.5 rounded-lg text-gray-300 hover:text-red-400 hover:bg-gray-800 transition-all"
+                className="p-1.5 rounded-lg text-red-400 hover:text-red-300 hover:bg-red-500/20 transition-all"
                 title="Clear all filters"
               >
                 <RotateCcw className="w-4 h-4" />
