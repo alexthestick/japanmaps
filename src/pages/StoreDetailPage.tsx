@@ -15,7 +15,7 @@ import { isUUID, generateSlug } from '../utils/slugify';
 import { MAIN_CATEGORY_COLORS } from '../lib/constants';
 import 'mapbox-gl/dist/mapbox-gl.css';
 
-const MAPBOX_TOKEN = import.meta.env.VITE_MAPBOX_ACCESS_TOKEN;
+const MAPBOX_TOKEN = import.meta.env.VITE_MAPBOX_TOKEN;
 const MAP_STYLE = 'mapbox://styles/mapbox/dark-v11';
 
 export function StoreDetailPage() {
