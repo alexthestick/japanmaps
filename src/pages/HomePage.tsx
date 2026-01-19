@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef, useMemo, useCallback } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import { AnimatePresence } from 'framer-motion';
+import { Dices } from 'lucide-react';
 import { MapView } from '../components/map/MapView';
 import { StoreList } from '../components/store/StoreList';
 import { StoreDetail } from '../components/store/StoreDetail';
@@ -15,6 +16,7 @@ import { MobileListView } from '../components/mobile/MobileListView';
 import { ListViewSidebar } from '../components/filters/ListViewSidebar';
 import { SortDropdown } from '../components/store/SortDropdown';
 import { BottomSheet } from '../components/common/BottomSheet';
+import { RandomStoreModal } from '../components/store/RandomStoreModal';
 import { useStores } from '../hooks/useStores';
 import { useIsMobile } from '../hooks/useMediaQuery';
 import { Loader } from '../components/common/Loader';
@@ -58,6 +60,9 @@ export function HomePage() {
   const [showCityDrawer, setShowCityDrawer] = useState(false);
   const [tappedStoreId, setTappedStoreId] = useState<string | null>(null); // Track first tap on mobile
   const isMobile = useIsMobile();
+
+  // Random store modal state (for list view)
+  const [randomStore, setRandomStore] = useState<Store | null>(null);
 
   // Map style mode state
   const getInitialStyleMode = (): 'day' | 'night' => {
@@ -347,6 +352,15 @@ export function HomePage() {
                 onSubCategoryToggle={handleSubCategoryToggle}
                 onCityChange={handleCityChange}
                 onNeighborhoodChange={setSelectedNeighborhood}
+                stores={filteredStores}
+                onRandomStore={(store) => {
+                  // Zoom to the store and open its detail panel
+                  if (mapViewRef.current?.flyToStore) {
+                    mapViewRef.current.flyToStore(store.latitude, store.longitude);
+                  }
+                  setSelectedStore(store);
+                }}
+                onClearAll={handleClearAll}
               />
 
               {/* Floating Map Legend */}
@@ -562,8 +576,24 @@ export function HomePage() {
 
               {/* Stats and Controls Row */}
               <div className="flex items-center justify-between">
-                <div className="text-sm">
-                  <span className="font-bold text-white">{sortedStores.length}</span> <span className="text-gray-400">stores</span>
+                <div className="flex items-center gap-3 text-sm">
+                  <span>
+                    <span className="font-bold text-white">{sortedStores.length}</span> <span className="text-gray-400">stores</span>
+                  </span>
+                  {/* Random Store Button */}
+                  {sortedStores.length > 0 && (
+                    <button
+                      onClick={() => {
+                        const randomIndex = Math.floor(Math.random() * sortedStores.length);
+                        setRandomStore(sortedStores[randomIndex]);
+                      }}
+                      className="p-2 rounded-lg border border-cyan-400/50 text-cyan-300 hover:bg-cyan-500/20 hover:border-cyan-400 transition-all"
+                      title="Pick a random store"
+                      style={{ boxShadow: '0 0 10px rgba(34, 217, 238, 0.2)' }}
+                    >
+                      <Dices className="w-4 h-4" />
+                    </button>
+                  )}
                 </div>
                 <div className="flex items-center gap-3">
                   <SortDropdown value={sortBy} onChange={setSortBy} />
@@ -590,6 +620,22 @@ export function HomePage() {
                 navigate(`/store/${store.id}`, { state: { from: '/map', params } });
               }}
             />
+
+            {/* Random Store Modal */}
+            {randomStore && (
+              <RandomStoreModal
+                store={randomStore}
+                onClose={() => setRandomStore(null)}
+                onSpinAgain={() => {
+                  const randomIndex = Math.floor(Math.random() * sortedStores.length);
+                  setRandomStore(sortedStores[randomIndex]);
+                }}
+                onViewStore={() => {
+                  const params = Object.fromEntries(searchParams.entries());
+                  navigate(`/store/${randomStore.id}`, { state: { from: '/map', params } });
+                }}
+              />
+            )}
           </div>
         </div>
       )}

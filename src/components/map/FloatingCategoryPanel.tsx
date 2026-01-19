@@ -1,6 +1,6 @@
 import { useState } from 'react';
-import { MapPin, ShoppingBag, Utensils, Coffee, Home, Landmark, ChevronDown } from 'lucide-react';
-import type { MainCategory } from '../../types/store';
+import { MapPin, ShoppingBag, Utensils, Coffee, Home, Landmark, ChevronDown, Dices, RotateCcw } from 'lucide-react';
+import type { MainCategory, Store } from '../../types/store';
 import { FASHION_SUB_CATEGORIES, FOOD_SUB_CATEGORIES, HOME_GOODS_SUB_CATEGORIES, MAJOR_CITIES_JAPAN, LOCATIONS } from '../../lib/constants';
 import { FilterModal } from '../common/FilterModal';
 
@@ -13,6 +13,9 @@ interface FloatingCategoryPanelProps {
   onSubCategoryToggle: (subcategory: string) => void;
   onCityChange: (city: string | null) => void;
   onNeighborhoodChange: (neighborhood: string | null) => void;
+  stores?: Store[];
+  onRandomStore?: (store: Store) => void;
+  onClearAll?: () => void;
 }
 
 // FIXED ORDER - No random shuffle
@@ -43,6 +46,9 @@ export function FloatingCategoryPanel({
   onSubCategoryToggle,
   onCityChange,
   onNeighborhoodChange,
+  stores = [],
+  onRandomStore,
+  onClearAll,
 }: FloatingCategoryPanelProps) {
   const [activeModal, setActiveModal] = useState<'subcategory' | 'city' | null>(null);
   const [modalCategory, setModalCategory] = useState<MainCategory | null>(null);
@@ -185,6 +191,34 @@ export function FloatingCategoryPanel({
               <span className="max-w-[120px] truncate">{citiesButtonText}</span>
               <ChevronDown className="w-2.5 h-2.5 ml-0.5" />
             </button>
+
+            {/* Divider */}
+            <div className="w-px h-5 bg-cyan-400/30 mx-1" />
+
+            {/* Random Store Button */}
+            {onRandomStore && stores.length > 0 && (
+              <button
+                onClick={() => {
+                  const randomIndex = Math.floor(Math.random() * stores.length);
+                  onRandomStore(stores[randomIndex]);
+                }}
+                className="p-1.5 rounded-lg text-gray-300 hover:text-cyan-300 hover:bg-gray-800 transition-all"
+                title="Random store"
+              >
+                <Dices className="w-4 h-4" />
+              </button>
+            )}
+
+            {/* Clear All Filters Button */}
+            {onClearAll && (selectedMainCategory || selectedSubCategories.length > 0 || selectedCity || selectedNeighborhood) && (
+              <button
+                onClick={onClearAll}
+                className="p-1.5 rounded-lg text-gray-300 hover:text-red-400 hover:bg-gray-800 transition-all"
+                title="Clear all filters"
+              >
+                <RotateCcw className="w-4 h-4" />
+              </button>
+            )}
           </div>
         </div>
       </div>
