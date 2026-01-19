@@ -1,5 +1,6 @@
 import { useParams, useNavigate, useLocation } from 'react-router-dom';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
+import Map, { Marker, NavigationControl } from 'react-map-gl';
 import { supabase } from '../lib/supabase';
 import { Loader } from '../components/common/Loader';
 import { PhotoLightbox } from '../components/common/PhotoLightbox';
@@ -11,6 +12,11 @@ import type { Store } from '../types/store';
 import { getGoogleMapsUrl } from '../utils/formatters';
 import { parseLocation } from '../utils/helpers';
 import { isUUID, generateSlug } from '../utils/slugify';
+import { MAIN_CATEGORY_COLORS } from '../lib/constants';
+import 'mapbox-gl/dist/mapbox-gl.css';
+
+const MAPBOX_TOKEN = import.meta.env.VITE_MAPBOX_ACCESS_TOKEN;
+const MAP_STYLE = 'mapbox://styles/mapbox/dark-v11';
 
 export function StoreDetailPage() {
   const { id } = useParams<{ id: string }>();
@@ -350,13 +356,37 @@ export function StoreDetailPage() {
                 LOCATION
               </h2>
               <div className="aspect-video bg-gray-900 rounded-lg overflow-hidden border-2 border-cyan-500/30 shadow-[0_0_30px_rgba(34,217,238,0.2)]">
-                <iframe
-                  width="100%"
-                  height="100%"
-                  frameBorder="0"
-                  src={`https://www.google.com/maps/embed/v1/place?key=${import.meta.env.VITE_GOOGLE_PLACES_API_KEY}&q=${encodeURIComponent(store.address)}`}
-                  allowFullScreen
-                />
+                <Map
+                  initialViewState={{
+                    longitude: store.longitude,
+                    latitude: store.latitude,
+                    zoom: 15,
+                  }}
+                  style={{ width: '100%', height: '100%' }}
+                  mapStyle={MAP_STYLE}
+                  mapboxAccessToken={MAPBOX_TOKEN}
+                  interactive={true}
+                  scrollZoom={false}
+                >
+                  <NavigationControl position="top-right" />
+                  <Marker
+                    longitude={store.longitude}
+                    latitude={store.latitude}
+                    anchor="bottom"
+                  >
+                    <div
+                      className="w-8 h-8 rounded-full flex items-center justify-center shadow-lg"
+                      style={{
+                        backgroundColor: store.mainCategory
+                          ? MAIN_CATEGORY_COLORS[store.mainCategory as keyof typeof MAIN_CATEGORY_COLORS]
+                          : '#22D9EE',
+                        boxShadow: `0 0 15px ${store.mainCategory ? MAIN_CATEGORY_COLORS[store.mainCategory as keyof typeof MAIN_CATEGORY_COLORS] : '#22D9EE'}80`
+                      }}
+                    >
+                      <MapPin className="w-5 h-5 text-white" />
+                    </div>
+                  </Marker>
+                </Map>
               </div>
             </div>
           </div>
