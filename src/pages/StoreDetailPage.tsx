@@ -23,6 +23,7 @@ export function StoreDetailPage() {
   const navigate = useNavigate();
   const location = useLocation();
   const [store, setStore] = useState<Store | null>(null);
+  const [similarStores, setSimilarStores] = useState<Store[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
@@ -34,6 +35,69 @@ export function StoreDetailPage() {
       fetchStore(id);
     }
   }, [id]);
+
+  // Fetch similar stores when main store is loaded
+  useEffect(() => {
+    if (store) {
+      fetchSimilarStores(store);
+    }
+  }, [store]);
+
+  async function fetchSimilarStores(currentStore: Store) {
+    try {
+      // Fetch stores that match either same category in same city, or same subcategory anywhere
+      const { data, error } = await supabase
+        .from('stores')
+        .select('*')
+        .neq('id', currentStore.id) // Exclude current store
+        .limit(20);
+
+      if (data && !error) {
+        // Score and sort by relevance
+        const scoredStores = data.map((s: any) => {
+          let score = 0;
+          // Same main category = 2 points
+          if (s.main_category === currentStore.mainCategory) score += 2;
+          // Same city = 2 points
+          if (s.city === currentStore.city) score += 2;
+          // Same neighborhood = 1 point
+          if (s.neighborhood === currentStore.neighborhood) score += 1;
+          // Overlapping subcategories = 1 point each
+          const overlap = currentStore.categories.filter(c => s.categories?.includes(c)).length;
+          score += overlap;
+
+          return { store: s, score };
+        })
+        .filter(item => item.score > 0) // Only include if there's some relevance
+        .sort((a, b) => b.score - a.score) // Sort by score descending
+        .slice(0, 6) // Take top 6
+        .map(item => ({
+          id: item.store.id,
+          slug: item.store.slug || generateSlug(item.store.name, item.store.city),
+          name: item.store.name,
+          nameJapanese: item.store.name_japanese,
+          address: item.store.address,
+          city: item.store.city,
+          neighborhood: item.store.neighborhood,
+          country: item.store.country,
+          latitude: 0,
+          longitude: 0,
+          mainCategory: item.store.main_category,
+          categories: item.store.categories || [],
+          photos: item.store.photos || [],
+          verified: item.store.verified,
+          createdAt: item.store.created_at,
+          updatedAt: item.store.updated_at,
+          haulCount: item.store.haul_count || 0,
+          saveCount: item.store.save_count || 0,
+        }));
+
+        setSimilarStores(scoredStores);
+      }
+    } catch (err) {
+      console.error('Error fetching similar stores:', err);
+    }
+  }
 
   async function fetchStore(idOrSlug: string) {
     try {
@@ -194,7 +258,7 @@ export function StoreDetailPage() {
           </div>
 
           {/* Store Title */}
-          <div className="flex items-center gap-4 mb-3">
+          <div className="flex flex-wrap items-center gap-4 mb-3">
             <h1
               className="text-4xl md:text-6xl font-black italic uppercase tracking-tight"
               style={{
@@ -211,9 +275,38 @@ export function StoreDetailPage() {
             )}
           </div>
 
-          <p className="text-lg text-gray-400">
+          {/* Japanese name if available */}
+          {store.nameJapanese && (
+            <p className="text-xl text-gray-400 mb-3 font-medium">{store.nameJapanese}</p>
+          )}
+
+          {/* Location */}
+          <p className="text-lg text-gray-400 mb-4">
             {store.neighborhood ? `${store.neighborhood}, ` : ''}{store.city}
           </p>
+
+          {/* Category Tags - Moved from separate section */}
+          <div className="flex flex-wrap items-center gap-2">
+            {store.mainCategory && (
+              <span
+                className="px-4 py-1.5 text-sm font-bold uppercase rounded-full text-white"
+                style={{
+                  backgroundColor: MAIN_CATEGORY_COLORS[store.mainCategory as keyof typeof MAIN_CATEGORY_COLORS] || '#22D9EE',
+                  boxShadow: `0 0 15px ${MAIN_CATEGORY_COLORS[store.mainCategory as keyof typeof MAIN_CATEGORY_COLORS] || '#22D9EE'}40`
+                }}
+              >
+                {store.mainCategory}
+              </span>
+            )}
+            {store.categories.map((category) => (
+              <span
+                key={category}
+                className="px-3 py-1.5 bg-gray-700/50 text-gray-300 text-sm font-medium rounded-full border border-gray-600/30"
+              >
+                {category}
+              </span>
+            ))}
+          </div>
         </div>
       </div>
 
@@ -315,34 +408,6 @@ export function StoreDetailPage() {
                 </p>
               </div>
             )}
-
-            {/* Categories */}
-            <div className="bg-gradient-to-br from-gray-800/50 to-gray-900/50 p-6 rounded-xl border border-cyan-500/20">
-              <h2
-                className="text-2xl font-black italic uppercase mb-4"
-                style={{
-                  color: '#22D9EE',
-                  textShadow: '0 0 20px rgba(34, 217, 238, 0.3)'
-                }}
-              >
-                CATEGORIES
-              </h2>
-              <div className="flex flex-wrap gap-2">
-                {store.mainCategory && (
-                  <span className="px-4 py-2 bg-cyan-500/20 text-cyan-300 text-sm font-bold uppercase rounded-full border border-cyan-500/30">
-                    {store.mainCategory}
-                  </span>
-                )}
-                {store.categories.map((category) => (
-                  <span
-                    key={category}
-                    className="px-4 py-2 bg-gray-700/50 text-gray-300 text-sm font-medium rounded-full border border-gray-600/30"
-                  >
-                    {category}
-                  </span>
-                ))}
-              </div>
-            </div>
 
             {/* Map */}
             <div className="bg-gradient-to-br from-gray-800/50 to-gray-900/50 p-6 rounded-xl border border-cyan-500/20">
@@ -543,6 +608,79 @@ export function StoreDetailPage() {
             </div>
           </div>
         </div>
+      </div>
+
+      {/* Similar Stores Section */}
+      {similarStores.length > 0 && (
+        <div className="relative z-10 max-w-6xl mx-auto px-6 md:px-12 py-12 border-t border-cyan-500/20">
+          <h2
+            className="text-2xl font-black italic uppercase mb-8"
+            style={{
+              color: '#22D9EE',
+              textShadow: '0 0 20px rgba(34, 217, 238, 0.3)'
+            }}
+          >
+            Similar Stores
+          </h2>
+          <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+            {similarStores.map((similarStore) => {
+              const thumbnail = similarStore.photos?.[0] || 'https://images.unsplash.com/photo-1441986300917-64674bd600d8?w=400&h=300&fit=crop';
+              const categoryColor = similarStore.mainCategory
+                ? MAIN_CATEGORY_COLORS[similarStore.mainCategory as keyof typeof MAIN_CATEGORY_COLORS]
+                : '#22D9EE';
+
+              return (
+                <div
+                  key={similarStore.id}
+                  onClick={() => navigate(`/store/${similarStore.slug || similarStore.id}`)}
+                  className="group cursor-pointer bg-gradient-to-br from-gray-800/50 to-gray-900/50 rounded-xl overflow-hidden border border-cyan-500/20 hover:border-cyan-500/50 transition-all"
+                >
+                  {/* Image */}
+                  <div className="relative aspect-[4/3] overflow-hidden">
+                    <img
+                      src={thumbnail}
+                      alt={similarStore.name}
+                      className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-110"
+                    />
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
+                    {/* Category badge */}
+                    <span
+                      className="absolute top-2 left-2 px-2 py-1 text-xs font-bold uppercase rounded-full text-white"
+                      style={{ backgroundColor: categoryColor }}
+                    >
+                      {similarStore.mainCategory}
+                    </span>
+                  </div>
+                  {/* Info */}
+                  <div className="p-3">
+                    <h3 className="font-bold text-white text-sm truncate group-hover:text-cyan-300 transition-colors">
+                      {similarStore.name}
+                    </h3>
+                    <p className="text-xs text-gray-400 truncate">
+                      {similarStore.neighborhood ? `${similarStore.neighborhood}, ` : ''}{similarStore.city}
+                    </p>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
+      {/* Back to List Button */}
+      <div className="relative z-10 max-w-6xl mx-auto px-6 md:px-12 py-12 text-center">
+        <button
+          onClick={() => {
+            const state = location.state as any;
+            const params = new URLSearchParams(state?.params || {});
+            const fallback = `/map?view=list${params.toString() ? `&${params.toString()}` : ''}`;
+            navigate(fallback);
+          }}
+          className="px-8 py-3 bg-gradient-to-r from-cyan-500/20 to-blue-500/20 text-cyan-300 font-bold uppercase rounded-lg hover:from-cyan-500/30 hover:to-blue-500/30 transition-all border border-cyan-500/30 hover:border-cyan-500/50"
+          style={{ boxShadow: '0 0 20px rgba(34, 217, 238, 0.2)' }}
+        >
+          ← Back to Store List
+        </button>
       </div>
 
       {/* Photo Lightbox */}
