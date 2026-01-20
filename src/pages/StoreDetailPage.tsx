@@ -13,10 +13,8 @@ import { getGoogleMapsUrl } from '../utils/formatters';
 import { parseLocation } from '../utils/helpers';
 import { isUUID, generateSlug } from '../utils/slugify';
 import { MAIN_CATEGORY_COLORS } from '../lib/constants';
+import { MAPBOX_TOKEN, MAP_STYLE_NIGHT } from '../lib/mapbox';
 import 'mapbox-gl/dist/mapbox-gl.css';
-
-const MAPBOX_TOKEN = import.meta.env.VITE_MAPBOX_TOKEN;
-const MAP_STYLE = 'mapbox://styles/mapbox/dark-v11';
 
 export function StoreDetailPage() {
   const { id } = useParams<{ id: string }>();
@@ -421,37 +419,44 @@ export function StoreDetailPage() {
                 LOCATION
               </h2>
               <div className="aspect-video bg-gray-900 rounded-lg overflow-hidden border-2 border-cyan-500/30 shadow-[0_0_30px_rgba(34,217,238,0.2)]">
-                <Map
-                  initialViewState={{
-                    longitude: store.longitude,
-                    latitude: store.latitude,
-                    zoom: 15,
-                  }}
-                  style={{ width: '100%', height: '100%' }}
-                  mapStyle={MAP_STYLE}
-                  mapboxAccessToken={MAPBOX_TOKEN}
-                  interactive={true}
-                  scrollZoom={false}
-                >
-                  <NavigationControl position="top-right" />
-                  <Marker
-                    longitude={store.longitude}
-                    latitude={store.latitude}
-                    anchor="bottom"
+                {MAPBOX_TOKEN ? (
+                  <Map
+                    initialViewState={{
+                      longitude: store.longitude,
+                      latitude: store.latitude,
+                      zoom: 15,
+                    }}
+                    style={{ width: '100%', height: '100%' }}
+                    mapStyle={MAP_STYLE_NIGHT}
+                    mapboxAccessToken={MAPBOX_TOKEN}
+                    interactive={true}
+                    scrollZoom={false}
+                    attributionControl={true}
                   >
-                    <div
-                      className="w-8 h-8 rounded-full flex items-center justify-center shadow-lg"
-                      style={{
-                        backgroundColor: store.mainCategory
-                          ? MAIN_CATEGORY_COLORS[store.mainCategory as keyof typeof MAIN_CATEGORY_COLORS]
-                          : '#22D9EE',
-                        boxShadow: `0 0 15px ${store.mainCategory ? MAIN_CATEGORY_COLORS[store.mainCategory as keyof typeof MAIN_CATEGORY_COLORS] : '#22D9EE'}80`
-                      }}
+                    <NavigationControl position="top-right" />
+                    <Marker
+                      longitude={store.longitude}
+                      latitude={store.latitude}
+                      anchor="bottom"
                     >
-                      <MapPin className="w-5 h-5 text-white" />
-                    </div>
-                  </Marker>
-                </Map>
+                      <div
+                        className="w-8 h-8 rounded-full flex items-center justify-center shadow-lg"
+                        style={{
+                          backgroundColor: store.mainCategory
+                            ? MAIN_CATEGORY_COLORS[store.mainCategory as keyof typeof MAIN_CATEGORY_COLORS]
+                            : '#22D9EE',
+                          boxShadow: `0 0 15px ${store.mainCategory ? MAIN_CATEGORY_COLORS[store.mainCategory as keyof typeof MAIN_CATEGORY_COLORS] : '#22D9EE'}80`
+                        }}
+                      >
+                        <MapPin className="w-5 h-5 text-white" />
+                      </div>
+                    </Marker>
+                  </Map>
+                ) : (
+                  <div className="w-full h-full flex items-center justify-center text-gray-500">
+                    Map unavailable
+                  </div>
+                )}
               </div>
             </div>
           </div>
@@ -620,7 +625,7 @@ export function StoreDetailPage() {
               textShadow: '0 0 20px rgba(34, 217, 238, 0.3)'
             }}
           >
-            Similar Stores
+            Other Places
           </h2>
           <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
             {similarStores.map((similarStore) => {
