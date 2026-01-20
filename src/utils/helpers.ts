@@ -27,7 +27,7 @@ export function parseLocation(location: any): { latitude: number; longitude: num
 
   // Handle binary WKB format (hex string) from PostGIS
   // This is the default format returned by Supabase for geography/geometry columns
-  if (typeof location === 'string' && location.match(/^[0-9A-Fa-f]+$/)) {
+  if (typeof location === 'string' && /^[0-9A-Fa-f]+$/.test(location)) {
     try {
       // WKB Point format: after the header bytes, coordinates are stored as doubles (8 bytes each)
       // For POINT: byte order (1) + type (4) + SRID (4, optional) + X (8) + Y (8)
@@ -36,17 +36,26 @@ export function parseLocation(location: any): { latitude: number; longitude: num
       // Skip to coordinate data (after SRID header which is typically 21 bytes / 42 hex chars)
       const coordStart = 42;
 
-      // Extract 8-byte doubles for longitude and latitude
-      const lngHex = hex.substr(coordStart, 16);
-      const latHex = hex.substr(coordStart + 16, 16);
+      // Extract 8-byte doubles for longitude and latitude (16 hex chars = 8 bytes)
+      const lngHex = hex.substring(coordStart, coordStart + 16);
+      const latHex = hex.substring(coordStart + 16, coordStart + 32);
 
-      // Convert little-endian hex to double
-      const lngBytes = new Uint8Array(lngHex.match(/.{1,2}/g)!.map(byte => parseInt(byte, 16)));
-      const latBytes = new Uint8Array(latHex.match(/.{1,2}/g)!.map(byte => parseInt(byte, 16)));
+      // Convert hex string to byte array
+      const hexToBytes = (hexStr: string): Uint8Array => {
+        const bytes = new Uint8Array(hexStr.length / 2);
+        for (let i = 0; i < hexStr.length; i += 2) {
+          bytes[i / 2] = parseInt(hexStr.substring(i, i + 2), 16);
+        }
+        return bytes;
+      };
+
+      const lngBytes = hexToBytes(lngHex);
+      const latBytes = hexToBytes(latHex);
 
       const longitude = new DataView(lngBytes.buffer).getFloat64(0, true);
       const latitude = new DataView(latBytes.buffer).getFloat64(0, true);
 
+      console.log('Successfully parsed WKB coordinates:', { latitude, longitude });
       return { latitude, longitude };
     } catch (e) {
       console.error('Failed to parse WKB location data:', e);
