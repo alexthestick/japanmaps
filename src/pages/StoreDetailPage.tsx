@@ -27,6 +27,22 @@ export function StoreDetailPage() {
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [lightboxOpen, setLightboxOpen] = useState(false);
   const [instagramModalOpen, setInstagramModalOpen] = useState(false);
+  const [viewState, setViewState] = useState({
+    longitude: 139.6917,
+    latitude: 35.6895,
+    zoom: 15,
+  });
+
+  // Update map view when store loads
+  useEffect(() => {
+    if (store) {
+      setViewState({
+        longitude: store.longitude,
+        latitude: store.latitude,
+        zoom: 15,
+      });
+    }
+  }, [store]);
 
   useEffect(() => {
     if (id) {
@@ -424,13 +440,11 @@ export function StoreDetailPage() {
               <div className="aspect-video bg-gray-900 rounded-lg overflow-hidden border-2 border-cyan-500/30 shadow-[0_0_30px_rgba(34,217,238,0.2)]">
                 {MAPBOX_TOKEN ? (
                   <Map
-                    longitude={store.longitude}
-                    latitude={store.latitude}
-                    zoom={15}
+                    {...viewState}
+                    onMove={evt => setViewState(evt.viewState)}
                     style={{ width: '100%', height: '100%' }}
                     mapStyle={MAP_STYLE_NIGHT}
                     mapboxAccessToken={MAPBOX_TOKEN}
-                    interactive={true}
                     scrollZoom={false}
                   >
                     <NavigationControl position="top-right" />
