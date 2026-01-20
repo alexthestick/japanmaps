@@ -45,7 +45,6 @@
     "rehype-raw": "^7.0.0",
     "remark-gfm": "^4.0.1",
     "supercluster": "^8.0.1",
-    "wkx": "^0.5.0",
     "zod": "^3.23.8"
   },
   "devDependencies": {

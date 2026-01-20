@@ -1,13 +1,11 @@
 import type { Store } from '../types/store';
-import wkx from 'wkx';
 
 /**
  * Helper to parse PostGIS geography data from Supabase
  * Converts the geography object to latitude/longitude coordinates
  */
 export function parseLocation(location: any): { latitude: number; longitude: number } {
-  // Handle text WKT format
-  if (typeof location === 'string' && location.includes('POINT')) {
+  if (typeof location === 'string') {
     // Format: "POINT(longitude latitude)"
     const matches = location.match(/POINT\(([^ ]+) ([^ ]+)\)/);
     if (matches) {
@@ -17,7 +15,7 @@ export function parseLocation(location: any): { latitude: number; longitude: num
       };
     }
   }
-
+  
   // Handle GeoJSON format
   if (location?.coordinates) {
     return {
@@ -26,38 +24,7 @@ export function parseLocation(location: any): { latitude: number; longitude: num
     };
   }
 
-  // Handle binary WKB format (hex string) from PostGIS
-  // This is the default format returned by Supabase for geography/geometry columns
-  if (typeof location === 'string' && /^[0-9A-Fa-f]+$/.test(location)) {
-    try {
-      // Convert hex string to Uint8Array (browser-compatible)
-      const hexToBytes = (hex: string): Uint8Array => {
-        const bytes = new Uint8Array(hex.length / 2);
-        for (let i = 0; i < hex.length; i += 2) {
-          bytes[i / 2] = parseInt(hex.substring(i, i + 2), 16);
-        }
-        return bytes;
-      };
-
-      const buffer = hexToBytes(location);
-      const geometry = wkx.Geometry.parse(buffer);
-
-      // Check if it's a Point geometry with valid coordinates
-      if (geometry && 'x' in geometry && 'y' in geometry && geometry.x != null && geometry.y != null) {
-        const coords = {
-          longitude: geometry.x,
-          latitude: geometry.y,
-        };
-        console.log('Successfully parsed WKB coordinates:', coords);
-        return coords;
-      }
-    } catch (e) {
-      console.error('Failed to parse WKB location data:', e);
-    }
-  }
-
   // Fallback
-  console.warn('Could not parse location data:', location);
   return { latitude: 0, longitude: 0 };
 }
 
