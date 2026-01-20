@@ -145,21 +145,21 @@ export function StoreDetailPage() {
       let data: any = null;
       let fetchError: any = null;
 
-      // If it's a UUID, fetch by ID with PostGIS coordinate extraction
+      // If it's a UUID, fetch by ID
       if (isUUID(idOrSlug)) {
         const result = await supabase
           .from('stores')
-          .select('*, lat:ST_Y(location::geometry), lng:ST_X(location::geometry)')
+          .select('*')
           .eq('id', idOrSlug)
           .single();
 
         data = result.data;
         fetchError = result.error;
       } else {
-        // For slugs, fetch all stores with coordinates and match by generated slug
+        // For slugs, fetch all stores and match by generated slug
         const { data: allStores, error } = await supabase
           .from('stores')
-          .select('*, lat:ST_Y(location::geometry), lng:ST_X(location::geometry)');
+          .select('*');
 
         if (error) {
           fetchError = error;
@@ -176,9 +176,7 @@ export function StoreDetailPage() {
 
       if (fetchError || !data) throw fetchError || new Error('Store not found');
 
-      // Use the extracted coordinates from PostGIS or fall back to parsing
-      const latitude = (data as any).lat || parseLocation((data as any).location).latitude;
-      const longitude = (data as any).lng || parseLocation((data as any).location).longitude;
+      const { latitude, longitude } = parseLocation((data as any).location);
 
       const storeData = data as any;
 
