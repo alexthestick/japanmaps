@@ -101,33 +101,36 @@ export function StoreDetailPage() {
     try {
       setLoading(true);
 
-      // Determine if we're looking up by ID (UUID) or slug
-      const lookupField = isUUID(idOrSlug) ? 'id' : 'slug';
+      let data: any = null;
+      let fetchError: any = null;
 
-      let query = supabase
-        .from('stores')
-        .select('*');
+      // If it's a UUID, fetch by ID
+      if (isUUID(idOrSlug)) {
+        const result = await supabase
+          .from('stores')
+          .select('*')
+          .eq('id', idOrSlug)
+          .single();
 
-      if (lookupField === 'id') {
-        query = query.eq('id', idOrSlug);
+        data = result.data;
+        fetchError = result.error;
       } else {
-        // Try slug first, fall back to generated slug match
-        query = query.eq('slug', idOrSlug);
-      }
-
-      let { data, error: fetchError } = await query.single();
-
-      // If slug lookup failed, try matching by generated slug from name
-      if (fetchError && lookupField === 'slug') {
-        const { data: allStores } = await supabase
+        // For slugs, fetch all stores and match by generated slug
+        // This avoids issues if the slug column doesn't exist in the database
+        const { data: allStores, error } = await supabase
           .from('stores')
           .select('*');
 
-        if (allStores) {
+        if (error) {
+          fetchError = error;
+        } else if (allStores) {
+          // Find store by matching generated slug
           data = allStores.find((s: any) =>
             generateSlug(s.name, s.city) === idOrSlug
           );
-          if (data) fetchError = null;
+          if (!data) {
+            fetchError = new Error('Store not found');
+          }
         }
       }
 
