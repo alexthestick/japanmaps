@@ -13,7 +13,7 @@ import { getGoogleMapsUrl } from '../utils/formatters';
 import { parseLocation } from '../utils/helpers';
 import { isUUID, generateSlug } from '../utils/slugify';
 import { MAIN_CATEGORY_COLORS } from '../lib/constants';
-import { MAPBOX_TOKEN, MAP_STYLE_NIGHT } from '../lib/mapbox';
+import { MAPBOX_TOKEN, MAP_STYLE_DAY } from '../lib/mapbox';
 import 'mapbox-gl/dist/mapbox-gl.css';
 
 export function StoreDetailPage() {
@@ -443,7 +443,7 @@ export function StoreDetailPage() {
                     {...viewState}
                     onMove={evt => setViewState(evt.viewState)}
                     style={{ width: '100%', height: '100%' }}
-                    mapStyle={MAP_STYLE_NIGHT}
+                    mapStyle={MAP_STYLE_DAY}
                     mapboxAccessToken={MAPBOX_TOKEN}
                     scrollZoom={false}
                   >
