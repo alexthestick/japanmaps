@@ -63,21 +63,21 @@ export function StoreDetailPage() {
 
   async function fetchSimilarStores(currentStore: Store) {
     try {
-      // Fetch stores that match either same category in same city, or same subcategory anywhere
+      // Fetch more stores to have a larger pool for randomization
       const { data, error } = await supabase
         .from('stores')
         .select('*')
         .neq('id', currentStore.id) // Exclude current store
-        .limit(20);
+        .limit(100);
 
       if (data && !error) {
-        // Score and sort by relevance
+        // Score stores by relevance
         const scoredStores = data.map((s: any) => {
           let score = 0;
           // Same main category = 2 points
           if (s.main_category === currentStore.mainCategory) score += 2;
-          // Same city = 2 points
-          if (s.city === currentStore.city) score += 2;
+          // Same city = 1 point (reduced from 2 for more diversity)
+          if (s.city === currentStore.city) score += 1;
           // Same neighborhood = 1 point
           if (s.neighborhood === currentStore.neighborhood) score += 1;
           // Overlapping subcategories = 1 point each
@@ -86,9 +86,30 @@ export function StoreDetailPage() {
 
           return { store: s, score };
         })
-        .filter(item => item.score > 0) // Only include if there's some relevance
-        .sort((a, b) => b.score - a.score) // Sort by score descending
-        .slice(0, 6) // Take top 6
+        .filter(item => item.score > 0); // Only include if there's some relevance
+
+        // Group by score tiers for weighted randomization
+        const highScore = scoredStores.filter(item => item.score >= 4); // Very similar
+        const mediumScore = scoredStores.filter(item => item.score >= 2 && item.score < 4); // Somewhat similar
+        const lowScore = scoredStores.filter(item => item.score > 0 && item.score < 2); // Loosely related
+
+        // Fisher-Yates shuffle function
+        const shuffle = <T,>(array: T[]): T[] => {
+          const shuffled = [...array];
+          for (let i = shuffled.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+          }
+          return shuffled;
+        };
+
+        // Take a mix: 3 high-score, 2 medium-score, 1 low-score (randomized within each tier)
+        const selected = [
+          ...shuffle(highScore).slice(0, 3),
+          ...shuffle(mediumScore).slice(0, 2),
+          ...shuffle(lowScore).slice(0, 1),
+        ]
+        .slice(0, 6) // Ensure we only get 6 total
         .map(item => ({
           id: item.store.id,
           slug: item.store.slug || generateSlug(item.store.name, item.store.city),
@@ -110,7 +131,7 @@ export function StoreDetailPage() {
           saveCount: item.store.save_count || 0,
         }));
 
-        setSimilarStores(scoredStores);
+        setSimilarStores(selected);
       }
     } catch (err) {
       console.error('Error fetching similar stores:', err);
