@@ -424,17 +424,14 @@ export function StoreDetailPage() {
               <div className="aspect-video bg-gray-900 rounded-lg overflow-hidden border-2 border-cyan-500/30 shadow-[0_0_30px_rgba(34,217,238,0.2)]">
                 {MAPBOX_TOKEN ? (
                   <Map
-                    initialViewState={{
-                      longitude: store.longitude,
-                      latitude: store.latitude,
-                      zoom: 15,
-                    }}
+                    longitude={store.longitude}
+                    latitude={store.latitude}
+                    zoom={15}
                     style={{ width: '100%', height: '100%' }}
                     mapStyle={MAP_STYLE_NIGHT}
                     mapboxAccessToken={MAPBOX_TOKEN}
                     interactive={true}
                     scrollZoom={false}
-                    attributionControl={true}
                   >
                     <NavigationControl position="top-right" />
                     <Marker
