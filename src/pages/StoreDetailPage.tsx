@@ -36,6 +36,10 @@ export function StoreDetailPage() {
   // Update map view when store loads
   useEffect(() => {
     if (store) {
+      console.log('StoreDetailPage: Setting viewState with store coords:', {
+        lng: store.longitude,
+        lat: store.latitude,
+      });
       setViewState({
         longitude: store.longitude,
         latitude: store.latitude,
@@ -155,6 +159,10 @@ export function StoreDetailPage() {
       const { latitude, longitude } = parseLocation((data as any).location);
 
       const storeData = data as any;
+
+      // Debug log coordinates
+      console.log('StoreDetailPage: Raw location data:', (data as any).location);
+      console.log('StoreDetailPage: Parsed coordinates:', { latitude, longitude });
 
       const transformedStore: Store = {
         id: storeData.id,
