@@ -8,6 +8,7 @@ import { MapPin, ExternalLink, Instagram, Clock, Navigation, ArrowLeft, Shopping
 import { Button } from '../components/common/Button';
 import { SaveButton } from '../components/store/SaveButton';
 import { InstagramGeneratorModal } from '../components/store/InstagramGeneratorModal';
+import { SEOHead, generateStoreSchema, generateBreadcrumbSchema } from '../components/seo';
 import type { Store } from '../types/store';
 import { getGoogleMapsUrl } from '../utils/formatters';
 import { parseLocation } from '../utils/helpers';
@@ -251,8 +252,41 @@ export function StoreDetailPage() {
     ? store.photos
     : ['https://images.unsplash.com/photo-1441986300917-64674bd600d8?w=1200&h=800&fit=crop'];
 
+  // Generate SEO data
+  const seoTitle = `${store.name}${store.neighborhood ? ` - ${store.neighborhood}` : ''}, ${store.city}`;
+  const seoDescription = store.description
+    ? store.description.slice(0, 160)
+    : `Discover ${store.name} in ${store.neighborhood || store.city}, Japan. ${store.mainCategory ? `A curated ${store.mainCategory.toLowerCase()} destination` : 'A hidden gem'} featured on Lost in Transit JP.`;
+  const seoImage = photos[0];
+  const seoUrl = `/store/${store.slug || store.id}`;
+
+  // Generate structured data
+  const storeSchema = generateStoreSchema(store);
+  const breadcrumbSchema = generateBreadcrumbSchema([
+    { name: 'Home', url: '/' },
+    { name: store.city, url: `/city/${store.city.toLowerCase().replace(/\s*\/\s*/g, '-').replace(/\s+/g, '-')}` },
+    ...(store.neighborhood
+      ? [{ name: store.neighborhood, url: `/city/${store.city.toLowerCase().replace(/\s*\/\s*/g, '-').replace(/\s+/g, '-')}/${store.neighborhood.toLowerCase().replace(/\s+/g, '-')}` }]
+      : []),
+    { name: store.name, url: seoUrl },
+  ]);
+
   return (
     <div className="min-h-screen bg-gradient-to-b from-gray-900 via-black to-gray-900 text-white">
+      {/* SEO Head */}
+      <SEOHead
+        title={seoTitle}
+        description={seoDescription}
+        image={seoImage}
+        url={seoUrl}
+        type="place"
+        storeName={store.name}
+        storeAddress={store.address}
+        storeCity={store.city}
+        storeNeighborhood={store.neighborhood}
+        storeCategory={store.mainCategory}
+        jsonLd={[storeSchema, breadcrumbSchema]}
+      />
       {/* Film Grain Overlay */}
       <div
         className="fixed inset-0 opacity-[0.15] pointer-events-none z-0"

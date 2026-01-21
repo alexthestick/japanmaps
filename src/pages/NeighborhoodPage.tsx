@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useMemo } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { MapPin, ChevronRight } from 'lucide-react';
 import { motion } from 'framer-motion';
@@ -7,12 +7,13 @@ import { ListViewSidebar } from '../components/filters/ListViewSidebar';
 import { SortDropdown } from '../components/store/SortDropdown';
 import { ScrollingBanner } from '../components/layout/ScrollingBanner';
 import { MobileLocationCategoryFilters } from '../components/filters/MobileLocationCategoryFilters';
+import { SEOHead, generateItemListSchema, generateBreadcrumbSchema } from '../components/seo';
 import { useStores } from '../hooks/useStores';
 import { Loader } from '../components/common/Loader';
 import { sortStores } from '../utils/helpers';
 import { CITY_NAMES_JAPANESE, CITY_COLORS, MAJOR_CITIES_JAPAN } from '../lib/constants';
 import { slugToCity, slugToNeighborhood, cityToSlug, neighborhoodToSlug } from '../utils/cityData';
-import type { Store, MainCategory } from '../types/store';
+import type { MainCategory } from '../types/store';
 
 export function NeighborhoodPage() {
   const { citySlug, neighborhoodSlug } = useParams<{ citySlug: string; neighborhoodSlug: string }>();
@@ -131,12 +132,35 @@ export function NeighborhoodPage() {
     return Array.from(unique).sort();
   }, [stores]);
 
+  // Generate SEO data
+  const seoTitle = `${neighborhoodName}, ${cityName} - Best Stores & Hidden Gems`;
+  const seoDescription = `Explore ${stores.length} curated stores, restaurants, and hidden gems in ${neighborhoodName}, ${cityName}. Discover vintage shops, coffee spots, and local favorites.`;
+  const seoUrl = `/city/${citySlug}/${neighborhoodSlug}`;
+
+  // Generate structured data
+  const itemListSchema = generateItemListSchema(stores, `Best Places in ${neighborhoodName}`, seoUrl);
+  const breadcrumbSchema = generateBreadcrumbSchema([
+    { name: 'Home', url: '/' },
+    { name: 'Cities', url: '/cities' },
+    { name: cityName, url: `/city/${citySlug}` },
+    { name: neighborhoodName, url: seoUrl },
+  ]);
+
   if (loading) {
     return <Loader />;
   }
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-gray-900 via-black to-gray-900">
+      {/* SEO Head */}
+      <SEOHead
+        title={seoTitle}
+        description={seoDescription}
+        image={heroImage}
+        url={seoUrl}
+        jsonLd={[itemListSchema, breadcrumbSchema]}
+      />
+
       {/* Film grain overlay */}
       <div className="fixed inset-0 film-grain opacity-20 pointer-events-none" />
 

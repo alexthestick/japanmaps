@@ -1,5 +1,5 @@
 import { useEffect } from 'react';
-import { motion, useScroll, useTransform } from 'framer-motion';
+import { useScroll } from 'framer-motion';
 import Lenis from 'lenis';
 import { HeroSection } from '../components/landing/HeroSection';
 import { StatsBar } from '../components/landing/StatsBar';
@@ -7,6 +7,7 @@ import { CitiesCarousel } from '../components/landing/CitiesCarousel';
 import { TrainTicketMenu } from '../components/landing/TrainTicketMenu';
 import { CategoryShowcase } from '../components/landing/CategoryShowcase';
 import { CompactFooter } from '../components/landing/CompactFooter';
+import { SEOHead, generateWebsiteSchema, generateOrganizationSchema } from '../components/seo';
 
 export function NewLandingPage() {
   const { scrollYProgress } = useScroll();
@@ -35,8 +36,18 @@ export function NewLandingPage() {
     };
   }, []);
 
+  // Generate structured data for homepage
+  const websiteSchema = generateWebsiteSchema();
+  const organizationSchema = generateOrganizationSchema();
+
   return (
     <div className="min-h-screen bg-white">
+      {/* SEO Head - Homepage uses defaults from index.html but adds structured data */}
+      <SEOHead
+        url="/"
+        jsonLd={[websiteSchema, organizationSchema]}
+      />
+
       {/* Hero Section */}
       <HeroSection />
 

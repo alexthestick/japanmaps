@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useMemo } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { MapPin } from 'lucide-react';
 import { motion } from 'framer-motion';
@@ -8,12 +8,13 @@ import { SortDropdown } from '../components/store/SortDropdown';
 import { StoreDetail } from '../components/store/StoreDetail';
 import { ScrollingBanner } from '../components/layout/ScrollingBanner';
 import { MobileLocationCategoryFilters } from '../components/filters/MobileLocationCategoryFilters';
+import { SEOHead, generateCitySchema, generateItemListSchema, generateBreadcrumbSchema } from '../components/seo';
 import { useStores } from '../hooks/useStores';
 import { Loader } from '../components/common/Loader';
 import { sortStores } from '../utils/helpers';
 import { CITY_NAMES_JAPANESE, CITY_COLORS, MAJOR_CITIES_JAPAN } from '../lib/constants';
 import { slugToCity, cityToSlug, neighborhoodToSlug } from '../utils/cityData';
-import type { Store, MainCategory } from '../types/store';
+import type { MainCategory } from '../types/store';
 
 export function CityPage() {
   const { slug } = useParams<{ slug: string }>();
@@ -149,12 +150,35 @@ export function CityPage() {
     return Array.from(unique).sort();
   }, [stores]);
 
+  // Generate SEO data
+  const seoTitle = `${cityName} (${cityJapaneseName}) - Best Stores & Hidden Gems`;
+  const seoDescription = `Explore ${stores.length} curated stores, restaurants, coffee shops, and hidden gems in ${cityName}, Japan. Your guide to the best of ${cityJapaneseName}.`;
+  const seoUrl = `/city/${slug}`;
+
+  // Generate structured data
+  const citySchema = generateCitySchema(cityName, slug || '', stores.length);
+  const itemListSchema = generateItemListSchema(stores, `Best Places in ${cityName}`, seoUrl);
+  const breadcrumbSchema = generateBreadcrumbSchema([
+    { name: 'Home', url: '/' },
+    { name: 'Cities', url: '/cities' },
+    { name: cityName, url: seoUrl },
+  ]);
+
   if (loading) {
     return <Loader />;
   }
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-gray-900 via-black to-gray-900">
+      {/* SEO Head */}
+      <SEOHead
+        title={seoTitle}
+        description={seoDescription}
+        image={heroImage}
+        url={seoUrl}
+        jsonLd={[citySchema, itemListSchema, breadcrumbSchema]}
+      />
+
       {/* Film grain overlay */}
       <div className="fixed inset-0 film-grain opacity-20 pointer-events-none" />
 
