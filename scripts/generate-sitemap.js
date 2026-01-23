@@ -21,6 +21,23 @@ const __dirname = dirname(__filename);
 
 const SITE_URL = 'https://lostintransitjp.com';
 
+// Main categories for category pages
+const MAIN_CATEGORIES = [
+  { name: 'Fashion', slug: 'fashion' },
+  { name: 'Food', slug: 'food' },
+  { name: 'Coffee', slug: 'coffee' },
+  { name: 'Home Goods', slug: 'home-goods' },
+  { name: 'Museum', slug: 'museum' },
+  { name: 'Spots', slug: 'spots' },
+];
+
+// Subcategories by main category
+const SUB_CATEGORIES = {
+  fashion: ['archive', 'vintage', 'secondhand', 'streetwear', 'designer', 'luxury', 'avant-garde', 'military', 'antiques', 'stationery', 'flagship', 'concept-store', 'womenswear', 'select-shop'],
+  food: ['ramen', 'sushi', 'izakaya', 'kaiseki', 'yakitori', 'tempura', 'udon-soba', 'tonkatsu', 'yakiniku', 'cafe-restaurant', 'bakery', 'dessert', 'street-food', 'fine-dining', 'pizza', 'burger', 'curry', 'okonomiyaki', 'bar'],
+  'home-goods': ['antiques', 'homeware', 'furniture', 'art', 'general-stores', 'stationery', 'toys'],
+};
+
 // Initialize Supabase client
 const supabaseUrl = process.env.VITE_SUPABASE_URL;
 const supabaseKey = process.env.VITE_SUPABASE_ANON_KEY;
@@ -216,6 +233,34 @@ async function generateSitemap() {
     <priority>0.7</priority>
   </url>
 `;
+      }
+    }
+
+    xml += `
+  <!-- Category Pages -->
+`;
+
+    // Add main category pages
+    for (const category of MAIN_CATEGORIES) {
+      xml += `  <url>
+    <loc>${SITE_URL}/category/${category.slug}</loc>
+    <lastmod>${today}</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+`;
+      // Add subcategory pages if they exist
+      const subCats = SUB_CATEGORIES[category.slug];
+      if (subCats) {
+        for (const sub of subCats) {
+          xml += `  <url>
+    <loc>${SITE_URL}/category/${category.slug}/${sub}</loc>
+    <lastmod>${today}</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+  </url>
+`;
+        }
       }
     }
 

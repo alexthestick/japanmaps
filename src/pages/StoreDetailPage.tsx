@@ -1,4 +1,4 @@
-import { useParams, useNavigate, useLocation } from 'react-router-dom';
+import { useParams, useNavigate, useLocation, Link } from 'react-router-dom';
 import { useEffect, useState, useRef } from 'react';
 import Map, { Marker, NavigationControl } from 'react-map-gl';
 import { supabase } from '../lib/supabase';
@@ -9,11 +9,13 @@ import { Button } from '../components/common/Button';
 import { SaveButton } from '../components/store/SaveButton';
 import { InstagramGeneratorModal } from '../components/store/InstagramGeneratorModal';
 import { SEOHead, generateStoreSchema, generateBreadcrumbSchema } from '../components/seo';
+import { Breadcrumbs } from '../components/ui/Breadcrumbs';
 import type { Store } from '../types/store';
 import { getGoogleMapsUrl } from '../utils/formatters';
 import { parseLocation } from '../utils/helpers';
 import { isUUID, generateSlug } from '../utils/slugify';
 import { MAIN_CATEGORY_COLORS } from '../lib/constants';
+import { cityToSlug, neighborhoodToSlug } from '../utils/cityData';
 import { MAPBOX_TOKEN, MAP_STYLE_DAY } from '../lib/mapbox';
 import 'mapbox-gl/dist/mapbox-gl.css';
 
@@ -318,23 +320,18 @@ export function StoreDetailPage() {
       {/* Hero Section with Breadcrumb */}
       <div className="relative z-10 pt-24 pb-8 px-6 md:px-12">
         <div className="max-w-7xl mx-auto">
-          {/* Breadcrumb */}
-          <div className="flex items-center gap-2 text-sm mb-6">
-            <button
-              onClick={() => navigate('/cities')}
-              className="text-gray-400 hover:text-cyan-300 transition-colors"
-            >
-              {store.city}
-            </button>
-            {store.neighborhood && (
-              <>
-                <span className="text-gray-600">/</span>
-                <span className="text-gray-400">{store.neighborhood}</span>
-              </>
-            )}
-            <span className="text-gray-600">/</span>
-            <span className="text-cyan-300 font-bold">{store.name}</span>
-          </div>
+          {/* Breadcrumb - SEO friendly with proper links */}
+          <Breadcrumbs
+            items={[
+              { label: 'Cities', href: '/cities' },
+              { label: store.city, href: `/city/${cityToSlug(store.city)}` },
+              ...(store.neighborhood
+                ? [{ label: store.neighborhood, href: `/city/${cityToSlug(store.city)}/${neighborhoodToSlug(store.neighborhood)}` }]
+                : []),
+              { label: store.name },
+            ]}
+            className="mb-6"
+          />
 
           {/* Store Title */}
           <div className="flex flex-wrap items-center gap-4 mb-3">
@@ -691,7 +688,7 @@ export function StoreDetailPage() {
         </div>
       </div>
 
-      {/* Similar Stores Section */}
+      {/* Similar Stores Section - SEO friendly with proper Link tags */}
       {similarStores.length > 0 && (
         <div className="relative z-10 max-w-6xl mx-auto px-6 md:px-12 py-12 border-t border-cyan-500/20">
           <h2
@@ -701,7 +698,7 @@ export function StoreDetailPage() {
               textShadow: '0 0 20px rgba(34, 217, 238, 0.3)'
             }}
           >
-            Other Places
+            Related Stores
           </h2>
           <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
             {similarStores.map((similarStore) => {
@@ -709,12 +706,13 @@ export function StoreDetailPage() {
               const categoryColor = similarStore.mainCategory
                 ? MAIN_CATEGORY_COLORS[similarStore.mainCategory as keyof typeof MAIN_CATEGORY_COLORS]
                 : '#22D9EE';
+              const storeUrl = `/store/${similarStore.slug || similarStore.id}`;
 
               return (
-                <div
+                <Link
                   key={similarStore.id}
-                  onClick={() => navigate(`/store/${similarStore.slug || similarStore.id}`)}
-                  className="group cursor-pointer bg-gradient-to-br from-gray-800/50 to-gray-900/50 rounded-xl overflow-hidden border border-cyan-500/20 hover:border-cyan-500/50 transition-all"
+                  to={storeUrl}
+                  className="group bg-gradient-to-br from-gray-800/50 to-gray-900/50 rounded-xl overflow-hidden border border-cyan-500/20 hover:border-cyan-500/50 transition-all block"
                 >
                   {/* Image */}
                   <div className="relative aspect-[4/3] overflow-hidden">
@@ -741,7 +739,7 @@ export function StoreDetailPage() {
                       {similarStore.neighborhood ? `${similarStore.neighborhood}, ` : ''}{similarStore.city}
                     </p>
                   </div>
-                </div>
+                </Link>
               );
             })}
           </div>

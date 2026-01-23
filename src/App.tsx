@@ -17,6 +17,7 @@ import { CityPage } from './pages/CityPage';
 import { NeighborhoodPage } from './pages/NeighborhoodPage';
 import { CitiesPage } from './pages/CitiesPage';
 import { NeighborhoodsPage } from './pages/NeighborhoodsPage';
+import { CategoryPage } from './pages/CategoryPage';
 import { motion } from 'framer-motion';
 import { ScrollToTop } from './components/common/ScrollToTop';
 
@@ -80,6 +81,16 @@ function AnimatedRoutes() {
               transition={{ duration: 0.25, ease: 'easeOut' }}
             >
               <NeighborhoodPage />
+            </motion.div>
+          } />
+          <Route path="category/:category/:subcategory?" element={
+            <motion.div
+              initial={{ opacity: 0, x: 40 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0, x: -40 }}
+              transition={{ duration: 0.25, ease: 'easeOut' }}
+            >
+              <CategoryPage />
             </motion.div>
           } />
           <Route path="city/:slug" element={
