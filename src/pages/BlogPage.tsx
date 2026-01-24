@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
 import { Loader } from '../components/common/Loader';
+import { SEOHead } from '../components/seo';
 
 interface BlogPost {
   id: string;
@@ -59,9 +60,18 @@ export function BlogPage() {
   };
 
   return (
-    <div
-      className="min-h-screen relative py-6 md:py-12"
-      style={{
+    <>
+      {/* SEO Head */}
+      <SEOHead
+        title="Blog - Japan Travel & Vintage Shopping Guides"
+        description="Discover the best vintage stores, coffee shops, and hidden gems across Japan. In-depth guides to Tokyo, Osaka, Kyoto neighborhoods and shopping experiences."
+        url="/blog"
+        type="website"
+      />
+
+      <div
+        className="min-h-screen relative py-6 md:py-12"
+        style={{
         backgroundImage: `url("data:image/svg+xml,%3Csvg width='600' height='600' xmlns='http://www.w3.org/2000/svg'%3E%3Cdefs%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' /%3E%3CfeColorMatrix values='0 0 0 0 0, 0 0 0 0 0, 0 0 0 0 0, 0 0 0 0.03 0'/%3E%3C/filter%3E%3C/defs%3E%3Crect fill='%23B8956A' width='600' height='600'/%3E%3C!-- Main grain lines --%3E%3Cpath d='M0 30 Q150 28 300 30 T600 30' stroke='%23A17D50' stroke-width='3' fill='none' opacity='0.6'/%3E%3Cpath d='M0 32 Q150 30 300 32 T600 32' stroke='%238B6942' stroke-width='1' fill='none' opacity='0.4'/%3E%3Cpath d='M0 75 Q150 73 300 75 T600 75' stroke='%239A7B4F' stroke-width='4' fill='none' opacity='0.5'/%3E%3Cpath d='M0 78 Q150 76 300 78 T600 78' stroke='%237D5E3F' stroke-width='1.5' fill='none' opacity='0.35'/%3E%3Cpath d='M0 130 Q150 127 300 130 T600 130' stroke='%23A17D50' stroke-width='2.5' fill='none' opacity='0.55'/%3E%3Cpath d='M0 133 Q150 131 300 133 T600 133' stroke='%238B6942' stroke-width='1' fill='none' opacity='0.3'/%3E%3Cpath d='M0 185 Q150 183 300 185 T600 185' stroke='%239A7B4F' stroke-width='3.5' fill='none' opacity='0.6'/%3E%3Cpath d='M0 188 Q150 186 300 188 T600 188' stroke='%237D5E3F' stroke-width='1.2' fill='none' opacity='0.4'/%3E%3Cpath d='M0 245 Q150 242 300 245 T600 245' stroke='%23A17D50' stroke-width='2' fill='none' opacity='0.5'/%3E%3Cpath d='M0 305 Q150 303 300 305 T600 305' stroke='%239A7B4F' stroke-width='3' fill='none' opacity='0.55'/%3E%3Cpath d='M0 308 Q150 306 300 308 T600 308' stroke='%238B6942' stroke-width='1.5' fill='none' opacity='0.35'/%3E%3Cpath d='M0 370 Q150 368 300 370 T600 370' stroke='%23A17D50' stroke-width='2.8' fill='none' opacity='0.6'/%3E%3Cpath d='M0 435 Q150 432 300 435 T600 435' stroke='%239A7B4F' stroke-width='3.2' fill='none' opacity='0.5'/%3E%3Cpath d='M0 438 Q150 436 300 438 T600 438' stroke='%237D5E3F' stroke-width='1.3' fill='none' opacity='0.38'/%3E%3Cpath d='M0 500 Q150 498 300 500 T600 500' stroke='%23A17D50' stroke-width='2.5' fill='none' opacity='0.55'/%3E%3Cpath d='M0 565 Q150 563 300 565 T600 565' stroke='%239A7B4F' stroke-width='3' fill='none' opacity='0.52'/%3E%3C!-- Fine detail lines --%3E%3Cpath d='M0 50 Q150 49.5 300 50 T600 50' stroke='%238B6942' stroke-width='0.8' fill='none' opacity='0.25'/%3E%3Cpath d='M0 95 Q150 94.5 300 95 T600 95' stroke='%237D5E3F' stroke-width='0.6' fill='none' opacity='0.2'/%3E%3Cpath d='M0 155 Q150 154.5 300 155 T600 155' stroke='%238B6942' stroke-width='0.7' fill='none' opacity='0.22'/%3E%3Cpath d='M0 220 Q150 219.5 300 220 T600 220' stroke='%239A7B4F' stroke-width='0.9' fill='none' opacity='0.28'/%3E%3Cpath d='M0 280 Q150 279.5 300 280 T600 280' stroke='%237D5E3F' stroke-width='0.6' fill='none' opacity='0.2'/%3E%3Cpath d='M0 345 Q150 344.5 300 345 T600 345' stroke='%238B6942' stroke-width='0.8' fill='none' opacity='0.24'/%3E%3Cpath d='M0 405 Q150 404.5 300 405 T600 405' stroke='%239A7B4F' stroke-width='0.7' fill='none' opacity='0.26'/%3E%3Cpath d='M0 470 Q150 469.5 300 470 T600 470' stroke='%237D5E3F' stroke-width='0.6' fill='none' opacity='0.21'/%3E%3Cpath d='M0 535 Q150 534.5 300 535 T600 535' stroke='%238B6942' stroke-width='0.8' fill='none' opacity='0.23'/%3E%3C!-- Wood knots --%3E%3Cellipse cx='180' cy='110' rx='25' ry='12' fill='%237D5E3F' opacity='0.3'/%3E%3Cellipse cx='180' cy='110' rx='15' ry='7' fill='%236B4F3A' opacity='0.25'/%3E%3Cellipse cx='420' cy='280' rx='30' ry='15' fill='%237D5E3F' opacity='0.28'/%3E%3Cellipse cx='420' cy='280' rx='18' ry='9' fill='%236B4F3A' opacity='0.22'/%3E%3Cellipse cx='90' cy='390' rx='22' ry='11' fill='%237D5E3F' opacity='0.32'/%3E%3Cellipse cx='90' cy='390' rx='12' ry='6' fill='%236B4F3A' opacity='0.26'/%3E%3Crect width='600' height='600' filter='url(%23noise)' /%3E%3C/svg%3E")`,
         backgroundColor: '#B8956A',
       }}
@@ -222,5 +232,6 @@ export function BlogPage() {
         </div>
       </div>
     </div>
+    </>
   );
 }

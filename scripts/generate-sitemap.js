@@ -135,6 +135,18 @@ async function generateSitemap() {
 
     console.log(`Found ${stores.length} stores`);
 
+    // Fetch all blog posts
+    const { data: blogPosts, error: blogError } = await supabase
+      .from('blog_posts')
+      .select('slug, updated_at, created_at, published_at')
+      .order('published_at', { ascending: false });
+
+    if (blogError) {
+      console.warn('Error fetching blog posts:', blogError);
+    }
+
+    console.log(`Found ${blogPosts?.length || 0} blog posts`);
+
     // Get unique cities and neighborhoods
     const cities = new Set();
     const neighborhoods = new Map(); // city -> Set of neighborhoods
@@ -265,6 +277,24 @@ async function generateSitemap() {
     }
 
     xml += `
+  <!-- Blog Posts -->
+`;
+
+    // Add blog post pages
+    if (blogPosts && blogPosts.length > 0) {
+      for (const post of blogPosts) {
+        const lastmod = formatDate(post.updated_at || post.published_at || post.created_at || new Date());
+        xml += `  <url>
+    <loc>${SITE_URL}/blog/${escapeXml(post.slug)}</loc>
+    <lastmod>${lastmod}</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+`;
+      }
+    }
+
+    xml += `
   <!-- Store Pages (Primary SEO Target) -->
 `;
 
@@ -288,8 +318,20 @@ async function generateSitemap() {
     const outputPath = join(__dirname, '..', 'public', 'sitemap.xml');
     writeFileSync(outputPath, xml, 'utf-8');
 
+    const neighborhoodCount = Array.from(neighborhoods.values()).reduce((acc, set) => acc + set.size, 0);
+    const categoryCount = MAIN_CATEGORIES.length + Object.values(SUB_CATEGORIES).flat().length;
+    const blogCount = blogPosts?.length || 0;
+    const staticPages = 7;
+    const totalUrls = stores.length + cities.size + neighborhoodCount + categoryCount + blogCount + staticPages;
+
     console.log(`Sitemap generated successfully at: ${outputPath}`);
-    console.log(`Total URLs: ${stores.length + cities.size + Array.from(neighborhoods.values()).reduce((acc, set) => acc + set.size, 0) + 7}`);
+    console.log(`Total URLs: ${totalUrls}`);
+    console.log(`  - Static pages: ${staticPages}`);
+    console.log(`  - Cities: ${cities.size}`);
+    console.log(`  - Neighborhoods: ${neighborhoodCount}`);
+    console.log(`  - Categories: ${categoryCount}`);
+    console.log(`  - Blog posts: ${blogCount}`);
+    console.log(`  - Stores: ${stores.length}`);
 
   } catch (error) {
     console.error('Error generating sitemap:', error);

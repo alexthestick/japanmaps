@@ -3,6 +3,7 @@ import { useParams, Link } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
 import { Loader } from '../components/common/Loader';
 import { ParallaxGuideSection } from '../components/common/ParallaxGuideSection';
+import { SEOHead } from '../components/seo';
 import type { ParallaxStoreSection } from '../types/blog';
 
 interface BlogPost {
@@ -72,10 +73,51 @@ export function BlogPostPage() {
     );
   }
 
+  // Generate SEO data
+  const seoDescription = post.intro_content
+    ? post.intro_content.slice(0, 160)
+    : post.content.slice(0, 160);
+
+  const blogPostSchema = {
+    '@context': 'https://schema.org',
+    '@type': 'BlogPosting',
+    headline: post.title,
+    url: `https://lostintransitjp.com/blog/${post.slug}`,
+    description: seoDescription,
+    image: post.hero_image || 'https://ik.imagekit.io/wscyshoygv/og-default.jpg',
+    datePublished: post.published_at,
+    dateModified: post.updated_at || post.published_at,
+    author: {
+      '@type': 'Organization',
+      name: 'Lost in Transit JP',
+      url: 'https://lostintransitjp.com',
+    },
+    publisher: {
+      '@type': 'Organization',
+      name: 'Lost in Transit JP',
+      url: 'https://lostintransitjp.com',
+    },
+    mainEntityOfPage: {
+      '@type': 'WebPage',
+      '@id': `https://lostintransitjp.com/blog/${post.slug}`,
+    },
+  };
+
   // Render Parallax Store Guide with Bulletin Board styling
   if (post.article_type === 'parallax_store_guide') {
     return (
-      <article className="min-h-screen relative py-6 md:py-12">
+      <>
+        {/* SEO Head */}
+        <SEOHead
+          title={post.title}
+          description={seoDescription}
+          image={post.hero_image || undefined}
+          url={`/blog/${post.slug}`}
+          type="article"
+          jsonLd={blogPostSchema}
+        />
+
+        <article className="min-h-screen relative py-6 md:py-12">
         {/* Realistic Wood Grain Background */}
         <div
           className="absolute inset-0"
@@ -296,12 +338,24 @@ export function BlogPostPage() {
           </div>
         </div>
       </article>
+      </>
     );
   }
 
   // Render Standard Article (bulletin board style - fallback)
   return (
-    <div
+    <>
+      {/* SEO Head */}
+      <SEOHead
+        title={post.title}
+        description={seoDescription}
+        image={post.hero_image || undefined}
+        url={`/blog/${post.slug}`}
+        type="article"
+        jsonLd={blogPostSchema}
+      />
+
+      <div
       className="min-h-screen relative"
       style={{
         background: 'linear-gradient(135deg, #D4A574 0%, #C69C6D 50%, #B8956A 100%)',
@@ -414,5 +468,6 @@ export function BlogPostPage() {
         </div>
       </div>
     </div>
+    </>
   );
 }
