@@ -24,6 +24,8 @@ export function SocialPostCreator() {
   const [showCorners, setShowCorners] = useState(true);
   const [showTrainIcon, setShowTrainIcon] = useState(true);
   const [showLogo, setShowLogo] = useState(true);
+  const [showCategoryIcon, setShowCategoryIcon] = useState(false);
+  const [selectedCategory, setSelectedCategory] = useState<string>('Fashion');
   const [imageUrl, setImageUrl] = useState<string>('');
 
   const canvasRef = useRef<HTMLDivElement>(null);
@@ -33,6 +35,7 @@ export function SocialPostCreator() {
   const [locationPos, setLocationPos] = useState({ x: 50, y: format === 'square' ? 900 : 1700 });
   const [logoPos, setLogoPos] = useState({ x: 50, y: 50 });
   const [iconPos, setIconPos] = useState({ x: 950, y: 50 });
+  const [categoryIconPos, setCategoryIconPos] = useState({ x: 50, y: format === 'square' ? 950 : 1750 });
 
   // Text styles
   const [storeNameSize, setStoreNameSize] = useState(60);
@@ -44,6 +47,13 @@ export function SocialPostCreator() {
   const [logoSize, setLogoSize] = useState(36);
   const [logoColor, setLogoColor] = useState('#00D9FF');
   const [iconColor, setIconColor] = useState('#00D9FF');
+
+  // Category icon styles
+  const [categoryIconSize, setCategoryIconSize] = useState(60);
+  const [categoryIconColor, setCategoryIconColor] = useState('#00D9FF');
+
+  // Corner bracket size
+  const [cornerSize, setCornerSize] = useState(24);
 
   // Fetch stores on mount
   useEffect(() => {
@@ -360,6 +370,35 @@ export function SocialPostCreator() {
                 Show LOST IN TRANSIT logo
               </label>
             </div>
+            <div className="flex items-center gap-2">
+              <input
+                type="checkbox"
+                id="categoryIcon"
+                checked={showCategoryIcon}
+                onChange={(e) => setShowCategoryIcon(e.target.checked)}
+                className="w-4 h-4 text-cyan-500 border-gray-300 rounded focus:ring-cyan-500"
+              />
+              <label htmlFor="categoryIcon" className="text-sm text-gray-700">
+                Show category icon
+              </label>
+            </div>
+            {showCategoryIcon && (
+              <div className="ml-6">
+                <label className="block text-xs font-medium text-gray-600 mb-1">Category</label>
+                <select
+                  value={selectedCategory}
+                  onChange={(e) => setSelectedCategory(e.target.value)}
+                  className="w-full px-2 py-1 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-cyan-500"
+                >
+                  <option value="Fashion">Fashion</option>
+                  <option value="Food">Food</option>
+                  <option value="Coffee">Coffee</option>
+                  <option value="Home Goods">Home Goods</option>
+                  <option value="Museum">Museum</option>
+                  <option value="Spots">Spots</option>
+                </select>
+              </div>
+            )}
           </div>
 
           {/* Styling Controls */}
@@ -409,6 +448,55 @@ export function SocialPostCreator() {
                   />
                 </div>
               </div>
+
+              {/* Category Icon */}
+              {showCategoryIcon && (
+                <div className="border-t pt-3">
+                  <p className="text-xs font-semibold text-gray-700 mb-2">Category Icon</p>
+                  <div className="space-y-2">
+                    <div>
+                      <label className="block text-xs text-gray-600 mb-1">Size</label>
+                      <input
+                        type="range"
+                        min="30"
+                        max="100"
+                        value={categoryIconSize}
+                        onChange={(e) => setCategoryIconSize(Number(e.target.value))}
+                        className="w-full"
+                      />
+                      <span className="text-xs text-gray-500">{categoryIconSize}px</span>
+                    </div>
+                    <div>
+                      <label className="block text-xs text-gray-600 mb-1">Color</label>
+                      <input
+                        type="color"
+                        value={categoryIconColor}
+                        onChange={(e) => setCategoryIconColor(e.target.value)}
+                        className="w-full h-10 rounded cursor-pointer"
+                      />
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Corner Brackets */}
+              {showCorners && (
+                <div className="border-t pt-3">
+                  <p className="text-xs font-semibold text-gray-700 mb-2">Corner Brackets</p>
+                  <div>
+                    <label className="block text-xs text-gray-600 mb-1">Size</label>
+                    <input
+                      type="range"
+                      min="16"
+                      max="48"
+                      value={cornerSize}
+                      onChange={(e) => setCornerSize(Number(e.target.value))}
+                      className="w-full"
+                    />
+                    <span className="text-xs text-gray-500">{cornerSize}px</span>
+                  </div>
+                </div>
+              )}
 
               {/* Store Name */}
               <div className="border-t pt-3">
@@ -518,10 +606,38 @@ export function SocialPostCreator() {
               {/* Corner Brackets */}
               {showCorners && (
                 <>
-                  <div className="absolute top-6 left-6 w-24 h-24 border-l-4 border-t-4 border-cyan-400" style={{ pointerEvents: 'none' }} />
-                  <div className="absolute top-6 right-6 w-24 h-24 border-r-4 border-t-4 border-cyan-400" style={{ pointerEvents: 'none' }} />
-                  <div className="absolute bottom-6 left-6 w-24 h-24 border-l-4 border-b-4 border-cyan-400" style={{ pointerEvents: 'none' }} />
-                  <div className="absolute bottom-6 right-6 w-24 h-24 border-r-4 border-b-4 border-cyan-400" style={{ pointerEvents: 'none' }} />
+                  <div
+                    className="absolute top-6 left-6 border-l-4 border-t-4 border-cyan-400"
+                    style={{
+                      width: `${cornerSize * 4}px`,
+                      height: `${cornerSize * 4}px`,
+                      pointerEvents: 'none',
+                    }}
+                  />
+                  <div
+                    className="absolute top-6 right-6 border-r-4 border-t-4 border-cyan-400"
+                    style={{
+                      width: `${cornerSize * 4}px`,
+                      height: `${cornerSize * 4}px`,
+                      pointerEvents: 'none',
+                    }}
+                  />
+                  <div
+                    className="absolute bottom-6 left-6 border-l-4 border-b-4 border-cyan-400"
+                    style={{
+                      width: `${cornerSize * 4}px`,
+                      height: `${cornerSize * 4}px`,
+                      pointerEvents: 'none',
+                    }}
+                  />
+                  <div
+                    className="absolute bottom-6 right-6 border-r-4 border-b-4 border-cyan-400"
+                    style={{
+                      width: `${cornerSize * 4}px`,
+                      height: `${cornerSize * 4}px`,
+                      pointerEvents: 'none',
+                    }}
+                  />
                 </>
               )}
 
@@ -619,6 +735,70 @@ export function SocialPostCreator() {
                     >
                       {location}
                     </div>
+                  </div>
+                </Draggable>
+              )}
+
+              {/* Draggable Category Icon */}
+              {showCategoryIcon && (
+                <Draggable
+                  position={categoryIconPos}
+                  onStop={(e, data) => setCategoryIconPos({ x: data.x, y: data.y })}
+                  bounds="parent"
+                >
+                  <div className="absolute cursor-move">
+                    <svg
+                      width={categoryIconSize}
+                      height={categoryIconSize}
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke={categoryIconColor}
+                      strokeWidth="2"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    >
+                      {selectedCategory === 'Fashion' && (
+                        <>
+                          <path d="M20.38 3.46 16 2a4 4 0 0 1-8 0L3.62 3.46a2 2 0 0 0-1.34 2.23l.58 3.47a1 1 0 0 0 .99.84H6v10c0 1.1.9 2 2 2h8a2 2 0 0 0 2-2V10h2.15a1 1 0 0 0 .99-.84l.58-3.47a2 2 0 0 0-1.34-2.23z" />
+                        </>
+                      )}
+                      {selectedCategory === 'Food' && (
+                        <>
+                          <path d="m16 2-2.3 12.3a2 2 0 0 1-2 1.7H8.3a2 2 0 0 1-2-1.7L4 2" />
+                          <path d="M7 22h10" />
+                          <path d="M12 16v6" />
+                        </>
+                      )}
+                      {selectedCategory === 'Coffee' && (
+                        <>
+                          <path d="M17 8h1a4 4 0 1 1 0 8h-1" />
+                          <path d="M3 8h14v9a4 4 0 0 1-4 4H7a4 4 0 0 1-4-4Z" />
+                          <line x1="6" x2="6" y1="2" y2="4" />
+                          <line x1="10" x2="10" y1="2" y2="4" />
+                          <line x1="14" x2="14" y1="2" y2="4" />
+                        </>
+                      )}
+                      {selectedCategory === 'Home Goods' && (
+                        <>
+                          <path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
+                          <polyline points="9 22 9 12 15 12 15 22" />
+                        </>
+                      )}
+                      {selectedCategory === 'Museum' && (
+                        <>
+                          <rect width="18" height="18" x="3" y="3" rx="2" />
+                          <path d="M7 7h10" />
+                          <path d="M7 12h10" />
+                          <path d="M7 17h10" />
+                        </>
+                      )}
+                      {selectedCategory === 'Spots' && (
+                        <>
+                          <path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z" />
+                          <circle cx="12" cy="10" r="3" />
+                        </>
+                      )}
+                    </svg>
                   </div>
                 </Draggable>
               )}
