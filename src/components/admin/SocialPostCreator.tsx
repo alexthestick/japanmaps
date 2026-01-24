@@ -23,6 +23,7 @@ export function SocialPostCreator() {
   const [location, setLocation] = useState<string>('');
   const [showCorners, setShowCorners] = useState(true);
   const [showTrainIcon, setShowTrainIcon] = useState(true);
+  const [showLogo, setShowLogo] = useState(true);
   const [imageUrl, setImageUrl] = useState<string>('');
 
   const canvasRef = useRef<HTMLDivElement>(null);
@@ -347,6 +348,18 @@ export function SocialPostCreator() {
                 Show L-Train-T icon
               </label>
             </div>
+            <div className="flex items-center gap-2">
+              <input
+                type="checkbox"
+                id="logo"
+                checked={showLogo}
+                onChange={(e) => setShowLogo(e.target.checked)}
+                className="w-4 h-4 text-cyan-500 border-gray-300 rounded focus:ring-cyan-500"
+              />
+              <label htmlFor="logo" className="text-sm text-gray-700">
+                Show LOST IN TRANSIT logo
+              </label>
+            </div>
           </div>
 
           {/* Styling Controls */}
@@ -542,25 +555,27 @@ export function SocialPostCreator() {
               )}
 
               {/* Draggable Logo */}
-              <Draggable
-                position={logoPos}
-                onStop={(e, data) => setLogoPos({ x: data.x, y: data.y })}
-                bounds="parent"
-              >
-                <div className="absolute cursor-move">
-                  <div
-                    className="font-black tracking-wider"
-                    style={{
-                      fontFamily: 'Plus Jakarta Sans, sans-serif',
-                      fontSize: `${logoSize}px`,
-                      color: logoColor,
-                      textShadow: '2px 2px 8px rgba(0,0,0,0.8)',
-                    }}
-                  >
-                    LOST IN TRANSIT
+              {showLogo && (
+                <Draggable
+                  position={logoPos}
+                  onStop={(e, data) => setLogoPos({ x: data.x, y: data.y })}
+                  bounds="parent"
+                >
+                  <div className="absolute cursor-move">
+                    <div
+                      className="font-black tracking-wider"
+                      style={{
+                        fontFamily: 'Plus Jakarta Sans, sans-serif',
+                        fontSize: `${logoSize}px`,
+                        color: logoColor,
+                        textShadow: '2px 2px 8px rgba(0,0,0,0.8)',
+                      }}
+                    >
+                      LOST IN TRANSIT
+                    </div>
                   </div>
-                </div>
-              </Draggable>
+                </Draggable>
+              )}
 
               {/* Draggable Store Name */}
               {storeName && (
