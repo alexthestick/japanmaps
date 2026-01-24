@@ -5,19 +5,18 @@ import { Button } from '../common/Button';
 import { supabase } from '../../lib/supabase';
 import type { Store } from '../../types/store';
 
-interface DraggableElement {
-  id: string;
-  x: number;
-  y: number;
-  fontSize: number;
-  color: string;
-}
+type FormatType = 'square' | 'story';
 
 export function SocialPostCreator() {
   const [stores, setStores] = useState<Store[]>([]);
   const [selectedStore, setSelectedStore] = useState<Store | null>(null);
   const [selectedPhotoIndex, setSelectedPhotoIndex] = useState(0);
   const [loadingStores, setLoadingStores] = useState(false);
+
+  // Format selection
+  const [format, setFormat] = useState<FormatType>('square');
+  const canvasWidth = 1080;
+  const canvasHeight = format === 'square' ? 1080 : 1920;
 
   const [storeImage, setStoreImage] = useState<string>('');
   const [storeName, setStoreName] = useState<string>('');
@@ -28,9 +27,9 @@ export function SocialPostCreator() {
 
   const canvasRef = useRef<HTMLDivElement>(null);
 
-  // Draggable positions
-  const [storeNamePos, setStoreNamePos] = useState({ x: 50, y: 850 });
-  const [locationPos, setLocationPos] = useState({ x: 50, y: 900 });
+  // Draggable positions - adjusted based on format
+  const [storeNamePos, setStoreNamePos] = useState({ x: 50, y: format === 'square' ? 850 : 1600 });
+  const [locationPos, setLocationPos] = useState({ x: 50, y: format === 'square' ? 900 : 1700 });
   const [logoPos, setLogoPos] = useState({ x: 50, y: 50 });
 
   // Text styles
@@ -38,6 +37,11 @@ export function SocialPostCreator() {
   const [locationSize, setLocationSize] = useState(32);
   const [storeNameColor, setStoreNameColor] = useState('#FFFFFF');
   const [locationColor, setLocationColor] = useState('#00D9FF');
+
+  // Logo styles
+  const [logoSize, setLogoSize] = useState(36);
+  const [logoColor, setLogoColor] = useState('#00D9FF');
+  const [iconColor, setIconColor] = useState('#00D9FF');
 
   // Fetch stores on mount
   useEffect(() => {
@@ -64,6 +68,17 @@ export function SocialPostCreator() {
       setStoreImage(selectedStore.photos[selectedPhotoIndex]);
     }
   }, [selectedPhotoIndex, selectedStore]);
+
+  // Adjust positions when format changes
+  useEffect(() => {
+    if (format === 'story') {
+      setStoreNamePos({ x: 50, y: 1600 });
+      setLocationPos({ x: 50, y: 1700 });
+    } else {
+      setStoreNamePos({ x: 50, y: 850 });
+      setLocationPos({ x: 50, y: 900 });
+    }
+  }, [format]);
 
   async function fetchStores() {
     try {
@@ -115,13 +130,14 @@ export function SocialPostCreator() {
       const dataUrl = await toPng(canvasRef.current, {
         quality: 1,
         pixelRatio: 2,
-        width: 1080,
-        height: 1080,
+        width: canvasWidth,
+        height: canvasHeight,
       });
 
       // Download the image
       const link = document.createElement('a');
-      link.download = `${storeName.toLowerCase().replace(/\s+/g, '-')}-post.png`;
+      const formatSuffix = format === 'story' ? 'story' : 'post';
+      link.download = `${storeName.toLowerCase().replace(/\s+/g, '-')}-${formatSuffix}.png`;
       link.href = dataUrl;
       link.click();
     } catch (error) {
@@ -141,17 +157,52 @@ export function SocialPostCreator() {
     }
   }
 
+  const scaleRatio = format === 'square' ? 0.5 : 0.28;
+
   return (
     <div className="max-w-7xl mx-auto p-6">
       <h2 className="text-2xl font-bold mb-6">Social Media Post Creator</h2>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
         {/* Left Panel - Controls */}
-        <div className="space-y-6">
+        <div className="space-y-5">
+          {/* Format Selector */}
+          <div className="bg-gradient-to-r from-cyan-50 to-blue-50 p-5 rounded-lg border-2 border-cyan-200">
+            <label className="block text-sm font-semibold text-gray-800 mb-3 flex items-center gap-2">
+              <span className="text-lg">📐</span> Post Format
+            </label>
+            <div className="grid grid-cols-2 gap-3">
+              <button
+                onClick={() => setFormat('square')}
+                className={`p-4 rounded-lg border-2 transition-all font-medium ${
+                  format === 'square'
+                    ? 'border-cyan-500 bg-cyan-500 text-white shadow-lg'
+                    : 'border-gray-300 bg-white text-gray-700 hover:border-cyan-300'
+                }`}
+              >
+                <div className="text-2xl mb-1">⬜</div>
+                <div className="text-sm">Square</div>
+                <div className="text-xs opacity-75">1080×1080</div>
+              </button>
+              <button
+                onClick={() => setFormat('story')}
+                className={`p-4 rounded-lg border-2 transition-all font-medium ${
+                  format === 'story'
+                    ? 'border-cyan-500 bg-cyan-500 text-white shadow-lg'
+                    : 'border-gray-300 bg-white text-gray-700 hover:border-cyan-300'
+                }`}
+              >
+                <div className="text-2xl mb-1">📱</div>
+                <div className="text-sm">Story</div>
+                <div className="text-xs opacity-75">1080×1920</div>
+              </button>
+            </div>
+          </div>
+
           {/* Store Selector */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Select Store
+          <div className="border border-gray-200 rounded-lg p-4 bg-white">
+            <label className="block text-sm font-semibold text-gray-800 mb-2 flex items-center gap-2">
+              <span className="text-lg">🏪</span> Select Store
             </label>
             <select
               value={selectedStore?.id || ''}
@@ -173,11 +224,11 @@ export function SocialPostCreator() {
             </select>
           </div>
 
-          {/* Photo Selector - Only show if store has photos */}
+          {/* Photo Selector */}
           {selectedStore && selectedStore.photos && selectedStore.photos.length > 0 && (
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Store Photos ({selectedStore.photos.length})
+            <div className="border border-gray-200 rounded-lg p-4 bg-white">
+              <label className="block text-sm font-semibold text-gray-800 mb-3 flex items-center gap-2">
+                <span className="text-lg">📸</span> Store Photos ({selectedStore.photos.length})
               </label>
               <div className="grid grid-cols-3 gap-2">
                 {selectedStore.photos.map((photo, index) => (
@@ -186,7 +237,7 @@ export function SocialPostCreator() {
                     onClick={() => setSelectedPhotoIndex(index)}
                     className={`aspect-square rounded-md overflow-hidden border-2 transition-all ${
                       selectedPhotoIndex === index
-                        ? 'border-cyan-500 ring-2 ring-cyan-500'
+                        ? 'border-cyan-500 ring-2 ring-cyan-500 shadow-md'
                         : 'border-gray-300 hover:border-cyan-300'
                     }`}
                   >
@@ -201,17 +252,17 @@ export function SocialPostCreator() {
             </div>
           )}
 
-          {/* Manual Image Upload - Collapsible */}
-          <details className="border border-gray-300 rounded-lg p-4">
-            <summary className="cursor-pointer text-sm font-medium text-gray-700 mb-2">
-              Or upload custom image
+          {/* Manual Image Upload */}
+          <details className="border border-gray-200 rounded-lg bg-white">
+            <summary className="cursor-pointer text-sm font-semibold text-gray-800 p-4 hover:bg-gray-50 rounded-lg">
+              <span className="text-lg">⬆️</span> Or upload custom image
             </summary>
-            <div className="mt-4 space-y-2">
+            <div className="px-4 pb-4 space-y-2">
               <input
                 type="file"
                 accept="image/*"
                 onChange={handleImageUpload}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md"
+                className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm"
               />
               <p className="text-xs text-gray-500">Or paste image URL:</p>
               <input
@@ -222,42 +273,43 @@ export function SocialPostCreator() {
                   setStoreImage(e.target.value);
                 }}
                 placeholder="https://example.com/store-image.jpg"
-                className="w-full px-3 py-2 border border-gray-300 rounded-md"
+                className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm"
               />
             </div>
           </details>
 
-          {/* Store Info */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Store Name
-            </label>
-            <input
-              type="text"
-              value={storeName}
-              onChange={(e) => setStoreName(e.target.value)}
-              placeholder="'BOUT"
-              className="w-full px-3 py-2 border border-gray-300 rounded-md"
-            />
+          {/* Text Content */}
+          <div className="border border-gray-200 rounded-lg p-4 bg-white space-y-3">
+            <h3 className="text-sm font-semibold text-gray-800 flex items-center gap-2">
+              <span className="text-lg">✏️</span> Text Content
+            </h3>
+            <div>
+              <label className="block text-xs font-medium text-gray-600 mb-1">Store Name</label>
+              <input
+                type="text"
+                value={storeName}
+                onChange={(e) => setStoreName(e.target.value)}
+                placeholder="BOUT"
+                className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm"
+              />
+            </div>
+            <div>
+              <label className="block text-xs font-medium text-gray-600 mb-1">Location</label>
+              <input
+                type="text"
+                value={location}
+                onChange={(e) => setLocation(e.target.value)}
+                placeholder="Tokyo • Asakusabashi"
+                className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm"
+              />
+            </div>
           </div>
 
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Location
-            </label>
-            <input
-              type="text"
-              value={location}
-              onChange={(e) => setLocation(e.target.value)}
-              placeholder="Tokyo • Asakusabashi"
-              className="w-full px-3 py-2 border border-gray-300 rounded-md"
-            />
-          </div>
-
-          {/* Design Toggles */}
-          <div className="space-y-3 p-4 bg-gray-50 rounded-lg">
-            <h3 className="font-semibold text-gray-900">Design Options</h3>
-
+          {/* Design Elements */}
+          <div className="border border-gray-200 rounded-lg p-4 bg-white space-y-3">
+            <h3 className="text-sm font-semibold text-gray-800 flex items-center gap-2">
+              <span className="text-lg">🎨</span> Design Elements
+            </h3>
             <div className="flex items-center gap-2">
               <input
                 type="checkbox"
@@ -270,7 +322,6 @@ export function SocialPostCreator() {
                 Show corner brackets
               </label>
             </div>
-
             <div className="flex items-center gap-2">
               <input
                 type="checkbox"
@@ -285,81 +336,141 @@ export function SocialPostCreator() {
             </div>
           </div>
 
-          {/* Text Styling */}
-          <div className="space-y-4 p-4 bg-gray-50 rounded-lg">
-            <h3 className="font-semibold text-gray-900">Text Styling</h3>
+          {/* Styling Controls */}
+          <details className="border border-gray-200 rounded-lg bg-white" open>
+            <summary className="cursor-pointer text-sm font-semibold text-gray-800 p-4 hover:bg-gray-50 rounded-lg">
+              <span className="text-lg">🎨</span> Text & Logo Styling
+            </summary>
+            <div className="px-4 pb-4 space-y-4">
+              {/* Logo Controls */}
+              <div className="border-t pt-3">
+                <p className="text-xs font-semibold text-gray-700 mb-2">LOST IN TRANSIT Logo</p>
+                <div className="space-y-2">
+                  <div>
+                    <label className="block text-xs text-gray-600 mb-1">Size</label>
+                    <input
+                      type="range"
+                      min="20"
+                      max="60"
+                      value={logoSize}
+                      onChange={(e) => setLogoSize(Number(e.target.value))}
+                      className="w-full"
+                    />
+                    <span className="text-xs text-gray-500">{logoSize}px</span>
+                  </div>
+                  <div>
+                    <label className="block text-xs text-gray-600 mb-1">Color</label>
+                    <input
+                      type="color"
+                      value={logoColor}
+                      onChange={(e) => setLogoColor(e.target.value)}
+                      className="w-full h-10 rounded cursor-pointer"
+                    />
+                  </div>
+                </div>
+              </div>
 
-            <div>
-              <label className="block text-sm text-gray-700 mb-1">Store Name Size</label>
-              <input
-                type="range"
-                min="30"
-                max="100"
-                value={storeNameSize}
-                onChange={(e) => setStoreNameSize(Number(e.target.value))}
-                className="w-full"
-              />
-              <span className="text-xs text-gray-500">{storeNameSize}px</span>
-            </div>
+              {/* L-Train-T Icon Color */}
+              <div className="border-t pt-3">
+                <p className="text-xs font-semibold text-gray-700 mb-2">L-Train-T Icon</p>
+                <div>
+                  <label className="block text-xs text-gray-600 mb-1">Color</label>
+                  <input
+                    type="color"
+                    value={iconColor}
+                    onChange={(e) => setIconColor(e.target.value)}
+                    className="w-full h-10 rounded cursor-pointer"
+                  />
+                </div>
+              </div>
 
-            <div>
-              <label className="block text-sm text-gray-700 mb-1">Store Name Color</label>
-              <input
-                type="color"
-                value={storeNameColor}
-                onChange={(e) => setStoreNameColor(e.target.value)}
-                className="w-full h-10 rounded cursor-pointer"
-              />
-            </div>
+              {/* Store Name */}
+              <div className="border-t pt-3">
+                <p className="text-xs font-semibold text-gray-700 mb-2">Store Name</p>
+                <div className="space-y-2">
+                  <div>
+                    <label className="block text-xs text-gray-600 mb-1">Size</label>
+                    <input
+                      type="range"
+                      min="30"
+                      max="120"
+                      value={storeNameSize}
+                      onChange={(e) => setStoreNameSize(Number(e.target.value))}
+                      className="w-full"
+                    />
+                    <span className="text-xs text-gray-500">{storeNameSize}px</span>
+                  </div>
+                  <div>
+                    <label className="block text-xs text-gray-600 mb-1">Color</label>
+                    <input
+                      type="color"
+                      value={storeNameColor}
+                      onChange={(e) => setStoreNameColor(e.target.value)}
+                      className="w-full h-10 rounded cursor-pointer"
+                    />
+                  </div>
+                </div>
+              </div>
 
-            <div>
-              <label className="block text-sm text-gray-700 mb-1">Location Size</label>
-              <input
-                type="range"
-                min="20"
-                max="60"
-                value={locationSize}
-                onChange={(e) => setLocationSize(Number(e.target.value))}
-                className="w-full"
-              />
-              <span className="text-xs text-gray-500">{locationSize}px</span>
+              {/* Location */}
+              <div className="border-t pt-3">
+                <p className="text-xs font-semibold text-gray-700 mb-2">Location</p>
+                <div className="space-y-2">
+                  <div>
+                    <label className="block text-xs text-gray-600 mb-1">Size</label>
+                    <input
+                      type="range"
+                      min="20"
+                      max="80"
+                      value={locationSize}
+                      onChange={(e) => setLocationSize(Number(e.target.value))}
+                      className="w-full"
+                    />
+                    <span className="text-xs text-gray-500">{locationSize}px</span>
+                  </div>
+                  <div>
+                    <label className="block text-xs text-gray-600 mb-1">Color</label>
+                    <input
+                      type="color"
+                      value={locationColor}
+                      onChange={(e) => setLocationColor(e.target.value)}
+                      className="w-full h-10 rounded cursor-pointer"
+                    />
+                  </div>
+                </div>
+              </div>
             </div>
-
-            <div>
-              <label className="block text-sm text-gray-700 mb-1">Location Color</label>
-              <input
-                type="color"
-                value={locationColor}
-                onChange={(e) => setLocationColor(e.target.value)}
-                className="w-full h-10 rounded cursor-pointer"
-              />
-            </div>
-          </div>
+          </details>
 
           {/* Export Button */}
           <Button
             onClick={handleExport}
             disabled={!storeImage || !storeName}
-            className="w-full"
+            className="w-full py-4 text-lg font-semibold"
           >
-            Export as Image (1080x1080)
+            📥 Export as Image ({canvasWidth}×{canvasHeight})
           </Button>
 
-          <p className="text-xs text-gray-500 text-center">
-            Drag text elements on the canvas to position them
+          <p className="text-xs text-gray-500 text-center italic">
+            💡 Drag text elements on the canvas to position them
           </p>
         </div>
 
         {/* Right Panel - Canvas Preview */}
         <div className="sticky top-6">
-          <div className="aspect-square bg-gray-100 rounded-lg overflow-hidden shadow-xl border-4 border-gray-200">
+          <div
+            className="bg-gray-100 rounded-lg overflow-hidden shadow-xl border-4 border-gray-200"
+            style={{
+              aspectRatio: format === 'square' ? '1/1' : '9/16',
+            }}
+          >
             <div
               ref={canvasRef}
               className="relative w-full h-full"
               style={{
-                width: '1080px',
-                height: '1080px',
-                transform: 'scale(0.5)',
+                width: `${canvasWidth}px`,
+                height: `${canvasHeight}px`,
+                transform: `scale(${scaleRatio})`,
                 transformOrigin: 'top left',
               }}
             >
@@ -373,22 +484,15 @@ export function SocialPostCreator() {
                 />
               )}
 
-              {/* Dark Overlay for better text visibility */}
+              {/* Dark Overlay */}
               <div className="absolute inset-0 bg-black/20" style={{ pointerEvents: 'none' }} />
 
               {/* Corner Brackets */}
               {showCorners && (
                 <>
-                  {/* Top Left */}
                   <div className="absolute top-6 left-6 w-24 h-24 border-l-4 border-t-4 border-cyan-400" style={{ pointerEvents: 'none' }} />
-
-                  {/* Top Right */}
                   <div className="absolute top-6 right-6 w-24 h-24 border-r-4 border-t-4 border-cyan-400" style={{ pointerEvents: 'none' }} />
-
-                  {/* Bottom Left */}
                   <div className="absolute bottom-6 left-6 w-24 h-24 border-l-4 border-b-4 border-cyan-400" style={{ pointerEvents: 'none' }} />
-
-                  {/* Bottom Right */}
                   <div className="absolute bottom-6 right-6 w-24 h-24 border-r-4 border-b-4 border-cyan-400" style={{ pointerEvents: 'none' }} />
                 </>
               )}
@@ -396,34 +500,42 @@ export function SocialPostCreator() {
               {/* L-Train-T Icon */}
               {showTrainIcon && (
                 <div className="absolute top-6 right-6" style={{ pointerEvents: 'none' }}>
-                  <svg width="80" height="80" viewBox="0 0 80 80" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <svg width="120" height="50" viewBox="0 0 120 50" fill="none" xmlns="http://www.w3.org/2000/svg">
                     {/* L */}
-                    <text x="5" y="35" fontFamily="Plus Jakarta Sans, sans-serif" fontSize="40" fontWeight="900" fill="#00D9FF">L</text>
+                    <text x="0" y="40" fontFamily="Plus Jakarta Sans, sans-serif" fontSize="48" fontWeight="900" fill={iconColor}>L</text>
 
-                    {/* Train Icon */}
-                    <g transform="translate(28, 8)">
-                      <rect x="4" y="8" width="18" height="16" rx="2" fill="#00D9FF" />
-                      <rect x="6" y="10" width="6" height="6" fill="#1a1a1a" />
-                      <rect x="14" y="10" width="6" height="6" fill="#1a1a1a" />
-                      <circle cx="8" cy="26" r="2" fill="#00D9FF" />
-                      <circle cx="18" cy="26" r="2" fill="#00D9FF" />
-                      <rect x="10" y="4" width="6" height="4" fill="#00D9FF" />
+                    {/* Train Icon - Scaled to match letter height */}
+                    <g transform="translate(38, 5)">
+                      <rect x="0" y="8" width="24" height="22" rx="2" fill={iconColor} />
+                      <rect x="3" y="11" width="8" height="8" fill="#1a1a1a" />
+                      <rect x="13" y="11" width="8" height="8" fill="#1a1a1a" />
+                      <circle cx="6" cy="32" r="2.5" fill={iconColor} />
+                      <circle cx="18" cy="32" r="2.5" fill={iconColor} />
+                      <rect x="8" y="2" width="8" height="6" fill={iconColor} />
                     </g>
 
                     {/* T */}
-                    <text x="50" y="35" fontFamily="Plus Jakarta Sans, sans-serif" fontSize="40" fontWeight="900" fill="#00D9FF">T</text>
+                    <text x="72" y="40" fontFamily="Plus Jakarta Sans, sans-serif" fontSize="48" fontWeight="900" fill={iconColor}>T</text>
                   </svg>
                 </div>
               )}
 
-              {/* Draggable Logo (Lost in Transit) */}
+              {/* Draggable Logo */}
               <Draggable
                 position={logoPos}
                 onStop={(e, data) => setLogoPos({ x: data.x, y: data.y })}
                 bounds="parent"
               >
                 <div className="absolute cursor-move">
-                  <div className="text-cyan-400 font-black text-3xl tracking-wider" style={{ fontFamily: 'Plus Jakarta Sans, sans-serif' }}>
+                  <div
+                    className="font-black tracking-wider"
+                    style={{
+                      fontFamily: 'Plus Jakarta Sans, sans-serif',
+                      fontSize: `${logoSize}px`,
+                      color: logoColor,
+                      textShadow: '2px 2px 8px rgba(0,0,0,0.8)',
+                    }}
+                  >
                     LOST IN TRANSIT
                   </div>
                 </div>
@@ -446,7 +558,7 @@ export function SocialPostCreator() {
                         textShadow: '2px 2px 8px rgba(0,0,0,0.8)',
                       }}
                     >
-                      '{storeName}
+                      {storeName}
                     </div>
                   </div>
                 </Draggable>
@@ -475,12 +587,12 @@ export function SocialPostCreator() {
                 </Draggable>
               )}
 
-              {/* Placeholder when no image */}
+              {/* Placeholder */}
               {!storeImage && (
                 <div className="absolute inset-0 flex items-center justify-center">
                   <div className="text-center text-gray-400">
-                    <p className="text-4xl mb-4">📸</p>
-                    <p className="text-2xl">Upload a store image to begin</p>
+                    <p className="text-6xl mb-4">📸</p>
+                    <p className="text-3xl font-semibold">Select a store to begin</p>
                   </div>
                 </div>
               )}
