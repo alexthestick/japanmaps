@@ -1,7 +1,9 @@
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import Draggable from 'react-draggable';
 import { toPng } from 'html-to-image';
 import { Button } from '../common/Button';
+import { supabase } from '../../lib/supabase';
+import type { Store } from '../../types/store';
 
 interface DraggableElement {
   id: string;
@@ -12,6 +14,11 @@ interface DraggableElement {
 }
 
 export function SocialPostCreator() {
+  const [stores, setStores] = useState<Store[]>([]);
+  const [selectedStore, setSelectedStore] = useState<Store | null>(null);
+  const [selectedPhotoIndex, setSelectedPhotoIndex] = useState(0);
+  const [loadingStores, setLoadingStores] = useState(false);
+
   const [storeImage, setStoreImage] = useState<string>('');
   const [storeName, setStoreName] = useState<string>('');
   const [location, setLocation] = useState<string>('');
@@ -31,6 +38,75 @@ export function SocialPostCreator() {
   const [locationSize, setLocationSize] = useState(32);
   const [storeNameColor, setStoreNameColor] = useState('#FFFFFF');
   const [locationColor, setLocationColor] = useState('#00D9FF');
+
+  // Fetch stores on mount
+  useEffect(() => {
+    fetchStores();
+  }, []);
+
+  // Update fields when store is selected
+  useEffect(() => {
+    if (selectedStore) {
+      setStoreName(selectedStore.name);
+      setLocation(`${selectedStore.city}${selectedStore.neighborhood ? ' • ' + selectedStore.neighborhood : ''}`);
+
+      // Set first photo if available
+      if (selectedStore.photos && selectedStore.photos.length > 0) {
+        setSelectedPhotoIndex(0);
+        setStoreImage(selectedStore.photos[0]);
+      }
+    }
+  }, [selectedStore]);
+
+  // Update image when photo index changes
+  useEffect(() => {
+    if (selectedStore && selectedStore.photos && selectedStore.photos[selectedPhotoIndex]) {
+      setStoreImage(selectedStore.photos[selectedPhotoIndex]);
+    }
+  }, [selectedPhotoIndex, selectedStore]);
+
+  async function fetchStores() {
+    try {
+      setLoadingStores(true);
+      const { data, error } = await supabase.rpc('get_stores_with_coordinates');
+
+      if (error) throw error;
+
+      const transformedStores: Store[] = (data || []).map((s: any) => ({
+        id: s.id,
+        name: s.name,
+        address: s.address,
+        city: s.city,
+        neighborhood: s.neighborhood || undefined,
+        country: s.country,
+        latitude: s.latitude,
+        longitude: s.longitude,
+        mainCategory: s.main_category || 'Fashion',
+        categories: s.categories,
+        priceRange: s.price_range || undefined,
+        description: s.description || undefined,
+        photos: s.photos || [],
+        website: s.website || undefined,
+        instagram: s.instagram || undefined,
+        hours: s.hours || undefined,
+        verified: s.verified,
+        submittedBy: s.submitted_by || undefined,
+        createdAt: s.created_at,
+        updatedAt: s.updated_at,
+        haulCount: s.haul_count || 0,
+        saveCount: s.save_count || 0,
+        google_place_id: s.google_place_id || undefined,
+      }));
+
+      // Sort alphabetically
+      transformedStores.sort((a, b) => a.name.localeCompare(b.name));
+      setStores(transformedStores);
+    } catch (error) {
+      console.error('Error fetching stores:', error);
+    } finally {
+      setLoadingStores(false);
+    }
+  }
 
   async function handleExport() {
     if (!canvasRef.current) return;
@@ -72,29 +148,84 @@ export function SocialPostCreator() {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
         {/* Left Panel - Controls */}
         <div className="space-y-6">
-          {/* Image Upload */}
+          {/* Store Selector */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
-              Store Image
+              Select Store
             </label>
-            <input
-              type="file"
-              accept="image/*"
-              onChange={handleImageUpload}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md"
-            />
-            <p className="text-xs text-gray-500 mt-1">Or paste image URL below:</p>
-            <input
-              type="url"
-              value={imageUrl}
+            <select
+              value={selectedStore?.id || ''}
               onChange={(e) => {
-                setImageUrl(e.target.value);
-                setStoreImage(e.target.value);
+                const store = stores.find(s => s.id === e.target.value);
+                setSelectedStore(store || null);
               }}
-              placeholder="https://example.com/store-image.jpg"
-              className="w-full px-3 py-2 border border-gray-300 rounded-md mt-2"
-            />
+              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-cyan-500"
+              disabled={loadingStores}
+            >
+              <option value="">
+                {loadingStores ? 'Loading stores...' : 'Choose a store...'}
+              </option>
+              {stores.map(store => (
+                <option key={store.id} value={store.id}>
+                  {store.name} - {store.city}
+                </option>
+              ))}
+            </select>
           </div>
+
+          {/* Photo Selector - Only show if store has photos */}
+          {selectedStore && selectedStore.photos && selectedStore.photos.length > 0 && (
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Store Photos ({selectedStore.photos.length})
+              </label>
+              <div className="grid grid-cols-3 gap-2">
+                {selectedStore.photos.map((photo, index) => (
+                  <button
+                    key={index}
+                    onClick={() => setSelectedPhotoIndex(index)}
+                    className={`aspect-square rounded-md overflow-hidden border-2 transition-all ${
+                      selectedPhotoIndex === index
+                        ? 'border-cyan-500 ring-2 ring-cyan-500'
+                        : 'border-gray-300 hover:border-cyan-300'
+                    }`}
+                  >
+                    <img
+                      src={photo}
+                      alt={`${selectedStore.name} ${index + 1}`}
+                      className="w-full h-full object-cover"
+                    />
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Manual Image Upload - Collapsible */}
+          <details className="border border-gray-300 rounded-lg p-4">
+            <summary className="cursor-pointer text-sm font-medium text-gray-700 mb-2">
+              Or upload custom image
+            </summary>
+            <div className="mt-4 space-y-2">
+              <input
+                type="file"
+                accept="image/*"
+                onChange={handleImageUpload}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md"
+              />
+              <p className="text-xs text-gray-500">Or paste image URL:</p>
+              <input
+                type="url"
+                value={imageUrl}
+                onChange={(e) => {
+                  setImageUrl(e.target.value);
+                  setStoreImage(e.target.value);
+                }}
+                placeholder="https://example.com/store-image.jpg"
+                className="w-full px-3 py-2 border border-gray-300 rounded-md"
+              />
+            </div>
+          </details>
 
           {/* Store Info */}
           <div>
