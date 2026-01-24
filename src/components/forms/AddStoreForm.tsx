@@ -29,6 +29,8 @@ const baseStoreSchema = z.object({
 });
 
 const storeSchema = baseStoreSchema.superRefine((data, ctx) => {
+  // Only Fashion, Food, and Home Goods require subcategories
+  // Coffee, Museum, and Spots do NOT require subcategories
   const needsSubcategories = ['Fashion', 'Food', 'Home Goods'].includes(data.mainCategory);
   if (needsSubcategories && (!data.categories || data.categories.length < 1)) {
     ctx.addIssue({
@@ -379,6 +381,15 @@ export function AddStoreForm({ onSuccess, onCancel }: AddStoreFormProps) {
         <div className="bg-gray-50 border border-gray-200 rounded-lg p-4">
           <p className="text-sm text-gray-800">
             🏛️ Museums don't have sub-categories. Just save with the Museum main category.
+          </p>
+        </div>
+      )}
+
+      {/* Spots: No sub-categories */}
+      {selectedMainCategory === 'Spots' && (
+        <div className="bg-green-50 border border-green-200 rounded-lg p-4">
+          <p className="text-sm text-green-800">
+            📍 Spots don't have sub-categories. Just save with the Spots main category.
           </p>
         </div>
       )}

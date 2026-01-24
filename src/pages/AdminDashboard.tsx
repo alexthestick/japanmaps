@@ -10,6 +10,7 @@ import { StoreListTable } from '../components/admin/StoreListTable';
 import { MainCategoryMigration } from '../components/admin/MainCategoryMigration';
 import { NeighborhoodList } from '../components/admin/NeighborhoodList';
 import { BlogPostEditor } from '../components/admin/BlogPostEditor';
+import { SocialPostCreator } from '../components/admin/SocialPostCreator';
 import { Modal } from '../components/common/Modal';
 import type { StoreSuggestion, Store } from '../types/store';
 
@@ -45,7 +46,7 @@ export function AdminDashboard() {
   const [loadingBlogPosts, setLoadingBlogPosts] = useState(false);
   const [showBlogEditor, setShowBlogEditor] = useState(false);
   const [editingPost, setEditingPost] = useState<any | null>(null);
-  const [activeTab, setActiveTab] = useState<'stores' | 'suggestions' | 'migration' | 'neighborhoods' | 'blog'>('stores');
+  const [activeTab, setActiveTab] = useState<'stores' | 'suggestions' | 'migration' | 'neighborhoods' | 'blog' | 'social'>('stores');
 
   const isFetchingRef = useRef(false);
 
@@ -477,6 +478,16 @@ export function AdminDashboard() {
         >
           📝 Blog Posts ({blogPosts.length})
         </button>
+        <button
+          onClick={() => setActiveTab('social')}
+          className={`px-4 py-2 font-medium border-b-2 transition-colors ${
+            activeTab === 'social'
+              ? 'border-cyan-500 text-cyan-600'
+              : 'border-transparent text-gray-600 hover:text-gray-900'
+          }`}
+        >
+          📸 Social Posts
+        </button>
       </div>
 
       {/* Store List Tab */}
@@ -642,9 +653,9 @@ export function AdminDashboard() {
                         <span>Published: {new Date(post.published_at).toLocaleDateString()}</span>
                       </div>
                       {post.hero_image && (
-                        <img 
-                          src={post.hero_image} 
-                          alt={post.title} 
+                        <img
+                          src={post.hero_image}
+                          alt={post.title}
                           className="w-32 h-20 object-cover rounded-md mb-2"
                         />
                       )}
@@ -678,6 +689,11 @@ export function AdminDashboard() {
             </div>
           )}
         </div>
+      )}
+
+      {/* Social Post Creator Tab */}
+      {activeTab === 'social' && (
+        <SocialPostCreator />
       )}
 
       {/* Add Store Modal */}

@@ -137,17 +137,28 @@ export function GoogleMapsStoreExtractor({ onApplyData }: GoogleMapsStoreExtract
       {!extractedData ? (
         <div className="space-y-4">
           <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Google Maps URL or Place ID
+            </label>
             <input
               type="text"
               value={googleMapsUrl}
               onChange={(e) => setGoogleMapsUrl(e.target.value)}
-              placeholder="https://maps.app.goo.gl/... or https://www.google.com/maps/place/..."
-              className="w-full px-4 py-3 border-2 border-purple-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent text-sm"
+              placeholder="https://maps.app.goo.gl/... OR ChIJN1t_tDeuEmsRUsoyG83frY4"
+              className="w-full px-4 py-3 border-2 border-purple-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent text-sm font-mono"
               disabled={loading}
             />
-            <p className="mt-2 text-xs text-gray-600">
-              💡 <strong>Tip:</strong> Paste any Google Maps link - we'll extract everything automatically!
-            </p>
+            <div className="mt-2 space-y-1">
+              <p className="text-xs text-gray-600">
+                💡 <strong>Option 1:</strong> Paste any Google Maps link (e.g., https://maps.app.goo.gl/...)
+              </p>
+              <p className="text-xs text-gray-600">
+                💡 <strong>Option 2:</strong> Paste the Place ID directly (e.g., ChIJN1t_tDeuEmsRUsoyG83frY4)
+              </p>
+              <p className="text-xs text-purple-600 font-medium">
+                ✨ Place IDs are more accurate! Find them in the URL or use Google's Place ID Finder.
+              </p>
+            </div>
           </div>
 
           {/* Photo Fetching Options */}
