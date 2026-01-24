@@ -31,6 +31,7 @@ export function SocialPostCreator() {
   const [storeNamePos, setStoreNamePos] = useState({ x: 50, y: format === 'square' ? 850 : 1600 });
   const [locationPos, setLocationPos] = useState({ x: 50, y: format === 'square' ? 900 : 1700 });
   const [logoPos, setLogoPos] = useState({ x: 50, y: 50 });
+  const [iconPos, setIconPos] = useState({ x: 950, y: 50 });
 
   // Text styles
   const [storeNameSize, setStoreNameSize] = useState(60);
@@ -127,12 +128,19 @@ export function SocialPostCreator() {
     if (!canvasRef.current) return;
 
     try {
+      // Temporarily remove the transform for export
+      const originalTransform = canvasRef.current.style.transform;
+      canvasRef.current.style.transform = 'none';
+
       const dataUrl = await toPng(canvasRef.current, {
         quality: 1,
         pixelRatio: 2,
         width: canvasWidth,
         height: canvasHeight,
       });
+
+      // Restore the transform
+      canvasRef.current.style.transform = originalTransform;
 
       // Download the image
       const link = document.createElement('a');
@@ -143,6 +151,11 @@ export function SocialPostCreator() {
     } catch (error) {
       console.error('Error exporting image:', error);
       alert('Failed to export image. Please try again.');
+
+      // Make sure to restore transform even if export fails
+      if (canvasRef.current) {
+        canvasRef.current.style.transform = `scale(${scaleRatio})`;
+      }
     }
   }
 
@@ -457,16 +470,18 @@ export function SocialPostCreator() {
         </div>
 
         {/* Right Panel - Canvas Preview */}
-        <div className="sticky top-6">
+        <div className="sticky top-6 self-start">
           <div
-            className="bg-gray-100 rounded-lg overflow-hidden shadow-xl border-4 border-gray-200"
+            className="bg-gray-100 rounded-lg overflow-visible shadow-xl border-4 border-gray-200 mx-auto"
             style={{
-              aspectRatio: format === 'square' ? '1/1' : '9/16',
+              width: format === 'square' ? '540px' : '303px',
+              height: format === 'square' ? '540px' : '540px',
+              position: 'relative',
             }}
           >
             <div
               ref={canvasRef}
-              className="relative w-full h-full"
+              className="relative"
               style={{
                 width: `${canvasWidth}px`,
                 height: `${canvasHeight}px`,
@@ -497,27 +512,33 @@ export function SocialPostCreator() {
                 </>
               )}
 
-              {/* L-Train-T Icon */}
+              {/* L-Train-T Icon - Draggable */}
               {showTrainIcon && (
-                <div className="absolute top-6 right-6" style={{ pointerEvents: 'none' }}>
-                  <svg width="120" height="50" viewBox="0 0 120 50" fill="none" xmlns="http://www.w3.org/2000/svg">
-                    {/* L */}
-                    <text x="0" y="40" fontFamily="Plus Jakarta Sans, sans-serif" fontSize="48" fontWeight="900" fill={iconColor}>L</text>
+                <Draggable
+                  position={iconPos}
+                  onStop={(e, data) => setIconPos({ x: data.x, y: data.y })}
+                  bounds="parent"
+                >
+                  <div className="absolute cursor-move">
+                    <svg width="120" height="50" viewBox="0 0 120 50" fill="none" xmlns="http://www.w3.org/2000/svg">
+                      {/* L */}
+                      <text x="0" y="40" fontFamily="Plus Jakarta Sans, sans-serif" fontSize="48" fontWeight="900" fill={iconColor}>L</text>
 
-                    {/* Train Icon - Scaled to match letter height */}
-                    <g transform="translate(38, 5)">
-                      <rect x="0" y="8" width="24" height="22" rx="2" fill={iconColor} />
-                      <rect x="3" y="11" width="8" height="8" fill="#1a1a1a" />
-                      <rect x="13" y="11" width="8" height="8" fill="#1a1a1a" />
-                      <circle cx="6" cy="32" r="2.5" fill={iconColor} />
-                      <circle cx="18" cy="32" r="2.5" fill={iconColor} />
-                      <rect x="8" y="2" width="8" height="6" fill={iconColor} />
-                    </g>
+                      {/* Train Icon - Scaled to match letter height */}
+                      <g transform="translate(38, 5)">
+                        <rect x="0" y="8" width="24" height="22" rx="2" fill={iconColor} />
+                        <rect x="3" y="11" width="8" height="8" fill="#1a1a1a" />
+                        <rect x="13" y="11" width="8" height="8" fill="#1a1a1a" />
+                        <circle cx="6" cy="32" r="2.5" fill={iconColor} />
+                        <circle cx="18" cy="32" r="2.5" fill={iconColor} />
+                        <rect x="8" y="2" width="8" height="6" fill={iconColor} />
+                      </g>
 
-                    {/* T */}
-                    <text x="72" y="40" fontFamily="Plus Jakarta Sans, sans-serif" fontSize="48" fontWeight="900" fill={iconColor}>T</text>
-                  </svg>
-                </div>
+                      {/* T */}
+                      <text x="72" y="40" fontFamily="Plus Jakarta Sans, sans-serif" fontSize="48" fontWeight="900" fill={iconColor}>T</text>
+                    </svg>
+                  </div>
+                </Draggable>
               )}
 
               {/* Draggable Logo */}
