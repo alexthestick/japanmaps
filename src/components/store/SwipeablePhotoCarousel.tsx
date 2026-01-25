@@ -72,7 +72,7 @@ export function SwipeablePhotoCarousel({ photos, storeName, onPhotoClick }: Swip
             <img
               src={photo}
               alt={`${storeName} - Photo ${index + 1}`}
-              className="w-full h-full object-cover"
+              className="w-full h-full object-contain"
               loading={index === 0 ? 'eager' : 'lazy'}
             />
 

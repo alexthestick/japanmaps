@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { ArrowLeft, Heart, Share2, ShoppingBag, MapPin, Clock, Globe, Instagram, ExternalLink, ChevronDown, ChevronUp, Navigation } from 'lucide-react';
+import { ArrowLeft, Heart, Share2, ShoppingBag, MapPin, Clock, Globe, Instagram, ExternalLink, ChevronDown, ChevronUp, Navigation, Map as MapIcon } from 'lucide-react';
 import { SwipeablePhotoCarousel } from './SwipeablePhotoCarousel';
 import { SaveButton } from './SaveButton';
 import { InstagramGeneratorModal } from './InstagramGeneratorModal';
@@ -40,13 +40,18 @@ export function MobileStoreDetail({ store, similarStores, onPhotoClick }: Mobile
     setExpandedSection(expandedSection === section ? null : section);
   };
 
+  const handleViewOnMap = () => {
+    // Navigate to map view with this store pre-selected
+    navigate(`/map?view=map`, { state: { selectedStoreId: store.id } });
+  };
+
   // Truncate description to ~100 chars for preview
   const shortDescription = store.description && store.description.length > 100
     ? store.description.slice(0, 100) + '...'
     : store.description;
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-gray-900 via-black to-gray-900 text-white pb-24">
+    <div className="min-h-screen bg-gradient-to-b from-gray-900 via-black to-gray-900 text-white pb-8">
       {/* Film Grain Overlay */}
       <div
         className="fixed inset-0 opacity-[0.15] pointer-events-none z-0"
@@ -223,6 +228,55 @@ export function MobileStoreDetail({ store, similarStores, onPhotoClick }: Mobile
           </div>
         )}
 
+        {/* Map Section */}
+        <div className="bg-gradient-to-br from-gray-800/50 to-gray-900/50 rounded-xl p-4 border border-cyan-500/20">
+          <h2
+            className="text-lg font-black italic uppercase mb-4"
+            style={{
+              color: '#22D9EE',
+              textShadow: '0 0 20px rgba(34, 217, 238, 0.3)'
+            }}
+          >
+            LOCATION
+          </h2>
+
+          {/* Map Placeholder - will show minimap when fixed */}
+          <div className="aspect-video bg-gray-900/50 rounded-lg overflow-hidden border border-cyan-400/20 mb-4 flex items-center justify-center">
+            <div className="text-center">
+              <MapPin className="w-12 h-12 text-cyan-400 mx-auto mb-2" />
+              <p className="text-xs text-gray-400">Map preview coming soon</p>
+            </div>
+          </div>
+
+          {/* Address */}
+          <div className="mb-4">
+            <p className="text-xs font-bold text-gray-400 uppercase mb-1">Address</p>
+            <p className="text-sm text-white">{store.address}</p>
+          </div>
+
+          {/* Action Buttons */}
+          <div className="grid grid-cols-2 gap-2">
+            <a
+              href={getGoogleMapsUrl(store.address)}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex items-center justify-center gap-2 px-4 py-3 bg-gradient-to-r from-cyan-500/20 to-blue-500/20 text-cyan-300 font-bold uppercase rounded-lg hover:from-cyan-500/30 hover:to-blue-500/30 transition-all border border-cyan-500/30 active:scale-95 text-sm"
+              style={{ boxShadow: '0 0 20px rgba(34, 217, 238, 0.2)' }}
+            >
+              <Navigation className="w-4 h-4" />
+              Directions
+            </a>
+            <button
+              onClick={handleViewOnMap}
+              className="flex items-center justify-center gap-2 px-4 py-3 bg-gradient-to-r from-purple-500/20 to-pink-500/20 text-purple-300 font-bold uppercase rounded-lg hover:from-purple-500/30 hover:to-pink-500/30 transition-all border border-purple-500/30 active:scale-95 text-sm"
+              style={{ boxShadow: '0 0 20px rgba(168, 85, 247, 0.2)' }}
+            >
+              <MapIcon className="w-4 h-4" />
+              View on Map
+            </button>
+          </div>
+        </div>
+
         {/* Information Section - Collapsible */}
         <div className="bg-gradient-to-br from-gray-800/50 to-gray-900/50 rounded-xl p-4 border border-cyan-500/20">
           <button
@@ -247,42 +301,21 @@ export function MobileStoreDetail({ store, similarStores, onPhotoClick }: Mobile
 
           {expandedSection === 'info' && (
             <div className="space-y-4">
-              {/* Address */}
-              <div className="flex gap-3">
-                <MapPin className="w-5 h-5 text-cyan-400 flex-shrink-0 mt-0.5" />
-                <div className="flex-1">
-                  <p className="text-xs font-bold text-gray-400 uppercase mb-1">Address</p>
-                  <p className="text-sm text-white mb-2">{store.address}</p>
-                  <a
-                    href={getGoogleMapsUrl(store.address)}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="inline-flex items-center gap-1.5 text-cyan-400 hover:text-cyan-300 text-sm font-medium transition-colors"
-                  >
-                    <Navigation className="w-4 h-4" />
-                    Get Directions
-                  </a>
-                </div>
-              </div>
-
               {/* Hours */}
               {store.hours && (
-                <>
-                  <div className="h-px bg-gray-700/50" />
-                  <div className="flex gap-3">
-                    <Clock className="w-5 h-5 text-cyan-400 flex-shrink-0 mt-0.5" />
-                    <div>
-                      <p className="text-xs font-bold text-gray-400 uppercase mb-1">Hours</p>
-                      <p className="text-sm text-white whitespace-pre-line">{store.hours}</p>
-                    </div>
+                <div className="flex gap-3">
+                  <Clock className="w-5 h-5 text-cyan-400 flex-shrink-0 mt-0.5" />
+                  <div>
+                    <p className="text-xs font-bold text-gray-400 uppercase mb-1">Hours</p>
+                    <p className="text-sm text-white whitespace-pre-line">{store.hours}</p>
                   </div>
-                </>
+                </div>
               )}
 
               {/* Website */}
               {store.website && (
                 <>
-                  <div className="h-px bg-gray-700/50" />
+                  {store.hours && <div className="h-px bg-gray-700/50" />}
                   <div className="flex gap-3">
                     <Globe className="w-5 h-5 text-cyan-400 flex-shrink-0 mt-0.5" />
                     <div>
@@ -304,7 +337,7 @@ export function MobileStoreDetail({ store, similarStores, onPhotoClick }: Mobile
               {/* Instagram */}
               {store.instagram && (
                 <>
-                  <div className="h-px bg-gray-700/50" />
+                  {(store.hours || store.website) && <div className="h-px bg-gray-700/50" />}
                   <div className="flex gap-3">
                     <Instagram className="w-5 h-5 text-cyan-400 flex-shrink-0 mt-0.5" />
                     <div>
@@ -324,6 +357,26 @@ export function MobileStoreDetail({ store, similarStores, onPhotoClick }: Mobile
               )}
             </div>
           )}
+        </div>
+
+        {/* Action Buttons Section */}
+        <div className="space-y-3">
+          <SaveButton storeId={store.id} variant="button" className="w-full" />
+          <button
+            onClick={() => setInstagramModalOpen(true)}
+            className="w-full px-6 py-3 bg-gradient-to-r from-pink-500/20 to-purple-600/20 text-pink-300 font-bold uppercase rounded-lg hover:from-pink-500/30 hover:to-purple-600/30 transition-all flex items-center justify-center gap-2 border border-pink-500/30 active:scale-95"
+            style={{ boxShadow: '0 0 20px rgba(236, 72, 153, 0.2)' }}
+          >
+            <Share2 className="w-5 h-5" />
+            Share to Instagram
+          </button>
+          <button
+            className="w-full px-6 py-3 bg-gradient-to-r from-cyan-500/20 to-cyan-600/20 text-cyan-300 font-bold uppercase rounded-lg hover:from-cyan-500/30 hover:to-cyan-600/30 transition-all flex items-center justify-center gap-2 border border-cyan-500/30 active:scale-95"
+            style={{ boxShadow: '0 0 20px rgba(34, 217, 238, 0.2)' }}
+          >
+            <ShoppingBag className="w-5 h-5" />
+            Add to Haul
+          </button>
         </div>
 
         {/* Related Stores */}
@@ -385,28 +438,6 @@ export function MobileStoreDetail({ store, similarStores, onPhotoClick }: Mobile
             </div>
           </div>
         )}
-      </div>
-
-      {/* Fixed Bottom Action Bar */}
-      <div className="fixed bottom-0 left-0 right-0 z-50 bg-gradient-to-t from-black via-black/95 to-transparent backdrop-blur-sm border-t border-cyan-400/20 px-4 py-4">
-        <div className="flex gap-3">
-          <SaveButton storeId={store.id} variant="button" className="flex-1" />
-          <button
-            onClick={() => setInstagramModalOpen(true)}
-            className="flex-1 px-4 py-3 bg-gradient-to-r from-pink-500/20 to-purple-600/20 text-pink-300 font-bold uppercase rounded-lg hover:from-pink-500/30 hover:to-purple-600/30 transition-all flex items-center justify-center gap-2 border border-pink-500/30 active:scale-95"
-            style={{ boxShadow: '0 0 20px rgba(236, 72, 153, 0.2)' }}
-          >
-            <Share2 className="w-4 h-4" />
-            <span className="text-xs">Share</span>
-          </button>
-          <button
-            className="flex-1 px-4 py-3 bg-gradient-to-r from-cyan-500/20 to-cyan-600/20 text-cyan-300 font-bold uppercase rounded-lg hover:from-cyan-500/30 hover:to-cyan-600/30 transition-all flex items-center justify-center gap-2 border border-cyan-500/30 active:scale-95"
-            style={{ boxShadow: '0 0 20px rgba(34, 217, 238, 0.2)' }}
-          >
-            <ShoppingBag className="w-4 h-4" />
-            <span className="text-xs">Haul</span>
-          </button>
-        </div>
       </div>
 
       {/* Instagram Generator Modal */}
