@@ -53,7 +53,7 @@ export function SwipeablePhotoCarousel({ photos, storeName, onPhotoClick }: Swip
   };
 
   return (
-    <div className="relative w-full aspect-[4/3] bg-black overflow-hidden group">
+    <div className="relative w-full aspect-[3/4] sm:aspect-[4/3] bg-black overflow-hidden group">
       {/* Photo Container */}
       <div
         ref={carouselRef}
@@ -72,8 +72,9 @@ export function SwipeablePhotoCarousel({ photos, storeName, onPhotoClick }: Swip
             <img
               src={photo}
               alt={`${storeName} - Photo ${index + 1}`}
-              className="w-full h-full object-contain"
+              className="w-full h-full object-cover"
               loading={index === 0 ? 'eager' : 'lazy'}
+              style={{ objectPosition: 'center' }}
             />
 
             {/* Expand icon overlay */}

@@ -29,6 +29,7 @@ import { MAJOR_CITIES_JAPAN, LOCATIONS } from '../lib/constants';
 export function HomePage() {
   const [searchParams, setSearchParams] = useSearchParams();
   const navigate = useNavigate();
+  const location = useLocation();
 
   // View state (persist in URL)
   const initialView = (searchParams.get('view') as 'map' | 'list') || 'map';
@@ -179,6 +180,23 @@ export function HomePage() {
 
   // Fetch stores with filters
   const { stores, loading, error } = useStores(storeFilters);
+
+  // Handle incoming store selection from navigation (e.g., from StoreDetailPage "View on Map")
+  useEffect(() => {
+    const state = location.state as any;
+    if (state?.selectedStoreId && stores.length > 0) {
+      const storeToSelect = stores.find(s => s.id === state.selectedStoreId);
+      if (storeToSelect) {
+        setSelectedStore(storeToSelect);
+        // Zoom to the store
+        if (mapViewRef.current?.flyToStore) {
+          mapViewRef.current.flyToStore(storeToSelect.latitude, storeToSelect.longitude);
+        }
+        // Clear the state so it doesn't re-trigger
+        navigate(location.pathname + location.search, { replace: true, state: {} });
+      }
+    }
+  }, [stores, location.state, navigate, location.pathname, location.search]);
 
   // Filter stores by main category and city (client-side)
   const filteredStores = stores.filter(store => {
