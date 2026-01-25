@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
-import { Search, ShoppingBag, Utensils, Coffee, Home, Landmark, MapPin, X, Sun, Moon, Dices, RotateCcw } from 'lucide-react';
+import { Search, ShoppingBag, Utensils, Coffee, Home, Landmark, MapPin, X, Dices, RotateCcw } from 'lucide-react';
 import { FilterPill } from './FilterPill';
 import type { MainCategory, Store } from '../../types/store';
 import { FASHION_SUB_CATEGORIES, FOOD_SUB_CATEGORIES, HOME_GOODS_SUB_CATEGORIES } from '../../lib/constants';
@@ -218,32 +218,6 @@ export function MobileFilterBar({
             );
           })}
 
-          {/* Map Style Toggle Pills - Mobile only */}
-          {onMapStyleChange && (
-            <>
-              <FilterPill
-                label={
-                  <div className="flex items-center gap-1.5">
-                    <Sun className="w-4 h-4" />
-                    <span>Light</span>
-                  </div>
-                }
-                active={mapStyleMode === 'day'}
-                onClick={() => onMapStyleChange('day')}
-              />
-              <FilterPill
-                label={
-                  <div className="flex items-center gap-1.5">
-                    <Moon className="w-4 h-4" />
-                    <span>Dark</span>
-                  </div>
-                }
-                active={mapStyleMode === 'night'}
-                onClick={() => onMapStyleChange('night')}
-              />
-            </>
-          )}
-
           {/* Random Store Button */}
           {onRandomStore && stores.length > 0 && (
             <button
@@ -258,8 +232,8 @@ export function MobileFilterBar({
             </button>
           )}
 
-          {/* Clear All Filters Button */}
-          {onClearAll && (selectedMainCategory || selectedSubCategories.length > 0 || selectedCity || selectedNeighborhood) && (
+          {/* Clear All Filters Button - Always visible when there are stores */}
+          {onClearAll && stores.length > 0 && (
             <button
               onClick={onClearAll}
               className="flex-shrink-0 px-3 py-2 rounded-lg bg-gray-800/90 border border-red-400/30 text-red-400 hover:bg-red-500/20 transition-all"

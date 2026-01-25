@@ -132,12 +132,15 @@ export function SearchAutocomplete({ query, stores, onSelect, onClose }: SearchA
   if (suggestions.length === 0) return null;
 
   return (
-    <div className="absolute top-full left-0 right-0 mt-2 z-[100] bg-white shadow-2xl rounded-lg max-h-[70vh] overflow-y-auto border-0 divide-y divide-gray-100">
+    <div className="absolute top-full left-0 right-0 mt-2 z-[100] bg-white shadow-2xl rounded-lg max-h-[60vh] overflow-y-auto border-0 divide-y divide-gray-100">
       {suggestions.map((suggestion, index) => (
         <button
           key={`${suggestion.type}-${suggestion.name}-${index}`}
-          onClick={() => onSelect(suggestion)}
-          className={`w-full flex items-center gap-3 px-4 py-3 text-left transition-colors first:rounded-t-lg last:rounded-b-lg ${
+          onClick={(e) => {
+            e.stopPropagation(); // Prevent backdrop click
+            onSelect(suggestion);
+          }}
+          className={`w-full flex items-center gap-3 px-4 py-3 text-left transition-colors first:rounded-t-lg last:rounded-b-lg active:scale-[0.98] ${
             index === selectedIndex ? 'bg-blue-50' : 'hover:bg-gray-50'
           }`}
         >
@@ -167,8 +170,8 @@ export function SearchAutocomplete({ query, stores, onSelect, onClose }: SearchA
           {/* Type badge */}
           <div className="flex-shrink-0">
             <span className={`text-xs px-2.5 py-1 rounded-full font-medium ${
-              suggestion.type === 'store' 
-                ? 'bg-blue-100 text-blue-700' 
+              suggestion.type === 'store'
+                ? 'bg-blue-100 text-blue-700'
                 : 'bg-green-100 text-green-700'
             }`}>
               {suggestion.type === 'store' ? 'Store' : 'Area'}

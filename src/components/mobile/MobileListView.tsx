@@ -117,10 +117,19 @@ export function MobileListView({
       {/* Film grain */}
       <div className="absolute inset-0 film-grain opacity-20 pointer-events-none" />
 
+      {/* Backdrop overlay when autocomplete is open */}
+      {showAutocomplete && searchQuery.length >= 2 && (
+        <div
+          className="fixed inset-0 bg-black/60 backdrop-blur-sm z-40 transition-opacity"
+          onClick={() => setShowAutocomplete(false)}
+          style={{ top: '64px' }} // Start below header
+        />
+      )}
+
       {/* Content */}
       <div className="relative">
         {/* Search Bar */}
-        <div className="bg-gradient-to-b from-black via-gray-900 to-transparent pb-4 px-4 pt-4">
+        <div className="bg-gradient-to-b from-black via-gray-900 to-transparent pb-4 px-4 pt-4 relative z-50">
           <div className="relative" ref={searchContainerRef}>
             <div className="absolute -inset-1 bg-gradient-to-r from-cyan-500 via-blue-500 to-purple-500 rounded-2xl opacity-30 blur-md" />
             <div className="relative bg-gray-900/95 backdrop-blur-xl rounded-2xl border-2 border-cyan-400/30 shadow-2xl overflow-visible">
