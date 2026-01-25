@@ -8,6 +8,7 @@ import { MapPin, ExternalLink, Instagram, Clock, Navigation, ArrowLeft, Shopping
 import { Button } from '../components/common/Button';
 import { SaveButton } from '../components/store/SaveButton';
 import { InstagramGeneratorModal } from '../components/store/InstagramGeneratorModal';
+import { MobileStoreDetail } from '../components/store/MobileStoreDetail';
 import { SEOHead, generateStoreSchema, generateBreadcrumbSchema } from '../components/seo';
 import { Breadcrumbs } from '../components/ui/Breadcrumbs';
 import type { Store } from '../types/store';
@@ -17,12 +18,14 @@ import { isUUID, generateSlug } from '../utils/slugify';
 import { MAIN_CATEGORY_COLORS } from '../lib/constants';
 import { cityToSlug, neighborhoodToSlug } from '../utils/cityData';
 import { MAPBOX_TOKEN, MAP_STYLE_DAY } from '../lib/mapbox';
+import { useIsMobile } from '../hooks/useMediaQuery';
 import 'mapbox-gl/dist/mapbox-gl.css';
 
 export function StoreDetailPage() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const location = useLocation();
+  const isMobile = useIsMobile();
   const [store, setStore] = useState<Store | null>(null);
   const [similarStores, setSimilarStores] = useState<Store[]>([]);
   const [loading, setLoading] = useState(true);
@@ -273,6 +276,50 @@ export function StoreDetailPage() {
     { name: store.name, url: seoUrl },
   ]);
 
+  // Render mobile version
+  if (isMobile) {
+    return (
+      <>
+        {/* SEO Head */}
+        <SEOHead
+          title={seoTitle}
+          description={seoDescription}
+          image={seoImage}
+          url={seoUrl}
+          type="place"
+          storeName={store.name}
+          storeAddress={store.address}
+          storeCity={store.city}
+          storeNeighborhood={store.neighborhood}
+          storeCategory={store.mainCategory}
+          jsonLd={[storeSchema, breadcrumbSchema]}
+        />
+
+        <MobileStoreDetail
+          store={store}
+          similarStores={similarStores}
+          onPhotoClick={(index) => {
+            setCurrentImageIndex(index);
+            setLightboxOpen(true);
+          }}
+        />
+
+        {/* Photo Lightbox */}
+        {lightboxOpen && (
+          <PhotoLightbox
+            photos={photos}
+            currentIndex={currentImageIndex}
+            storeName={store.name}
+            onClose={() => setLightboxOpen(false)}
+            onNext={() => setCurrentImageIndex((i) => (i === photos.length - 1 ? 0 : i + 1))}
+            onPrevious={() => setCurrentImageIndex((i) => (i === 0 ? photos.length - 1 : i - 1))}
+          />
+        )}
+      </>
+    );
+  }
+
+  // Desktop version
   return (
     <div className="min-h-screen bg-gradient-to-b from-gray-900 via-black to-gray-900 text-white">
       {/* SEO Head */}
