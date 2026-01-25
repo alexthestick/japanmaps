@@ -57,8 +57,11 @@ export function SwipeablePhotoCarousel({ photos, storeName, onPhotoClick }: Swip
       {/* Photo Container */}
       <div
         ref={carouselRef}
-        className="relative w-full h-full flex transition-transform duration-300 ease-out"
-        style={{ transform: `translateX(-${currentIndex * 100}%)` }}
+        className="relative h-full flex transition-transform duration-300 ease-out"
+        style={{
+          transform: `translateX(-${currentIndex * 100}%)`,
+          width: `${photos.length * 100}%`
+        }}
         onTouchStart={handleTouchStart}
         onTouchMove={handleTouchMove}
         onTouchEnd={handleTouchEnd}
@@ -66,7 +69,8 @@ export function SwipeablePhotoCarousel({ photos, storeName, onPhotoClick }: Swip
         {photos.map((photo, index) => (
           <div
             key={index}
-            className="min-w-full h-full flex-shrink-0 relative"
+            className="h-full flex-shrink-0 relative"
+            style={{ width: `${100 / photos.length}%` }}
             onClick={() => onPhotoClick(index)}
           >
             <img
