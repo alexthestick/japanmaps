@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
-import { Search, ShoppingBag, Utensils, Coffee, Home, Landmark, MapPin, X, Sun, Moon } from 'lucide-react';
+import { Search, ShoppingBag, Utensils, Coffee, Home, Landmark, MapPin, X, Sun, Moon, Dices, RotateCcw } from 'lucide-react';
 import { FilterPill } from './FilterPill';
 import type { MainCategory, Store } from '../../types/store';
 import { FASHION_SUB_CATEGORIES, FOOD_SUB_CATEGORIES, HOME_GOODS_SUB_CATEGORIES } from '../../lib/constants';
@@ -33,6 +33,10 @@ interface MobileFilterBarProps {
   // Map style mode
   mapStyleMode?: 'day' | 'night';
   onMapStyleChange?: (mode: 'day' | 'night') => void;
+
+  // Random store and clear filters
+  onRandomStore?: (store: Store) => void;
+  onClearAll?: () => void;
 }
 
 // Category definitions with icons and subcategories
@@ -42,6 +46,7 @@ const CATEGORIES = [
   { id: 'Coffee' as MainCategory, label: 'Coffee', Icon: Coffee, subcategories: [] },
   { id: 'Home Goods' as MainCategory, label: 'Home Goods', Icon: Home, subcategories: HOME_GOODS_SUB_CATEGORIES },
   { id: 'Museum' as MainCategory, label: 'Museum', Icon: Landmark, subcategories: [] },
+  { id: 'Spots' as MainCategory, label: 'Spots', Icon: MapPin, subcategories: [] },
 ];
 
 /**
@@ -62,6 +67,8 @@ export function MobileFilterBar({
   onSelectSuggestion,
   mapStyleMode = 'day',
   onMapStyleChange,
+  onRandomStore,
+  onClearAll,
 }: MobileFilterBarProps) {
   // Track which category's subcategories are expanded
   const [expandedCategory, setExpandedCategory] = useState<MainCategory | null>(null);
@@ -235,6 +242,31 @@ export function MobileFilterBar({
                 onClick={() => onMapStyleChange('night')}
               />
             </>
+          )}
+
+          {/* Random Store Button */}
+          {onRandomStore && stores.length > 0 && (
+            <button
+              onClick={() => {
+                const randomIndex = Math.floor(Math.random() * stores.length);
+                onRandomStore(stores[randomIndex]);
+              }}
+              className="flex-shrink-0 px-3 py-2 rounded-lg bg-gray-800/90 border border-cyan-400/30 text-cyan-300 hover:bg-gray-700 transition-all"
+              title="Random store"
+            >
+              <Dices className="w-4 h-4" />
+            </button>
+          )}
+
+          {/* Clear All Filters Button */}
+          {onClearAll && (selectedMainCategory || selectedSubCategories.length > 0 || selectedCity || selectedNeighborhood) && (
+            <button
+              onClick={onClearAll}
+              className="flex-shrink-0 px-3 py-2 rounded-lg bg-gray-800/90 border border-red-400/30 text-red-400 hover:bg-red-500/20 transition-all"
+              title="Clear all filters"
+            >
+              <RotateCcw className="w-4 h-4" />
+            </button>
           )}
         </div>
 

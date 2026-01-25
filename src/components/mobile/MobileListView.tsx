@@ -30,6 +30,7 @@ const CATEGORIES = [
   { id: 'Coffee' as MainCategory, label: 'Coffee', subcategories: [] },
   { id: 'Home Goods' as MainCategory, label: 'Home Goods', subcategories: HOME_GOODS_SUB_CATEGORIES },
   { id: 'Museum' as MainCategory, label: 'Museum', subcategories: [] },
+  { id: 'Spots' as MainCategory, label: 'Spots', subcategories: [] },
 ];
 
 const SORT_OPTIONS = [

@@ -316,10 +316,17 @@ export function HomePage() {
                 searchQuery={searchQuery}
                 onSearchChange={setSearchQuery}
                 onOpenCityDrawer={() => setShowCityDrawer(true)}
-                stores={stores}
+                stores={filteredStores}
                 onSelectSuggestion={handleSearchSuggestionSelect}
                 mapStyleMode={mapStyleMode}
                 onMapStyleChange={setMapStyleMode}
+                onRandomStore={(store) => {
+                  if (mapViewRef.current?.flyToStore) {
+                    mapViewRef.current.flyToStore(store.latitude, store.longitude);
+                  }
+                  setSelectedStore(store);
+                }}
+                onClearAll={handleClearAll}
               />
 
               {/* View Toggle Button - Bottom Right */}
