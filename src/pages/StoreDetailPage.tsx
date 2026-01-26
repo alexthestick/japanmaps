@@ -472,29 +472,49 @@ export function StoreDetailPage() {
             ))}
           </div>
         ) : (
-          /* 3+ Images - Square Grid Tiles */
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
-            {photos.slice(0, 8).map((photo, index) => (
+          /* 3+ Images - Airbnb Style Grid with Square Shapes (1 Large + 4 Small) */
+          <div className="grid grid-cols-4 grid-rows-2 gap-3">
+            {/* Large Main Image - Takes up 2x2 grid (Square) */}
+            <div
+              className="col-span-2 row-span-2 relative w-full cursor-pointer group rounded-xl overflow-hidden border-2 border-cyan-500/30 hover:border-cyan-500/60 transition-all shadow-[0_0_20px_rgba(34,217,238,0.2)] hover:shadow-[0_0_40px_rgba(34,217,238,0.4)]"
+              style={{ paddingBottom: '100%' }}
+              onClick={() => {
+                setCurrentImageIndex(0);
+                setLightboxOpen(true);
+              }}
+            >
+              <div className="absolute inset-0">
+                <img
+                  src={photos[0]}
+                  alt={store.name}
+                  className="w-full h-full object-cover transition-transform group-hover:scale-105"
+                  style={{ objectPosition: 'center' }}
+                />
+              </div>
+            </div>
+
+            {/* Four Smaller Square Images */}
+            {photos.slice(1, 5).map((photo, index) => (
               <div
-                key={index}
+                key={index + 1}
                 className="relative w-full cursor-pointer group rounded-xl overflow-hidden border-2 border-cyan-500/30 hover:border-cyan-500/60 transition-all shadow-[0_0_20px_rgba(34,217,238,0.2)] hover:shadow-[0_0_40px_rgba(34,217,238,0.4)]"
                 style={{ paddingBottom: '100%' }}
                 onClick={() => {
-                  setCurrentImageIndex(index);
+                  setCurrentImageIndex(index + 1);
                   setLightboxOpen(true);
                 }}
               >
                 <div className="absolute inset-0">
                   <img
                     src={photo}
-                    alt={`${store.name} - ${index + 1}`}
+                    alt={`${store.name} - ${index + 2}`}
                     className="w-full h-full object-cover transition-transform group-hover:scale-105"
                     style={{ objectPosition: 'center' }}
                   />
-                  {/* Show +X more on last visible tile if there are more photos */}
-                  {index === 7 && photos.length > 8 && (
+                  {/* Show +X more on last image if there are more photos */}
+                  {index === 3 && photos.length > 5 && (
                     <div className="absolute inset-0 bg-black/70 flex items-center justify-center text-cyan-300 text-xl font-bold italic pointer-events-none">
-                      +{photos.length - 8} MORE
+                      +{photos.length - 5} MORE
                     </div>
                   )}
                 </div>
