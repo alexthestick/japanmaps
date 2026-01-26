@@ -1,7 +1,7 @@
 import { useState, useCallback, useEffect, useRef, useImperativeHandle, forwardRef, useMemo } from 'react';
 import Map, { Marker, NavigationControl } from 'react-map-gl';
 import { MAPBOX_TOKEN, MAP_STYLE_DAY, MAP_STYLE_NIGHT, DEFAULT_CENTER, DEFAULT_ZOOM } from '../../lib/mapbox';
-import { CITY_COORDINATES, NEIGHBORHOOD_COORDINATES } from '../../lib/constants';
+import { CITY_COORDINATES, NEIGHBORHOOD_COORDINATES, MAIN_CATEGORY_COLORS } from '../../lib/constants';
 import { IconStoreMarker } from './IconStoreMarker';
 import { MapLegend } from './MapLegend';
 import { StoreLabel } from './StoreLabel';
@@ -14,6 +14,61 @@ import { useToast } from '../../hooks/useToast';
 import type { Store } from '../../types/store';
 import type { Map as MapboxMap } from 'mapbox-gl';
 import 'mapbox-gl/dist/mapbox-gl.css';
+
+// 🎯 PHASE 1: Marker Tier System for Performance
+// Tier 0 (zoom < 12): Tiny glowing dots - atmosphere mode
+// Tier 1 (zoom 12-14): Category-colored dots - discovery mode
+// Tier 2 (zoom 14-16): Mini pins with icons - exploration mode
+// Tier 3 (zoom 16+): Full markers with labels - street level
+
+type MarkerTier = 'atmosphere' | 'discovery' | 'exploration' | 'street';
+
+function getMarkerTier(zoom: number): MarkerTier {
+  if (zoom < 12) return 'atmosphere';
+  if (zoom < 14) return 'discovery';
+  if (zoom < 16) return 'exploration';
+  return 'street';
+}
+
+// 🎨 Atmosphere Dot Component (Tier 0) - Minimal, glowing presence
+const AtmosphereDot = ({ store, onClick }: { store: Store; onClick: (e: any) => void }) => {
+  const color = MAIN_CATEGORY_COLORS[store.mainCategory || 'Fashion'] || '#22D9EE';
+  return (
+    <div
+      onClick={onClick}
+      className="cursor-pointer transition-transform duration-200 hover:scale-150"
+      style={{
+        width: '6px',
+        height: '6px',
+        borderRadius: '50%',
+        backgroundColor: color,
+        opacity: 0.7,
+        boxShadow: `0 0 6px 2px ${color}40`,
+      }}
+      title={store.name}
+    />
+  );
+};
+
+// 🎨 Discovery Dot Component (Tier 1) - Category-colored, slightly larger
+const DiscoveryDot = ({ store, onClick }: { store: Store; onClick: (e: any) => void }) => {
+  const color = MAIN_CATEGORY_COLORS[store.mainCategory || 'Fashion'] || '#22D9EE';
+  return (
+    <div
+      onClick={onClick}
+      className="cursor-pointer transition-all duration-200 hover:scale-125"
+      style={{
+        width: '10px',
+        height: '10px',
+        borderRadius: '50%',
+        backgroundColor: color,
+        border: '2px solid white',
+        boxShadow: `0 2px 4px rgba(0,0,0,0.3), 0 0 8px 2px ${color}30`,
+      }}
+      title={store.name}
+    />
+  );
+};
 
 interface MapViewProps {
   stores: Store[];
@@ -281,17 +336,8 @@ export const MapView = forwardRef<MapViewHandle, MapViewProps>(({ stores, onStor
     }
   }), []);
 
-  // Debug logging
-  console.log('MapView received stores:', stores);
-  console.log('Store count in MapView:', stores.length);
-  if (stores.length > 0) {
-    console.log('First store in MapView:', {
-      name: stores[0].name,
-      lat: stores[0].latitude,
-      lng: stores[0].longitude,
-      categories: stores[0].categories,
-    });
-  }
+  // Debug logging (disabled for production performance)
+  // console.log('MapView received stores:', stores.length);
 
   // Show message if no Mapbox token
   if (!MAPBOX_TOKEN) {
@@ -370,24 +416,55 @@ export const MapView = forwardRef<MapViewHandle, MapViewProps>(({ stores, onStor
       >
         <NavigationControl position="top-right" />
 
-        {/* Store Markers - All visible with zoom-based rendering */}
-        {stores.map(store => (
-          <Marker
-            key={store.id}
-            longitude={store.longitude}
-            latitude={store.latitude}
-            anchor="bottom"
-            onClick={e => handleMarkerClick(e, store)}
-          >
-            <IconStoreMarker
-              store={store}
-              activeFilter={activeSubCategory}
-              activeMainCategory={activeMainCategory}
-              onHoverChange={setHoveredStoreId}
-              currentZoom={viewState.zoom}
-            />
-          </Marker>
-        ))}
+        {/* 🎯 PHASE 1: Optimized Store Markers with Viewport Culling + Tiered Rendering */}
+        {(() => {
+          const currentTier = getMarkerTier(viewState.zoom);
+
+          // 🔹 Viewport Culling: Only render markers in visible bounds (with buffer)
+          const bounds = mapRef.current?.getBounds();
+          const buffer = 0.01; // ~1km buffer to prevent pop-in
+
+          const visibleStores = bounds
+            ? stores.filter(store => {
+                return store.latitude >= bounds.getSouth() - buffer &&
+                       store.latitude <= bounds.getNorth() + buffer &&
+                       store.longitude >= bounds.getWest() - buffer &&
+                       store.longitude <= bounds.getEast() + buffer;
+              })
+            : stores;
+
+          // 🔹 Limit markers at very low zoom for performance
+          const maxMarkers = currentTier === 'atmosphere' ? 200 :
+                            currentTier === 'discovery' ? 150 :
+                            currentTier === 'exploration' ? 100 : 80;
+
+          const markersToRender = visibleStores.slice(0, maxMarkers);
+
+          return markersToRender.map(store => (
+            <Marker
+              key={store.id}
+              longitude={store.longitude}
+              latitude={store.latitude}
+              anchor={currentTier === 'atmosphere' || currentTier === 'discovery' ? 'center' : 'bottom'}
+              onClick={e => handleMarkerClick(e, store)}
+            >
+              {/* Render different marker types based on zoom tier */}
+              {currentTier === 'atmosphere' ? (
+                <AtmosphereDot store={store} onClick={(e) => handleMarkerClick(e, store)} />
+              ) : currentTier === 'discovery' ? (
+                <DiscoveryDot store={store} onClick={(e) => handleMarkerClick(e, store)} />
+              ) : (
+                <IconStoreMarker
+                  store={store}
+                  activeFilter={activeSubCategory}
+                  activeMainCategory={activeMainCategory}
+                  onHoverChange={setHoveredStoreId}
+                  currentZoom={viewState.zoom}
+                />
+              )}
+            </Marker>
+          ));
+        })()}
 
         {/* User Location Marker */}
         {userPosition && (
