@@ -11,6 +11,7 @@ import { LocateButton } from './LocateButton';
 import { Toast } from '../common/Toast';
 import { useGeolocation } from '../../hooks/useGeolocation';
 import { useToast } from '../../hooks/useToast';
+import { useIsMobile } from '../../hooks/useMediaQuery';
 import type { Store } from '../../types/store';
 import type { Map as MapboxMap } from 'mapbox-gl';
 import 'mapbox-gl/dist/mapbox-gl.css';
@@ -97,6 +98,7 @@ export const MapView = forwardRef<MapViewHandle, MapViewProps>(({ stores, onStor
 
   const [hoveredStoreId, setHoveredStoreId] = useState<string | null>(null);
   const mapRef = useRef<MapboxMap | null>(null);
+  const isMobile = useIsMobile();
 
   // User location tracking
   const { position: userPosition, error: locationError, loading: locationLoading, requestLocation } = useGeolocation();
@@ -555,31 +557,17 @@ export const MapView = forwardRef<MapViewHandle, MapViewProps>(({ stores, onStor
 
 
       {/* Store Labels - Rendered outside Map component for absolute positioning */}
-      {/* PHASE 1.6: Limit to 50 closest stores to viewport center for performance */}
+      {/* PHASE 1.5A: Optimized label limits - 8-10 on mobile, 15 on desktop */}
       <div className="absolute inset-0 pointer-events-none">
         {(() => {
-          // If there are <= 50 stores, show all labels
-          if (stores.length <= 50) {
-            return stores.map((store, index) => (
-              <StoreLabel
-                key={`label-${store.id}`}
-                store={store}
-                map={mapRef.current}
-                isSearchActive={isSearchActive}
-                isHovered={hoveredStoreId === store.id || tappedStoreId === store.id}
-                index={index}
-                activeZoneCenter={activeZoneCenter}
-                activeZoneRadius={calculateActiveZoneRadius}
-                onClick={onLabelClick}
-              />
-            ));
-          }
+          // 🎯 PHASE 1.5A: Responsive label limits
+          const maxLabels = isMobile ? 10 : 15;
 
           // Calculate map center and sort stores by distance
           const mapCenter = mapRef.current?.getCenter();
           if (!mapCenter) {
-            // Fallback: show first 50 stores
-            return stores.slice(0, 50).map((store, index) => (
+            // Fallback: show limited stores
+            return stores.slice(0, maxLabels).map((store, index) => (
               <StoreLabel
                 key={`label-${store.id}`}
                 store={store}
@@ -604,8 +592,8 @@ export const MapView = forwardRef<MapViewHandle, MapViewProps>(({ stores, onStor
 
           storesWithDistance.sort((a, b) => a.distance - b.distance);
 
-          // Take closest 50 stores
-          const closestStores = storesWithDistance.slice(0, 50);
+          // 🎯 Take closest stores based on device - updates dynamically as user pans
+          const closestStores = storesWithDistance.slice(0, maxLabels);
 
           return closestStores.map(({ store }, index) => (
             <StoreLabel
