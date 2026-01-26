@@ -61,18 +61,12 @@ function StoreCardComponent({ store, onClick }: StoreCardProps) {
 
         {/* Image Container */}
         <div className="relative w-full aspect-[4/5] overflow-hidden bg-gray-800">
-          {store.photos[0] ? (
-            <img
-              src={store.photos[0]}
-              alt={store.name}
-              loading="lazy"
-              className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
-            />
-          ) : (
-            <div className="w-full h-full flex items-center justify-center text-gray-500">
-              No Image
-            </div>
-          )}
+          <img
+            src={store.photos[0] || 'https://images.unsplash.com/photo-1578662996442-48f60103fc96?w=600&h=750&fit=crop&q=80'}
+            alt={store.name}
+            loading="lazy"
+            className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+          />
 
           {/* Cyan tint overlay */}
           <div className="absolute inset-0 bg-cyan-400/5" />
