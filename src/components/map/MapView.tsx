@@ -379,10 +379,10 @@ export const MapView = forwardRef<MapViewHandle, MapViewProps>(({ stores, onStor
       return;
     }
 
-    // Hide POI labels that clutter the map
+    // Hide POI labels that clutter the map (except transit stations - Phase 1.5B)
     const layersToHide = [
       'poi-label',
-      'transit-label',
+      // 'transit-label', // 🚉 PHASE 1.5B: Keep transit stations visible for navigation
       'airport-label',
       'settlement-subdivision-label',
       'natural-point-label',
@@ -399,7 +399,7 @@ export const MapView = forwardRef<MapViewHandle, MapViewProps>(({ stores, onStor
       }
     });
 
-    console.log('Map POI labels hidden for cleaner appearance');
+    console.log('Map labels configured: POI hidden, transit stations visible');
   }, []);
 
   return (
@@ -555,6 +555,57 @@ export const MapView = forwardRef<MapViewHandle, MapViewProps>(({ stores, onStor
         </div>
       )}
 
+
+      {/* 🏙️ PHASE 1.5B: Neighborhood Labels (Low Zoom Context) */}
+      {viewState.zoom < 14 && mapRef.current && (
+        <div className="absolute inset-0 pointer-events-none">
+          {Object.entries(NEIGHBORHOOD_COORDINATES).map(([name, coords]) => {
+            const point = mapRef.current!.project([coords.longitude, coords.latitude]);
+
+            // Check if neighborhood is in viewport
+            const mapContainer = mapRef.current!.getContainer();
+            const inViewport =
+              point.x >= 0 && point.x <= mapContainer.clientWidth &&
+              point.y >= 0 && point.y <= mapContainer.clientHeight;
+
+            if (!inViewport) return null;
+
+            // Determine font size based on zoom
+            const fontSize = viewState.zoom < 12 ? 20 : 16;
+            const padding = viewState.zoom < 12 ? '10px 18px' : '8px 14px';
+
+            return (
+              <div
+                key={name}
+                className="absolute animate-in fade-in duration-300"
+                style={{
+                  left: `${point.x}px`,
+                  top: `${point.y}px`,
+                  transform: 'translate(-50%, -50%)',
+                }}
+              >
+                <div
+                  style={{
+                    fontSize: `${fontSize}px`,
+                    fontWeight: 'bold',
+                    color: '#FCD34D', // Yellow-300 for visibility
+                    textShadow: '0 2px 12px rgba(0,0,0,0.9), 0 0 20px rgba(252, 211, 77, 0.3)',
+                    padding,
+                    background: 'rgba(0, 0, 0, 0.5)',
+                    backdropFilter: 'blur(8px)',
+                    borderRadius: '24px',
+                    border: '1.5px solid rgba(252, 211, 77, 0.3)',
+                    whiteSpace: 'nowrap',
+                    letterSpacing: '0.5px',
+                  }}
+                >
+                  {name}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      )}
 
       {/* Store Labels - Rendered outside Map component for absolute positioning */}
       {/* PHASE 1.5A: Optimized label limits - 8-10 on mobile, 15 on desktop */}
