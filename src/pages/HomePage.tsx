@@ -5,6 +5,7 @@ import { Dices } from 'lucide-react';
 import { MapView } from '../components/map/MapView';
 import { StoreList } from '../components/store/StoreList';
 import { StoreDetail } from '../components/store/StoreDetail';
+import { BottomSheetStoreDetail } from '../components/store/BottomSheetStoreDetail';
 import { ScrollingBanner } from '../components/layout/ScrollingBanner';
 // import { StoreDetailModal } from '../components/store/StoreDetailModal'; // Not needed in new design
 import { FloatingSearchBar } from '../components/map/FloatingSearchBar';
@@ -246,6 +247,19 @@ export function HomePage() {
     setSelectedNeighborhood(null);
   };
 
+  // PHASE 1.6A: Handle search area - smart context switching
+  const handleSearchArea = useCallback((city: string | null, bounds: { north: number; south: number; east: number; west: number } | null) => {
+    if (city) {
+      // Switch to detected city
+      setSelectedCity(city);
+      setSelectedNeighborhood(null);
+    } else if (bounds) {
+      // Apply bounds filter - for now, just keep current city
+      // TODO: Implement bounds-based filtering in future if needed
+      console.log('Bounds filter requested:', bounds);
+    }
+  }, []);
+
   // Handle autocomplete suggestion selection (CRITICAL: prevent refresh)
   const handleSearchSuggestionSelect = useCallback((suggestion: SearchSuggestion) => {
     if (suggestion.type === 'store') {
@@ -318,6 +332,8 @@ export function HomePage() {
             onLabelClick={handleLabelClick}
             styleMode={mapStyleMode}
             onStyleModeChange={setMapStyleMode}
+            onSearchArea={handleSearchArea}
+            selectedStore={selectedStore}
           />
 
           {/* MOBILE: Floating Filter Bar (overlays map) */}
@@ -402,19 +418,25 @@ export function HomePage() {
             </>
           )}
 
-          {/* Store Detail Panel (both mobile and desktop - will update in Phase 2) */}
-          <AnimatePresence mode="wait">
-            {selectedStore && (
-              <>
-                {console.log('Rendering StoreDetail for:', selectedStore.name)}
+          {/* PHASE 2.1: Store Detail - Bottom Sheet on Mobile, Sidebar on Desktop */}
+          {isMobile ? (
+            // Mobile: Bottom Sheet (peek/half/full states)
+            <BottomSheetStoreDetail
+              store={selectedStore}
+              onClose={() => setSelectedStore(null)}
+            />
+          ) : (
+            // Desktop: Right Sidebar (existing design)
+            <AnimatePresence mode="wait">
+              {selectedStore && (
                 <StoreDetail
                   key={selectedStore.id}
                   store={selectedStore}
                   onClose={() => setSelectedStore(null)}
                 />
-              </>
-            )}
-          </AnimatePresence>
+              )}
+            </AnimatePresence>
+          )}
 
           {/* City/Neighborhood Selector Bottom Sheet (Mobile only) */}
           {isMobile && (

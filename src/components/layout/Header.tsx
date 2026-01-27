@@ -39,6 +39,18 @@ export function Header({ onCitiesClick }: HeaderProps) {
     window.dispatchEvent(new Event('mapStyleModeChanged'));
   }, [styleMode]);
 
+  // Prevent body scroll when mobile menu is open
+  useEffect(() => {
+    if (mobileMenuOpen) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = '';
+    }
+    return () => {
+      document.body.style.overflow = '';
+    };
+  }, [mobileMenuOpen]);
+
   return (
     <header className="relative bg-gradient-to-r from-gray-900 via-black to-gray-900 border-b-2 border-cyan-400/30 sticky top-0 z-40 overflow-hidden">
       {/* Film grain */}
@@ -202,6 +214,11 @@ export function Header({ onCitiesClick }: HeaderProps) {
                   <span className="relative z-10">SUGGEST STORE</span>
                 </button>
               </Link>
+
+              {/* Day/Night toggle for mobile */}
+              <div className="mt-3 px-3">
+                <MapStyleToggle mode={styleMode} onChange={setStyleMode} placement="inline" />
+              </div>
             </nav>
           </div>
         )}

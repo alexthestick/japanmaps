@@ -8,10 +8,12 @@ import { StoreLabel } from './StoreLabel';
 import { MapStyleToggle } from './MapStyleToggle';
 import { UserLocationMarker } from './UserLocationMarker';
 import { LocateButton } from './LocateButton';
+import { SearchAreaButton } from './SearchAreaButton';
 import { Toast } from '../common/Toast';
 import { useGeolocation } from '../../hooks/useGeolocation';
 import { useToast } from '../../hooks/useToast';
 import { useIsMobile } from '../../hooks/useMediaQuery';
+import { useSearchArea } from '../../hooks/useSearchArea';
 import type { Store } from '../../types/store';
 import type { Map as MapboxMap } from 'mapbox-gl';
 import 'mapbox-gl/dist/mapbox-gl.css';
@@ -83,13 +85,15 @@ interface MapViewProps {
   onStyleModeChange?: (mode: 'day' | 'night') => void;
   tappedStoreId?: string | null; // For mobile two-tap interaction
   onLabelClick?: (store: Store) => void; // Direct click handler for labels
+  onSearchArea?: (city: string | null, bounds: { north: number; south: number; east: number; west: number } | null) => void;
+  selectedStore?: Store | null; // PHASE 2.2C: Track if store is selected to hide button
 }
 
 export interface MapViewHandle {
   flyToStore: (latitude: number, longitude: number) => void;
 }
 
-export const MapView = forwardRef<MapViewHandle, MapViewProps>(({ stores, onStoreClick, selectedCity, selectedNeighborhood, isSearchActive = false, activeMainCategory, activeSubCategory, styleMode: controlledStyleMode, onStyleModeChange, tappedStoreId, onLabelClick }, ref) => {
+export const MapView = forwardRef<MapViewHandle, MapViewProps>(({ stores, onStoreClick, selectedCity, selectedNeighborhood, isSearchActive = false, activeMainCategory, activeSubCategory, styleMode: controlledStyleMode, onStyleModeChange, tappedStoreId, onLabelClick, onSearchArea, selectedStore }, ref) => {
   const [viewState, setViewState] = useState({
     longitude: DEFAULT_CENTER.longitude,
     latitude: DEFAULT_CENTER.latitude,
@@ -100,6 +104,13 @@ export const MapView = forwardRef<MapViewHandle, MapViewProps>(({ stores, onStor
   const mapRef = useRef<MapboxMap | null>(null);
   const isMobile = useIsMobile();
 
+  // PHASE 1.5G: Track map movement to hide city labels during pan/zoom
+  const [isMapMoving, setIsMapMoving] = useState(false);
+  const moveTimeoutRef = useRef<NodeJS.Timeout>();
+
+  // PHASE 1.6A: Search Area feature with smart context switching
+  const { showSearchButton, hideSearchButton, initializeSearch, getCurrentBounds, detectCurrentCity } = useSearchArea(mapRef);
+
   // User location tracking
   const { position: userPosition, error: locationError, loading: locationLoading, requestLocation } = useGeolocation();
   const { toast, showToast, hideToast } = useToast();
@@ -108,6 +119,25 @@ export const MapView = forwardRef<MapViewHandle, MapViewProps>(({ stores, onStor
   const handleLocateClick = useCallback(() => {
     requestLocation();
   }, [requestLocation]);
+
+  // PHASE 1.6A: Handle search area button click - smart context switching
+  const handleSearchArea = useCallback(() => {
+    const bounds = getCurrentBounds();
+    const detectedCity = detectCurrentCity();
+
+    // Hybrid approach: detect if user panned to a different city
+    if (detectedCity && detectedCity !== selectedCity) {
+      // User panned to a different city - switch city filter
+      console.log('Search area: Switching to city', detectedCity);
+      onSearchArea?.(detectedCity, null);
+    } else {
+      // Same city or ambiguous - apply bounds filter
+      console.log('Search area: Applying bounds filter', bounds);
+      onSearchArea?.(null, bounds);
+    }
+
+    hideSearchButton();
+  }, [getCurrentBounds, detectCurrentCity, selectedCity, onSearchArea, hideSearchButton]);
 
   // Fly to user location when position is received
   useEffect(() => {
@@ -128,6 +158,13 @@ export const MapView = forwardRef<MapViewHandle, MapViewProps>(({ stores, onStor
       showToast(locationError.message, 'error');
     }
   }, [locationError, showToast]);
+
+  // PHASE 1.6A: Initialize search area when filters change
+  useEffect(() => {
+    if (mapRef.current) {
+      initializeSearch();
+    }
+  }, [selectedCity, selectedNeighborhood, activeMainCategory, activeSubCategory, initializeSearch]);
 
   // 🎮 DISCOVERY LENS: Active Zone System
   const activeZoneCenter = useMemo(() => {
@@ -402,11 +439,29 @@ export const MapView = forwardRef<MapViewHandle, MapViewProps>(({ stores, onStor
     console.log('Map labels configured: POI hidden, transit stations visible');
   }, []);
 
+  // PHASE 1.5G: Handle map movement - hide city labels during pan/zoom
+  const handleMapMove = useCallback((evt: any) => {
+    setViewState(evt.viewState);
+
+    // Hide city labels immediately when map starts moving
+    setIsMapMoving(true);
+
+    // Clear existing timeout
+    if (moveTimeoutRef.current) {
+      clearTimeout(moveTimeoutRef.current);
+    }
+
+    // Show city labels after 500ms of idle time
+    moveTimeoutRef.current = setTimeout(() => {
+      setIsMapMoving(false);
+    }, 500);
+  }, []);
+
   return (
     <div className="w-full h-full relative">
       <Map
         {...viewState}
-        onMove={evt => setViewState(evt.viewState)}
+        onMove={handleMapMove}
         mapStyle={styleMode === 'day' ? MAP_STYLE_DAY : MAP_STYLE_NIGHT}
         mapboxAccessToken={MAPBOX_TOKEN}
         onLoad={handleMapLoad}
@@ -555,28 +610,60 @@ export const MapView = forwardRef<MapViewHandle, MapViewProps>(({ stores, onStor
         </div>
       )}
 
-
-      {/* 🏙️ PHASE 1.5B: Neighborhood Labels (Low Zoom Context) */}
-      {viewState.zoom < 14 && mapRef.current && (
+      {/* 🏙️ PHASE 1.6A: City Labels (Zoom < 8) - Country View with Collision Detection */}
+      {viewState.zoom < 8 && mapRef.current && !isMapMoving && (
         <div className="absolute inset-0 pointer-events-none">
-          {Object.entries(NEIGHBORHOOD_COORDINATES).map(([name, coords]) => {
-            const point = mapRef.current!.project([coords.longitude, coords.latitude]);
+          {(() => {
+            // Show all cities from database (18 total cities across Japan)
+            const majorCities = [
+              'Tokyo', 'Osaka', 'Kyoto', 'Fukuoka', 'Nagoya', 'Sapporo',
+              'Kanagawa / Yokohama', 'Hiroshima', 'Kanazawa', 'Kobe',
+              'Niigata', 'Chiba', 'Takamatsu', 'Fukushima', 'Okayama',
+              'Kojima', 'Nagano', 'Toyama'
+            ];
 
-            // Check if neighborhood is in viewport
-            const mapContainer = mapRef.current!.getContainer();
-            const inViewport =
-              point.x >= 0 && point.x <= mapContainer.clientWidth &&
-              point.y >= 0 && point.y <= mapContainer.clientHeight;
+            // PHASE 1.6A: Collision detection for city labels
+            const selectedCityLabels: Array<{ cityName: string; point: { x: number; y: number }; fontSize: number; padding: string }> = [];
 
-            if (!inViewport) return null;
+            majorCities.forEach(cityName => {
+              const coords = CITY_COORDINATES[cityName];
+              if (!coords) return;
 
-            // Determine font size based on zoom
-            const fontSize = viewState.zoom < 12 ? 20 : 16;
-            const padding = viewState.zoom < 12 ? '10px 18px' : '8px 14px';
+              const point = mapRef.current!.project([coords.longitude, coords.latitude]);
 
-            return (
+              // Check if city is in viewport
+              const mapContainer = mapRef.current!.getContainer();
+              const inViewport =
+                point.x >= 0 && point.x <= mapContainer.clientWidth &&
+                point.y >= 0 && point.y <= mapContainer.clientHeight;
+
+              if (!inViewport) return;
+
+              const baseFontSize = 14;
+              const fontSize = Math.max(10, Math.min(14, baseFontSize * (viewState.zoom / 7)));
+              const padding = fontSize >= 13 ? '6px 12px' : '5px 10px';
+
+              // Estimate label dimensions (rough approximation)
+              const estimatedWidth = cityName.length * fontSize * 0.6 + 24; // 0.6 is avg char width ratio
+              const estimatedHeight = fontSize + 12; // padding
+
+              // Check collision with already selected labels (100px minimum spacing)
+              const hasCollision = selectedCityLabels.some(selected => {
+                const dx = Math.abs(point.x - selected.point.x);
+                const dy = Math.abs(point.y - selected.point.y);
+                // Use larger of the two label dimensions for spacing
+                const minSpacing = 80;
+                return dx < minSpacing && dy < minSpacing;
+              });
+
+              if (!hasCollision) {
+                selectedCityLabels.push({ cityName, point, fontSize, padding });
+              }
+            });
+
+            return selectedCityLabels.map(({ cityName, point, fontSize, padding }) => (
               <div
-                key={name}
+                key={cityName}
                 className="absolute animate-in fade-in duration-300"
                 style={{
                   left: `${point.x}px`,
@@ -587,23 +674,136 @@ export const MapView = forwardRef<MapViewHandle, MapViewProps>(({ stores, onStor
                 <div
                   style={{
                     fontSize: `${fontSize}px`,
-                    fontWeight: 'bold',
-                    color: '#FCD34D', // Yellow-300 for visibility
-                    textShadow: '0 2px 12px rgba(0,0,0,0.9), 0 0 20px rgba(252, 211, 77, 0.3)',
+                    fontWeight: '600',
+                    color: '#1F2937',
                     padding,
-                    background: 'rgba(0, 0, 0, 0.5)',
-                    backdropFilter: 'blur(8px)',
-                    borderRadius: '24px',
-                    border: '1.5px solid rgba(252, 211, 77, 0.3)',
+                    background: 'rgba(255, 255, 255, 0.95)',
+                    borderRadius: '20px',
+                    border: '1px solid rgba(0, 0, 0, 0.1)',
                     whiteSpace: 'nowrap',
-                    letterSpacing: '0.5px',
+                    letterSpacing: '0.3px',
+                    textTransform: 'lowercase',
+                    boxShadow: styleMode === 'night' ? '0 2px 12px rgba(0, 0, 0, 0.6)' : '0 2px 8px rgba(0, 0, 0, 0.1)',
                   }}
                 >
-                  {name}
+                  {cityName.toLowerCase()}
                 </div>
               </div>
+            ));
+          })()}
+        </div>
+      )}
+
+      {/* 🏙️ PHASE 1.5E: Fixed Neighborhood Labels (Zoom 12-14) */}
+      {/* Show 2 zoom levels before icons appear (icons start at zoom 14) */}
+      {/* Store density filtering - 20+ stores minimum */}
+      {/* Priority + distance hybrid with collision detection (150px spacing) */}
+      {/* Max 3 mobile, 4 desktop labels */}
+      {viewState.zoom >= 12 && viewState.zoom < 14 && mapRef.current && (
+        <div className="absolute inset-0 pointer-events-none">
+          {(() => {
+            // PHASE 1.5D-4: Count stores per neighborhood with stricter criteria
+            const neighborhoodStoreCounts: Record<string, number> = {};
+
+            Object.keys(NEIGHBORHOOD_COORDINATES).forEach(neighborhoodName => {
+              const coords = NEIGHBORHOOD_COORDINATES[neighborhoodName];
+              // PHASE 1.5D-4: Increased radius to 0.015 degrees (~1.5km) for better coverage
+              const nearbyStores = stores.filter(store => {
+                const latDiff = Math.abs(store.latitude - coords.latitude);
+                const lngDiff = Math.abs(store.longitude - coords.longitude);
+                return latDiff < 0.015 && lngDiff < 0.015;
+              });
+              neighborhoodStoreCounts[neighborhoodName] = nearbyStores.length;
+            });
+
+            // PHASE 1.5D-4: Filter to only neighborhoods with 20+ stores (was 10)
+            const relevantNeighborhoods = Object.entries(NEIGHBORHOOD_COORDINATES).filter(
+              ([name]) => neighborhoodStoreCounts[name] >= 20
             );
-          })}
+
+            // Calculate distance to map center and sort
+            const mapCenter = mapRef.current!.getCenter();
+            const neighborhoodsWithDistance = relevantNeighborhoods.map(([name, coords]) => {
+              const dx = coords.longitude - mapCenter.lng;
+              const dy = coords.latitude - mapCenter.lat;
+              const distance = Math.sqrt(dx * dx + dy * dy);
+              return { name, coords, distance };
+            });
+
+            // Sort by distance (closest first)
+            neighborhoodsWithDistance.sort((a, b) => a.distance - b.distance);
+
+            // PHASE 1.5D-5: Collision detection - 150px minimum spacing
+            // PHASE 1.5D-6: Max 3 mobile, 4 desktop (was 5/8)
+            const maxLabels = isMobile ? 3 : 4;
+            const selectedNeighborhoods: Array<{ name: string; coords: typeof NEIGHBORHOOD_COORDINATES[string]; distance: number; point: { x: number; y: number } }> = [];
+
+            for (const neighborhood of neighborhoodsWithDistance) {
+              if (selectedNeighborhoods.length >= maxLabels) break;
+
+              const point = mapRef.current!.project([neighborhood.coords.longitude, neighborhood.coords.latitude]);
+
+              // Check if this label would collide with any already-selected labels
+              const hasCollision = selectedNeighborhoods.some(selected => {
+                const dx = point.x - selected.point.x;
+                const dy = point.y - selected.point.y;
+                const distance = Math.sqrt(dx * dx + dy * dy);
+                return distance < 150; // 150px minimum spacing
+              });
+
+              if (!hasCollision) {
+                selectedNeighborhoods.push({ ...neighborhood, point });
+              }
+            }
+
+            return selectedNeighborhoods.map(({ name, coords, point }) => {
+              // Check if neighborhood is in viewport
+              const mapContainer = mapRef.current!.getContainer();
+              const inViewport =
+                point.x >= 0 && point.x <= mapContainer.clientWidth &&
+                point.y >= 0 && point.y <= mapContainer.clientHeight;
+
+              if (!inViewport) return null;
+
+              // PHASE 1.5E: No fade needed - labels disappear at zoom 14 when icons appear
+              const opacity = 1;
+
+              // PHASE 1.5E: Fixed small size - 10px font, stays constant across all zoom levels
+              const fontSize = 10;
+              const padding = '4px 8px';
+
+              return (
+                <div
+                  key={name}
+                  className="absolute transition-opacity duration-200"
+                  style={{
+                    left: `${point.x}px`,
+                    top: `${point.y}px`,
+                    transform: 'translate(-50%, -50%)',
+                    opacity,
+                  }}
+                >
+                  <div
+                    style={{
+                      fontSize: `${fontSize}px`,
+                      fontWeight: '600',
+                      color: '#FCD34D',
+                      textShadow: '0 1px 8px rgba(0,0,0,0.8)',
+                      padding,
+                      background: 'rgba(0, 0, 0, 0.35)',
+                      backdropFilter: 'blur(10px)',
+                      borderRadius: '16px',
+                      border: '1px solid rgba(252, 211, 77, 0.15)',
+                      whiteSpace: 'nowrap',
+                      letterSpacing: '0.2px',
+                    }}
+                  >
+                    {name}
+                  </div>
+                </div>
+              );
+            });
+          })()}
         </div>
       )}
 
@@ -668,6 +868,13 @@ export const MapView = forwardRef<MapViewHandle, MapViewProps>(({ stores, onStor
         loading={locationLoading}
         hasLocation={!!userPosition}
       />
+
+      {/* PHASE 2.2: Search This Area Button - Hide when store selected */}
+      {showSearchButton && !selectedStore && (
+        <SearchAreaButton
+          onClick={handleSearchArea}
+        />
+      )}
 
       {/* Toast Notifications */}
       <Toast

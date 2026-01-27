@@ -1,6 +1,7 @@
 import { X } from 'lucide-react';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { MAIN_CATEGORIES, FASHION_SUB_CATEGORIES, FOOD_SUB_CATEGORIES, HOME_GOODS_SUB_CATEGORIES, MAJOR_CITIES_JAPAN, LOCATIONS } from '../../lib/constants';
+import { MapStyleToggle } from '../map/MapStyleToggle';
 import type { MainCategory } from '../../types/store';
 
 interface FilterSidebarProps {
@@ -28,6 +29,24 @@ export function FilterSidebar({
 }: FilterSidebarProps) {
   const [isOpen, setIsOpen] = useState(false);
 
+  // PHASE 1.5F-3: Theme toggle state for mobile sidebar
+  const [styleMode, setStyleMode] = useState<'day' | 'night'>(() => {
+    if (typeof window === 'undefined') return 'day';
+    try {
+      return (localStorage.getItem('map-style-mode') as 'day' | 'night') || 'day';
+    } catch {
+      return 'day';
+    }
+  });
+
+  // PHASE 1.5F-3: Persist theme changes and broadcast to map
+  useEffect(() => {
+    try {
+      localStorage.setItem('map-style-mode', styleMode);
+      window.dispatchEvent(new CustomEvent('mapStyleModeChanged', { detail: styleMode }));
+    } catch {}
+  }, [styleMode]);
+
   const hasActiveFilters = selectedMainCategory || selectedSubCategories.length > 0 || selectedCity || selectedNeighborhood;
 
   return (
@@ -52,14 +71,21 @@ export function FilterSidebar({
           `}
         >
           {/* Mobile Header */}
-          <div className="sticky top-0 bg-white border-b border-gray-200 px-6 py-4 flex items-center justify-between">
-            <h2 className="text-lg font-bold text-gray-900">Filters</h2>
-            <button
-              onClick={() => setIsOpen(false)}
-              className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
-            >
-              <X className="w-5 h-5 text-gray-600" />
-            </button>
+          <div className="sticky top-0 bg-white border-b border-gray-200 px-6 py-4">
+            <div className="flex items-center justify-between mb-3">
+              <h2 className="text-lg font-bold text-gray-900">Filters</h2>
+              <button
+                onClick={() => setIsOpen(false)}
+                className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+              >
+                <X className="w-5 h-5 text-gray-600" />
+              </button>
+            </div>
+            {/* PHASE 1.5F-3: Theme toggle in mobile sidebar */}
+            <div className="flex items-center justify-between pt-2">
+              <span className="text-sm font-medium text-gray-700">Map Theme</span>
+              <MapStyleToggle mode={styleMode} onChange={setStyleMode} placement="inline" compact />
+            </div>
           </div>
 
           {/* Mobile Filter Content */}

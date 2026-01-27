@@ -2,6 +2,37 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Bottom Sheet Custom Styles - PHASE 2.1K: Fixed pointer events */
+[data-rsbs-overlay] {
+  z-index: 150 !important;
+  /* CRITICAL FIX: Allow sheet gestures to work */
+  pointer-events: auto !important;
+}
+
+[data-rsbs-backdrop] {
+  display: none !important; /* No backdrop = map stays visible */
+}
+
+[data-rsbs-root] {
+  z-index: 150 !important;
+  pointer-events: auto !important;
+}
+
+[data-rsbs-header] {
+  padding: 0 !important;
+  box-shadow: none !important;
+  background: transparent !important;
+}
+
+[data-rsbs-scroll] {
+  overflow-y: auto !important;
+}
+
+/* Ensure map can still be interacted with when sheet is at peek/half */
+[data-rsbs-is-dismissable] {
+  pointer-events: auto !important;
+}
+
 /* Design Tokens */
 :root {
   /* Brand & neutrals */
