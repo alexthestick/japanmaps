@@ -437,7 +437,10 @@ export const MapView = forwardRef<MapViewHandle, MapViewProps>(({ stores, onStor
     });
 
     console.log('Map labels configured: POI hidden, transit stations visible');
-  }, []);
+
+    // PHASE 2.2: Initialize search area tracking on map load
+    initializeSearch();
+  }, [initializeSearch]);
 
   // PHASE 1.5G: Handle map movement - hide city labels during pan/zoom
   const handleMapMove = useCallback((evt: any) => {

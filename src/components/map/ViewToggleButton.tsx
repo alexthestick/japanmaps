@@ -9,25 +9,27 @@ export function ViewToggleButton({ currentView, onToggle }: ViewToggleButtonProp
   const isMapView = currentView === 'map';
 
   return (
-    <div className="absolute bottom-6 right-6 z-20">
+    <div className="absolute top-4 right-4 z-30">
       <button
         onClick={() => onToggle(isMapView ? 'list' : 'map')}
-        className="relative bg-gradient-to-r from-cyan-400 via-blue-500 to-purple-500 text-white px-6 py-3 rounded-full shadow-lg hover:scale-105 transition-all flex items-center gap-2 font-bold text-sm border-2 border-cyan-300/50 overflow-hidden"
-        style={{ boxShadow: '0 0 30px rgba(34, 217, 238, 0.4), 0 10px 40px rgba(0, 0, 0, 0.3)' }}
+        className="relative bg-gradient-to-r from-cyan-400 via-blue-500 to-purple-500 text-white px-4 py-2.5 rounded-full shadow-lg hover:scale-105 transition-all flex items-center gap-2 font-bold text-xs border-2 border-cyan-300/50 overflow-hidden"
+        style={{ boxShadow: '0 0 20px rgba(34, 217, 238, 0.3), 0 6px 20px rgba(0, 0, 0, 0.2)' }}
       >
         {/* Film grain */}
         <div className="absolute inset-0 film-grain opacity-10" />
 
-        <div className="relative flex items-center gap-2">
+        <div className="relative flex items-center gap-1.5">
           {isMapView ? (
             <>
-              <List className="w-5 h-5" />
-              List View
+              <List className="w-4 h-4" />
+              <span className="hidden sm:inline">List View</span>
+              <span className="sm:hidden">List</span>
             </>
           ) : (
             <>
-              <Map className="w-5 h-5" />
-              Map View
+              <Map className="w-4 h-4" />
+              <span className="hidden sm:inline">Map View</span>
+              <span className="sm:hidden">Map</span>
             </>
           )}
         </div>
