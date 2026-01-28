@@ -9,7 +9,7 @@ export function SearchAreaButton({ onClick }: SearchAreaButtonProps) {
     <button
       onClick={onClick}
       className="
-        fixed bottom-[100px] left-1/2 -translate-x-1/2 z-20
+        fixed left-1/2 -translate-x-1/2 z-20
         bg-white dark:bg-gray-800
         text-gray-900 dark:text-gray-100
         px-4 py-2.5
@@ -24,7 +24,10 @@ export function SearchAreaButton({ onClick }: SearchAreaButtonProps) {
       "
       style={{
         touchAction: 'manipulation',
-        width: '140px'
+        width: '140px',
+        // Mobile: 180px from bottom + safe area inset for iOS devices
+        // Positions button above locate button (128px) with 52px spacing
+        bottom: 'max(180px, calc(180px + env(safe-area-inset-bottom, 0px)))',
       }}
     >
       <RefreshCw className="w-4 h-4" />
