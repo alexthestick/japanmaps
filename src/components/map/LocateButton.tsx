@@ -8,7 +8,13 @@ interface LocateButtonProps {
 
 export function LocateButton({ onClick, loading = false, hasLocation = false }: LocateButtonProps) {
   return (
-    <div className="absolute bottom-24 right-6 z-20 md:bottom-6 md:right-24">
+    <div
+      className="absolute right-6 z-20 md:bottom-6 md:right-24"
+      style={{
+        // Mobile: Use safe-area-inset-bottom for iOS
+        bottom: 'calc(6rem + env(safe-area-inset-bottom, 0px))',
+      }}
+    >
       <button
         onClick={onClick}
         disabled={loading}

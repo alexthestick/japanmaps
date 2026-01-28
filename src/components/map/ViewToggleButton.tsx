@@ -9,7 +9,13 @@ export function ViewToggleButton({ currentView, onToggle }: ViewToggleButtonProp
   const isMapView = currentView === 'map';
 
   return (
-    <div className="absolute bottom-6 right-6 z-20">
+    <div
+      className="absolute right-6 z-20"
+      style={{
+        // Mobile: Use safe-area-inset-bottom for iOS
+        bottom: 'calc(1.5rem + env(safe-area-inset-bottom, 0px))',
+      }}
+    >
       <button
         onClick={() => onToggle(isMapView ? 'list' : 'map')}
         className="relative bg-gradient-to-r from-cyan-400 via-blue-500 to-purple-500 text-white px-6 py-3 rounded-full shadow-lg hover:scale-105 transition-all flex items-center gap-2 font-bold text-sm border-2 border-cyan-300/50 overflow-hidden"
