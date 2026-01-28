@@ -314,11 +314,15 @@ export function HomePage() {
 
       {view === 'map' ? (
         // ========== MAP VIEW - Full Screen with Floating Panels ==========
-        <div className={`relative w-full ${
-          isMobile
-            ? 'h-[calc(100vh-64px)]' // Mobile: just header (64px)
-            : 'h-[calc(100vh-64px-48px)]'  // Desktop: header + banner
-        }`}>
+        <div
+          className="relative w-full"
+          style={{
+            height: isMobile
+              ? 'calc(100vh - 64px)' // Mobile: header + extend into safe area
+              : 'calc(100vh - 64px - 48px)', // Desktop: header + banner
+            paddingBottom: isMobile ? 'env(safe-area-inset-bottom, 0px)' : '0px'
+          }}
+        >
           {/* Full-screen Map */}
           <MapView
             ref={mapViewRef}
