@@ -8,13 +8,7 @@ interface LocateButtonProps {
 
 export function LocateButton({ onClick, loading = false, hasLocation = false }: LocateButtonProps) {
   return (
-    <div
-      className="absolute right-6 z-20"
-      style={{
-        // Mobile: Position above List View button (128px) + 60px spacing + safe area
-        bottom: 'max(188px, calc(188px + env(safe-area-inset-bottom, 0px)))',
-      }}
-    >
+    <div className="absolute bottom-24 right-6 z-20 md:bottom-6 md:right-24">
       <button
         onClick={onClick}
         disabled={loading}

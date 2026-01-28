@@ -872,8 +872,8 @@ export const MapView = forwardRef<MapViewHandle, MapViewProps>(({ stores, onStor
         hasLocation={!!userPosition}
       />
 
-      {/* PHASE 2.2: Search This Area Button - TEMP: Always visible for testing */}
-      {!selectedStore && (
+      {/* PHASE 2.2: Search This Area Button - Movement-based, zoom >= 14 only */}
+      {showSearchButton && !selectedStore && viewState.zoom >= 14 && (
         <SearchAreaButton
           onClick={handleSearchArea}
         />
