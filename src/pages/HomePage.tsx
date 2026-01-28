@@ -317,10 +317,11 @@ export function HomePage() {
         <div
           className="relative w-full"
           style={{
+            // Mobile: Use dvh (dynamic viewport height) for Safari toolbar handling
+            // Desktop: Standard vh with header + banner
             height: isMobile
-              ? 'calc(100vh - 64px)' // Mobile: header + extend into safe area
-              : 'calc(100vh - 64px - 48px)', // Desktop: header + banner
-            paddingBottom: isMobile ? 'env(safe-area-inset-bottom, 0px)' : '0px'
+              ? 'calc(100dvh - 64px)'
+              : 'calc(100vh - 64px - 48px)'
           }}
         >
           {/* Full-screen Map */}
