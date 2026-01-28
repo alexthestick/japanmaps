@@ -9,11 +9,10 @@ interface LocateButtonProps {
 export function LocateButton({ onClick, loading = false, hasLocation = false }: LocateButtonProps) {
   return (
     <div
-      className="absolute right-6 z-20 md:bottom-6 md:right-24"
+      className="absolute right-6 z-20"
       style={{
-        // Mobile: 32px (128px) + safe area inset for iOS devices
-        // Desktop: 6px (24px) as before
-        bottom: 'max(128px, calc(128px + env(safe-area-inset-bottom, 0px)))',
+        // Mobile: Position above List View button (128px) + 60px spacing + safe area
+        bottom: 'max(188px, calc(188px + env(safe-area-inset-bottom, 0px)))',
       }}
     >
       <button
