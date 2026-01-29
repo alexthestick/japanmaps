@@ -6,6 +6,7 @@ import { MapView } from '../components/map/MapView';
 import { StoreList } from '../components/store/StoreList';
 import { StoreDetail } from '../components/store/StoreDetail';
 import { BottomSheetStoreDetail } from '../components/store/BottomSheetStoreDetail';
+import { SpotlightBottomSheet } from '../components/store/SpotlightBottomSheet';
 import { ScrollingBanner } from '../components/layout/ScrollingBanner';
 // import { StoreDetailModal } from '../components/store/StoreDetailModal'; // Not needed in new design
 import { FloatingSearchBar } from '../components/map/FloatingSearchBar';
@@ -20,6 +21,8 @@ import { BottomSheet } from '../components/common/BottomSheet';
 import { RandomStoreModal } from '../components/store/RandomStoreModal';
 import { useStores } from '../hooks/useStores';
 import { useIsMobile } from '../hooks/useMediaQuery';
+import { useScrollPastMap } from '../hooks/useScrollPastMap';
+import { useSpotlightStores } from '../hooks/useSpotlightStores';
 import { Loader } from '../components/common/Loader';
 import type { Store, MainCategory } from '../types/store';
 import { sortStores } from '../utils/helpers';
@@ -66,6 +69,11 @@ export function HomePage() {
   // Random store modal state (for list view)
   const [randomStore, setRandomStore] = useState<Store | null>(null);
 
+  // PHASE 3: Spotlight Mode state
+  const [isSpotlightMode, setIsSpotlightMode] = useState(false);
+  const [spotlightedStores, setSpotlightedStores] = useState<Store[]>([]);
+  const [viewportBounds, setViewportBounds] = useState<{ north: number; south: number; east: number; west: number } | null>(null);
+
   // Map style mode state
   const getInitialStyleMode = (): 'day' | 'night' => {
     try {
@@ -89,6 +97,10 @@ export function HomePage() {
   // Refs for map control and preventing refresh
   const mapViewRef = useRef<any>(null);
   const debounceTimer = useRef<NodeJS.Timeout>();
+
+  // Sentinel ref for scroll detection (mobile only)
+  const mapBottomSentinelRef = useRef<HTMLDivElement>(null);
+  const isScrolledPast = useScrollPastMap(mapBottomSentinelRef);
 
   // Handle store clicks with two-tap behavior on mobile
   const handleStoreClick = useCallback((store: Store) => {
@@ -247,18 +259,23 @@ export function HomePage() {
     setSelectedNeighborhood(null);
   };
 
-  // PHASE 1.6A: Handle search area - smart context switching
-  const handleSearchArea = useCallback((city: string | null, bounds: { north: number; south: number; east: number; west: number } | null) => {
-    if (city) {
-      // Switch to detected city
-      setSelectedCity(city);
-      setSelectedNeighborhood(null);
-    } else if (bounds) {
-      // Apply bounds filter - for now, just keep current city
-      // TODO: Implement bounds-based filtering in future if needed
-      console.log('Bounds filter requested:', bounds);
+  // PHASE 3: Get curated spotlight stores whenever viewport or filters change
+  const curatedSpotlightStores = useSpotlightStores(filteredStores, viewportBounds, { count: 5 });
+
+  // PHASE 3: Handle spotlight mode toggle
+  const handleSearchArea = useCallback(() => {
+    if (isSpotlightMode) {
+      // Clear spotlight mode
+      setIsSpotlightMode(false);
+      setSpotlightedStores([]);
+      console.log('Spotlight mode cleared');
+    } else {
+      // Activate spotlight mode with curated stores
+      setSpotlightedStores(curatedSpotlightStores);
+      setIsSpotlightMode(true);
+      console.log('Spotlight mode activated:', curatedSpotlightStores.length, 'stores', curatedSpotlightStores);
     }
-  }, []);
+  }, [isSpotlightMode, curatedSpotlightStores]);
 
   // Handle autocomplete suggestion selection (CRITICAL: prevent refresh)
   const handleSearchSuggestionSelect = useCallback((suggestion: SearchSuggestion) => {
@@ -317,10 +334,10 @@ export function HomePage() {
         <div
           className="relative w-full"
           style={{
-            // Mobile: Use dvh (dynamic viewport height) for Safari toolbar handling
+            // Mobile: Use svh (small viewport height) for smooth, stable scrolling
             // Desktop: Standard vh with header + banner
             height: isMobile
-              ? 'calc(100dvh - 64px)'
+              ? 'calc(100svh - 64px)'
               : 'calc(100vh - 64px - 48px)'
           }}
         >
@@ -339,7 +356,19 @@ export function HomePage() {
             onStyleModeChange={setMapStyleMode}
             onSearchArea={handleSearchArea}
             selectedStore={selectedStore}
+            onViewportChange={setViewportBounds}
+            spotlightedStoreIds={spotlightedStores.map(s => s.id)}
+            isSpotlightMode={isSpotlightMode}
           />
+
+          {/* Sentinel element at bottom of map for scroll detection (mobile only) */}
+          {isMobile && (
+            <div
+              ref={mapBottomSentinelRef}
+              className="absolute bottom-0 left-0 right-0 h-px pointer-events-none"
+              aria-hidden="true"
+            />
+          )}
 
           {/* MOBILE: Floating Filter Bar (overlays map) */}
           {isMobile && (
@@ -366,6 +395,7 @@ export function HomePage() {
                   setSelectedStore(store);
                 }}
                 onClearAll={handleClearAll}
+                isHidden={isScrolledPast || isSpotlightMode}
               />
 
               {/* View Toggle Button - Bottom Right */}
@@ -373,6 +403,7 @@ export function HomePage() {
                 currentView="map"
                 onToggle={(newView) => setView(newView)}
               />
+
             </>
           )}
 
@@ -423,11 +454,24 @@ export function HomePage() {
             </>
           )}
 
-          {/* PHASE 2.1: Store Detail - Bottom Sheet on Mobile, Sidebar on Desktop */}
+          {/* PHASE 3 REDESIGN: Unified Bottom Sheet - Spotlight Peek OR Store Detail */}
           {isMobile ? (
-            // Mobile: Bottom Sheet (peek/half/full states)
-            <BottomSheetStoreDetail
-              store={selectedStore}
+            // Mobile: Unified bottom sheet with dual modes
+            <SpotlightBottomSheet
+              isSpotlightMode={isSpotlightMode}
+              spotlightedStores={spotlightedStores}
+              selectedStore={selectedStore}
+              onStoreSelect={(store) => {
+                setSelectedStore(store);
+                // Pan map to store
+                if (mapViewRef.current?.flyToStore) {
+                  mapViewRef.current.flyToStore(store.latitude, store.longitude);
+                }
+              }}
+              onDismiss={() => {
+                setIsSpotlightMode(false);
+                setSpotlightedStores([]);
+              }}
               onClose={() => setSelectedStore(null)}
             />
           ) : (

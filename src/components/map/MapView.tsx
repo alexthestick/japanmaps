@@ -3,6 +3,7 @@ import Map, { Marker, NavigationControl } from 'react-map-gl';
 import { MAPBOX_TOKEN, MAP_STYLE_DAY, MAP_STYLE_NIGHT, DEFAULT_CENTER, DEFAULT_ZOOM } from '../../lib/mapbox';
 import { CITY_COORDINATES, NEIGHBORHOOD_COORDINATES, MAIN_CATEGORY_COLORS } from '../../lib/constants';
 import { IconStoreMarker } from './IconStoreMarker';
+import { SpotlightMarker } from './SpotlightMarker';
 import { MapLegend } from './MapLegend';
 import { StoreLabel } from './StoreLabel';
 import { MapStyleToggle } from './MapStyleToggle';
@@ -85,15 +86,18 @@ interface MapViewProps {
   onStyleModeChange?: (mode: 'day' | 'night') => void;
   tappedStoreId?: string | null; // For mobile two-tap interaction
   onLabelClick?: (store: Store) => void; // Direct click handler for labels
-  onSearchArea?: (city: string | null, bounds: { north: number; south: number; east: number; west: number } | null) => void;
+  onSearchArea?: () => void; // PHASE 3: Simplified for spotlight mode
   selectedStore?: Store | null; // PHASE 2.2C: Track if store is selected to hide button
+  onViewportChange?: (bounds: { north: number; south: number; east: number; west: number }) => void; // PHASE 3: Track viewport
+  spotlightedStoreIds?: string[]; // PHASE 3: IDs of stores to spotlight
+  isSpotlightMode?: boolean; // PHASE 3: Whether spotlight mode is active
 }
 
 export interface MapViewHandle {
-  flyToStore: (latitude: number, longitude: number) => void;
+  flyToStore: (latitude: number, longitude: number, options?: { offset?: [number, number] }) => void;
 }
 
-export const MapView = forwardRef<MapViewHandle, MapViewProps>(({ stores, onStoreClick, selectedCity, selectedNeighborhood, isSearchActive = false, activeMainCategory, activeSubCategory, styleMode: controlledStyleMode, onStyleModeChange, tappedStoreId, onLabelClick, onSearchArea, selectedStore }, ref) => {
+export const MapView = forwardRef<MapViewHandle, MapViewProps>(({ stores, onStoreClick, selectedCity, selectedNeighborhood, isSearchActive = false, activeMainCategory, activeSubCategory, styleMode: controlledStyleMode, onStyleModeChange, tappedStoreId, onLabelClick, onSearchArea, selectedStore, onViewportChange, spotlightedStoreIds = [], isSpotlightMode = false }, ref) => {
   const [viewState, setViewState] = useState({
     longitude: DEFAULT_CENTER.longitude,
     latitude: DEFAULT_CENTER.latitude,
@@ -120,24 +124,10 @@ export const MapView = forwardRef<MapViewHandle, MapViewProps>(({ stores, onStor
     requestLocation();
   }, [requestLocation]);
 
-  // PHASE 1.6A: Handle search area button click - smart context switching
+  // PHASE 3: Handle search area button click - trigger spotlight mode
   const handleSearchArea = useCallback(() => {
-    const bounds = getCurrentBounds();
-    const detectedCity = detectCurrentCity();
-
-    // Hybrid approach: detect if user panned to a different city
-    if (detectedCity && detectedCity !== selectedCity) {
-      // User panned to a different city - switch city filter
-      console.log('Search area: Switching to city', detectedCity);
-      onSearchArea?.(detectedCity, null);
-    } else {
-      // Same city or ambiguous - apply bounds filter
-      console.log('Search area: Applying bounds filter', bounds);
-      onSearchArea?.(null, bounds);
-    }
-
-    hideSearchButton();
-  }, [getCurrentBounds, detectCurrentCity, selectedCity, onSearchArea, hideSearchButton]);
+    onSearchArea?.();
+  }, [onSearchArea]);
 
   // Fly to user location when position is received
   useEffect(() => {
@@ -363,13 +353,16 @@ export const MapView = forwardRef<MapViewHandle, MapViewProps>(({ stores, onStor
 
   // Expose flyToStore method via ref
   useImperativeHandle(ref, () => ({
-    flyToStore: (latitude: number, longitude: number) => {
+    flyToStore: (latitude: number, longitude: number, options?: { offset?: [number, number] }) => {
       if (mapRef.current) {
         mapRef.current.flyTo({
           center: [longitude, latitude],
           zoom: 16,
           duration: 1500,
-          essential: true
+          essential: true,
+          // Offset the center point to account for bottom sheet
+          // Default: shift up by 300px to keep marker visible above bottom sheet (42% of screen height ≈ 350px on most phones)
+          offset: options?.offset || [0, -300]
         });
       }
     }
@@ -458,7 +451,18 @@ export const MapView = forwardRef<MapViewHandle, MapViewProps>(({ stores, onStor
     moveTimeoutRef.current = setTimeout(() => {
       setIsMapMoving(false);
     }, 500);
-  }, []);
+
+    // PHASE 3: Track viewport bounds for spotlight mode
+    if (mapRef.current && onViewportChange) {
+      const bounds = mapRef.current.getBounds();
+      onViewportChange({
+        north: bounds.getNorth(),
+        south: bounds.getSouth(),
+        east: bounds.getEast(),
+        west: bounds.getWest(),
+      });
+    }
+  }, [onViewportChange]);
 
   return (
     <div className="w-full h-full relative">
@@ -500,30 +504,48 @@ export const MapView = forwardRef<MapViewHandle, MapViewProps>(({ stores, onStor
 
           const markersToRender = visibleStores.slice(0, maxMarkers);
 
-          return markersToRender.map(store => (
-            <Marker
-              key={store.id}
-              longitude={store.longitude}
-              latitude={store.latitude}
-              anchor={currentTier === 'atmosphere' || currentTier === 'discovery' ? 'center' : 'bottom'}
-              onClick={e => handleMarkerClick(e, store)}
-            >
-              {/* Render different marker types based on zoom tier */}
-              {currentTier === 'atmosphere' ? (
-                <AtmosphereDot store={store} onClick={(e) => handleMarkerClick(e, store)} />
-              ) : currentTier === 'discovery' ? (
-                <DiscoveryDot store={store} onClick={(e) => handleMarkerClick(e, store)} />
-              ) : (
-                <IconStoreMarker
-                  store={store}
-                  activeFilter={activeSubCategory}
-                  activeMainCategory={activeMainCategory}
-                  onHoverChange={setHoveredStoreId}
-                  currentZoom={viewState.zoom}
-                />
-              )}
-            </Marker>
-          ));
+          return markersToRender.map(store => {
+            // PHASE 3: Check if this store is spotlighted
+            const spotlightIndex = spotlightedStoreIds.indexOf(store.id);
+            const isSpotlighted = isSpotlightMode && spotlightIndex !== -1;
+            const spotlightOrder = isSpotlighted ? spotlightIndex + 1 : 0;
+
+            return (
+              <Marker
+                key={store.id}
+                longitude={store.longitude}
+                latitude={store.latitude}
+                anchor={currentTier === 'atmosphere' || currentTier === 'discovery' ? 'center' : 'bottom'}
+                onClick={e => handleMarkerClick(e, store)}
+              >
+                {/* Render different marker types based on zoom tier and spotlight status */}
+                {currentTier === 'atmosphere' ? (
+                  <AtmosphereDot store={store} onClick={(e) => handleMarkerClick(e, store)} />
+                ) : currentTier === 'discovery' ? (
+                  <DiscoveryDot store={store} onClick={(e) => handleMarkerClick(e, store)} />
+                ) : isSpotlighted ? (
+                  // PHASE 3: Spotlighted marker with glow
+                  <SpotlightMarker
+                    store={store}
+                    activeFilter={activeSubCategory}
+                    activeMainCategory={activeMainCategory}
+                    onHoverChange={setHoveredStoreId}
+                    currentZoom={viewState.zoom}
+                    spotlightOrder={spotlightOrder}
+                  />
+                ) : (
+                  // Regular marker
+                  <IconStoreMarker
+                    store={store}
+                    activeFilter={activeSubCategory}
+                    activeMainCategory={activeMainCategory}
+                    onHoverChange={setHoveredStoreId}
+                    currentZoom={viewState.zoom}
+                  />
+                )}
+              </Marker>
+            );
+          });
         })()}
 
         {/* User Location Marker */}

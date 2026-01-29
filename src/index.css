@@ -33,6 +33,16 @@
   pointer-events: auto !important;
 }
 
+/* PHASE 3 FIX: Lock spotlight peek - prevent vertical expansion */
+.spotlight-peek-locked [data-rsbs-scroll] {
+  overflow-y: hidden !important; /* Disable vertical scroll in peek mode */
+  overscroll-behavior: contain; /* Prevent scroll chaining */
+}
+
+.spotlight-peek-locked [data-rsbs-overlay] {
+  touch-action: none !important; /* Disable touch gestures on overlay in peek mode */
+}
+
 /* Design Tokens */
 :root {
   /* Brand & neutrals */

@@ -37,6 +37,9 @@ interface MobileFilterBarProps {
   // Random store and clear filters
   onRandomStore?: (store: Store) => void;
   onClearAll?: () => void;
+
+  // Hide when scrolled past map
+  isHidden?: boolean;
 }
 
 // Category definitions with icons and subcategories
@@ -69,6 +72,7 @@ export function MobileFilterBar({
   onMapStyleChange,
   onRandomStore,
   onClearAll,
+  isHidden = false,
 }: MobileFilterBarProps) {
   // Track which category's subcategories are expanded
   const [expandedCategory, setExpandedCategory] = useState<MainCategory | null>(null);
@@ -119,7 +123,14 @@ export function MobileFilterBar({
   };
 
   return (
-    <div className="fixed top-20 left-0 right-0 z-30 px-4 pointer-events-none">
+    <div
+      className="fixed top-20 left-0 right-0 z-30 px-4 pointer-events-none transition-all duration-300 ease-in-out"
+      style={{
+        transform: isHidden ? 'translate3d(0, -150px, 0)' : 'translate3d(0, 0, 0)',
+        opacity: isHidden ? 0 : 1,
+        willChange: 'transform, opacity',
+      }}
+    >
       <div className="max-w-7xl mx-auto space-y-2 pointer-events-auto">
         {/* Search Bar - Floating */}
         <div className="relative" ref={searchContainerRef}>
