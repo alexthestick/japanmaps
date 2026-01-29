@@ -361,8 +361,10 @@ export const MapView = forwardRef<MapViewHandle, MapViewProps>(({ stores, onStor
           duration: 1500,
           essential: true,
           // Offset the center point to account for bottom sheet
-          // Default: shift up by 300px to keep marker visible above bottom sheet (42% of screen height ≈ 350px on most phones)
-          offset: options?.offset || [0, -300]
+          // Bottom sheet at 42% of viewport height means we need significant offset
+          // Calculate dynamic offset: 42% of typical mobile viewport (800px) = 336px
+          // Add extra buffer for safety -> 400px upward shift
+          offset: options?.offset || [0, -400]
         });
       }
     }

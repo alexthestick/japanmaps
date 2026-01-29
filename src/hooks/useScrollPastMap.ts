@@ -18,11 +18,24 @@ export function useScrollPastMap(sentinelRef: RefObject<HTMLElement>) {
       // Get the sentinel's position relative to the viewport
       const rect = sentinel.getBoundingClientRect();
 
-      // Hide filter bar when sentinel approaches the top half of viewport
-      // This means user is scrolling down towards the footer
-      // Use viewport height / 2 as threshold so bar hides when user starts scrolling down
-      const threshold = window.innerHeight * 0.5;
-      setIsScrolledPast(rect.top < threshold);
+      // Hide filter bar when user has scrolled down significantly
+      // When user scrolls to footer, sentinel will have negative or very small rect.top
+      // We use a generous threshold to ensure it triggers reliably
+      const viewportHeight = window.innerHeight;
+      const threshold = viewportHeight * 0.8; // Hide when sentinel is in top 20% of viewport or above
+
+      const shouldHide = rect.top < threshold;
+      setIsScrolledPast(shouldHide);
+
+      // Debug logging (remove in production)
+      if (process.env.NODE_ENV === 'development') {
+        console.log('[useScrollPastMap]', {
+          rectTop: rect.top,
+          threshold,
+          shouldHide,
+          viewportHeight
+        });
+      }
     };
 
     // Initial check

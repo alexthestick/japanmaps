@@ -2,6 +2,7 @@ import { X, ChevronRight } from 'lucide-react';
 import { MAIN_CATEGORY_ICONS } from '../../lib/constants';
 import type { Store } from '../../types/store';
 import { Shirt, UtensilsCrossed, Coffee, Home, Building2 } from 'lucide-react';
+import useEmblaCarousel from 'embla-carousel-react';
 
 interface SpotlightPeekContentProps {
   stores: Store[];
@@ -15,6 +16,14 @@ interface SpotlightPeekContentProps {
  * Lives inside bottom sheet peek state
  */
 export function SpotlightPeekContent({ stores, onStoreSelect, onDismiss }: SpotlightPeekContentProps) {
+  // Use Embla Carousel for smooth, responsive horizontal scrolling
+  const [emblaRef, emblaApi] = useEmblaCarousel({
+    align: 'start',
+    containScroll: 'trimSnaps',
+    dragFree: true, // Allows free-form dragging like Instagram stories
+    skipSnaps: false,
+  });
+
   const getIcon = (mainCategory: string) => {
     const iconName = MAIN_CATEGORY_ICONS[mainCategory];
     const iconMap: Record<string, any> = {
@@ -26,6 +35,13 @@ export function SpotlightPeekContent({ stores, onStoreSelect, onDismiss }: Spotl
     };
     const Icon = iconMap[iconName] || Shirt;
     return Icon;
+  };
+
+  const handleStoreClick = (store: Store) => {
+    // Check if drag is in progress - only navigate if not dragging
+    if (emblaApi && emblaApi.clickAllowed()) {
+      onStoreSelect(store);
+    }
   };
 
   return (
@@ -50,18 +66,9 @@ export function SpotlightPeekContent({ stores, onStoreSelect, onDismiss }: Spotl
         </button>
       </div>
 
-      {/* Horizontal scrollable cards */}
-      <div
-        className="overflow-x-auto scrollbar-hide px-5"
-        style={{
-          touchAction: 'pan-x', // CRITICAL: Only allow horizontal scrolling on touch devices
-          overscrollBehavior: 'contain', // Prevent scroll chaining to parent
-          WebkitOverflowScrolling: 'touch', // Smooth momentum scrolling on iOS
-          scrollBehavior: 'smooth', // Smooth scrolling
-          cursor: 'grab',
-        }}
-      >
-        <div className="flex gap-3 pb-2" style={{ minWidth: 'min-content' }}>
+      {/* Embla Carousel - Smooth horizontal scrolling */}
+      <div className="overflow-hidden px-5" ref={emblaRef}>
+        <div className="flex gap-3 pb-2 touch-pan-x">
           {stores.map((store, index) => {
             const Icon = getIcon(store.mainCategory || 'Fashion');
             const hasPhoto = store.photos && store.photos.length > 0;
@@ -69,7 +76,7 @@ export function SpotlightPeekContent({ stores, onStoreSelect, onDismiss }: Spotl
             return (
               <button
                 key={store.id}
-                onClick={() => onStoreSelect(store)}
+                onClick={() => handleStoreClick(store)}
                 className="flex-shrink-0 w-[160px] group active:scale-95 transition-transform duration-200"
               >
                 {/* Card container with gradient border effect */}
