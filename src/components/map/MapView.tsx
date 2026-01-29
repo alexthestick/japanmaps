@@ -357,14 +357,13 @@ export const MapView = forwardRef<MapViewHandle, MapViewProps>(({ stores, onStor
       if (mapRef.current) {
         mapRef.current.flyTo({
           center: [longitude, latitude],
-          zoom: 16,
+          zoom: 14, // Wider view to show context around the store
           duration: 1500,
           essential: true,
-          // Offset the center point to account for bottom sheet
-          // Bottom sheet at 42% of viewport height means we need significant offset
-          // Calculate dynamic offset: 42% of typical mobile viewport (800px) = 336px
-          // Add extra buffer for safety -> 400px upward shift
-          offset: options?.offset || [0, -400]
+          // Offset the center point to account for bottom sheet in peek mode
+          // Zoom 14 shows wider area, so we need less aggressive offset
+          // 250px shift positions marker in upper-middle area, clearly visible above carousel
+          offset: options?.offset || [0, -250]
         });
       }
     }

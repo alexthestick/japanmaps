@@ -38,8 +38,9 @@ export function SpotlightPeekContent({ stores, onStoreSelect, onDismiss }: Spotl
   };
 
   const handleStoreClick = (store: Store) => {
-    // Check if drag is in progress - only navigate if not dragging
-    if (emblaApi && emblaApi.clickAllowed()) {
+    // Allow clicks if emblaApi not ready OR if it explicitly allows clicks
+    // This prevents blocking clicks when carousel is initializing
+    if (!emblaApi || emblaApi.clickAllowed()) {
       onStoreSelect(store);
     }
   };

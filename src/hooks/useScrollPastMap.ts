@@ -2,7 +2,7 @@ import { useEffect, useState, RefObject } from 'react';
 
 /**
  * Hook to detect when user scrolls past the map container into footer area
- * Uses scroll position to detect when user has scrolled beyond map height
+ * Uses Intersection Observer API for reliable detection on mobile/iOS Safari
  *
  * @param sentinelRef - Ref to sentinel element at bottom of map
  * @returns isScrolledPast - true when user has scrolled past the map
@@ -14,41 +14,38 @@ export function useScrollPastMap(sentinelRef: RefObject<HTMLElement>) {
     const sentinel = sentinelRef.current;
     if (!sentinel) return;
 
-    const handleScroll = () => {
-      // Get the sentinel's position relative to the viewport
-      const rect = sentinel.getBoundingClientRect();
+    // Use Intersection Observer - more reliable than scroll events on iOS Safari
+    // This API is specifically designed for "is element in viewport?" detection
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        // When sentinel is NOT intersecting (not visible) = user scrolled past map
+        // When sentinel IS intersecting (visible) = user scrolled back up
+        const shouldHide = !entry.isIntersecting;
+        setIsScrolledPast(shouldHide);
 
-      // Hide filter bar when user has scrolled down significantly
-      // When user scrolls to footer, sentinel will have negative or very small rect.top
-      // We use a generous threshold to ensure it triggers reliably
-      const viewportHeight = window.innerHeight;
-      const threshold = viewportHeight * 0.8; // Hide when sentinel is in top 20% of viewport or above
-
-      const shouldHide = rect.top < threshold;
-      setIsScrolledPast(shouldHide);
-
-      // Debug logging (remove in production)
-      if (process.env.NODE_ENV === 'development') {
-        console.log('[useScrollPastMap]', {
-          rectTop: rect.top,
-          threshold,
-          shouldHide,
-          viewportHeight
-        });
+        // Debug logging
+        if (process.env.NODE_ENV === 'development') {
+          console.log('[useScrollPastMap] Intersection Observer:', {
+            isIntersecting: entry.isIntersecting,
+            intersectionRatio: entry.intersectionRatio,
+            shouldHide,
+            boundingClientRect: entry.boundingClientRect.top
+          });
+        }
+      },
+      {
+        // Trigger when sentinel is 200px from leaving/entering viewport
+        // Positive value = trigger earlier when scrolling down
+        rootMargin: '200px 0px 0px 0px',
+        // 0 = trigger as soon as ANY part leaves viewport
+        threshold: 0
       }
-    };
+    );
 
-    // Initial check
-    handleScroll();
-
-    // Listen to scroll events
-    window.addEventListener('scroll', handleScroll, { passive: true });
-    // Also listen to touchmove for better iOS Safari support
-    window.addEventListener('touchmove', handleScroll, { passive: true });
+    observer.observe(sentinel);
 
     return () => {
-      window.removeEventListener('scroll', handleScroll);
-      window.removeEventListener('touchmove', handleScroll);
+      observer.disconnect();
     };
   }, [sentinelRef]);
 
