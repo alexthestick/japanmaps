@@ -1,4 +1,8 @@
 import { BrowserRouter, Routes, Route, useLocation } from 'react-router-dom';
+
+// VERSION INDICATOR - Check browser console to verify deployment
+// If you see this message, the new code is deployed
+console.log('[Lost in Transit] Build Version: 2024-01-30-FIX-V2 - Carousel click + Filter bar fixes');
 import { Layout } from './components/layout/Layout';
 import { NewLandingPage } from './pages/NewLandingPage';
 import { HomePage } from './pages/HomePage';

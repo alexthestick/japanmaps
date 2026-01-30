@@ -38,11 +38,10 @@ export function SpotlightPeekContent({ stores, onStoreSelect, onDismiss }: Spotl
   };
 
   const handleStoreClick = (store: Store) => {
-    // Allow clicks if emblaApi not ready OR if it explicitly allows clicks
-    // This prevents blocking clicks when carousel is initializing
-    if (!emblaApi || emblaApi.clickAllowed()) {
-      onStoreSelect(store);
-    }
+    // SIMPLIFIED: Always fire the click - let Embla handle drag vs click internally
+    // Previous conditional logic was blocking legitimate clicks
+    console.log('[SpotlightPeekContent] Store clicked:', store.name);
+    onStoreSelect(store);
   };
 
   return (
@@ -69,7 +68,7 @@ export function SpotlightPeekContent({ stores, onStoreSelect, onDismiss }: Spotl
 
       {/* Embla Carousel - Smooth horizontal scrolling */}
       <div className="overflow-hidden px-5" ref={emblaRef}>
-        <div className="flex gap-3 pb-2 touch-pan-x">
+        <div className="flex gap-3 pb-2">
           {stores.map((store, index) => {
             const Icon = getIcon(store.mainCategory || 'Fashion');
             const hasPhoto = store.photos && store.photos.length > 0;
@@ -79,6 +78,7 @@ export function SpotlightPeekContent({ stores, onStoreSelect, onDismiss }: Spotl
                 key={store.id}
                 onClick={() => handleStoreClick(store)}
                 className="flex-shrink-0 w-[160px] group active:scale-95 transition-transform duration-200"
+                style={{ touchAction: 'manipulation' }}
               >
                 {/* Card container with gradient border effect */}
                 <div className="relative">

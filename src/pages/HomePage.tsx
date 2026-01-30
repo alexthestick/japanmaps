@@ -331,6 +331,7 @@ export function HomePage() {
 
       {view === 'map' ? (
         // ========== MAP VIEW - Full Screen with Floating Panels ==========
+        <>
         <div
           className="relative w-full"
           style={{
@@ -360,15 +361,6 @@ export function HomePage() {
             spotlightedStoreIds={spotlightedStores.map(s => s.id)}
             isSpotlightMode={isSpotlightMode}
           />
-
-          {/* Sentinel element at bottom of map for scroll detection (mobile only) */}
-          {isMobile && (
-            <div
-              ref={mapBottomSentinelRef}
-              className="absolute bottom-0 left-0 right-0 h-px pointer-events-none"
-              aria-hidden="true"
-            />
-          )}
 
           {/* MOBILE: Floating Filter Bar (overlays map) */}
           {isMobile && (
@@ -589,6 +581,17 @@ export function HomePage() {
             </BottomSheet>
           )}
         </div>
+
+        {/* SENTINEL: Placed OUTSIDE map container for proper scroll detection */}
+        {/* When this element leaves viewport (user scrolls to footer), filter bar hides */}
+        {isMobile && (
+          <div
+            ref={mapBottomSentinelRef}
+            className="h-1 w-full pointer-events-none bg-transparent"
+            aria-hidden="true"
+          />
+        )}
+        </>
       ) : isMobile ? (
         // ========== MOBILE LIST VIEW - Optimized for mobile ==========
         <MobileListView
