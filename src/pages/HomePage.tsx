@@ -21,7 +21,7 @@ import { BottomSheet } from '../components/common/BottomSheet';
 import { RandomStoreModal } from '../components/store/RandomStoreModal';
 import { useStores } from '../hooks/useStores';
 import { useIsMobile } from '../hooks/useMediaQuery';
-import { useScrollPastMap } from '../hooks/useScrollPastMap';
+import { useScrollDirection } from '../hooks/useScrollDirection';
 import { useSpotlightStores } from '../hooks/useSpotlightStores';
 import { Loader } from '../components/common/Loader';
 import type { Store, MainCategory } from '../types/store';
@@ -98,9 +98,8 @@ export function HomePage() {
   const mapViewRef = useRef<any>(null);
   const debounceTimer = useRef<NodeJS.Timeout>();
 
-  // Sentinel ref for scroll detection (mobile only)
-  const mapBottomSentinelRef = useRef<HTMLDivElement>(null);
-  const isScrolledPast = useScrollPastMap(mapBottomSentinelRef);
+  // Simple scroll direction detection - hide filter bar when scrolling down
+  const isScrollingDown = useScrollDirection();
 
   // Handle store clicks with two-tap behavior on mobile
   const handleStoreClick = useCallback((store: Store) => {
@@ -387,7 +386,7 @@ export function HomePage() {
                   setSelectedStore(store);
                 }}
                 onClearAll={handleClearAll}
-                isHidden={isScrolledPast || isSpotlightMode}
+                isHidden={isScrollingDown || isSpotlightMode}
               />
 
               {/* View Toggle Button - Bottom Right */}
@@ -581,17 +580,6 @@ export function HomePage() {
             </BottomSheet>
           )}
         </div>
-
-        {/* SENTINEL: Placed OUTSIDE map container for proper scroll detection */}
-        {/* When this element leaves viewport (user scrolls to footer), filter bar hides */}
-        {isMobile && (
-          <div
-            ref={mapBottomSentinelRef}
-            className="h-0 w-full pointer-events-none"
-            style={{ margin: 0, padding: 0, border: 'none', background: 'none' }}
-            aria-hidden="true"
-          />
-        )}
         </>
       ) : isMobile ? (
         // ========== MOBILE LIST VIEW - Optimized for mobile ==========
