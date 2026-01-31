@@ -34,9 +34,10 @@ export function useScrollPastMap(sentinelRef: RefObject<HTMLElement>) {
         }
       },
       {
-        // Trigger when sentinel is 200px from leaving/entering viewport
-        // Positive value = trigger earlier when scrolling down
-        rootMargin: '200px 0px 0px 0px',
+        // rootMargin: top right bottom left
+        // Negative top value = trigger BEFORE sentinel reaches top of viewport
+        // This hides filter bar as user starts scrolling down, before reaching footer
+        rootMargin: '-100px 0px 0px 0px',
         // 0 = trigger as soon as ANY part leaves viewport
         threshold: 0
       }

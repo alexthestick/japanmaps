@@ -587,7 +587,8 @@ export function HomePage() {
         {isMobile && (
           <div
             ref={mapBottomSentinelRef}
-            className="h-1 w-full pointer-events-none bg-transparent"
+            className="h-0 w-full pointer-events-none"
+            style={{ margin: 0, padding: 0, border: 'none', background: 'none' }}
             aria-hidden="true"
           />
         )}
