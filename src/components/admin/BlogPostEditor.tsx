@@ -19,11 +19,18 @@ interface BlogPost {
 
 interface BlogPostEditorProps {
   post?: BlogPost | null;
+  importedData?: {
+    title: string;
+    slug: string;
+    hero_image: string;
+    intro_content: string;
+    sections: ParallaxStoreSection[];
+  } | null;
   onSuccess: () => void;
   onCancel: () => void;
 }
 
-export function BlogPostEditor({ post, onSuccess, onCancel }: BlogPostEditorProps) {
+export function BlogPostEditor({ post, importedData, onSuccess, onCancel }: BlogPostEditorProps) {
   const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState({
     title: '',
@@ -42,8 +49,17 @@ export function BlogPostEditor({ post, onSuccess, onCancel }: BlogPostEditorProp
         intro_content: post.intro_content || '',
         sections: post.sections_data || [],
       });
+    } else if (importedData) {
+      // Pre-fill with imported Substack data
+      setFormData({
+        title: importedData.title,
+        slug: importedData.slug,
+        hero_image: importedData.hero_image,
+        intro_content: importedData.intro_content,
+        sections: importedData.sections,
+      });
     }
-  }, [post]);
+  }, [post, importedData]);
 
   function generateSlugFromTitle(title: string): string {
     return title

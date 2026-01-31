@@ -11,8 +11,10 @@ import { MainCategoryMigration } from '../components/admin/MainCategoryMigration
 import { NeighborhoodList } from '../components/admin/NeighborhoodList';
 import { BlogPostEditor } from '../components/admin/BlogPostEditor';
 import { SocialPostCreator } from '../components/admin/SocialPostCreator';
+import { SubstackImporter } from '../components/admin/SubstackImporter';
 import { Modal } from '../components/common/Modal';
 import type { StoreSuggestion, Store } from '../types/store';
+import type { ParallaxStoreSection } from '../types/blog';
 
 // Module-level cache to persist data across component remounts
 let adminDataCache: {
@@ -46,6 +48,13 @@ export function AdminDashboard() {
   const [loadingBlogPosts, setLoadingBlogPosts] = useState(false);
   const [showBlogEditor, setShowBlogEditor] = useState(false);
   const [editingPost, setEditingPost] = useState<any | null>(null);
+  const [importedData, setImportedData] = useState<{
+    title: string;
+    slug: string;
+    hero_image: string;
+    intro_content: string;
+    sections: ParallaxStoreSection[];
+  } | null>(null);
   const [activeTab, setActiveTab] = useState<'stores' | 'suggestions' | 'migration' | 'neighborhoods' | 'blog' | 'social'>('stores');
 
   const isFetchingRef = useRef(false);
@@ -625,11 +634,23 @@ export function AdminDashboard() {
             <Button
               onClick={() => {
                 setEditingPost(null);
+                setImportedData(null);
                 setShowBlogEditor(true);
               }}
             >
               + New Post
             </Button>
+          </div>
+
+          {/* Substack Importer */}
+          <div className="mb-8 pb-8 border-b-2 border-gray-200">
+            <SubstackImporter
+              onImport={(data) => {
+                setImportedData(data);
+                setEditingPost(null);
+                setShowBlogEditor(true);
+              }}
+            />
           </div>
 
           {blogPosts.length === 0 ? (
@@ -737,20 +758,30 @@ export function AdminDashboard() {
         onClose={() => {
           setShowBlogEditor(false);
           setEditingPost(null);
+          setImportedData(null);
         }}
-        title={editingPost ? `Edit: ${editingPost.title}` : 'Create New Blog Post'}
+        title={
+          editingPost
+            ? `Edit: ${editingPost.title}`
+            : importedData
+              ? `Import: ${importedData.title}`
+              : 'Create New Blog Post'
+        }
         maxWidth="4xl"
       >
         <BlogPostEditor
           post={editingPost}
+          importedData={importedData}
           onSuccess={() => {
             setShowBlogEditor(false);
             setEditingPost(null);
+            setImportedData(null);
             fetchBlogPosts();
           }}
           onCancel={() => {
             setShowBlogEditor(false);
             setEditingPost(null);
+            setImportedData(null);
           }}
         />
       </Modal>
