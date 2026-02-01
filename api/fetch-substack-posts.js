@@ -73,8 +73,8 @@ function parseSubstackContent(htmlContent) {
     const links = extractLinks(htmlContent);
 
     // Split content by headings (store names)
-    // Looking for: <h2>, <h3>, <h4> tags (Substack uses h3 for store names)
-    const headingRegex = /<h([2-4])[^>]*>(.*?)<\/h\1>/gi;
+    // Looking for: <h1>, <h2>, <h3>, <h4> tags (Substack uses h1 or h3 for store names)
+    const headingRegex = /<h([1-4])[^>]*>(.*?)<\/h\1>/gi;
     const sections = [];
     let match;
     const matches = [];
