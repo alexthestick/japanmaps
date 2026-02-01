@@ -51,9 +51,14 @@ export function sortStores(stores: Store[], sortBy: string): Store[] {
       return sorted;
     case 'alphabetical':
       return sorted.sort((a, b) => a.name.localeCompare(b.name));
+    case 'reverse-alphabetical':
+      // MOBILE: Z-A sorting
+      return sorted.sort((a, b) => b.name.localeCompare(a.name));
     case 'city':
       return sorted.sort((a, b) => a.city.localeCompare(b.city));
     case 'recent':
+    case 'newest':
+      // Both desktop "recent" and mobile "newest" = sort by creation date descending
       return sorted.sort((a, b) =>
         new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
       );

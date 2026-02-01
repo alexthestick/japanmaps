@@ -34,6 +34,7 @@ const CATEGORIES = [
 ];
 
 const SORT_OPTIONS = [
+  { value: 'random', label: 'Random' },
   { value: 'alphabetical', label: 'A-Z' },
   { value: 'reverse-alphabetical', label: 'Z-A' },
   { value: 'newest', label: 'Newest First' },
