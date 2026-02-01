@@ -118,6 +118,12 @@ export const MAJOR_CITIES_JAPAN = [
   'Kojima',
   'Nagano',
   'Toyama',
+  'Sendai',
+  'Kawasaki',
+  'Saitama',
+  'Shizuoka',
+  'Gunma',
+  'Kochi',
 ] as const;
 
 // Main category colors (default view) - Vibrant neon colors
@@ -296,6 +302,12 @@ export const LOCATIONS = {
   Okayama: [],
   Kojima: [],
   Toyama: [],
+  Sendai: [],
+  Kawasaki: [],
+  Saitama: [],
+  Shizuoka: [],
+  Gunma: [],
+  Kochi: [],
 } as const;
 
 // City coordinates for map centering
@@ -318,6 +330,12 @@ export const CITY_COORDINATES: Record<string, { latitude: number; longitude: num
   Kojima: { latitude: 34.4640, longitude: 133.8150, zoom: 12 },
   Nagano: { latitude: 36.6513, longitude: 138.1809, zoom: 12 },
   Toyama: { latitude: 36.6959, longitude: 137.2137, zoom: 12 },
+  Sendai: { latitude: 38.2682, longitude: 140.8694, zoom: 12 },
+  Kawasaki: { latitude: 35.5308, longitude: 139.7030, zoom: 12 },
+  Saitama: { latitude: 35.8617, longitude: 139.6455, zoom: 12 },
+  Shizuoka: { latitude: 34.9756, longitude: 138.3828, zoom: 12 },
+  Gunma: { latitude: 36.3906, longitude: 139.0604, zoom: 11 },
+  Kochi: { latitude: 33.5597, longitude: 133.5311, zoom: 12 },
 };
 
 // Neighborhood coordinates for map centering (zoom level 14-15 for neighborhood detail)
@@ -417,6 +435,12 @@ export const CITY_COLORS: Record<string, string> = {
   Kojima: '#FCD34D', // amber-300
   Nagano: '#A855F7', // purple-500
   Toyama: '#FB923C', // orange-400
+  Sendai: '#14B8A6', // teal-500
+  Kawasaki: '#EC4899', // pink-500
+  Saitama: '#6366F1', // indigo-500
+  Shizuoka: '#0EA5E9', // sky-500
+  Gunma: '#22D3EE', // cyan-400
+  Kochi: '#F97316', // orange-500
 };
 
 // Japanese city names (for ticket cards)
@@ -439,6 +463,12 @@ export const CITY_NAMES_JAPANESE: Record<string, string> = {
   Kojima: '児島',
   Nagano: '長野',
   Toyama: '富山',
+  Sendai: '仙台',
+  Kawasaki: '川崎',
+  Saitama: '埼玉',
+  Shizuoka: '静岡',
+  Gunma: '群馬',
+  Kochi: '高知',
 };
 
 // City regions (for ticket cards)
@@ -461,6 +491,12 @@ export const CITY_REGIONS: Record<string, string> = {
   Kojima: 'Chugoku',
   Nagano: 'Chubu',
   Toyama: 'Chubu',
+  Sendai: 'Tohoku',
+  Kawasaki: 'Kanto',
+  Saitama: 'Kanto',
+  Shizuoka: 'Chubu',
+  Gunma: 'Kanto',
+  Kochi: 'Shikoku',
 };
 
 

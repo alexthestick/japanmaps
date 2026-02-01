@@ -742,9 +742,10 @@ export const MapView = forwardRef<MapViewHandle, MapViewProps>(({ stores, onStor
               neighborhoodStoreCounts[neighborhoodName] = nearbyStores.length;
             });
 
-            // PHASE 1.5D-4: Filter to only neighborhoods with 20+ stores (was 10)
+            // PHASE 1.5D-4: Filter to only neighborhoods with 10+ stores
+            // Lowered from 20 to show more neighborhood labels like Kichijoji, Jiyugaoka
             const relevantNeighborhoods = Object.entries(NEIGHBORHOOD_COORDINATES).filter(
-              ([name]) => neighborhoodStoreCounts[name] >= 20
+              ([name]) => neighborhoodStoreCounts[name] >= 10
             );
 
             // Calculate distance to map center and sort
