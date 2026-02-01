@@ -835,8 +835,12 @@ export const MapView = forwardRef<MapViewHandle, MapViewProps>(({ stores, onStor
 
       {/* Store Labels - Rendered outside Map component for absolute positioning */}
       {/* PHASE 1.5A: Optimized label limits - 8-10 on mobile, 15 on desktop */}
+      {/* PHASE 3: Hide labels at super zoom (zoom > 16) to reduce lag and clutter */}
       <div className="absolute inset-0 pointer-events-none">
         {(() => {
+          // Hide labels at super zoom level (street view)
+          if (viewState.zoom > 16) return null;
+
           // 🎯 PHASE 1.5A: Responsive label limits
           const maxLabels = isMobile ? 10 : 15;
 
