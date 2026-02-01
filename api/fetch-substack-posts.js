@@ -73,20 +73,27 @@ function parseSubstackContent(htmlContent) {
     const links = extractLinks(htmlContent);
 
     // Split content by headings (store names)
-    // Looking for patterns like: <h2>Store Name</h2> or <strong>Store Name</strong>
-    const headingRegex = /<h[2-4][^>]*>([^<]+)<\/h[2-4]>|<p><strong>([^<]+)<\/strong><\/p>/gi;
+    // Looking for: <h2>, <h3>, <h4> tags (Substack uses h3 for store names)
+    const headingRegex = /<h([2-4])[^>]*>(.*?)<\/h\1>/gi;
     const sections = [];
-    let lastIndex = 0;
     let match;
     const matches = [];
 
+    // Reset regex lastIndex before using
+    headingRegex.lastIndex = 0;
+
     while ((match = headingRegex.exec(htmlContent)) !== null) {
-      matches.push({
-        heading: match[1] || match[2],
-        index: match.index,
-        fullMatch: match[0]
-      });
+      const headingText = match[2].replace(/<[^>]+>/g, '').trim(); // Strip any inner HTML tags
+      if (headingText) {
+        matches.push({
+          heading: headingText,
+          index: match.index,
+          fullMatch: match[0]
+        });
+      }
     }
+
+    console.log(`Found ${matches.length} store sections:`, matches.map(m => m.heading));
 
     // Extract intro (everything before first heading)
     let intro = '';
@@ -118,11 +125,10 @@ function parseSubstackContent(htmlContent) {
       let address = '';
       let mapLink = '';
 
-      // Check for Google Maps links
+      // Check for Google Maps links (share.google, goo.gl, google.com/maps)
       const mapsLink = sectionLinks.find(link =>
-        link.url.includes('google.com/maps') ||
-        link.url.includes('goo.gl') ||
-        link.url.includes('share.google')
+        link.url.includes('google') &&
+        (link.url.includes('maps') || link.url.includes('goo.gl') || link.url.includes('share.google'))
       );
 
       if (mapsLink) {
@@ -130,10 +136,19 @@ function parseSubstackContent(htmlContent) {
         address = mapsLink.text;
       }
 
-      // Or look for "address:" in text
-      const addressMatch = sectionText.match(/address:\s*([^\n]+)/i);
-      if (addressMatch) {
-        address = addressMatch[1].trim();
+      // Also look for "address:" pattern in the HTML (before stripping)
+      const addressLineMatch = sectionHtml.match(/address:\s*<a[^>]+href="([^"]+)"[^>]*>([^<]+)<\/a>/i);
+      if (addressLineMatch) {
+        if (!mapLink) mapLink = addressLineMatch[1];
+        if (!address) address = addressLineMatch[2];
+      }
+
+      // Fallback: look for "address:" in plain text
+      if (!address) {
+        const addressMatch = sectionText.match(/address:\s*([^\n]+)/i);
+        if (addressMatch) {
+          address = addressMatch[1].trim();
+        }
       }
 
       // Description is the main text (excluding address line)
