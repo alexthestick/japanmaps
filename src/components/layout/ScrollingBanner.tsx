@@ -5,7 +5,7 @@ export function ScrollingBanner() {
   const { stores } = useStores({ countries: [], cities: [], categories: [], priceRanges: [], searchQuery: '', selectedCity: null, selectedNeighborhood: null, selectedCategory: null });
   const storeCount = stores.length;
 
-  const message = `Welcome to Lost in Transit v1.0 • We currently have ${storeCount} stores and will continue updating • Enjoy exploring Japan's best spots`;
+  const message = `Welcome to Lost in Transit v2.0 • We currently have ${storeCount} stores and will continue updating • Enjoy exploring Japan's best spots`;
 
   return (
     <div className="relative w-full bg-gradient-to-r from-gray-900 via-black to-gray-900 border-y-2 border-orange-500/40 overflow-hidden">

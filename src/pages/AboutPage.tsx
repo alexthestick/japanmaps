@@ -1,9 +1,91 @@
-import { MapPin, Heart, Users } from 'lucide-react';
+import { MapPin, Heart, Users, Sparkles, Zap, Store, Map, Newspaper } from 'lucide-react';
 
 export function AboutPage() {
   return (
     <div className="max-w-4xl mx-auto px-4 py-12">
       <h1 className="text-4xl font-bold text-gray-900 mb-6">About Lost in Transit</h1>
+
+      {/* v2.0 Update Section */}
+      <div className="bg-gradient-to-r from-orange-50 to-amber-50 border-2 border-orange-200 rounded-xl p-6 mb-12">
+        <div className="flex items-center gap-3 mb-4">
+          <div className="bg-orange-500 text-white px-3 py-1 rounded-full text-sm font-bold">
+            NEW
+          </div>
+          <h2 className="text-2xl font-bold text-orange-900">Version 2.0 Update</h2>
+        </div>
+
+        <p className="text-orange-800 mb-6">
+          We're excited to announce the biggest update to Lost in Transit yet! Here's what's new:
+        </p>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="flex items-start gap-3">
+            <Store className="w-5 h-5 text-orange-600 mt-1 flex-shrink-0" />
+            <div>
+              <h4 className="font-semibold text-orange-900">870+ Stores</h4>
+              <p className="text-sm text-orange-700">Hundreds of new stores added across Japan, from hidden vintage gems to premier archive shops.</p>
+            </div>
+          </div>
+
+          <div className="flex items-start gap-3">
+            <Map className="w-5 h-5 text-orange-600 mt-1 flex-shrink-0" />
+            <div>
+              <h4 className="font-semibold text-orange-900">6 New Cities</h4>
+              <p className="text-sm text-orange-700">Now covering Sendai, Kawasaki, Saitama, Shizuoka, Gunma, and Kochi.</p>
+            </div>
+          </div>
+
+          <div className="flex items-start gap-3">
+            <MapPin className="w-5 h-5 text-orange-600 mt-1 flex-shrink-0" />
+            <div>
+              <h4 className="font-semibold text-orange-900">New Neighborhoods</h4>
+              <p className="text-sm text-orange-700">12 new Tokyo neighborhoods including Tachikawa, Azabujuban, Sumida City, and more.</p>
+            </div>
+          </div>
+
+          <div className="flex items-start gap-3">
+            <Zap className="w-5 h-5 text-orange-600 mt-1 flex-shrink-0" />
+            <div>
+              <h4 className="font-semibold text-orange-900">Performance Improvements</h4>
+              <p className="text-sm text-orange-700">Faster map loading, smoother scrolling, and optimized rendering for a better experience.</p>
+            </div>
+          </div>
+
+          <div className="flex items-start gap-3">
+            <Sparkles className="w-5 h-5 text-orange-600 mt-1 flex-shrink-0" />
+            <div>
+              <h4 className="font-semibold text-orange-900">Spotlight Mode</h4>
+              <p className="text-sm text-orange-700">New "Search This Area" feature curates 5 recommended stores based on your map view.</p>
+            </div>
+          </div>
+
+          <div className="flex items-start gap-3">
+            <Heart className="w-5 h-5 text-orange-600 mt-1 flex-shrink-0" />
+            <div>
+              <h4 className="font-semibold text-orange-900">Redesigned Store Cards</h4>
+              <p className="text-sm text-orange-700">Beautiful new store cards with better photos, cleaner layout, and more details at a glance.</p>
+            </div>
+          </div>
+        </div>
+
+        <div className="mt-6 pt-4 border-t border-orange-200">
+          <div className="flex items-start gap-3">
+            <Newspaper className="w-5 h-5 text-orange-600 mt-1 flex-shrink-0" />
+            <div>
+              <h4 className="font-semibold text-orange-900">Subscribe to Our Substack</h4>
+              <p className="text-sm text-orange-700 mb-2">Stay updated with new store additions, city guides, and Japan fashion insights.</p>
+              <a
+                href="https://lostintransitjapan.substack.com"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-2 bg-orange-500 hover:bg-orange-600 text-white px-4 py-2 rounded-lg text-sm font-semibold transition-colors"
+              >
+                Subscribe on Substack
+              </a>
+            </div>
+          </div>
+        </div>
+      </div>
 
       <div className="prose prose-lg max-w-none">
         <p className="text-xl text-gray-600 mb-8">

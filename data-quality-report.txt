@@ -1,0 +1,386 @@
+================================================================================
+STORE DATA QUALITY REPORT
+Generated: 2026-02-01
+================================================================================
+
+SUMMARY
+--------
+Total Issues Found: 70 stores
+- Neighborhood = City Name: 63 stores across 12 cities
+- Neighborhood contains Postal Code: 7 stores across 6 cities
+
+================================================================================
+ISSUE #1: STORES WHERE NEIGHBORHOOD = CITY NAME (63 stores)
+================================================================================
+
+These stores have the same value for both "neighborhood" and "city" fields,
+which provides no additional location information. The neighborhood field
+should contain a more specific district or area name.
+
+------------------------------------------------------------------------
+CHIBA (1 store)
+------------------------------------------------------------------------
+1. ANDANTEANDANTE
+   ID: 6ccff24d-3aba-4804-8a74-6f15f120c9cb
+   City: Chiba | Neighborhood: Chiba
+
+------------------------------------------------------------------------
+HIROSHIMA (3 stores)
+------------------------------------------------------------------------
+1. MOLDNEST-VLACK
+   ID: 963fe96e-d542-4a1b-9692-dcbef3f437a9
+   City: Hiroshima | Neighborhood: Hiroshima
+
+2. Miles Coffee
+   ID: 106484c9-bc21-491d-a6c1-57059edba587
+   City: Hiroshima | Neighborhood: Hiroshima
+
+3. BREATH HIROSHIMA POINT
+   ID: 905db209-c996-4497-974e-1b8f714226fb
+   City: Hiroshima | Neighborhood: Hiroshima
+
+------------------------------------------------------------------------
+KANAZAWA (4 stores)
+------------------------------------------------------------------------
+1. Kanazawa Temakizushi Coil
+   ID: cf43440c-0d72-4d3d-b4e8-b408d69f0a10
+   City: Kanazawa | Neighborhood: Kanazawa
+
+2. wax clothing
+   ID: 09788483-80f3-4385-9d6a-597123dba689
+   City: Kanazawa | Neighborhood: Kanazawa
+
+3. sui金沢店
+   ID: 950c31dc-9882-4d58-a509-4b4d0f259daa
+   City: Kanazawa | Neighborhood: Kanazawa
+
+4. desire kanazawa
+   ID: e09c454a-b4de-4e43-afb8-0301cee4fc52
+   City: Kanazawa | Neighborhood: Kanazawa
+
+------------------------------------------------------------------------
+KAWASAKI (2 stores)
+------------------------------------------------------------------------
+1. miyabi clothing store
+   ID: f0bd8711-d70a-48a8-add1-aa499f3d467c
+   City: Kawasaki | Neighborhood: Kawasaki
+
+2. allz
+   ID: d81783cf-20a8-492c-85bf-78e5c08606cf
+   City: Kawasaki | Neighborhood: Kawasaki
+
+------------------------------------------------------------------------
+KOBE (14 stores)
+------------------------------------------------------------------------
+1. hommage east
+   ID: 00369a56-e3eb-40cc-98f6-8ff5f8e3c625
+   City: Kobe | Neighborhood: Kobe
+
+2. TROA (トロア 古着)
+   ID: 455a49c1-325b-4492-9ef0-ca8b2771165d
+   City: Kobe | Neighborhood: Kobe
+
+3. PUKUI
+   ID: 639f6bfd-b938-491b-b851-1fae001f5daf
+   City: Kobe | Neighborhood: Kobe
+
+4. FLAIR （フレアー）
+   ID: e1615c98-114c-4dba-9e31-dc4f3509e46a
+   City: Kobe | Neighborhood: Kobe
+
+5. RAGTAG
+   ID: c6ebd837-8b50-460d-8159-7bd88cf3b9aa
+   City: Kobe | Neighborhood: Kobe
+
+6. Mumu
+   ID: 4d117cec-ad52-4af6-8f71-ee4eb237955e
+   City: Kobe | Neighborhood: Kobe
+
+7. Black Out
+   ID: 91da836a-f5eb-4ac9-9dc5-d2205c115e58
+   City: Kobe | Neighborhood: Kobe
+
+8. マグネッツ ヴィンテージ 神戸トアウエスト店
+   ID: b2af900d-9fe5-4631-96e4-d58da30ef787
+   City: Kobe | Neighborhood: Kobe
+
+9. 神戸古着屋 Chrono
+   ID: 681959e3-1546-4e28-a7be-1b4380105ab8
+   City: Kobe | Neighborhood: Kobe
+
+10. hommage kobe
+    ID: 70bc4935-adad-4894-bd41-63571d27669a
+    City: Kobe | Neighborhood: Kobe
+
+11. UNION
+    ID: b654ce8a-0434-4b64-a090-a374ddfcac87
+    City: Kobe | Neighborhood: Kobe
+
+12. J'ai la peche
+    ID: 5842dcee-e94b-44fd-9b53-9357c7f647fc
+    City: Kobe | Neighborhood: Kobe
+
+13. Mukta / Sal
+    ID: 1b05410d-f1b8-4d96-94a3-55041c68de79
+    City: Kobe | Neighborhood: Kobe
+
+14. GALAXIES
+    ID: e226e25d-2a99-4141-8abb-3ed181e19765
+    City: Kobe | Neighborhood: Kobe
+
+------------------------------------------------------------------------
+KYOTO (22 stores)
+------------------------------------------------------------------------
+1. Ragtag Kyoto
+   ID: f08dd5e6-95c9-4805-ab1b-13bc028bd54b
+   City: Kyoto | Neighborhood: Kyoto
+
+2. kindal kyoto second hand store
+   ID: 283609b5-5754-4d12-89ae-43d368bdfd7a
+   City: Kyoto | Neighborhood: Kyoto
+
+3. Japanese MAZEMEN MARUTA
+   ID: 00031d36-6d3b-4122-ab41-3cfda435fd97
+   City: Kyoto | Neighborhood: Kyoto
+
+4. Kurasu Kyoto Stand
+   ID: 642f463e-9585-4768-8f52-feca768337c0
+   City: Kyoto | Neighborhood: Kyoto
+
+5. WEEKENDERS COFFEE ROASTERY
+   ID: b15563dd-d727-4484-8002-c092f29580ce
+   City: Kyoto | Neighborhood: Kyoto
+
+6. GWDH
+   ID: a7898f32-50e9-44f9-abf2-faafa490acaf
+   City: Kyoto | Neighborhood: Kyoto
+
+7. Otsu kei Kyoto
+   ID: 5c2fac70-0630-4130-bfc5-7c8bd6f95b18
+   City: Kyoto | Neighborhood: Kyoto
+
+8. lloomm
+   ID: ae36a13d-2473-47c0-ad73-ab73323358f9
+   City: Kyoto | Neighborhood: Kyoto
+
+9. Prophet
+   ID: b6e56fbd-fd60-4b70-a03e-52f3a84adc15
+   City: Kyoto | Neighborhood: Kyoto
+
+10. T.T
+    ID: a628ee23-99fd-490c-bd6c-b131405b2ddb
+    City: Kyoto | Neighborhood: Kyoto
+
+11. Walden Woods Kyoto
+    ID: 5f7a3bcf-eff8-4529-b476-a2e475f8dcdf
+    City: Kyoto | Neighborhood: Kyoto
+
+12. Katayama Bunzaburo Shoten Kyoto Honten
+    ID: e4f1f6e3-ff89-4e9a-af96-4acdf5eff819
+    City: Kyoto | Neighborhood: Kyoto
+
+13. ISSEY MIYAKE KYOTO
+    ID: 14ff85e2-17fd-49bb-8d02-e9669c205bd2
+    City: Kyoto | Neighborhood: Kyoto
+
+14. Wajoryomen Sugari
+    ID: 07eae807-daac-42f8-a61f-512696c0be2b
+    City: Kyoto | Neighborhood: Kyoto
+
+15. EMBA KYOTO GRILL
+    ID: 8e935fcb-cf3e-4c48-90ea-1f41456870dd
+    City: Kyoto | Neighborhood: Kyoto
+
+16. HYPE
+    ID: a48db9d9-4cdd-488d-8b5d-17d6319926f2
+    City: Kyoto | Neighborhood: Kyoto
+
+17. CETTEN Kyoto
+    ID: ec88a871-afe0-4576-aa82-b29572495916
+    City: Kyoto | Neighborhood: Kyoto
+
+18. GOKAGO
+    ID: 10d011e1-733c-4e2e-b10b-ca729cc0a56f
+    City: Kyoto | Neighborhood: Kyoto
+
+19. Washoku Haru
+    ID: f6603849-589a-462c-b148-c43f322a857d
+    City: Kyoto | Neighborhood: Kyoto
+
+20. HUMAN MADE 1928 Cafe by Blue Bottle Coffee
+    ID: 99fdb159-fbe5-4551-b920-6d4693c33282
+    City: Kyoto | Neighborhood: Kyoto
+
+21. VOU/棒
+    ID: 90838403-c9c5-425e-9a88-2fb66f40cfbf
+    City: Kyoto | Neighborhood: Kyoto
+
+22. ARTRO
+    ID: a1eafe0e-ff69-4752-bc23-7a188412d4e1
+    City: Kyoto | Neighborhood: Kyoto
+
+------------------------------------------------------------------------
+NAGOYA (4 stores)
+------------------------------------------------------------------------
+1. Lusty Nagoya【名古屋 古着屋】
+   ID: f323e8a4-1640-4348-b537-e86b62e2d2bd
+   City: Nagoya | Neighborhood: Nagoya
+
+2. UNEVEN HUB STORE
+   ID: 783616cb-d12c-4986-9eba-5333b63d7ecf
+   City: Nagoya | Neighborhood: Nagoya
+
+3. POETRY
+   ID: 4c1d04b5-7dad-4dfb-94d0-5a0ff05d78a0
+   City: Nagoya | Neighborhood: Nagoya
+
+4. Yaba Misen
+   ID: 8154ef9b-9ec0-4410-8e4a-4b0eec718286
+   City: Nagoya | Neighborhood: Nagoya
+
+------------------------------------------------------------------------
+NIIGATA (3 stores)
+------------------------------------------------------------------------
+1. Coalmind
+   ID: 2fc4258c-fa8b-481a-8886-4ab92dbadf9e
+   City: Niigata | Neighborhood: Niigata
+
+2. THIS MAN vintage clothing
+   ID: 97747f59-5a84-4f37-8610-e9d37f3b5ea7
+   City: Niigata | Neighborhood: Niigata
+
+3. one day store
+   ID: 02ccda5d-b88a-4c85-b7db-d0d78a9970bc
+   City: Niigata | Neighborhood: Niigata
+
+------------------------------------------------------------------------
+OKAYAMA (4 stores)
+------------------------------------------------------------------------
+1. Rushout
+   ID: 48739c17-e07b-4fca-9ea0-c6c75eb4e4de
+   City: Okayama | Neighborhood: Okayama
+
+2. plywood circus
+   ID: 2318eafd-ec5e-4457-aa43-60a68419cf14
+   City: Okayama | Neighborhood: Okayama
+
+3. CASANOVA&CO（カサノヴァ アンド コー）
+   ID: 4af72cef-0919-49c7-90f1-44fd3707ddc4
+   City: Okayama | Neighborhood: Okayama
+
+4. etoqk
+   ID: f7b2d34a-5809-4741-bfdd-df7f7a123374
+   City: Okayama | Neighborhood: Okayama
+
+------------------------------------------------------------------------
+OSAKA (3 stores)
+------------------------------------------------------------------------
+1. Henry's PIZZA
+   ID: c6f72c39-2c0d-48f9-aae0-1e2c08ef0203
+   City: Osaka | Neighborhood: Osaka
+
+2. "+" plus
+   ID: eca2aecc-4d39-4683-b4ac-92f75900800e
+   City: Osaka | Neighborhood: Osaka
+
+3. Hachikome
+   ID: 4eef9c96-78b7-4090-8187-9c1e6ddfe967
+   City: Osaka | Neighborhood: Osaka
+
+------------------------------------------------------------------------
+SAPPORO (2 stores)
+------------------------------------------------------------------------
+1. pierce, ice dalnum 5 09 1 8
+   ID: 09463da0-c288-4b83-97c2-754f7a8cb670
+   City: Sapporo | Neighborhood: Sapporo
+
+2. Ephraim sapporo
+   ID: 0365b425-c9bb-48fb-9ee8-98d1045b00eb
+   City: Sapporo | Neighborhood: Sapporo
+
+------------------------------------------------------------------------
+SENDAI (1 store)
+------------------------------------------------------------------------
+1. cosmic__sendai
+   ID: 3ba70f3b-a8fc-46dc-9a0b-e40670fcf5fc
+   City: Sendai | Neighborhood: Sendai
+
+
+================================================================================
+ISSUE #2: STORES WHERE NEIGHBORHOOD CONTAINS POSTAL CODE (7 stores)
+================================================================================
+
+These stores have postal codes or prefecture names in the neighborhood field.
+The neighborhood field should contain the district/area name only, not postal
+codes or prefecture names.
+
+------------------------------------------------------------------------
+KANAZAWA (2 stores)
+------------------------------------------------------------------------
+1. Select Recycle Shop MUGI
+   ID: 6d14f56e-b659-4902-a93f-5342148118b0
+   City: Kanazawa | Neighborhood: Ishikawa 920-0807
+   → Issue: Contains prefecture "Ishikawa" and postal code "920-0807"
+
+2. ATTIC MIRROR
+   ID: c08f4c6d-39e8-465c-bf80-f8e2f3a73a1a
+   City: Kanazawa | Neighborhood: Ishikawa 920-0998
+   → Issue: Contains prefecture "Ishikawa" and postal code "920-0998"
+
+------------------------------------------------------------------------
+OKAYAMA (1 store)
+------------------------------------------------------------------------
+1. Belk
+   ID: ece7f72b-c931-4197-b1da-baaa351558c1
+   City: Okayama | Neighborhood: Okayama 706-0002
+   → Issue: Contains city name and postal code "706-0002"
+
+------------------------------------------------------------------------
+SHIGA (1 store)
+------------------------------------------------------------------------
+1. NOTA_SHOP / NOTA & design
+   ID: ac2a21bf-fe6b-43e2-9e53-6169268b78ee
+   City: Shiga | Neighborhood: Shiga 529-1804
+   → Issue: Contains prefecture "Shiga" and postal code "529-1804"
+
+------------------------------------------------------------------------
+TOKYO (2 stores)
+------------------------------------------------------------------------
+1. MUUMUU COFFEE
+   ID: 6e8f7238-90e1-4e51-844d-9cd5ec4bfed0
+   City: Tokyo | Neighborhood: Tokyo 131-0046
+   → Issue: Contains city name and postal code "131-0046"
+
+2. SLOW JET COFFEE
+   ID: 6863d044-594f-436e-84cf-4e8da8cbcebd
+   City: Tokyo | Neighborhood: Tokyo 120-0025
+   → Issue: Contains city name and postal code "120-0025"
+
+------------------------------------------------------------------------
+TOYAMA (1 store)
+------------------------------------------------------------------------
+1. フォンドット（ＶＯＮＤＯＴ）
+   ID: cc549970-68c2-4c6c-8833-d89007ea2472
+   City: Toyama | Neighborhood: 939-8092
+   → Issue: Contains postal code "939-8092" only
+
+================================================================================
+RECOMMENDED ACTIONS
+================================================================================
+
+For Issue #1 (Neighborhood = City):
+- Research the actual district/area/neighborhood for each store
+- Update the neighborhood field with the specific area name
+- Common Tokyo neighborhoods: Shibuya, Harajuku, Daikanyama, Nakameguro, etc.
+- Common Kyoto neighborhoods: Gion, Kawaramachi, Arashiyama, etc.
+- Common Osaka neighborhoods: Namba, Umeda, Shinsaibashi, etc.
+
+For Issue #2 (Postal Codes in Neighborhood):
+- Remove the postal code from the neighborhood field
+- Remove prefecture/city names if they duplicate the city field
+- Extract the actual neighborhood/district name from the address
+- Use Google Maps or the store's address to verify the correct neighborhood
+
+================================================================================
+END OF REPORT
+================================================================================
