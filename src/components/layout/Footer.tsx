@@ -3,6 +3,13 @@ import { MapPin, Instagram, Youtube } from 'lucide-react';
 import { MAJOR_CITIES_JAPAN, MAIN_CATEGORIES, CITY_REGIONS } from '../../lib/constants';
 import { cityToSlug } from '../../utils/cityData';
 
+// Custom Substack icon since Lucide doesn't have one
+const SubstackIcon = ({ className }: { className?: string }) => (
+  <svg className={className} viewBox="0 0 24 24" fill="currentColor">
+    <path d="M22.539 8.242H1.46V5.406h21.08v2.836zM1.46 10.812V24L12 18.11 22.54 24V10.812H1.46zM22.54 0H1.46v2.836h21.08V0z" />
+  </svg>
+);
+
 // Group cities by region for organized display
 const REGIONS = ['Kanto', 'Kansai', 'Chubu', 'Kyushu', 'Hokkaido', 'Chugoku', 'Shikoku', 'Tohoku'] as const;
 
@@ -89,6 +96,15 @@ export function Footer() {
                 aria-label="Subscribe on YouTube"
               >
                 <Youtube className="w-5 h-5" />
+              </a>
+              <a
+                href="https://substack.com/@lostintransitjp"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-gray-400 hover:text-white transition-colors"
+                aria-label="Subscribe on Substack"
+              >
+                <SubstackIcon className="w-5 h-5" />
               </a>
             </div>
           </div>

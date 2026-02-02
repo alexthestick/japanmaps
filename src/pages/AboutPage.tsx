@@ -75,7 +75,7 @@ export function AboutPage() {
               <h4 className="font-semibold text-orange-900">Subscribe to Our Substack</h4>
               <p className="text-sm text-orange-700 mb-2">Stay updated with new store additions, city guides, and Japan fashion insights.</p>
               <a
-                href="https://lostintransitjapan.substack.com"
+                href="https://substack.com/@lostintransitjp"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="inline-flex items-center gap-2 bg-orange-500 hover:bg-orange-600 text-white px-4 py-2 rounded-lg text-sm font-semibold transition-colors"
