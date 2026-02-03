@@ -55,6 +55,13 @@ export function SocialPostCreator() {
   // Corner bracket size
   const [cornerSize, setCornerSize] = useState(24);
 
+  // Custom caption
+  const [showCaption, setShowCaption] = useState(false);
+  const [captionText, setCaptionText] = useState('');
+  const [captionPos, setCaptionPos] = useState({ x: 50, y: format === 'square' ? 500 : 900 });
+  const [captionSize, setCaptionSize] = useState(48);
+  const [captionColor, setCaptionColor] = useState('#FFFFFF');
+
   // Fetch stores on mount
   useEffect(() => {
     fetchStores();
@@ -86,9 +93,11 @@ export function SocialPostCreator() {
     if (format === 'story') {
       setStoreNamePos({ x: 50, y: 1600 });
       setLocationPos({ x: 50, y: 1700 });
+      setCaptionPos({ x: 50, y: 900 });
     } else {
       setStoreNamePos({ x: 50, y: 850 });
       setLocationPos({ x: 50, y: 900 });
+      setCaptionPos({ x: 50, y: 500 });
     }
   }, [format]);
 
@@ -397,6 +406,82 @@ export function SocialPostCreator() {
                   <option value="Museum">Museum</option>
                   <option value="Spots">Spots</option>
                 </select>
+              </div>
+            )}
+          </div>
+
+          {/* Custom Caption */}
+          <div className="border border-gray-200 rounded-lg p-4 bg-white space-y-3">
+            <h3 className="text-sm font-semibold text-gray-800 flex items-center gap-2">
+              <span className="text-lg">💬</span> Custom Caption
+            </h3>
+            <div className="flex items-center gap-2">
+              <input
+                type="checkbox"
+                id="showCaption"
+                checked={showCaption}
+                onChange={(e) => setShowCaption(e.target.checked)}
+                className="w-4 h-4 text-cyan-500 border-gray-300 rounded focus:ring-cyan-500"
+              />
+              <label htmlFor="showCaption" className="text-sm text-gray-700">
+                Add custom caption overlay
+              </label>
+            </div>
+            {showCaption && (
+              <div className="space-y-3 pt-2">
+                <div>
+                  <label className="block text-xs font-medium text-gray-600 mb-1">Caption Text</label>
+                  <textarea
+                    value={captionText}
+                    onChange={(e) => setCaptionText(e.target.value)}
+                    placeholder="Enter your caption..."
+                    rows={3}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm resize-none focus:outline-none focus:ring-2 focus:ring-cyan-500"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-medium text-gray-600 mb-1">Font Size: {captionSize}px</label>
+                  <input
+                    type="range"
+                    min="24"
+                    max="120"
+                    value={captionSize}
+                    onChange={(e) => setCaptionSize(Number(e.target.value))}
+                    className="w-full"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-medium text-gray-600 mb-1">Text Color</label>
+                  <div className="flex gap-2">
+                    <input
+                      type="color"
+                      value={captionColor}
+                      onChange={(e) => setCaptionColor(e.target.value)}
+                      className="w-12 h-10 rounded cursor-pointer"
+                    />
+                    <button
+                      onClick={() => setCaptionColor('#FFFFFF')}
+                      className={`px-3 py-1 text-xs rounded border ${captionColor === '#FFFFFF' ? 'border-cyan-500 bg-cyan-50' : 'border-gray-300'}`}
+                    >
+                      White
+                    </button>
+                    <button
+                      onClick={() => setCaptionColor('#00D9FF')}
+                      className={`px-3 py-1 text-xs rounded border ${captionColor === '#00D9FF' ? 'border-cyan-500 bg-cyan-50' : 'border-gray-300'}`}
+                    >
+                      Cyan
+                    </button>
+                    <button
+                      onClick={() => setCaptionColor('#000000')}
+                      className={`px-3 py-1 text-xs rounded border ${captionColor === '#000000' ? 'border-cyan-500 bg-cyan-50' : 'border-gray-300'}`}
+                    >
+                      Black
+                    </button>
+                  </div>
+                </div>
+                <p className="text-xs text-gray-500 italic">
+                  💡 Drag the caption on the canvas to position it
+                </p>
               </div>
             )}
           </div>
@@ -799,6 +884,33 @@ export function SocialPostCreator() {
                         </>
                       )}
                     </svg>
+                  </div>
+                </Draggable>
+              )}
+
+              {/* Draggable Custom Caption */}
+              {showCaption && captionText && (
+                <Draggable
+                  position={captionPos}
+                  onStop={(e, data) => setCaptionPos({ x: data.x, y: data.y })}
+                  bounds="parent"
+                >
+                  <div className="absolute cursor-move">
+                    <div
+                      className="font-bold"
+                      style={{
+                        fontSize: `${captionSize}px`,
+                        color: captionColor,
+                        fontFamily: 'Plus Jakarta Sans, sans-serif',
+                        textShadow: '3px 3px 10px rgba(0,0,0,0.9), 0 0 20px rgba(0,0,0,0.5)',
+                        maxWidth: '900px',
+                        lineHeight: 1.2,
+                        whiteSpace: 'pre-wrap',
+                        wordBreak: 'break-word',
+                      }}
+                    >
+                      {captionText}
+                    </div>
                   </div>
                 </Draggable>
               )}
