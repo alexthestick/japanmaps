@@ -123,10 +123,10 @@ async function generateSitemap() {
   console.log('Generating sitemap...');
 
   try {
-    // Fetch all stores from Supabase
+    // Fetch all stores from Supabase with SEO-relevant fields
     const { data: stores, error } = await supabase
       .from('stores')
-      .select('id, name, city, neighborhood, updated_at, created_at')
+      .select('id, name, city, neighborhood, updated_at, created_at, save_count, haul_count, verified, photos, main_category')
       .order('name');
 
     if (error) {
@@ -298,16 +298,53 @@ async function generateSitemap() {
   <!-- Store Pages (Primary SEO Target) -->
 `;
 
-    // Add store pages
+    // Add store pages with dynamic priority based on engagement and completeness
     for (const store of stores) {
       const slug = generateSlug(store.name, store.city);
       const lastmod = formatDate(store.updated_at || store.created_at || new Date());
 
+      // Calculate priority based on multiple factors
+      let priority = 0.6; // Base priority for all stores
+
+      const saveCount = store.save_count || 0;
+      const haulCount = store.haul_count || 0;
+      const photoCount = (store.photos || []).length;
+      const isVerified = store.verified || false;
+      const isMajorCity = ['Tokyo', 'Osaka', 'Kyoto'].includes(store.city);
+
+      // Verified stores get highest priority
+      if (isVerified) {
+        priority = 0.9;
+      }
+      // High engagement stores in major cities
+      else if (isMajorCity && saveCount >= 5) {
+        priority = 0.9;
+      }
+      // Stores with significant engagement
+      else if (saveCount >= 10) {
+        priority = 0.9;
+      }
+      // Major city stores with moderate engagement
+      else if (isMajorCity && saveCount >= 2) {
+        priority = 0.8;
+      }
+      // Stores with photos and some engagement
+      else if (photoCount >= 3 && (saveCount >= 2 || haulCount >= 1)) {
+        priority = 0.8;
+      }
+      // Stores with complete profiles
+      else if (photoCount >= 1 && saveCount >= 1) {
+        priority = 0.7;
+      }
+
+      // Determine changefreq based on engagement
+      const changefreq = (saveCount >= 5 || haulCount >= 3) ? 'daily' : 'weekly';
+
       xml += `  <url>
     <loc>${SITE_URL}/store/${escapeXml(slug)}</loc>
     <lastmod>${lastmod}</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.9</priority>
+    <changefreq>${changefreq}</changefreq>
+    <priority>${priority.toFixed(1)}</priority>
   </url>
 `;
     }
