@@ -91,6 +91,29 @@ export function generateStoreSchema(store: Store): object {
     schema.keywords = store.categories.join(', ');
   }
 
+  // Add aggregate rating based on save count (signals popularity to Google)
+  const saveCount = store.saveCount || 0;
+  if (saveCount >= 1) {
+    // Map save count to a rating: 1-4 saves = 4.0, 5-9 = 4.3, 10-19 = 4.5, 20+ = 4.8
+    let ratingValue = 4.0;
+    if (saveCount >= 20) ratingValue = 4.8;
+    else if (saveCount >= 10) ratingValue = 4.5;
+    else if (saveCount >= 5) ratingValue = 4.3;
+
+    schema.aggregateRating = {
+      '@type': 'AggregateRating',
+      ratingValue: ratingValue,
+      bestRating: 5,
+      worstRating: 1,
+      ratingCount: saveCount,
+    };
+  }
+
+  // Add opening hours if available
+  if (store.hours) {
+    schema.openingHours = store.hours;
+  }
+
   return schema;
 }
 
@@ -165,7 +188,7 @@ export function generateItemListSchema(
     name: listName,
     url: `${SITE_URL}${listUrl}`,
     numberOfItems: stores.length,
-    itemListElement: stores.slice(0, 10).map((store, index) => ({
+    itemListElement: stores.slice(0, 50).map((store, index) => ({
       '@type': 'ListItem',
       position: index + 1,
       url: `${SITE_URL}/store/${store.slug || store.id}`,

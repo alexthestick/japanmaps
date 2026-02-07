@@ -259,9 +259,62 @@ export function StoreDetailPage() {
 
   // Generate SEO data
   const seoTitle = `${store.name}${store.neighborhood ? ` - ${store.neighborhood}` : ''}, ${store.city}`;
-  const seoDescription = store.description
-    ? store.description.slice(0, 160)
-    : `Discover ${store.name} in ${store.neighborhood || store.city}, Japan. ${store.mainCategory ? `A curated ${store.mainCategory.toLowerCase()} destination` : 'A hidden gem'} featured on Lost in Transit JP.`;
+
+  // Build unique, category-aware meta description
+  const seoDescription = (() => {
+    if (store.description && store.description.length > 80) {
+      return store.description.slice(0, 155) + '...';
+    }
+
+    const parts: string[] = [];
+
+    // Category-specific intro
+    const categoryDescriptions: Record<string, string> = {
+      'Fashion': 'vintage and fashion store',
+      'Food': 'restaurant and dining spot',
+      'Coffee': 'coffee shop and cafe',
+      'Museum': 'museum and cultural space',
+      'Home Goods': 'home goods and lifestyle store',
+      'Spots': 'hidden gem and local spot',
+    };
+    const categoryLabel = store.mainCategory
+      ? categoryDescriptions[store.mainCategory] || 'curated destination'
+      : 'hidden gem';
+
+    // Location context
+    const locationContext = store.neighborhood
+      ? `${store.neighborhood}, ${store.city}`
+      : store.city;
+
+    parts.push(`${store.name} is a ${categoryLabel} in ${locationContext}, Japan.`);
+
+    // Subcategory detail
+    if (store.categories && store.categories.length > 0) {
+      const subcats = store.categories.slice(0, 3).join(', ');
+      parts.push(`Specializing in ${subcats}.`);
+    }
+
+    // Photo count
+    const photoCount = (store.photos || []).length;
+    if (photoCount >= 3) {
+      parts.push(`Browse ${photoCount} photos.`);
+    }
+
+    // Engagement signal
+    if ((store.saveCount || 0) >= 5) {
+      parts.push(`One of ${store.city}'s most saved spots on Lost in Transit JP.`);
+    } else {
+      parts.push(`Featured on Lost in Transit JP.`);
+    }
+
+    // Trim to ~160 chars
+    let result = parts.join(' ');
+    if (result.length > 160) {
+      result = result.slice(0, 157) + '...';
+    }
+    return result;
+  })();
+
   const seoImage = photos[0];
   const seoUrl = `/store/${store.slug || store.id}`;
 
@@ -292,6 +345,8 @@ export function StoreDetailPage() {
           storeCity={store.city}
           storeNeighborhood={store.neighborhood}
           storeCategory={store.mainCategory}
+          storeLatitude={store.latitude}
+          storeLongitude={store.longitude}
           jsonLd={[storeSchema, breadcrumbSchema]}
         />
 
@@ -334,6 +389,8 @@ export function StoreDetailPage() {
         storeCity={store.city}
         storeNeighborhood={store.neighborhood}
         storeCategory={store.mainCategory}
+        storeLatitude={store.latitude}
+        storeLongitude={store.longitude}
         jsonLd={[storeSchema, breadcrumbSchema]}
       />
       {/* Film Grain Overlay */}

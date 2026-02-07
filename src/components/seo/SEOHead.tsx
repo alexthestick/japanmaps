@@ -18,6 +18,8 @@ interface SEOHeadProps {
   storeCity?: string;
   storeNeighborhood?: string;
   storeCategory?: string;
+  storeLatitude?: number;
+  storeLongitude?: number;
   // For structured data
   jsonLd?: object | object[];
 }
@@ -34,6 +36,8 @@ export function SEOHead({
   storeCity,
   storeNeighborhood,
   storeCategory,
+  storeLatitude,
+  storeLongitude,
   jsonLd,
 }: SEOHeadProps) {
   // Build the full title
@@ -74,10 +78,10 @@ export function SEOHead({
       <meta property="og:locale" content="en_US" />
 
       {/* Place-specific Open Graph (for stores) */}
-      {type === 'place' && storeAddress && (
+      {type === 'place' && storeLatitude && storeLongitude && (
         <>
-          <meta property="place:location:latitude" content="" />
-          <meta property="place:location:longitude" content="" />
+          <meta property="place:location:latitude" content={String(storeLatitude)} />
+          <meta property="place:location:longitude" content={String(storeLongitude)} />
         </>
       )}
 
