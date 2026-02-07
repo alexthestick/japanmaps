@@ -1,4 +1,5 @@
 import { ArrowRight, Shirt, UtensilsCrossed, Coffee, Home, Building2, LucideIcon } from 'lucide-react';
+import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { useState, memo } from 'react';
 import type { Store } from '../../types/store';
@@ -37,12 +38,20 @@ function StoreCardComponent({ store, onClick }: StoreCardProps) {
     .map(c => c.replace('-', ' '));
   const primaryCategory = categoryChips[0] || mainCategory;
 
+  const storeUrl = `/store/${store.slug || store.id}`;
+
   return (
-    <motion.div
-      className="group cursor-pointer relative"
-      onClick={onClick}
+    <Link
+      to={storeUrl}
+      onClick={(e) => {
+        // Allow the Link to handle navigation, but also call onClick for any tracking
+        onClick();
+      }}
+      className="group cursor-pointer relative block"
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
+    >
+    <motion.div
       initial={{ opacity: 0, y: 8 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.2, ease: 'easeOut' }}
@@ -94,7 +103,8 @@ function StoreCardComponent({ store, onClick }: StoreCardProps) {
 
           {/* Save Heart - Top Right */}
           <div className="absolute top-3 right-3 bg-gradient-to-br from-cyan-500/30 to-blue-500/30 backdrop-blur-sm rounded-full shadow-sm border border-cyan-400/50 transition-all z-10"
-               style={{ boxShadow: '0 0 15px rgba(34, 217, 238, 0.3)' }}>
+               style={{ boxShadow: '0 0 15px rgba(34, 217, 238, 0.3)' }}
+               onClick={(e) => e.preventDefault()}>
             <SaveButton storeId={store.id} />
           </div>
         </div>
@@ -138,6 +148,7 @@ function StoreCardComponent({ store, onClick }: StoreCardProps) {
         </div>
       </div>
     </motion.div>
+    </Link>
   );
 }
 

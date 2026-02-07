@@ -270,6 +270,58 @@ export function CategoryPage() {
           onStoreClick={(store) => navigate(`/store/${store.slug || store.id}`)}
         />
       </div>
+
+      {/* SEO: Browse this category by city - crawlable cross-links */}
+      {(() => {
+        const citiesWithStores = Array.from(
+          new Set(stores.map((s) => s.city))
+        ).sort();
+        if (citiesWithStores.length <= 1) return null;
+        return (
+          <div className="max-w-7xl mx-auto px-6 md:px-12 py-8 border-t border-cyan-400/20">
+            <h2
+              className="text-xl font-black italic uppercase mb-4"
+              style={{ color: categoryColor, textShadow: `0 0 20px ${categoryColor}50` }}
+            >
+              {mainCategory} by City
+            </h2>
+            <div className="flex flex-wrap gap-2">
+              {citiesWithStores.map((city) => {
+                const citySlugValue = city.toLowerCase().replace(/\s*\/\s*/g, '-').replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '');
+                return (
+                  <Link
+                    key={city}
+                    to={`/city/${citySlugValue}`}
+                    className="px-4 py-2 bg-gray-800/60 text-gray-300 text-sm font-medium rounded-full border border-cyan-500/20 hover:border-cyan-500/50 hover:text-cyan-300 transition-all"
+                  >
+                    {city} ({stores.filter((s) => s.city === city).length})
+                  </Link>
+                );
+              })}
+            </div>
+          </div>
+        );
+      })()}
+
+      {/* SEO: Browse other categories - crawlable cross-links */}
+      <div className="max-w-7xl mx-auto px-6 md:px-12 py-8 border-t border-cyan-400/20">
+        <h2 className="text-xl font-black italic uppercase mb-4 text-cyan-300" style={{ textShadow: '0 0 20px rgba(34,217,238,0.3)' }}>
+          Other Categories
+        </h2>
+        <div className="flex flex-wrap gap-2">
+          {Object.entries(CATEGORY_SLUG_MAP)
+            .filter(([slug]) => slug !== categorySlug)
+            .map(([slug, name]) => (
+              <Link
+                key={slug}
+                to={`/category/${slug}`}
+                className="px-4 py-2 bg-gray-800/60 text-gray-300 text-sm font-medium rounded-full border border-cyan-500/20 hover:border-cyan-500/50 hover:text-cyan-300 transition-all"
+              >
+                {name}
+              </Link>
+            ))}
+        </div>
+      </div>
     </div>
   );
 }

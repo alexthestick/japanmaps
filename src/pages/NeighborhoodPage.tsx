@@ -1,5 +1,5 @@
 import { useState, useMemo } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, Link } from 'react-router-dom';
 import { MapPin, ChevronRight } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { StoreList } from '../components/store/StoreList';
@@ -315,6 +315,60 @@ export function NeighborhoodPage() {
           />
         </div>
       </div>
+
+      {/* SEO: All Stores in Neighborhood - crawlable links */}
+      {stores.length > 0 && (
+        <div className="max-w-7xl mx-auto px-6 md:px-12 py-8 border-t border-cyan-400/20">
+          <h2
+            className="text-xl font-black italic uppercase mb-4"
+            style={{ color: cityColor, textShadow: `0 0 20px ${cityColor}50` }}
+          >
+            All Stores in {neighborhoodName}
+          </h2>
+          <div className="flex flex-wrap gap-2">
+            {stores.map((store) => (
+              <Link
+                key={store.id}
+                to={`/store/${store.slug || store.id}`}
+                className="px-3 py-1.5 bg-gray-800/60 text-gray-300 text-sm rounded-full border border-cyan-500/20 hover:border-cyan-500/50 hover:text-cyan-300 transition-all"
+              >
+                {store.name}
+              </Link>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* SEO: Other Neighborhoods in this City - crawlable cross-links */}
+      {allNeighborhoodsInCity.length > 1 && (
+        <div className="max-w-7xl mx-auto px-6 md:px-12 py-8 border-t border-cyan-400/20">
+          <h2
+            className="text-xl font-black italic uppercase mb-4"
+            style={{ color: cityColor, textShadow: `0 0 20px ${cityColor}50` }}
+          >
+            Other Neighborhoods in {cityName}
+          </h2>
+          <div className="flex flex-wrap gap-2">
+            {allNeighborhoodsInCity
+              .filter((hood) => hood !== neighborhoodName)
+              .map((hood) => (
+                <Link
+                  key={hood}
+                  to={`/city/${citySlug}/${neighborhoodToSlug(hood!)}`}
+                  className="px-4 py-2 bg-gray-800/60 text-gray-300 text-sm font-medium rounded-full border border-cyan-500/20 hover:border-cyan-500/50 hover:text-cyan-300 transition-all"
+                >
+                  {hood}
+                </Link>
+              ))}
+            <Link
+              to={`/city/${citySlug}`}
+              className="px-4 py-2 bg-cyan-500/10 text-cyan-300 text-sm font-bold rounded-full border border-cyan-500/30 hover:border-cyan-500/60 transition-all"
+            >
+              View All {cityName} →
+            </Link>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
