@@ -143,7 +143,7 @@ export function generateWebsiteSchema(): object {
     name: SITE_NAME,
     alternateName: 'Lost in Transit Japan',
     url: SITE_URL,
-    description: 'Discover the best vintage stores, coffee shops, restaurants, and hidden gems across Japan.',
+    description: 'Discover Japan\'s best thrift stores, vintage shops, and secondhand clothing boutiques. Your complete 2025 guide to affordable thrifting, preloved fashion, and unique vintage finds in Tokyo, Osaka, Kyoto, Harajuku, Shimokitazawa, Koenji, and beyond.',
     potentialAction: {
       '@type': 'SearchAction',
       target: {

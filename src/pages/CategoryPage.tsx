@@ -45,12 +45,12 @@ function getSubCategories(mainCategory: string): readonly string[] {
 
 // Category descriptions for SEO
 const CATEGORY_DESCRIPTIONS: Record<string, string> = {
-  'Fashion': 'Discover the best fashion stores in Japan - from vintage and archive shops to designer boutiques, streetwear, and luxury brands.',
-  'Food': 'Explore Japan\'s best restaurants, from traditional ramen shops and sushi bars to modern izakayas and fine dining experiences.',
-  'Coffee': 'Find the best coffee shops and cafes in Japan - specialty roasters, kissaten, and modern third-wave coffee spots.',
-  'Home Goods': 'Browse Japan\'s top homeware stores - antiques, furniture, art, and beautifully crafted everyday objects.',
-  'Museum': 'Discover Japan\'s fascinating museums - art, history, fashion, and unique cultural experiences.',
-  'Spots': 'Explore unique spots and hidden gems across Japan - parks, viewpoints, and memorable locations.',
+  'Fashion': 'Discover Japan\'s best thrift stores and vintage fashion shops - from affordable secondhand boutiques and preloved designer finds to archive stores, American vintage clothing, retro streetwear, and sustainable fashion. Your complete guide to thrifting in Japan.',
+  'Food': 'Explore Japan\'s best restaurants and dining experiences - from traditional ramen shops and sushi bars to modern izakayas, hidden gem cafes, and fine dining destinations.',
+  'Coffee': 'Find the best coffee shops and specialty cafes in Japan - from third-wave roasters and traditional kissaten to modern espresso bars and unique coffee experiences.',
+  'Home Goods': 'Browse Japan\'s top vintage and secondhand homeware stores - antiques, preloved furniture, retro decor, art, and beautifully crafted lifestyle goods.',
+  'Museum': 'Discover Japan\'s fascinating museums and cultural experiences - art galleries, history exhibits, fashion museums, and unique cultural destinations.',
+  'Spots': 'Explore unique spots and hidden gems across Japan - off-the-beaten-path locations, scenic viewpoints, and memorable experiences.',
 };
 
 export function CategoryPage() {

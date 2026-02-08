@@ -141,8 +141,8 @@ export function CityPage() {
 
   const heroImage = getCityHeroImage(cityImageSlug);
 
-  // City description/history - can be expanded later
-  const cityDescription = `Explore the best stores, restaurants, and hidden gems in ${cityName}. From traditional neighborhoods to modern shopping districts, discover what makes ${cityName} unique.`;
+  // City description with thrifting focus
+  const cityDescription = `Your 2025 guide to thrift shopping in ${cityName}. Explore the best vintage stores, secondhand boutiques, and hidden gem thrift shops from traditional neighborhoods to modern shopping districts.`;
 
   // Get unique neighborhoods from stores
   const neighborhoods = useMemo(() => {
@@ -150,9 +150,9 @@ export function CityPage() {
     return Array.from(unique).sort();
   }, [stores]);
 
-  // Generate SEO data
-  const seoTitle = `${cityName} (${cityJapaneseName}) - Best Stores & Hidden Gems`;
-  const seoDescription = `Explore ${stores.length} curated stores, restaurants, coffee shops, and hidden gems in ${cityName}, Japan. Your guide to the best of ${cityJapaneseName}.`;
+  // Generate SEO data with long-tail keywords
+  const seoTitle = `${cityName} (${cityJapaneseName}) - Thrift Stores & Vintage Shopping Guide 2025`;
+  const seoDescription = `Discover ${stores.length} thrift stores, vintage shops, and secondhand clothing boutiques in ${cityName}, Japan. Your complete 2025 thrifting guide to ${cityJapaneseName} - find affordable vintage fashion, preloved designer items, and unique finds.`;
   const seoUrl = `/city/${slug}`;
 
   // Generate structured data

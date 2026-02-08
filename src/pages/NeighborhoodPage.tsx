@@ -123,8 +123,8 @@ export function NeighborhoodPage() {
   // Neighborhood hero image
   const heroImage = `/images/neighborhoods/preview/${neighborhoodImageSlug}-preview.jpg`;
 
-  // Neighborhood description
-  const neighborhoodDescription = `Discover the unique character of ${neighborhoodName} in ${cityName}. Explore local shops, restaurants, and hidden gems that make this neighborhood special.`;
+  // Neighborhood description with thrifting focus
+  const neighborhoodDescription = `Your complete guide to thrifting in ${neighborhoodName}, ${cityName}. Discover curated vintage stores, affordable secondhand shops, and hidden gem boutiques that make this neighborhood a must-visit for preloved fashion hunters.`;
 
   // Get all neighborhoods for the current city (for mobile filter)
   const allNeighborhoodsInCity = useMemo(() => {
@@ -132,9 +132,9 @@ export function NeighborhoodPage() {
     return Array.from(unique).sort();
   }, [stores]);
 
-  // Generate SEO data
-  const seoTitle = `${neighborhoodName}, ${cityName} - Best Stores & Hidden Gems`;
-  const seoDescription = `Explore ${stores.length} curated stores, restaurants, and hidden gems in ${neighborhoodName}, ${cityName}. Discover vintage shops, coffee spots, and local favorites.`;
+  // Generate SEO data with guide language
+  const seoTitle = `${neighborhoodName}, ${cityName} - Thrift Store & Vintage Shopping Guide 2025`;
+  const seoDescription = `Explore ${stores.length} thrift stores and vintage shops in ${neighborhoodName}, ${cityName}. Complete 2025 guide to secondhand shopping, preloved fashion, affordable vintage finds, and unique boutiques in one of Japan's best thrifting neighborhoods.`;
   const seoUrl = `/city/${citySlug}/${neighborhoodSlug}`;
 
   // Generate structured data

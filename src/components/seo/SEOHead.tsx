@@ -3,7 +3,7 @@ import { Helmet } from 'react-helmet-async';
 const SITE_NAME = 'Lost in Transit JP';
 const SITE_URL = 'https://lostintransitjp.com';
 const DEFAULT_IMAGE = 'https://ik.imagekit.io/wscyshoygv/og-default.jpg';
-const DEFAULT_DESCRIPTION = 'Discover the best vintage stores, coffee shops, restaurants, and hidden gems across Japan. Your curated guide to Tokyo, Osaka, Kyoto, and beyond.';
+const DEFAULT_DESCRIPTION = 'Discover the best thrift stores, vintage shops, and secondhand clothing in Japan. Your 2025 guide to affordable thrifting, preloved fashion, and unique finds in Tokyo, Osaka, Kyoto, and beyond.';
 
 interface SEOHeadProps {
   title?: string;
@@ -101,7 +101,7 @@ export function SEOHead({
       {storeCategory && storeCity && (
         <meta
           name="keywords"
-          content={`${storeCategory}, ${storeCity}, ${storeNeighborhood || ''}, Japan, vintage stores, fashion, shopping`.trim()}
+          content={`${storeCategory}, ${storeCity}, ${storeNeighborhood || ''}, Japan, vintage stores, thrift shops, thrifting, secondhand clothing, used clothing, preloved fashion, affordable vintage, fashion, shopping`.trim()}
         />
       )}
 

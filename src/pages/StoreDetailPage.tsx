@@ -270,12 +270,12 @@ export function StoreDetailPage() {
 
     // Category-specific intro
     const categoryDescriptions: Record<string, string> = {
-      'Fashion': 'vintage and fashion store',
+      'Fashion': 'vintage thrift and secondhand fashion store',
       'Food': 'restaurant and dining spot',
-      'Coffee': 'coffee shop and cafe',
-      'Museum': 'museum and cultural space',
-      'Home Goods': 'home goods and lifestyle store',
-      'Spots': 'hidden gem and local spot',
+      'Coffee': 'coffee shop and specialty cafe',
+      'Museum': 'museum and cultural experience',
+      'Home Goods': 'vintage home goods and secondhand finds',
+      'Spots': 'hidden gem and unique local spot',
     };
     const categoryLabel = store.mainCategory
       ? categoryDescriptions[store.mainCategory] || 'curated destination'
@@ -288,10 +288,19 @@ export function StoreDetailPage() {
 
     parts.push(`${store.name} is a ${categoryLabel} in ${locationContext}, Japan.`);
 
-    // Subcategory detail
+    // Subcategory detail with thrifting context for fashion
     if (store.categories && store.categories.length > 0) {
       const subcats = store.categories.slice(0, 3).join(', ');
-      parts.push(`Specializing in ${subcats}.`);
+      if (store.mainCategory === 'Fashion') {
+        parts.push(`Specializing in ${subcats} thrifting and preloved finds.`);
+      } else {
+        parts.push(`Specializing in ${subcats}.`);
+      }
+    }
+
+    // Add pricing context if available
+    if (store.priceRange && store.mainCategory === 'Fashion') {
+      parts.push(`Affordable vintage shopping with ${store.priceRange} pricing.`);
     }
 
     // Photo count
@@ -300,11 +309,11 @@ export function StoreDetailPage() {
       parts.push(`Browse ${photoCount} photos.`);
     }
 
-    // Engagement signal
+    // Engagement signal with thrifting context
     if ((store.saveCount || 0) >= 5) {
-      parts.push(`One of ${store.city}'s most saved spots on Lost in Transit JP.`);
+      parts.push(`One of ${store.city}'s most saved affordable vintage destinations.`);
     } else {
-      parts.push(`Featured on Lost in Transit JP.`);
+      parts.push(`Featured on Lost in Transit JP's guide to thrifting in Japan.`);
     }
 
     // Trim to ~160 chars
