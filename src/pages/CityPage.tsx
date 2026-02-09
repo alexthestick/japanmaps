@@ -251,51 +251,6 @@ export function CityPage() {
         </div>
       </div>
 
-      {/* SEO: Top Stores Section - crawlable links for Google */}
-      {stores.length > 0 && (
-        <div className="max-w-7xl mx-auto px-6 md:px-12 py-8 border-b border-cyan-400/20">
-          <h2
-            className="text-xl font-black italic uppercase mb-4"
-            style={{ color: cityColor, textShadow: `0 0 20px ${cityColor}50` }}
-          >
-            Top Stores in {cityName}
-          </h2>
-          <div className="flex flex-wrap gap-2">
-            {stores.slice(0, 20).map((store) => (
-              <Link
-                key={store.id}
-                to={`/store/${store.slug || store.id}`}
-                className="px-3 py-1.5 bg-gray-800/60 text-gray-300 text-sm rounded-full border border-cyan-500/20 hover:border-cyan-500/50 hover:text-cyan-300 transition-all"
-              >
-                {store.name}
-              </Link>
-            ))}
-          </div>
-        </div>
-      )}
-
-      {/* SEO: Explore Neighborhoods - crawlable links */}
-      {neighborhoods.length > 0 && (
-        <div className="max-w-7xl mx-auto px-6 md:px-12 py-8 border-b border-cyan-400/20">
-          <h2
-            className="text-xl font-black italic uppercase mb-4"
-            style={{ color: cityColor, textShadow: `0 0 20px ${cityColor}50` }}
-          >
-            Neighborhoods in {cityName}
-          </h2>
-          <div className="flex flex-wrap gap-2">
-            {neighborhoods.map((hood) => (
-              <Link
-                key={hood}
-                to={`/city/${slug}/${neighborhoodToSlug(hood!)}`}
-                className="px-4 py-2 bg-gray-800/60 text-gray-300 text-sm font-medium rounded-full border border-cyan-500/20 hover:border-cyan-500/50 hover:text-cyan-300 transition-all"
-              >
-                {hood}
-              </Link>
-            ))}
-          </div>
-        </div>
-      )}
 
       {/* Mobile Filter Bars - MOBILE ONLY */}
       <MobileLocationCategoryFilters

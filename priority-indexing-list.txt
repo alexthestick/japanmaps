@@ -1,0 +1,412 @@
+Lost in Transit JP - Priority Indexing List
+Generated: 2026-02-05T07:50:50.398Z
+
+INSTRUCTIONS:
+1. Submit these URLs to Google Search Console manually
+2. Google limits manual indexing requests to ~10-12 per day
+3. Start with the top 20, then continue daily
+4. URLs are ranked by priority score (engagement + completeness)
+
+TOP 100 PRIORITY URLS:
+=====================
+
+1. Brooch Nakameguro - Tokyo
+   URL: https://lostintransitjp.com/store/brooch-nakameguro-tokyo
+   Score: 215 | Saves: 0 | Hauls: 0 | Photos: 11 | ✓ VERIFIED
+
+2. Brooch Omotesando - Tokyo
+   URL: https://lostintransitjp.com/store/brooch-omotesando-tokyo
+   Score: 215 | Saves: 0 | Hauls: 0 | Photos: 11 | ✓ VERIFIED
+
+3. 'bout - Tokyo
+   URL: https://lostintransitjp.com/store/bout-tokyo
+   Score: 200 | Saves: 0 | Hauls: 0 | Photos: 6 | ✓ VERIFIED
+
+4. RINKAN Shibuya - Tokyo
+   URL: https://lostintransitjp.com/store/rinkan-shibuya-tokyo
+   Score: 195 | Saves: 0 | Hauls: 0 | Photos: 5 | ✓ VERIFIED
+
+5. American Graffiti - Tokyo
+   URL: https://lostintransitjp.com/store/american-graffiti-tokyo
+   Score: 195 | Saves: 0 | Hauls: 0 | Photos: 5 | ✓ VERIFIED
+
+6. per-aah - Tokyo
+   URL: https://lostintransitjp.com/store/per-aah-tokyo
+   Score: 195 | Saves: 0 | Hauls: 0 | Photos: 5 | ✓ VERIFIED
+
+7. MOGI Folk Art - Tokyo
+   URL: https://lostintransitjp.com/store/mogi-folk-art-tokyo
+   Score: 195 | Saves: 0 | Hauls: 0 | Photos: 5 | ✓ VERIFIED
+
+8. Yamastore - Osaka
+   URL: https://lostintransitjp.com/store/yamastore-osaka
+   Score: 195 | Saves: 0 | Hauls: 0 | Photos: 5 | ✓ VERIFIED
+
+9. seam used clothing - Tokyo
+   URL: https://lostintransitjp.com/store/seam-used-clothing-tokyo
+   Score: 195 | Saves: 0 | Hauls: 0 | Photos: 5 | ✓ VERIFIED
+
+10. PULP VINTAGE - Tokyo
+   URL: https://lostintransitjp.com/store/pulp-vintage-tokyo
+   Score: 195 | Saves: 0 | Hauls: 0 | Photos: 5 | ✓ VERIFIED
+
+11. charlie（チャーリー） - Tokyo
+   URL: https://lostintransitjp.com/store/charlie-tokyo
+   Score: 195 | Saves: 0 | Hauls: 0 | Photos: 5 | ✓ VERIFIED
+
+12. sui vintage - Tokyo
+   URL: https://lostintransitjp.com/store/sui-vintage-tokyo
+   Score: 195 | Saves: 0 | Hauls: 0 | Photos: 5 | ✓ VERIFIED
+
+13. sinot.clothing - Tokyo
+   URL: https://lostintransitjp.com/store/sinotclothing-tokyo
+   Score: 195 | Saves: 0 | Hauls: 0 | Photos: 5 | ✓ VERIFIED
+
+14. RAGTAG Harajuku - Tokyo
+   URL: https://lostintransitjp.com/store/ragtag-harajuku-tokyo
+   Score: 195 | Saves: 0 | Hauls: 0 | Photos: 5 | ✓ VERIFIED
+
+15. fini Asagi Antiques - Tokyo
+   URL: https://lostintransitjp.com/store/fini-asagi-antiques-tokyo
+   Score: 195 | Saves: 0 | Hauls: 0 | Photos: 5 | ✓ VERIFIED
+
+16. iti vintage clothing & humor - Tokyo
+   URL: https://lostintransitjp.com/store/iti-vintage-clothing-humor-tokyo
+   Score: 195 | Saves: 0 | Hauls: 0 | Photos: 5 | ✓ VERIFIED
+
+17. FOLLIEE. 下北沢の古着屋と見せかけて池ノ上 - Tokyo
+   URL: https://lostintransitjp.com/store/folliee-tokyo
+   Score: 195 | Saves: 0 | Hauls: 0 | Photos: 5 | ✓ VERIFIED
+
+18. PAT MARKET IKEBUKURO - Tokyo
+   URL: https://lostintransitjp.com/store/pat-market-ikebukuro-tokyo
+   Score: 195 | Saves: 0 | Hauls: 0 | Photos: 5 | ✓ VERIFIED
+
+19. TRAMPOT - Tokyo
+   URL: https://lostintransitjp.com/store/trampot-tokyo
+   Score: 195 | Saves: 0 | Hauls: 0 | Photos: 5 | ✓ VERIFIED
+
+20. Qont - Tokyo
+   URL: https://lostintransitjp.com/store/qont-tokyo
+   Score: 195 | Saves: 0 | Hauls: 0 | Photos: 5 | ✓ VERIFIED
+
+21. LeeLoo - Tokyo
+   URL: https://lostintransitjp.com/store/leeloo-tokyo
+   Score: 195 | Saves: 0 | Hauls: 0 | Photos: 5 | ✓ VERIFIED
+
+22. LVMY LND - Tokyo
+   URL: https://lostintransitjp.com/store/lvmy-lnd-tokyo
+   Score: 195 | Saves: 0 | Hauls: 0 | Photos: 5 | ✓ VERIFIED
+
+23. 酔服屋 YOUFUKUYA - Tokyo
+   URL: https://lostintransitjp.com/store/youfukuya-tokyo
+   Score: 195 | Saves: 0 | Hauls: 0 | Photos: 5 | ✓ VERIFIED
+
+24. KAKKO - Tokyo
+   URL: https://lostintransitjp.com/store/kakko-tokyo
+   Score: 195 | Saves: 0 | Hauls: 0 | Photos: 5 | ✓ VERIFIED
+
+25. olgou - Tokyo
+   URL: https://lostintransitjp.com/store/olgou-tokyo
+   Score: 195 | Saves: 0 | Hauls: 0 | Photos: 5 | ✓ VERIFIED
+
+26. NEOTENY - Tokyo
+   URL: https://lostintransitjp.com/store/neoteny-tokyo
+   Score: 195 | Saves: 0 | Hauls: 0 | Photos: 5 | ✓ VERIFIED
+
+27. RAIN 古着 - Osaka
+   URL: https://lostintransitjp.com/store/rain-osaka
+   Score: 195 | Saves: 0 | Hauls: 0 | Photos: 5 | ✓ VERIFIED
+
+28. Grange - Tokyo
+   URL: https://lostintransitjp.com/store/grange-tokyo
+   Score: 195 | Saves: 0 | Hauls: 0 | Photos: 5 | ✓ VERIFIED
+
+29. ether - Tokyo
+   URL: https://lostintransitjp.com/store/ether-tokyo
+   Score: 195 | Saves: 0 | Hauls: 0 | Photos: 5 | ✓ VERIFIED
+
+30. WORN - Tokyo
+   URL: https://lostintransitjp.com/store/worn-tokyo
+   Score: 195 | Saves: 0 | Hauls: 0 | Photos: 5 | ✓ VERIFIED
+
+31. ayahuasca_clothes - Tokyo
+   URL: https://lostintransitjp.com/store/ayahuasca_clothes-tokyo
+   Score: 195 | Saves: 0 | Hauls: 0 | Photos: 5 | ✓ VERIFIED
+
+32. aaar - Tokyo
+   URL: https://lostintransitjp.com/store/aaar-tokyo
+   Score: 195 | Saves: 0 | Hauls: 0 | Photos: 5 | ✓ VERIFIED
+
+33. CETTEN サクラビル店 /中崎町古着屋/Nakazaki-cho used clothing shop - Osaka
+   URL: https://lostintransitjp.com/store/cetten-nakazaki-cho-used-clothing-shop-osaka
+   Score: 195 | Saves: 0 | Hauls: 0 | Photos: 5 | ✓ VERIFIED
+
+34. Chicago Harajuku - Tokyo
+   URL: https://lostintransitjp.com/store/chicago-harajuku-tokyo
+   Score: 195 | Saves: 0 | Hauls: 0 | Photos: 5 | ✓ VERIFIED
+
+35. from_Antique - Tokyo
+   URL: https://lostintransitjp.com/store/from_antique-tokyo
+   Score: 195 | Saves: 0 | Hauls: 0 | Photos: 5 | ✓ VERIFIED
+
+36. Murakami Store（Tonari no Zingaro） - Tokyo
+   URL: https://lostintransitjp.com/store/murakami-storetonari-no-zingaro-tokyo
+   Score: 195 | Saves: 0 | Hauls: 0 | Photos: 5 | ✓ VERIFIED
+
+37. N.VINTAGE - Tokyo
+   URL: https://lostintransitjp.com/store/nvintage-tokyo
+   Score: 195 | Saves: 0 | Hauls: 0 | Photos: 5 | ✓ VERIFIED
+
+38. KIOSQUE CC - Tokyo
+   URL: https://lostintransitjp.com/store/kiosque-cc-tokyo
+   Score: 195 | Saves: 0 | Hauls: 0 | Photos: 5 | ✓ VERIFIED
+
+39. DROP - Tokyo
+   URL: https://lostintransitjp.com/store/drop-tokyo
+   Score: 195 | Saves: 0 | Hauls: 0 | Photos: 5 | ✓ VERIFIED
+
+40. Only One - Tokyo
+   URL: https://lostintransitjp.com/store/only-one-tokyo
+   Score: 195 | Saves: 0 | Hauls: 0 | Photos: 5 | ✓ VERIFIED
+
+41. Witty Vintage - Tokyo
+   URL: https://lostintransitjp.com/store/witty-vintage-tokyo
+   Score: 195 | Saves: 0 | Hauls: 0 | Photos: 5 | ✓ VERIFIED
+
+42. KIT VINTAGE - Tokyo
+   URL: https://lostintransitjp.com/store/kit-vintage-tokyo
+   Score: 195 | Saves: 0 | Hauls: 0 | Photos: 5 | ✓ VERIFIED
+
+43. floccinaucinihilipilification - Tokyo
+   URL: https://lostintransitjp.com/store/floccinaucinihilipilification-tokyo
+   Score: 195 | Saves: 0 | Hauls: 0 | Photos: 5 | ✓ VERIFIED
+
+44. BLANK BLACK MARKET - Tokyo
+   URL: https://lostintransitjp.com/store/blank-black-market-tokyo
+   Score: 195 | Saves: 0 | Hauls: 0 | Photos: 5 | ✓ VERIFIED
+
+45. 古着屋PARER綾瀬店 - Tokyo
+   URL: https://lostintransitjp.com/store/parer-tokyo
+   Score: 190 | Saves: 0 | Hauls: 0 | Photos: 5 | ✓ VERIFIED
+
+46. PAT MARKET - Tokyo
+   URL: https://lostintransitjp.com/store/pat-market-tokyo
+   Score: 190 | Saves: 0 | Hauls: 0 | Photos: 4 | ✓ VERIFIED
+
+47. LUSTY TOKYO - Tokyo
+   URL: https://lostintransitjp.com/store/lusty-tokyo
+   Score: 190 | Saves: 0 | Hauls: 0 | Photos: 4 | ✓ VERIFIED
+
+48. ele vintage&used clothing - Osaka
+   URL: https://lostintransitjp.com/store/ele-vintageused-clothing-osaka
+   Score: 190 | Saves: 0 | Hauls: 0 | Photos: 4 | ✓ VERIFIED
+
+49. EROTIC - Tokyo
+   URL: https://lostintransitjp.com/store/erotic-tokyo
+   Score: 190 | Saves: 0 | Hauls: 0 | Photos: 4 | ✓ VERIFIED
+
+50. NeeD - Kyoto
+   URL: https://lostintransitjp.com/store/need-kyoto
+   Score: 190 | Saves: 0 | Hauls: 0 | Photos: 5 | ✓ VERIFIED
+
+51. HYPE - Kyoto
+   URL: https://lostintransitjp.com/store/hype-kyoto
+   Score: 190 | Saves: 0 | Hauls: 0 | Photos: 4 | ✓ VERIFIED
+
+52. branche  - Osaka
+   URL: https://lostintransitjp.com/store/branche-osaka
+   Score: 190 | Saves: 0 | Hauls: 0 | Photos: 4 | ✓ VERIFIED
+
+53. FAAR - Tokyo
+   URL: https://lostintransitjp.com/store/faar-tokyo
+   Score: 190 | Saves: 0 | Hauls: 0 | Photos: 4 | ✓ VERIFIED
+
+54. 6 ( roku ) - Tokyo
+   URL: https://lostintransitjp.com/store/6-roku-tokyo
+   Score: 190 | Saves: 0 | Hauls: 0 | Photos: 4 | ✓ VERIFIED
+
+55. 古着屋 polaroid vintage【ポラロイド】 - Osaka
+   URL: https://lostintransitjp.com/store/polaroid-vintage-osaka
+   Score: 185 | Saves: 0 | Hauls: 0 | Photos: 5 | ✓ VERIFIED
+
+56. Taurus - Tokyo
+   URL: https://lostintransitjp.com/store/taurus-tokyo
+   Score: 185 | Saves: 0 | Hauls: 0 | Photos: 5 | ✓ VERIFIED
+
+57. raul general store - Tokyo
+   URL: https://lostintransitjp.com/store/raul-general-store-tokyo
+   Score: 185 | Saves: 0 | Hauls: 0 | Photos: 5 | ✓ VERIFIED
+
+58. sirius_archives - Osaka
+   URL: https://lostintransitjp.com/store/sirius_archives-osaka
+   Score: 185 | Saves: 0 | Hauls: 0 | Photos: 3 | ✓ VERIFIED
+
+59. SixDix - Tokyo
+   URL: https://lostintransitjp.com/store/sixdix-tokyo
+   Score: 185 | Saves: 0 | Hauls: 0 | Photos: 5 | ✓ VERIFIED
+
+60. Post-Antique - Tokyo
+   URL: https://lostintransitjp.com/store/post-antique-tokyo
+   Score: 185 | Saves: 0 | Hauls: 0 | Photos: 5 | ✓ VERIFIED
+
+61. SQUALL _ TOKYO - Tokyo
+   URL: https://lostintransitjp.com/store/squall-_-tokyo
+   Score: 185 | Saves: 0 | Hauls: 0 | Photos: 5 | ✓ VERIFIED
+
+62. STAGE - Tokyo
+   URL: https://lostintransitjp.com/store/stage-tokyo
+   Score: 185 | Saves: 0 | Hauls: 0 | Photos: 5 | ✓ VERIFIED
+
+63. TOGA XTC Harajuku - Tokyo
+   URL: https://lostintransitjp.com/store/toga-xtc-harajuku-tokyo
+   Score: 185 | Saves: 0 | Hauls: 0 | Photos: 5 | ✓ VERIFIED
+
+64. AMORE Wardrobe & Archive - Tokyo
+   URL: https://lostintransitjp.com/store/amore-wardrobe-archive-tokyo
+   Score: 185 | Saves: 0 | Hauls: 0 | Photos: 5 | ✓ VERIFIED
+
+65. Atlantis Vintage Tokyo - Tokyo
+   URL: https://lostintransitjp.com/store/atlantis-vintage-tokyo
+   Score: 185 | Saves: 0 | Hauls: 0 | Photos: 5 | ✓ VERIFIED
+
+66. Christopher Nemeth - Tokyo
+   URL: https://lostintransitjp.com/store/christopher-nemeth-tokyo
+   Score: 185 | Saves: 0 | Hauls: 0 | Photos: 5 | ✓ VERIFIED
+
+67. Portration - Tokyo
+   URL: https://lostintransitjp.com/store/portration-tokyo
+   Score: 185 | Saves: 0 | Hauls: 0 | Photos: 5 | ✓ VERIFIED
+
+68. Trading Museum Comme des Garçons - Tokyo
+   URL: https://lostintransitjp.com/store/trading-museum-comme-des-garons-tokyo
+   Score: 185 | Saves: 0 | Hauls: 0 | Photos: 5 | ✓ VERIFIED
+
+69. SMALL TRADES SHINYAKOZUKA シンヤコヅカ - Tokyo
+   URL: https://lostintransitjp.com/store/small-trades-shinyakozuka-tokyo
+   Score: 185 | Saves: 0 | Hauls: 0 | Photos: 5 | ✓ VERIFIED
+
+70. HOLY SHIT - Tokyo
+   URL: https://lostintransitjp.com/store/holy-shit-tokyo
+   Score: 185 | Saves: 0 | Hauls: 0 | Photos: 5 | ✓ VERIFIED
+
+71. RADD LOUNGE - Tokyo
+   URL: https://lostintransitjp.com/store/radd-lounge-tokyo
+   Score: 185 | Saves: 0 | Hauls: 0 | Photos: 5 | ✓ VERIFIED
+
+72. CASANOVA vintage 離れ - Tokyo
+   URL: https://lostintransitjp.com/store/casanova-vintage-tokyo
+   Score: 185 | Saves: 0 | Hauls: 0 | Photos: 5 | ✓ VERIFIED
+
+73. Laboratory R - Tokyo
+   URL: https://lostintransitjp.com/store/laboratory-r-tokyo
+   Score: 185 | Saves: 0 | Hauls: 0 | Photos: 5 | ✓ VERIFIED
+
+74. ETO select & vintage - Tokyo
+   URL: https://lostintransitjp.com/store/eto-select-vintage-tokyo
+   Score: 185 | Saves: 0 | Hauls: 0 | Photos: 5 | ✓ VERIFIED
+
+75. UZU - Tokyo
+   URL: https://lostintransitjp.com/store/uzu-tokyo
+   Score: 185 | Saves: 0 | Hauls: 0 | Photos: 5 | ✓ VERIFIED
+
+76. ビートニク（ＢＥＡＴＮＩＫ） - Tokyo
+   URL: https://lostintransitjp.com/store/-tokyo
+   Score: 185 | Saves: 0 | Hauls: 0 | Photos: 5 | ✓ VERIFIED
+
+77. Aum vintage - Tokyo
+   URL: https://lostintransitjp.com/store/aum-vintage-tokyo
+   Score: 185 | Saves: 0 | Hauls: 0 | Photos: 5 | ✓ VERIFIED
+
+78. THREE - Tokyo
+   URL: https://lostintransitjp.com/store/three-tokyo
+   Score: 185 | Saves: 0 | Hauls: 0 | Photos: 5 | ✓ VERIFIED
+
+79. NOT CONVENTIONAL Osaka - Osaka
+   URL: https://lostintransitjp.com/store/not-conventional-osaka
+   Score: 185 | Saves: 0 | Hauls: 0 | Photos: 5 | ✓ VERIFIED
+
+80. fethers goffa x - Tokyo
+   URL: https://lostintransitjp.com/store/fethers-goffa-x-tokyo
+   Score: 185 | Saves: 0 | Hauls: 0 | Photos: 5 | ✓ VERIFIED
+
+81. 11747391 - Osaka
+   URL: https://lostintransitjp.com/store/11747391-osaka
+   Score: 185 | Saves: 0 | Hauls: 0 | Photos: 5 | ✓ VERIFIED
+
+82. anns - Tokyo
+   URL: https://lostintransitjp.com/store/anns-tokyo
+   Score: 185 | Saves: 0 | Hauls: 0 | Photos: 5 | ✓ VERIFIED
+
+83. TEMPORARY - Tokyo
+   URL: https://lostintransitjp.com/store/temporary-tokyo
+   Score: 185 | Saves: 0 | Hauls: 0 | Photos: 5 | ✓ VERIFIED
+
+84. kakimori - Tokyo
+   URL: https://lostintransitjp.com/store/kakimori-tokyo
+   Score: 185 | Saves: 0 | Hauls: 0 | Photos: 5 | ✓ VERIFIED
+
+85. CETTEN 本店 / Archive select - Osaka
+   URL: https://lostintransitjp.com/store/cetten-archive-select-osaka
+   Score: 185 | Saves: 0 | Hauls: 0 | Photos: 5 | ✓ VERIFIED
+
+86. CHAPERONI vintage clothing store - Tokyo
+   URL: https://lostintransitjp.com/store/chaperoni-vintage-clothing-store-tokyo
+   Score: 185 | Saves: 0 | Hauls: 0 | Photos: 5 | ✓ VERIFIED
+
+87. Pacifica Collectives - Tokyo
+   URL: https://lostintransitjp.com/store/pacifica-collectives-tokyo
+   Score: 185 | Saves: 0 | Hauls: 0 | Photos: 5 | ✓ VERIFIED
+
+88. SULLEN TOKYO - Tokyo
+   URL: https://lostintransitjp.com/store/sullen-tokyo
+   Score: 185 | Saves: 0 | Hauls: 0 | Photos: 5 | ✓ VERIFIED
+
+89. hundred buyers - Tokyo
+   URL: https://lostintransitjp.com/store/hundred-buyers-tokyo
+   Score: 185 | Saves: 0 | Hauls: 0 | Photos: 5 | ✓ VERIFIED
+
+90. Carrefour - Tokyo
+   URL: https://lostintransitjp.com/store/carrefour-tokyo
+   Score: 185 | Saves: 0 | Hauls: 0 | Photos: 5 | ✓ VERIFIED
+
+91. BUY＆SELL フクウロ明大前店 - Tokyo
+   URL: https://lostintransitjp.com/store/buysell-tokyo
+   Score: 185 | Saves: 0 | Hauls: 0 | Photos: 5 | ✓ VERIFIED
+
+92. #FFFFFFT SENDAGAYA（シロティ千駄ヶ谷) - Tokyo
+   URL: https://lostintransitjp.com/store/fffffft-sendagaya-tokyo
+   Score: 185 | Saves: 0 | Hauls: 0 | Photos: 5 | ✓ VERIFIED
+
+93. TOKYO PiXEL - Tokyo
+   URL: https://lostintransitjp.com/store/tokyo-pixel
+   Score: 185 | Saves: 0 | Hauls: 0 | Photos: 5 | ✓ VERIFIED
+
+94. Graphio - Tokyo
+   URL: https://lostintransitjp.com/store/graphio-tokyo
+   Score: 185 | Saves: 0 | Hauls: 0 | Photos: 5 | ✓ VERIFIED
+
+95. D&DEPARTMENT TOKYO - Tokyo
+   URL: https://lostintransitjp.com/store/ddepartment-tokyo
+   Score: 185 | Saves: 0 | Hauls: 0 | Photos: 5 | ✓ VERIFIED
+
+96. Esmeralda Serviced Department エスメラルダサービスドデパートメント - Tokyo
+   URL: https://lostintransitjp.com/store/esmeralda-serviced-department-tokyo
+   Score: 185 | Saves: 0 | Hauls: 0 | Photos: 5 | ✓ VERIFIED
+
+97. THINK OF THINGS - Tokyo
+   URL: https://lostintransitjp.com/store/think-of-things-tokyo
+   Score: 185 | Saves: 0 | Hauls: 0 | Photos: 5 | ✓ VERIFIED
+
+98. TOKYO APARTMENT STORE - Tokyo
+   URL: https://lostintransitjp.com/store/tokyo-apartment-store
+   Score: 185 | Saves: 0 | Hauls: 0 | Photos: 5 | ✓ VERIFIED
+
+99. OTSUMO PLAZA - Tokyo
+   URL: https://lostintransitjp.com/store/otsumo-plaza-tokyo
+   Score: 185 | Saves: 0 | Hauls: 0 | Photos: 5 | ✓ VERIFIED
+
+100. BAGGAGE COFFEE - Tokyo
+   URL: https://lostintransitjp.com/store/baggage-coffee-tokyo
+   Score: 185 | Saves: 0 | Hauls: 0 | Photos: 5 | ✓ VERIFIED
+
