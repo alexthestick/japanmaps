@@ -17,7 +17,7 @@ export function InstagramGeneratorModal({ store, isOpen, onClose }: InstagramGen
     : ['https://images.unsplash.com/photo-1441986300917-64674bd600d8?w=1200&h=800&fit=crop'];
 
   const [selectedPhotoIndex, setSelectedPhotoIndex] = useState(0);
-  const [format, setFormat] = useState<'story' | 'post'>('post');
+  const [format, setFormat] = useState<'story' | 'portrait'>('portrait');
   const [template, setTemplate] = useState<'topBar' | 'minimal'>('minimal');
   const [isGenerating, setIsGenerating] = useState(false);
   const cardRef = useRef<HTMLDivElement>(null);
@@ -47,7 +47,7 @@ export function InstagramGeneratorModal({ store, isOpen, onClose }: InstagramGen
         const url = URL.createObjectURL(blob);
         const link = document.createElement('a');
         link.href = url;
-        link.download = `${store.name.replace(/[^a-zA-Z0-9]/g, '_')}_${format}.png`;
+        link.download = `${store.name.replace(/[^a-zA-Z0-9]/g, '_')}_${format === 'portrait' ? '4x5' : 'story'}.png`;
         link.click();
         URL.revokeObjectURL(url);
 
@@ -138,14 +138,14 @@ export function InstagramGeneratorModal({ store, isOpen, onClose }: InstagramGen
             <h3 className="text-lg font-semibold text-gray-900 mb-3">Format</h3>
             <div className="flex gap-3">
               <button
-                onClick={() => setFormat('post')}
+                onClick={() => setFormat('portrait')}
                 className={`flex-1 py-3 px-6 rounded-lg border-2 font-medium transition-all ${
-                  format === 'post'
+                  format === 'portrait'
                     ? 'border-cyan-500 bg-cyan-50 text-cyan-700'
                     : 'border-gray-300 text-gray-700 hover:border-gray-400'
                 }`}
               >
-                Post (1:1)
+                Portrait (4:5)
               </button>
               <button
                 onClick={() => setFormat('story')}
@@ -168,7 +168,7 @@ export function InstagramGeneratorModal({ store, isOpen, onClose }: InstagramGen
                 className="bg-white rounded-lg shadow-xl overflow-hidden"
                 style={{
                   width: format === 'story' ? '270px' : '400px',
-                  height: format === 'story' ? '480px' : '400px',
+                  height: format === 'story' ? '480px' : '500px',
                 }}
               >
                 <div className="w-full h-full relative overflow-hidden">

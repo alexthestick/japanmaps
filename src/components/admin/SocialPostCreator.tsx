@@ -5,7 +5,7 @@ import { Button } from '../common/Button';
 import { supabase } from '../../lib/supabase';
 import type { Store } from '../../types/store';
 
-type FormatType = 'square' | 'story';
+type FormatType = 'portrait' | 'story';
 
 export function SocialPostCreator() {
   const [stores, setStores] = useState<Store[]>([]);
@@ -14,9 +14,9 @@ export function SocialPostCreator() {
   const [loadingStores, setLoadingStores] = useState(false);
 
   // Format selection
-  const [format, setFormat] = useState<FormatType>('square');
+  const [format, setFormat] = useState<FormatType>('portrait');
   const canvasWidth = 1080;
-  const canvasHeight = format === 'square' ? 1080 : 1920;
+  const canvasHeight = format === 'portrait' ? 1350 : 1920;
 
   const [storeImage, setStoreImage] = useState<string>('');
   const [storeName, setStoreName] = useState<string>('');
@@ -31,11 +31,11 @@ export function SocialPostCreator() {
   const canvasRef = useRef<HTMLDivElement>(null);
 
   // Draggable positions - adjusted based on format
-  const [storeNamePos, setStoreNamePos] = useState({ x: 50, y: format === 'square' ? 850 : 1600 });
-  const [locationPos, setLocationPos] = useState({ x: 50, y: format === 'square' ? 900 : 1700 });
+  const [storeNamePos, setStoreNamePos] = useState({ x: 50, y: format === 'portrait' ? 1150 : 1600 });
+  const [locationPos, setLocationPos] = useState({ x: 50, y: format === 'portrait' ? 1220 : 1700 });
   const [logoPos, setLogoPos] = useState({ x: 50, y: 50 });
   const [iconPos, setIconPos] = useState({ x: 950, y: 50 });
-  const [categoryIconPos, setCategoryIconPos] = useState({ x: 50, y: format === 'square' ? 950 : 1750 });
+  const [categoryIconPos, setCategoryIconPos] = useState({ x: 50, y: format === 'portrait' ? 1270 : 1750 });
 
   // Text styles
   const [storeNameSize, setStoreNameSize] = useState(60);
@@ -58,7 +58,7 @@ export function SocialPostCreator() {
   // Custom caption
   const [showCaption, setShowCaption] = useState(false);
   const [captionText, setCaptionText] = useState('');
-  const [captionPos, setCaptionPos] = useState({ x: 50, y: format === 'square' ? 500 : 900 });
+  const [captionPos, setCaptionPos] = useState({ x: 50, y: format === 'portrait' ? 600 : 900 });
   const [captionSize, setCaptionSize] = useState(48);
   const [captionColor, setCaptionColor] = useState('#FFFFFF');
 
@@ -95,9 +95,10 @@ export function SocialPostCreator() {
       setLocationPos({ x: 50, y: 1700 });
       setCaptionPos({ x: 50, y: 900 });
     } else {
-      setStoreNamePos({ x: 50, y: 850 });
-      setLocationPos({ x: 50, y: 900 });
-      setCaptionPos({ x: 50, y: 500 });
+      // portrait 4:5
+      setStoreNamePos({ x: 50, y: 1150 });
+      setLocationPos({ x: 50, y: 1220 });
+      setCaptionPos({ x: 50, y: 600 });
     }
   }, [format]);
 
@@ -190,7 +191,7 @@ export function SocialPostCreator() {
     }
   }
 
-  const scaleRatio = format === 'square' ? 0.5 : 0.28;
+  const scaleRatio = format === 'portrait' ? 0.4 : 0.28;
 
   return (
     <div className="max-w-7xl mx-auto p-6">
@@ -206,16 +207,16 @@ export function SocialPostCreator() {
             </label>
             <div className="grid grid-cols-2 gap-3">
               <button
-                onClick={() => setFormat('square')}
+                onClick={() => setFormat('portrait')}
                 className={`p-4 rounded-lg border-2 transition-all font-medium ${
-                  format === 'square'
+                  format === 'portrait'
                     ? 'border-cyan-500 bg-cyan-500 text-white shadow-lg'
                     : 'border-gray-300 bg-white text-gray-700 hover:border-cyan-300'
                 }`}
               >
-                <div className="text-2xl mb-1">⬜</div>
-                <div className="text-sm">Square</div>
-                <div className="text-xs opacity-75">1080×1080</div>
+                <div className="text-2xl mb-1">🖼️</div>
+                <div className="text-sm">Portrait</div>
+                <div className="text-xs opacity-75">1080×1350 (4:5)</div>
               </button>
               <button
                 onClick={() => setFormat('story')}
@@ -227,7 +228,7 @@ export function SocialPostCreator() {
               >
                 <div className="text-2xl mb-1">📱</div>
                 <div className="text-sm">Story</div>
-                <div className="text-xs opacity-75">1080×1920</div>
+                <div className="text-xs opacity-75">1080×1920 (9:16)</div>
               </button>
             </div>
           </div>
@@ -660,8 +661,8 @@ export function SocialPostCreator() {
           <div
             className="bg-gray-100 rounded-lg overflow-visible shadow-xl border-4 border-gray-200 mx-auto"
             style={{
-              width: format === 'square' ? '540px' : '303px',
-              height: format === 'square' ? '540px' : '540px',
+              width: format === 'portrait' ? '432px' : '303px',
+              height: format === 'portrait' ? '540px' : '540px',
               position: 'relative',
             }}
           >
