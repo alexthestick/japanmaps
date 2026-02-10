@@ -27,6 +27,8 @@ export function SocialPostCreator() {
   const [showCategoryIcon, setShowCategoryIcon] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState<string>('Fashion');
   const [imageUrl, setImageUrl] = useState<string>('');
+  const [imageUrlLoading, setImageUrlLoading] = useState(false);
+  const [imageUrlError, setImageUrlError] = useState<string>('');
 
   const canvasRef = useRef<HTMLDivElement>(null);
 
@@ -191,6 +193,34 @@ export function SocialPostCreator() {
     }
   }
 
+  async function handleImageUrlLoad(url: string) {
+    setImageUrl(url);
+    setImageUrlError('');
+    if (!url) {
+      setStoreImage('');
+      return;
+    }
+    setImageUrlLoading(true);
+    try {
+      // Fetch via proxy to avoid CORS issues with Google/external URLs
+      const proxyUrl = `https://corsproxy.io/?${encodeURIComponent(url)}`;
+      const response = await fetch(proxyUrl);
+      if (!response.ok) throw new Error('Failed to fetch image');
+      const blob = await response.blob();
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        setStoreImage(event.target?.result as string);
+        setImageUrlLoading(false);
+      };
+      reader.readAsDataURL(blob);
+    } catch {
+      // Fallback: try loading the URL directly (works for same-origin or CORS-enabled images)
+      setStoreImage(url);
+      setImageUrlLoading(false);
+      setImageUrlError('If image does not appear, try downloading it and uploading directly.');
+    }
+  }
+
   const scaleRatio = format === 'portrait' ? 0.4 : 0.28;
 
   return (
@@ -298,17 +328,20 @@ export function SocialPostCreator() {
                 onChange={handleImageUpload}
                 className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm"
               />
-              <p className="text-xs text-gray-500">Or paste image URL:</p>
+              <p className="text-xs text-gray-500">Or paste image URL (Google Photos, etc.):</p>
               <input
                 type="url"
                 value={imageUrl}
-                onChange={(e) => {
-                  setImageUrl(e.target.value);
-                  setStoreImage(e.target.value);
-                }}
-                placeholder="https://example.com/store-image.jpg"
+                onChange={(e) => handleImageUrlLoad(e.target.value)}
+                placeholder="https://lh3.googleusercontent.com/..."
                 className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm"
               />
+              {imageUrlLoading && (
+                <p className="text-xs text-cyan-600">Loading image...</p>
+              )}
+              {imageUrlError && (
+                <p className="text-xs text-amber-600">{imageUrlError}</p>
+              )}
             </div>
           </details>
 
