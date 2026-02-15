@@ -37,13 +37,33 @@ function isOriginAllowed(origin) {
  */
 function parseSubstackContent(htmlContent) {
   // Remove HTML tags for easier parsing
+  const decodeHtmlEntities = (str) => {
+    return str
+      .replace(/&#8217;/g, '\u2019')  // right single quotation mark / apostrophe
+      .replace(/&#8216;/g, '\u2018')  // left single quotation mark
+      .replace(/&#8220;/g, '\u201C')  // left double quotation mark
+      .replace(/&#8221;/g, '\u201D')  // right double quotation mark
+      .replace(/&#8211;/g, '\u2013')  // en dash
+      .replace(/&#8212;/g, '\u2014')  // em dash
+      .replace(/&#8230;/g, '\u2026')  // ellipsis
+      .replace(/&amp;/g, '&')
+      .replace(/&lt;/g, '<')
+      .replace(/&gt;/g, '>')
+      .replace(/&quot;/g, '"')
+      .replace(/&#39;/g, "'")
+      .replace(/&nbsp;/g, ' ')
+      .replace(/&#(\d+);/g, (_, code) => String.fromCharCode(Number(code)));
+  };
+
   const stripHtml = (html) => {
-    return html
-      .replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, '')
-      .replace(/<style\b[^<]*(?:(?!<\/style>)<[^<]*)*<\/style>/gi, '')
-      .replace(/<[^>]+>/g, ' ')
-      .replace(/\s+/g, ' ')
-      .trim();
+    return decodeHtmlEntities(
+      html
+        .replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, '')
+        .replace(/<style\b[^<]*(?:(?!<\/style>)<[^<]*)*<\/style>/gi, '')
+        .replace(/<[^>]+>/g, ' ')
+        .replace(/\s+/g, ' ')
+        .trim()
+    );
   };
 
   // Extract images from HTML

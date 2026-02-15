@@ -6,6 +6,24 @@ import { ParallaxGuideSection } from '../components/common/ParallaxGuideSection'
 import { SEOHead } from '../components/seo';
 import type { ParallaxStoreSection } from '../types/blog';
 
+function decodeHtmlEntities(str: string): string {
+  return str
+    .replace(/&#8217;/g, '\u2019')
+    .replace(/&#8216;/g, '\u2018')
+    .replace(/&#8220;/g, '\u201C')
+    .replace(/&#8221;/g, '\u201D')
+    .replace(/&#8211;/g, '\u2013')
+    .replace(/&#8212;/g, '\u2014')
+    .replace(/&#8230;/g, '\u2026')
+    .replace(/&amp;/g, '&')
+    .replace(/&lt;/g, '<')
+    .replace(/&gt;/g, '>')
+    .replace(/&quot;/g, '"')
+    .replace(/&#39;/g, "'")
+    .replace(/&nbsp;/g, ' ')
+    .replace(/&#(\d+);/g, (_, code: string) => String.fromCharCode(Number(code)));
+}
+
 interface BlogPost {
   id: string;
   title: string;
@@ -299,7 +317,7 @@ export function BlogPostPage() {
                             lineHeight: '1.7',
                           }}
                         >
-                          {post.intro_content}
+                          {decodeHtmlEntities(post.intro_content)}
                         </p>
                       )}
                     </div>
@@ -449,7 +467,7 @@ export function BlogPostPage() {
               fontSize: '1rem',
             }}
           >
-            <p className="whitespace-pre-line text-base md:text-lg leading-relaxed">{post.content}</p>
+            <p className="whitespace-pre-line text-base md:text-lg leading-relaxed">{decodeHtmlEntities(post.content)}</p>
           </div>
 
           <div className="mt-8 md:mt-12 text-center">
