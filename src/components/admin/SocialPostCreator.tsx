@@ -846,6 +846,7 @@ export function SocialPostCreator() {
                         color: storeNameColor,
                         fontFamily: 'Plus Jakarta Sans, sans-serif',
                         textShadow: '2px 2px 8px rgba(0,0,0,0.8)',
+                        whiteSpace: 'nowrap',
                       }}
                     >
                       {storeName}
@@ -869,6 +870,7 @@ export function SocialPostCreator() {
                         color: locationColor,
                         fontFamily: 'Plus Jakarta Sans, sans-serif',
                         textShadow: '2px 2px 6px rgba(0,0,0,0.8)',
+                        whiteSpace: 'nowrap',
                       }}
                     >
                       {location}
