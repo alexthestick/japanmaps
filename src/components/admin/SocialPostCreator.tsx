@@ -954,7 +954,7 @@ export function SocialPostCreator() {
                   onStop={(e, data) => setCaptionPos({ x: data.x, y: data.y })}
                   bounds="parent"
                 >
-                  <div className="absolute cursor-move" style={{ whiteSpace: 'nowrap', display: 'inline-block' }}>
+                  <div className="absolute cursor-move" style={{ display: 'inline-block' }}>
                     <div
                       className="font-bold"
                       style={{
@@ -963,7 +963,7 @@ export function SocialPostCreator() {
                         fontFamily: 'Plus Jakarta Sans, sans-serif',
                         textShadow: '3px 3px 10px rgba(0,0,0,0.9), 0 0 20px rgba(0,0,0,0.5)',
                         lineHeight: 1.2,
-                        whiteSpace: 'nowrap',
+                        whiteSpace: 'pre-wrap',
                         display: 'inline-block',
                       }}
                     >
