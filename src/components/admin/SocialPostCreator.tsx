@@ -823,6 +823,7 @@ export function SocialPostCreator() {
                         fontSize: `${logoSize}px`,
                         color: logoColor,
                         textShadow: '2px 2px 8px rgba(0,0,0,0.8)',
+                        whiteSpace: 'nowrap',
                       }}
                     >
                       LOST IN TRANSIT
@@ -958,10 +959,9 @@ export function SocialPostCreator() {
                         color: captionColor,
                         fontFamily: 'Plus Jakarta Sans, sans-serif',
                         textShadow: '3px 3px 10px rgba(0,0,0,0.9), 0 0 20px rgba(0,0,0,0.5)',
-                        maxWidth: '900px',
+                        maxWidth: `${canvasWidth - 100}px`,
                         lineHeight: 1.2,
-                        whiteSpace: 'pre-wrap',
-                        wordBreak: 'break-word',
+                        whiteSpace: 'nowrap',
                       }}
                     >
                       {captionText}
