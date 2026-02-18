@@ -160,6 +160,7 @@ export function SocialPostCreator() {
         pixelRatio: 2,
         width: canvasWidth,
         height: canvasHeight,
+        skipFonts: true,
       });
 
       // Restore the transform
@@ -193,6 +194,33 @@ export function SocialPostCreator() {
     }
   }
 
+  async function fetchImageAsBase64(url: string): Promise<string> {
+    // Try multiple CORS proxies in sequence
+    const proxies = [
+      `https://corsproxy.io/?${encodeURIComponent(url)}`,
+      `https://api.allorigins.win/raw?url=${encodeURIComponent(url)}`,
+      `https://proxy.cors.sh/${url}`,
+    ];
+
+    for (const proxyUrl of proxies) {
+      try {
+        const response = await fetch(proxyUrl);
+        if (!response.ok) continue;
+        const blob = await response.blob();
+        if (!blob.type.startsWith('image/')) continue;
+        return await new Promise((resolve, reject) => {
+          const reader = new FileReader();
+          reader.onload = (e) => resolve(e.target?.result as string);
+          reader.onerror = reject;
+          reader.readAsDataURL(blob);
+        });
+      } catch {
+        continue;
+      }
+    }
+    throw new Error('All proxies failed');
+  }
+
   async function handleImageUrlLoad(url: string) {
     setImageUrl(url);
     setImageUrlError('');
@@ -202,22 +230,13 @@ export function SocialPostCreator() {
     }
     setImageUrlLoading(true);
     try {
-      // Fetch via proxy to avoid CORS issues with Google/external URLs
-      const proxyUrl = `https://corsproxy.io/?${encodeURIComponent(url)}`;
-      const response = await fetch(proxyUrl);
-      if (!response.ok) throw new Error('Failed to fetch image');
-      const blob = await response.blob();
-      const reader = new FileReader();
-      reader.onload = (event) => {
-        setStoreImage(event.target?.result as string);
-        setImageUrlLoading(false);
-      };
-      reader.readAsDataURL(blob);
-    } catch {
-      // Fallback: try loading the URL directly (works for same-origin or CORS-enabled images)
-      setStoreImage(url);
+      const base64 = await fetchImageAsBase64(url);
+      setStoreImage(base64);
       setImageUrlLoading(false);
-      setImageUrlError('If image does not appear, try downloading it and uploading directly.');
+    } catch {
+      setImageUrlLoading(false);
+      setStoreImage('');
+      setImageUrlError('This site blocks external access. Please download the image and upload it directly using the file picker above.');
     }
   }
 
