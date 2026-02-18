@@ -815,7 +815,7 @@ export function SocialPostCreator() {
                   onStop={(e, data) => setLogoPos({ x: data.x, y: data.y })}
                   bounds="parent"
                 >
-                  <div className="absolute cursor-move">
+                  <div className="absolute cursor-move" style={{ whiteSpace: 'nowrap', display: 'inline-block' }}>
                     <div
                       className="font-black tracking-wider"
                       style={{
@@ -824,6 +824,7 @@ export function SocialPostCreator() {
                         color: logoColor,
                         textShadow: '2px 2px 8px rgba(0,0,0,0.8)',
                         whiteSpace: 'nowrap',
+                        display: 'inline-block',
                       }}
                     >
                       LOST IN TRANSIT
@@ -839,7 +840,7 @@ export function SocialPostCreator() {
                   onStop={(e, data) => setStoreNamePos({ x: data.x, y: data.y })}
                   bounds="parent"
                 >
-                  <div className="absolute cursor-move">
+                  <div className="absolute cursor-move" style={{ whiteSpace: 'nowrap', display: 'inline-block' }}>
                     <div
                       className="font-black tracking-tight"
                       style={{
@@ -848,6 +849,7 @@ export function SocialPostCreator() {
                         fontFamily: 'Plus Jakarta Sans, sans-serif',
                         textShadow: '2px 2px 8px rgba(0,0,0,0.8)',
                         whiteSpace: 'nowrap',
+                        display: 'inline-block',
                       }}
                     >
                       {storeName}
@@ -863,7 +865,7 @@ export function SocialPostCreator() {
                   onStop={(e, data) => setLocationPos({ x: data.x, y: data.y })}
                   bounds="parent"
                 >
-                  <div className="absolute cursor-move">
+                  <div className="absolute cursor-move" style={{ whiteSpace: 'nowrap', display: 'inline-block' }}>
                     <div
                       className="font-semibold"
                       style={{
@@ -872,6 +874,7 @@ export function SocialPostCreator() {
                         fontFamily: 'Plus Jakarta Sans, sans-serif',
                         textShadow: '2px 2px 6px rgba(0,0,0,0.8)',
                         whiteSpace: 'nowrap',
+                        display: 'inline-block',
                       }}
                     >
                       {location}
@@ -951,7 +954,7 @@ export function SocialPostCreator() {
                   onStop={(e, data) => setCaptionPos({ x: data.x, y: data.y })}
                   bounds="parent"
                 >
-                  <div className="absolute cursor-move">
+                  <div className="absolute cursor-move" style={{ whiteSpace: 'nowrap', display: 'inline-block' }}>
                     <div
                       className="font-bold"
                       style={{
@@ -959,9 +962,9 @@ export function SocialPostCreator() {
                         color: captionColor,
                         fontFamily: 'Plus Jakarta Sans, sans-serif',
                         textShadow: '3px 3px 10px rgba(0,0,0,0.9), 0 0 20px rgba(0,0,0,0.5)',
-                        maxWidth: `${canvasWidth - 100}px`,
                         lineHeight: 1.2,
                         whiteSpace: 'nowrap',
+                        display: 'inline-block',
                       }}
                     >
                       {captionText}
