@@ -555,12 +555,13 @@ export function FindsPage() {
   const [filterCity, setFilterCity] = useState('All Cities');
   const [showSubmitModal, setShowSubmitModal] = useState(false);
   const [showBanner, setShowBanner] = useState(false);
-  const [page, setPage] = useState(0);
   const [hasMore, setHasMore] = useState(true);
   const PAGE_SIZE = 24;
+  const pageRef = useRef(0);
 
   async function fetchFinds(reset = false) {
-    const start = reset ? 0 : page * PAGE_SIZE;
+    if (reset) pageRef.current = 0;
+    const start = pageRef.current * PAGE_SIZE;
     setLoading(true);
 
     let query = supabase
@@ -578,12 +579,11 @@ export function FindsPage() {
 
     setFinds(prev => reset ? fetched : [...prev, ...fetched]);
     setHasMore(fetched.length === PAGE_SIZE);
-    if (!reset) setPage(p => p + 1);
+    pageRef.current += 1;
     setLoading(false);
   }
 
   useEffect(() => {
-    setPage(0);
     fetchFinds(true);
   }, [filterType, filterCity]);
 
