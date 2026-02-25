@@ -73,7 +73,7 @@ export function CategoryShowcase() {
             EXPLORE BY CATEGORY
           </h2>
           <p className="mt-4 text-lg text-cyan-300 font-medium">
-            Find exactly what you're looking for
+            Archive, vintage, streetwear — every corner of Japan's fashion scene
           </p>
         </motion.div>
 

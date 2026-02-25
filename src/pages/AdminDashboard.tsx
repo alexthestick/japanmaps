@@ -55,7 +55,9 @@ export function AdminDashboard() {
     intro_content: string;
     sections: ParallaxStoreSection[];
   } | null>(null);
-  const [activeTab, setActiveTab] = useState<'stores' | 'suggestions' | 'migration' | 'neighborhoods' | 'blog' | 'social'>('stores');
+  const [activeTab, setActiveTab] = useState<'stores' | 'suggestions' | 'migration' | 'neighborhoods' | 'blog' | 'social' | 'finds'>('stores');
+  const [pendingFinds, setPendingFinds] = useState<any[]>([]);
+  const [loadingFinds, setLoadingFinds] = useState(false);
 
   const isFetchingRef = useRef(false);
 
@@ -67,6 +69,7 @@ export function AdminDashboard() {
       fetchSuggestions();
       fetchStores();
       fetchBlogPosts();
+      fetchPendingFinds();
     }
   }, [user, isAdmin]);
 
@@ -101,6 +104,37 @@ export function AdminDashboard() {
       console.error('Error fetching suggestions:', error);
     } finally {
       setLoadingSuggestions(false);
+    }
+  }
+
+  async function fetchPendingFinds() {
+    try {
+      setLoadingFinds(true);
+      const { data, error } = await supabase
+        .from('field_notes')
+        .select('*, profiles(username, display_name)')
+        .order('created_at', { ascending: false });
+      console.log('[Admin] fetchPendingFinds:', { data, error });
+      if (error) throw error;
+      setPendingFinds(data || []);
+    } catch (err) {
+      console.error('[Admin] Error fetching finds:', err);
+    } finally {
+      setLoadingFinds(false);
+    }
+  }
+
+  async function handleFindStatus(id: string, status: 'approved' | 'rejected') {
+    try {
+      const { error } = await supabase
+        .from('field_notes')
+        .update({ status })
+        .eq('id', id);
+      if (error) throw error;
+      setPendingFinds(prev => prev.map(f => f.id === id ? { ...f, status } : f));
+    } catch (err) {
+      console.error('Error updating find:', err);
+      alert('Failed to update find');
     }
   }
 
@@ -497,6 +531,16 @@ export function AdminDashboard() {
         >
           📸 Social Posts
         </button>
+        <button
+          onClick={async () => { setActiveTab('finds'); await fetchPendingFinds(); }}
+          className={`px-4 py-2 font-medium border-b-2 transition-colors ${
+            activeTab === 'finds'
+              ? 'border-purple-500 text-purple-600'
+              : 'border-transparent text-gray-600 hover:text-gray-900'
+          }`}
+        >
+          🔍 Finds ({pendingFinds.filter(f => f.status === 'pending').length})
+        </button>
       </div>
 
       {/* Store List Tab */}
@@ -715,6 +759,114 @@ export function AdminDashboard() {
       {/* Social Post Creator Tab */}
       {activeTab === 'social' && (
         <SocialPostCreator />
+      )}
+
+      {/* Finds Approval Tab */}
+      {activeTab === 'finds' && (
+        <div className="bg-white rounded-lg shadow-md p-6">
+          <h2 className="text-xl font-semibold text-gray-900 mb-1">
+            Community Finds
+            {loadingFinds && <span className="text-sm text-gray-500 ml-2">(Loading...)</span>}
+          </h2>
+          <p className="text-sm text-gray-500 mb-6">
+            Review and approve finds submitted by the community. Only approved finds appear publicly.
+          </p>
+
+          {pendingFinds.length === 0 ? (
+            <p className="text-gray-600">No finds submitted yet.</p>
+          ) : (
+            <div className="space-y-4">
+              {/* Show pending first, then rest */}
+              {[...pendingFinds].sort((a, b) => {
+                if (a.status === 'pending' && b.status !== 'pending') return -1;
+                if (a.status !== 'pending' && b.status === 'pending') return 1;
+                return 0;
+              }).map((find: any) => {
+                const username = find.profiles?.username || find.profiles?.display_name || 'Anonymous';
+                return (
+                  <div
+                    key={find.id}
+                    className="border border-gray-200 rounded-lg p-4 flex gap-4"
+                  >
+                    {/* Photo thumbnail */}
+                    {find.photo_url && (
+                      <img
+                        src={find.photo_url}
+                        alt=""
+                        className="w-20 h-20 object-cover rounded-lg flex-shrink-0"
+                      />
+                    )}
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-start justify-between gap-4 mb-1">
+                        <div>
+                          <span className={`inline-block text-xs font-bold uppercase px-2 py-0.5 rounded-full mr-2 ${
+                            find.type === 'visit'
+                              ? 'bg-cyan-100 text-cyan-700'
+                              : 'bg-purple-100 text-purple-700'
+                          }`}>
+                            {find.type === 'visit' ? 'Visit' : 'Pickup'}
+                          </span>
+                          <span className={`inline-block text-xs px-2 py-0.5 rounded-full font-medium ${
+                            find.status === 'pending'
+                              ? 'bg-yellow-100 text-yellow-800'
+                              : find.status === 'approved'
+                              ? 'bg-green-100 text-green-800'
+                              : 'bg-red-100 text-red-800'
+                          }`}>
+                            {find.status}
+                          </span>
+                        </div>
+                        <span className="text-xs text-gray-400 flex-shrink-0">
+                          {new Date(find.created_at).toLocaleDateString()}
+                        </span>
+                      </div>
+
+                      <p className="font-semibold text-gray-900">{find.store_name}</p>
+                      <p className="text-sm text-gray-600">
+                        {find.neighborhood ? `${find.neighborhood}, ` : ''}{find.city}
+                        {' · '}<span className="text-gray-500">@{username}</span>
+                      </p>
+                      {find.item_name && (
+                        <p className="text-sm text-purple-600 mt-1">
+                          Picked up: {find.item_name}
+                        </p>
+                      )}
+                      {find.caption && (
+                        <p className="text-sm text-gray-500 mt-1 italic">"{find.caption}"</p>
+                      )}
+
+                      {find.status === 'pending' && (
+                        <div className="flex gap-2 mt-3">
+                          <Button
+                            size="sm"
+                            onClick={() => handleFindStatus(find.id, 'approved')}
+                          >
+                            ✓ Approve
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => handleFindStatus(find.id, 'rejected')}
+                          >
+                            ✕ Reject
+                          </Button>
+                        </div>
+                      )}
+                      {find.status !== 'pending' && (
+                        <button
+                          onClick={() => handleFindStatus(find.id, find.status === 'approved' ? 'rejected' : 'approved')}
+                          className="mt-2 text-xs text-gray-400 hover:text-gray-600 underline"
+                        >
+                          Change to {find.status === 'approved' ? 'rejected' : 'approved'}
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </div>
       )}
 
       {/* Add Store Modal */}

@@ -2,7 +2,8 @@ import { BrowserRouter, Routes, Route, useLocation } from 'react-router-dom';
 
 // VERSION INDICATOR - Check browser console to verify deployment
 // If you see this message, the new code is deployed
-console.log('[Lost in Transit] Build Version: 2024-01-30-FIX-V2 - Carousel click + Filter bar fixes');
+console.log('[Lost in Transit] Build Version: 2026-02-23-PHASE4 - Finds, Admin Approval & Community Feed');
+import { AuthProvider } from './contexts/AuthContext';
 import { Layout } from './components/layout/Layout';
 import { NewLandingPage } from './pages/NewLandingPage';
 import { HomePage } from './pages/HomePage';
@@ -22,6 +23,11 @@ import { NeighborhoodPage } from './pages/NeighborhoodPage';
 import { CitiesPage } from './pages/CitiesPage';
 import { NeighborhoodsPage } from './pages/NeighborhoodsPage';
 import { CategoryPage } from './pages/CategoryPage';
+import { LoginPage } from './pages/LoginPage';
+import { SignupPage } from './pages/SignupPage';
+import { FindsPage } from './pages/FindsPage';
+import { FindDetailPage } from './pages/FindDetailPage';
+import { ResetPasswordPage } from './pages/ResetPasswordPage';
 import { motion } from 'framer-motion';
 import { ScrollToTop } from './components/common/ScrollToTop';
 
@@ -52,6 +58,43 @@ function AnimatedRoutes() {
         <Route path="/store/:id" element={
           <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
             <StoreDetailPage />
+          </motion.div>
+        } />
+
+        {/* Auth pages (no layout, full screen) */}
+        <Route path="/login" element={
+          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.2 }}>
+            <LoginPage />
+          </motion.div>
+        } />
+        <Route path="/signup" element={
+          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.2 }}>
+            <SignupPage />
+          </motion.div>
+        } />
+        <Route path="/reset-password" element={
+          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.2 }}>
+            <ResetPasswordPage />
+          </motion.div>
+        } />
+
+        {/* Finds page (no layout, full screen) */}
+        <Route path="/finds" element={
+          <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} transition={{ duration: 0.2 }}>
+            <FindsPage />
+          </motion.div>
+        } />
+        {/* Redirect old /field-notes URL to /finds */}
+        <Route path="/field-notes" element={
+          <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} transition={{ duration: 0.2 }}>
+            <FindsPage />
+          </motion.div>
+        } />
+
+        {/* Find detail page */}
+        <Route path="/finds/:id" element={
+          <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} transition={{ duration: 0.2 }}>
+            <FindDetailPage />
           </motion.div>
         } />
 
@@ -157,7 +200,9 @@ function AnimatedRoutes() {
 function App() {
   return (
     <BrowserRouter future={{ v7_startTransition: true }}>
-      <AnimatedRoutes />
+      <AuthProvider>
+        <AnimatedRoutes />
+      </AuthProvider>
     </BrowserRouter>
   );
 }

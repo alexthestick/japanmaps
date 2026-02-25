@@ -58,6 +58,12 @@ export function CompactFooter() {
               Contact
             </a>
             <a
+              href="/finds"
+              className="text-gray-400 hover:text-purple-300 transition-colors duration-300 font-medium"
+            >
+              Finds
+            </a>
+            <a
               href={links.support}
               className="flex items-center gap-1 text-gray-400 hover:text-cyan-300 transition-colors duration-300 font-medium"
             >

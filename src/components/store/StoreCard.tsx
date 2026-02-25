@@ -6,6 +6,7 @@ import type { Store } from '../../types/store';
 import { MAIN_CATEGORY_ICONS, CITY_COLORS } from '../../lib/constants';
 import { SaveButton } from './SaveButton';
 import { WashiTexture } from '../common/WashiTexture';
+import { ikUrl } from '../../utils/ikUrl';
 
 // Map icon names to actual icon components
 const getCategoryIcon = (iconName: string): LucideIcon => {
@@ -71,7 +72,7 @@ function StoreCardComponent({ store, onClick }: StoreCardProps) {
         {/* Image Container */}
         <div className="relative w-full aspect-[4/5] overflow-hidden bg-gray-800">
           <img
-            src={store.photos[0] || 'https://images.unsplash.com/photo-1578662996442-48f60103fc96?w=600&h=750&fit=crop&q=80'}
+            src={ikUrl(store.photos[0], 'thumb') || 'https://images.unsplash.com/photo-1578662996442-48f60103fc96?w=400&h=500&fit=crop&q=65'}
             alt={store.name}
             loading="lazy"
             className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"

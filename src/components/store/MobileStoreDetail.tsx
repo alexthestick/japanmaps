@@ -1,12 +1,16 @@
 import { useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { ArrowLeft, Heart, Share2, ShoppingBag, MapPin, Clock, Globe, Instagram, ExternalLink, ChevronDown, ChevronUp, Navigation, Map as MapIcon } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { ArrowLeft, Share2, ShoppingBag, MapPin, Clock, Globe, Instagram, ExternalLink, ChevronDown, ChevronUp, Navigation, Map as MapIcon, Camera } from 'lucide-react';
 import { SwipeablePhotoCarousel } from './SwipeablePhotoCarousel';
 import { SaveButton } from './SaveButton';
 import { InstagramGeneratorModal } from './InstagramGeneratorModal';
+import { StoreFindsSection } from './StoreFindsSection';
+import { SubmitModal } from '../../pages/FindsPage';
 import type { Store } from '../../types/store';
 import { getGoogleMapsUrl } from '../../utils/formatters';
 import { MAIN_CATEGORY_COLORS } from '../../lib/constants';
+import { ikUrl } from '../../utils/ikUrl';
 
 interface MobileStoreDetailProps {
   store: Store;
@@ -20,6 +24,8 @@ export function MobileStoreDetail({ store, similarStores, onPhotoClick }: Mobile
   const [showFullDescription, setShowFullDescription] = useState(false);
   const [expandedSection, setExpandedSection] = useState<string | null>(null);
   const [instagramModalOpen, setInstagramModalOpen] = useState(false);
+  const [showLogModal, setShowLogModal] = useState(false);
+  const [showLogBanner, setShowLogBanner] = useState(false);
 
   const photos = store.photos && store.photos.length > 0
     ? store.photos
@@ -371,12 +377,23 @@ export function MobileStoreDetail({ store, similarStores, onPhotoClick }: Mobile
             Share to Instagram
           </button>
           <button
-            className="w-full px-6 py-3 bg-gradient-to-r from-cyan-500/20 to-cyan-600/20 text-cyan-300 font-bold uppercase rounded-lg hover:from-cyan-500/30 hover:to-cyan-600/30 transition-all flex items-center justify-center gap-2 border border-cyan-500/30 active:scale-95"
-            style={{ boxShadow: '0 0 20px rgba(34, 217, 238, 0.2)' }}
+            onClick={() => setShowLogModal(true)}
+            className="w-full px-6 py-3 bg-gradient-to-r from-purple-500/20 to-cyan-600/20 text-purple-300 font-bold uppercase rounded-lg hover:from-purple-500/30 hover:to-cyan-600/30 transition-all flex items-center justify-center gap-2 border border-purple-500/30 active:scale-95"
+            style={{ boxShadow: '0 0 20px rgba(168, 85, 247, 0.2)' }}
           >
-            <ShoppingBag className="w-5 h-5" />
-            Add to Haul
+            <Camera className="w-5 h-5" />
+            Log a Find
           </button>
+        </div>
+
+        {/* Community Finds */}
+        <div className="pt-2">
+          <StoreFindsSection
+            storeId={store.id}
+            storeName={store.name}
+            storeCity={store.city}
+            storeNeighborhood={store.neighborhood}
+          />
         </div>
 
         {/* Related Stores */}
@@ -393,7 +410,7 @@ export function MobileStoreDetail({ store, similarStores, onPhotoClick }: Mobile
             </h2>
             <div className="grid grid-cols-2 gap-3">
               {similarStores.slice(0, 4).map((similarStore) => {
-                const thumbnail = similarStore.photos?.[0] || 'https://images.unsplash.com/photo-1441986300917-64674bd600d8?w=400&h=300&fit=crop';
+                const thumbnail = ikUrl(similarStore.photos?.[0], 'thumb') || 'https://images.unsplash.com/photo-1441986300917-64674bd600d8?w=400&h=300&fit=crop';
                 const categoryColor = similarStore.mainCategory
                   ? MAIN_CATEGORY_COLORS[similarStore.mainCategory as keyof typeof MAIN_CATEGORY_COLORS]
                   : '#22D9EE';
@@ -446,6 +463,42 @@ export function MobileStoreDetail({ store, similarStores, onPhotoClick }: Mobile
         isOpen={instagramModalOpen}
         onClose={() => setInstagramModalOpen(false)}
       />
+
+      {/* Log a Find Modal */}
+      <AnimatePresence>
+        {showLogModal && (
+          <SubmitModal
+            onClose={() => setShowLogModal(false)}
+            onSubmitted={() => {
+              setShowLogModal(false);
+              setShowLogBanner(true);
+              setTimeout(() => setShowLogBanner(false), 5000);
+            }}
+            prefill={{
+              storeId: store.id,
+              storeName: store.name,
+              storeCity: store.city,
+              storeNeighborhood: store.neighborhood,
+              defaultType: 'haul',
+            }}
+          />
+        )}
+      </AnimatePresence>
+
+      {/* Submitted banner */}
+      <AnimatePresence>
+        {showLogBanner && (
+          <motion.div
+            initial={{ opacity: 0, y: -20 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -20 }}
+            className="fixed top-6 left-1/2 -translate-x-1/2 z-[100] flex items-center gap-3 px-5 py-3 bg-gray-900 border border-purple-500/40 rounded-2xl shadow-2xl text-sm text-white"
+          >
+            <div className="h-2 w-2 rounded-full bg-purple-400 animate-pulse" />
+            Your find has been submitted for review. Thanks!
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }

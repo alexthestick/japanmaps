@@ -16,6 +16,8 @@ export interface Database {
           display_name: string | null;
           profile_photo: string | null;
           bio: string | null;
+          city: string | null;
+          is_admin: boolean;
           created_at: string;
           updated_at: string;
         };
@@ -25,6 +27,8 @@ export interface Database {
           display_name?: string | null;
           profile_photo?: string | null;
           bio?: string | null;
+          city?: string | null;
+          is_admin?: boolean;
           created_at?: string;
           updated_at?: string;
         };
@@ -34,8 +38,88 @@ export interface Database {
           display_name?: string | null;
           profile_photo?: string | null;
           bio?: string | null;
+          city?: string | null;
+          is_admin?: boolean;
           created_at?: string;
           updated_at?: string;
+        };
+      };
+      field_notes: {
+        Row: {
+          id: string;
+          user_id: string;
+          type: 'visit' | 'haul';
+          photo_url: string | null;
+          store_id: string | null;
+          store_name: string;
+          neighborhood: string | null;
+          city: string;
+          item_name: string | null;
+          caption: string | null;
+          status: 'pending' | 'approved' | 'rejected';
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          user_id: string;
+          type: 'visit' | 'haul';
+          photo_url?: string | null;
+          store_id?: string | null;
+          store_name: string;
+          neighborhood?: string | null;
+          city: string;
+          item_name?: string | null;
+          caption?: string | null;
+          status?: 'pending' | 'approved' | 'rejected';
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          user_id?: string;
+          type?: 'visit' | 'haul';
+          photo_url?: string | null;
+          store_id?: string | null;
+          store_name?: string;
+          neighborhood?: string | null;
+          city?: string;
+          item_name?: string | null;
+          caption?: string | null;
+          status?: 'pending' | 'approved' | 'rejected';
+          created_at?: string;
+        };
+      };
+      store_visits: {
+        Row: {
+          user_id: string;
+          store_id: string;
+          created_at: string;
+        };
+        Insert: {
+          user_id: string;
+          store_id: string;
+          created_at?: string;
+        };
+        Update: {
+          user_id?: string;
+          store_id?: string;
+          created_at?: string;
+        };
+      };
+      saved_stores: {
+        Row: {
+          user_id: string;
+          store_id: string;
+          created_at: string;
+        };
+        Insert: {
+          user_id: string;
+          store_id: string;
+          created_at?: string;
+        };
+        Update: {
+          user_id?: string;
+          store_id?: string;
+          created_at?: string;
         };
       };
       stores: {
@@ -60,6 +144,7 @@ export interface Database {
           updated_at: string;
           haul_count: number;
           save_count: number;
+          visit_count: number;
         };
         Insert: {
           id?: string;
@@ -82,6 +167,7 @@ export interface Database {
           updated_at?: string;
           haul_count?: number;
           save_count?: number;
+          visit_count?: number;
         };
         Update: {
           id?: string;
@@ -104,6 +190,7 @@ export interface Database {
           updated_at?: string;
           haul_count?: number;
           save_count?: number;
+          visit_count?: number;
         };
       };
       store_suggestions: {
@@ -197,5 +284,3 @@ export interface Database {
     };
   };
 }
-
-

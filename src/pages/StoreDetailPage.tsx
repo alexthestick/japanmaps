@@ -1,12 +1,14 @@
 import { useParams, useNavigate, useLocation, Link } from 'react-router-dom';
 import { useEffect, useState, useRef } from 'react';
 import Map, { Marker, NavigationControl } from 'react-map-gl';
+import { motion, AnimatePresence } from 'framer-motion';
 import { supabase } from '../lib/supabase';
 import { Loader } from '../components/common/Loader';
 import { PhotoLightbox } from '../components/common/PhotoLightbox';
-import { MapPin, ExternalLink, Instagram, Clock, Navigation, ArrowLeft, ShoppingBag, Globe, Heart, Share2 } from 'lucide-react';
+import { MapPin, ExternalLink, Instagram, Clock, Navigation, ArrowLeft, ShoppingBag, Globe, Heart, Share2, Camera } from 'lucide-react';
 import { Button } from '../components/common/Button';
 import { SaveButton } from '../components/store/SaveButton';
+import { VisitButton } from '../components/store/VisitButton';
 import { InstagramGeneratorModal } from '../components/store/InstagramGeneratorModal';
 import { MobileStoreDetail } from '../components/store/MobileStoreDetail';
 import { SEOHead, generateStoreSchema, generateBreadcrumbSchema } from '../components/seo';
@@ -15,10 +17,13 @@ import type { Store } from '../types/store';
 import { getGoogleMapsUrl } from '../utils/formatters';
 import { parseLocation } from '../utils/helpers';
 import { isUUID, generateSlug } from '../utils/slugify';
+import { ikUrl } from '../utils/ikUrl';
 import { MAIN_CATEGORY_COLORS } from '../lib/constants';
 import { cityToSlug, neighborhoodToSlug } from '../utils/cityData';
 import { MAPBOX_TOKEN, MAP_STYLE_DAY } from '../lib/mapbox';
 import { useIsMobile } from '../hooks/useMediaQuery';
+import { SubmitModal } from './FindsPage';
+import { StoreFindsSection } from '../components/store/StoreFindsSection';
 import 'mapbox-gl/dist/mapbox-gl.css';
 
 export function StoreDetailPage() {
@@ -33,6 +38,10 @@ export function StoreDetailPage() {
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [lightboxOpen, setLightboxOpen] = useState(false);
   const [instagramModalOpen, setInstagramModalOpen] = useState(false);
+  const [liveSaveCount, setLiveSaveCount] = useState<number | null>(null);
+  const [liveHaulCount, setLiveHaulCount] = useState<number | null>(null);
+  const [showSubmitModal, setShowSubmitModal] = useState(false);
+  const [showSubmitBanner, setShowSubmitBanner] = useState(false);
   const [viewState, setViewState] = useState({
     longitude: 139.6917,
     latitude: 35.6895,
@@ -64,8 +73,28 @@ export function StoreDetailPage() {
   useEffect(() => {
     if (store) {
       fetchSimilarStores(store);
+      fetchLiveCounts(store.id);
     }
   }, [store]);
+
+  async function fetchLiveCounts(storeId: string) {
+    // Live save count
+    const { count: saveCount } = await supabase
+      .from('saved_stores')
+      .select('*', { count: 'exact', head: true })
+      .eq('store_id', storeId);
+
+    // Live haul count (approved field_notes of type 'haul')
+    const { count: haulCount } = await supabase
+      .from('field_notes')
+      .select('*', { count: 'exact', head: true })
+      .eq('store_id', storeId)
+      .eq('type', 'haul')
+      .eq('status', 'approved');
+
+    setLiveSaveCount(saveCount ?? 0);
+    setLiveHaulCount(haulCount ?? 0);
+  }
 
   async function fetchSimilarStores(currentStore: Store) {
     try {
@@ -510,7 +539,7 @@ export function StoreDetailPage() {
             }}
           >
             <img
-              src={photos[0]}
+              src={ikUrl(photos[0], 'hero')}
               alt={store.name}
               className="w-full h-full object-cover transition-transform group-hover:scale-105"
               style={{ objectPosition: 'center' }}
@@ -529,8 +558,9 @@ export function StoreDetailPage() {
                 }}
               >
                 <img
-                  src={photo}
+                  src={ikUrl(photo, 'card')}
                   alt={`${store.name} - ${index + 1}`}
+                  loading={index === 0 ? 'eager' : 'lazy'}
                   className="w-full h-full object-cover transition-transform group-hover:scale-105"
                   style={{ objectPosition: 'center' }}
                 />
@@ -551,7 +581,7 @@ export function StoreDetailPage() {
             >
               <div className="absolute inset-0">
                 <img
-                  src={photos[0]}
+                  src={ikUrl(photos[0], 'hero')}
                   alt={store.name}
                   className="w-full h-full object-cover transition-transform group-hover:scale-105"
                   style={{ objectPosition: 'center' }}
@@ -572,8 +602,9 @@ export function StoreDetailPage() {
               >
                 <div className="absolute inset-0">
                   <img
-                    src={photo}
+                    src={ikUrl(photo, 'card')}
                     alt={`${store.name} - ${index + 2}`}
+                    loading="lazy"
                     className="w-full h-full object-cover transition-transform group-hover:scale-105"
                     style={{ objectPosition: 'center' }}
                   />
@@ -678,22 +709,22 @@ export function StoreDetailPage() {
                     textShadow: '0 0 20px rgba(34, 217, 238, 0.5)'
                   }}
                 >
-                  {store.saveCount}
+                  {liveSaveCount !== null ? liveSaveCount : store.saveCount}
                 </span>
               </div>
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2 text-gray-400">
-                  <ShoppingBag className="w-5 h-5 text-cyan-400" />
+                  <ShoppingBag className="w-5 h-5 text-purple-400" />
                   <span className="font-bold uppercase">Hauls</span>
                 </div>
                 <span
                   className="text-3xl font-black italic"
                   style={{
-                    color: '#22D9EE',
-                    textShadow: '0 0 20px rgba(34, 217, 238, 0.5)'
+                    color: '#a855f7',
+                    textShadow: '0 0 20px rgba(168, 85, 247, 0.5)'
                   }}
                 >
-                  {store.haulCount}
+                  {liveHaulCount !== null ? liveHaulCount : store.haulCount}
                 </span>
               </div>
             </div>
@@ -792,6 +823,7 @@ export function StoreDetailPage() {
             {/* Action Buttons */}
             <div className="space-y-3">
               <SaveButton storeId={store.id} variant="button" className="w-full" />
+              <VisitButton storeId={store.id} visitCount={(store as any).visitCount || 0} className="w-full" />
               <button
                 onClick={() => setInstagramModalOpen(true)}
                 className="w-full px-6 py-3 bg-gradient-to-r from-pink-500/20 to-purple-600/20 text-pink-300 font-bold uppercase rounded-lg hover:from-pink-500/30 hover:to-purple-600/30 transition-all flex items-center justify-center gap-2 border border-pink-500/30 hover:border-pink-500/50"
@@ -803,17 +835,28 @@ export function StoreDetailPage() {
                 Share to Instagram
               </button>
               <button
-                className="w-full px-6 py-3 bg-gradient-to-r from-cyan-500/20 to-cyan-600/20 text-cyan-300 font-bold uppercase rounded-lg hover:from-cyan-500/30 hover:to-cyan-600/30 transition-all flex items-center justify-center gap-2 border border-cyan-500/30 hover:border-cyan-500/50"
+                onClick={() => setShowSubmitModal(true)}
+                className="w-full px-6 py-3 bg-gradient-to-r from-purple-500/20 to-cyan-600/20 text-purple-300 font-bold uppercase rounded-lg hover:from-purple-500/30 hover:to-cyan-600/30 transition-all flex items-center justify-center gap-2 border border-purple-500/30 hover:border-purple-500/50"
                 style={{
-                  boxShadow: '0 0 20px rgba(34, 217, 238, 0.2)'
+                  boxShadow: '0 0 20px rgba(168, 85, 247, 0.2)'
                 }}
               >
-                <ShoppingBag className="w-5 h-5" />
-                Add to Haul
+                <Camera className="w-5 h-5" />
+                Log a Find
               </button>
             </div>
           </div>
         </div>
+      </div>
+
+      {/* Community Finds Section */}
+      <div className="relative z-10 max-w-6xl mx-auto px-6 md:px-12 pb-12">
+        <StoreFindsSection
+          storeId={store.id}
+          storeName={store.name}
+          storeCity={store.city}
+          storeNeighborhood={store.neighborhood}
+        />
       </div>
 
       {/* Similar Stores Section - SEO friendly with proper Link tags */}
@@ -830,7 +873,7 @@ export function StoreDetailPage() {
           </h2>
           <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
             {similarStores.map((similarStore) => {
-              const thumbnail = similarStore.photos?.[0] || 'https://images.unsplash.com/photo-1441986300917-64674bd600d8?w=400&h=300&fit=crop';
+              const thumbnail = ikUrl(similarStore.photos?.[0], 'thumb') || 'https://images.unsplash.com/photo-1441986300917-64674bd600d8?w=400&h=300&fit=crop';
               const categoryColor = similarStore.mainCategory
                 ? MAIN_CATEGORY_COLORS[similarStore.mainCategory as keyof typeof MAIN_CATEGORY_COLORS]
                 : '#22D9EE';
@@ -847,6 +890,7 @@ export function StoreDetailPage() {
                     <img
                       src={thumbnail}
                       alt={similarStore.name}
+                      loading="lazy"
                       className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-110"
                     />
                     <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
@@ -908,6 +952,42 @@ export function StoreDetailPage() {
         isOpen={instagramModalOpen}
         onClose={() => setInstagramModalOpen(false)}
       />
+
+      {/* Log a Find Modal (sidebar button) */}
+      <AnimatePresence>
+        {showSubmitModal && (
+          <SubmitModal
+            onClose={() => setShowSubmitModal(false)}
+            onSubmitted={() => {
+              setShowSubmitModal(false);
+              setShowSubmitBanner(true);
+              setTimeout(() => setShowSubmitBanner(false), 5000);
+            }}
+            prefill={{
+              storeId: store.id,
+              storeName: store.name,
+              storeCity: store.city,
+              storeNeighborhood: store.neighborhood,
+              defaultType: 'haul',
+            }}
+          />
+        )}
+      </AnimatePresence>
+
+      {/* Submit banner */}
+      <AnimatePresence>
+        {showSubmitBanner && (
+          <motion.div
+            initial={{ opacity: 0, y: -20 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -20 }}
+            className="fixed top-6 left-1/2 -translate-x-1/2 z-[100] flex items-center gap-3 px-5 py-3 bg-gray-900 border border-purple-500/40 rounded-2xl shadow-2xl text-sm text-white"
+          >
+            <div className="h-2 w-2 rounded-full bg-purple-400 animate-pulse" />
+            Your find has been submitted for review. Thanks!
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }

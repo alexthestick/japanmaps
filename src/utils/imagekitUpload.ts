@@ -19,11 +19,11 @@ import { supabase } from '../lib/supabase';
 const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB before compression
 const ALLOWED_TYPES = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
 const COMPRESSION_OPTIONS = {
-  maxSizeMB: 0.5,
-  maxWidthOrHeight: 1200,
+  maxSizeMB: 0.3,           // 300KB max (was 500KB) — saves ~40% bandwidth per upload
+  maxWidthOrHeight: 1000,   // 1000px max (was 1200px) — IK transformations handle display sizing
   useWebWorker: true,
   fileType: 'image/jpeg',
-  initialQuality: 0.85,
+  initialQuality: 0.80,     // 80% quality (was 85%) — imperceptible quality loss
 };
 
 function validateFile(file: File): void {

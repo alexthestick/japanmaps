@@ -1,6 +1,9 @@
 import { useState, useEffect } from 'react';
 import { Heart } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 import { toggleSaveStore, isStoreSaved } from '../../utils/savedStores';
+import { useAuthContext } from '../../contexts/AuthContext';
+import { supabase } from '../../lib/supabase';
 
 interface SaveButtonProps {
   storeId: string;
@@ -10,31 +13,80 @@ interface SaveButtonProps {
 }
 
 export function SaveButton({ storeId, className = '', showLabel = false, variant = 'icon' }: SaveButtonProps) {
+  const { user } = useAuthContext();
+  const navigate = useNavigate();
   const [isSaved, setIsSaved] = useState(false);
+  const [loading, setLoading] = useState(false);
 
+  // Load initial state
   useEffect(() => {
-    setIsSaved(isStoreSaved(storeId));
-
-    // Listen for changes
-    const handleChange = () => {
+    if (user) {
+      // Load from Supabase for logged-in users
+      supabase
+        .from('saved_stores')
+        .select('store_id')
+        .eq('user_id', user.id)
+        .eq('store_id', storeId)
+        .maybeSingle()
+        .then(({ data }) => setIsSaved(!!data));
+    } else {
+      // Fall back to localStorage for guests
       setIsSaved(isStoreSaved(storeId));
-    };
 
-    window.addEventListener('savedStoresChanged', handleChange);
-    return () => window.removeEventListener('savedStoresChanged', handleChange);
-  }, [storeId]);
+      const handleChange = () => setIsSaved(isStoreSaved(storeId));
+      window.addEventListener('savedStoresChanged', handleChange);
+      return () => window.removeEventListener('savedStoresChanged', handleChange);
+    }
+  }, [storeId, user]);
 
-  const handleClick = (e: React.MouseEvent) => {
+  async function handleClick(e: React.MouseEvent) {
     e.stopPropagation();
     e.preventDefault();
-    toggleSaveStore(storeId);
-  };
+
+    if (!user) {
+      // Prompt login for guests
+      navigate('/login');
+      return;
+    }
+
+    if (loading) return;
+    setLoading(true);
+
+    if (isSaved) {
+      // Unsave
+      const { error } = await supabase
+        .from('saved_stores')
+        .delete()
+        .eq('user_id', user.id)
+        .eq('store_id', storeId);
+
+      if (!error) {
+        setIsSaved(false);
+        // Keep localStorage in sync too
+        toggleSaveStore(storeId);
+      }
+    } else {
+      // Save
+      const { error } = await supabase
+        .from('saved_stores')
+        .insert({ user_id: user.id, store_id: storeId });
+
+      if (!error) {
+        setIsSaved(true);
+        // Keep localStorage in sync too
+        if (!isStoreSaved(storeId)) toggleSaveStore(storeId);
+      }
+    }
+
+    setLoading(false);
+  }
 
   if (variant === 'button') {
     return (
       <button
         onClick={handleClick}
-        className={`flex items-center justify-center gap-2 px-6 py-3 font-medium rounded-lg transition-all ${
+        disabled={loading}
+        className={`flex items-center justify-center gap-2 px-6 py-3 font-medium rounded-lg transition-all disabled:opacity-60 ${
           isSaved
             ? 'bg-red-500 text-white hover:bg-red-600'
             : 'bg-gray-100 text-gray-900 hover:bg-gray-200'
@@ -49,7 +101,8 @@ export function SaveButton({ storeId, className = '', showLabel = false, variant
   return (
     <button
       onClick={handleClick}
-      className={`group relative p-2 rounded-full transition-all ${
+      disabled={loading}
+      className={`group relative p-2 rounded-full transition-all disabled:opacity-60 ${
         isSaved
           ? 'text-red-500 hover:bg-red-50'
           : 'text-gray-400 hover:text-red-500 hover:bg-gray-100'

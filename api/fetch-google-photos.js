@@ -123,7 +123,7 @@ async function fetchPlacePhotos(placeId) {
  */
 async function downloadGooglePhoto(photoReference, apiKey) {
   // Legacy API uses photo_reference instead of photo name
-  const photoUrl = `https://maps.googleapis.com/maps/api/place/photo?maxwidth=1600&photoreference=${photoReference}&key=${apiKey}`;
+  const photoUrl = `https://maps.googleapis.com/maps/api/place/photo?maxwidth=800&photoreference=${photoReference}&key=${apiKey}`;
 
   const response = await fetch(photoUrl);
 
@@ -203,7 +203,7 @@ export default async function handler(req, res) {
   }
 
   try {
-    const { placeId, storeId, maxPhotos = 5 } = req.body;
+    const { placeId, storeId, maxPhotos = 3 } = req.body;
 
     if (!placeId || !storeId) {
       return res.status(400).json({

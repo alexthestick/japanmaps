@@ -4,9 +4,12 @@ import Lenis from 'lenis';
 import { HeroSection } from '../components/landing/HeroSection';
 import { StatsBar } from '../components/landing/StatsBar';
 import { CitiesCarousel } from '../components/landing/CitiesCarousel';
-import { TrainTicketMenu } from '../components/landing/TrainTicketMenu';
 import { CategoryShowcase } from '../components/landing/CategoryShowcase';
 import { CompactFooter } from '../components/landing/CompactFooter';
+import { MetroTimeline } from '../components/landing/MetroTimeline';
+import { MarqueeTicker } from '../components/landing/MarqueeTicker';
+import { CommunityFinds } from '../components/landing/FieldNotes';
+import { NeighborhoodsShowcase } from '../components/landing/NeighborhoodsShowcase';
 import { SEOHead, generateWebsiteSchema, generateOrganizationSchema } from '../components/seo';
 
 export function NewLandingPage() {
@@ -41,7 +44,7 @@ export function NewLandingPage() {
   const organizationSchema = generateOrganizationSchema();
 
   return (
-    <div className="min-h-screen bg-white">
+    <div className="min-h-screen bg-black">
       {/* SEO Head - Homepage uses defaults from index.html but adds structured data */}
       <SEOHead
         url="/"
@@ -54,14 +57,23 @@ export function NewLandingPage() {
       {/* Stats Bar */}
       <StatsBar />
 
+      {/* Marquee ticker — divider between stats and articles */}
+      <MarqueeTicker />
+
+      {/* Metro Timeline — Latest articles */}
+      <MetroTimeline />
+
       {/* Cities Carousel */}
       <CitiesCarousel />
+
+      {/* Neighborhoods Showcase */}
+      <NeighborhoodsShowcase />
 
       {/* Category Showcase */}
       <CategoryShowcase />
 
-      {/* Train Ticket Menu Cards */}
-      <TrainTicketMenu />
+      {/* Field Notes — community visits & hauls */}
+      <CommunityFinds />
 
       {/* Compact Footer */}
       <CompactFooter />
