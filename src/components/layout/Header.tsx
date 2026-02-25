@@ -228,7 +228,7 @@ export function Header({ onCitiesClick }: HeaderProps) {
             <Link to="/neighborhoods"
               className="px-3 py-2 text-sm font-bold text-cyan-300 hover:text-white transition-all rounded-lg hover:bg-cyan-500/10 border border-transparent hover:border-cyan-400/30 italic"
               style={{ textShadow: '0 0 10px rgba(34, 217, 238, 0.3)' }}>
-              HOODS
+              NEIGHBORHOODS
             </Link>
 
             {/* Divider */}
