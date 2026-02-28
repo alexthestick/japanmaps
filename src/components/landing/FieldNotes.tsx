@@ -276,12 +276,18 @@ function NoteCard({ note, index }: NoteCardProps) {
 
 export function CommunityFinds() {
   const navigate = useNavigate();
+  const sectionRef = useRef<HTMLElement>(null);
   const headerRef = useRef<HTMLDivElement>(null);
   const headerInView = useInView(headerRef, { once: true, margin: '-40px' });
+  const sectionInView = useInView(sectionRef, { once: true, margin: '0px 0px -100px 0px' });
   const [liveNotes, setLiveNotes] = useState<CommunityFind[]>([]);
   const [loadingLive, setLoadingLive] = useState(true);
+  const fetchedRef = useRef(false);
 
   useEffect(() => {
+    if (!sectionInView || fetchedRef.current) return;
+    fetchedRef.current = true;
+
     supabase
       .from('field_notes')
       .select('id, user_id, type, photo_url, store_name, store_id, neighborhood, city, item_name, caption, created_at, profiles(username, display_name)')
@@ -316,13 +322,14 @@ export function CommunityFinds() {
         }
         setLoadingLive(false);
       });
-  }, []);
+  }, [sectionInView]);
 
   // Use live data if available, fall back to seed data
   const displayNotes = liveNotes.length > 0 ? liveNotes : (loadingLive ? [] : SEED_NOTES);
 
   return (
     <section
+      ref={sectionRef}
       className="relative py-24 overflow-hidden"
       style={{ background: 'linear-gradient(to bottom, #000000, #05080f, #07111f, #05080f, #000000)' }}
     >

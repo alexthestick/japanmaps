@@ -98,7 +98,7 @@ export function StatsBar() {
   const [totalNeighborhoods, setTotalNeighborhoods] = useState(0);
 
   useEffect(() => {
-    // Fetch total stores
+    // Fetch total stores (count only, no row data)
     supabase
       .from('stores')
       .select('id', { count: 'exact', head: true })
@@ -106,27 +106,18 @@ export function StatsBar() {
         if (count) setTotalStores(count);
       });
 
-    // Fetch total unique cities
+    // Fetch distinct city count via RPC
     supabase
-      .from('stores')
-      .select('city')
+      .rpc('count_distinct_cities')
       .then(({ data }) => {
-        if (data) {
-          const uniqueCities = new Set(data.map(s => s.city));
-          setTotalCities(uniqueCities.size);
-        }
+        if (data) setTotalCities(data);
       });
 
-    // Fetch total unique neighborhoods
+    // Fetch distinct neighborhood count via RPC
     supabase
-      .from('stores')
-      .select('neighborhood')
-      .not('neighborhood', 'is', null)
+      .rpc('count_distinct_neighborhoods')
       .then(({ data }) => {
-        if (data) {
-          const uniqueNeighborhoods = new Set(data.map(s => s.neighborhood));
-          setTotalNeighborhoods(uniqueNeighborhoods.size);
-        }
+        if (data) setTotalNeighborhoods(data);
       });
   }, []);
 

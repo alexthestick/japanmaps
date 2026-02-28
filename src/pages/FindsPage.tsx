@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, memo } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
@@ -32,7 +32,7 @@ interface Find {
 
 // ─── Find card ─────────────────────────────────────────────────────────────────
 
-function FindCard({ find }: { find: Find }) {
+const FindCard = memo(function FindCard({ find }: { find: Find }) {
   const isVisit = find.type === 'visit';
   const typeColor = isVisit ? '#22d9ee' : '#a855f7';
   const TypeIcon = isVisit ? MapPin : ShoppingBag;
@@ -153,7 +153,7 @@ function FindCard({ find }: { find: Find }) {
       )}
     </motion.div>
   );
-}
+});
 
 // ─── Submit modal ──────────────────────────────────────────────────────────────
 
