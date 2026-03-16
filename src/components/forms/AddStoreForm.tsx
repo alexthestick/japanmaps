@@ -8,6 +8,7 @@ import { Button } from '../common/Button';
 import { MAIN_CATEGORIES, MAIN_CATEGORY_ICONS, FASHION_SUB_CATEGORIES, FOOD_SUB_CATEGORIES, HOME_GOODS_SUB_CATEGORIES, PRICE_RANGES } from '../../lib/constants';
 import { formatLocationForDB } from '../../utils/helpers';
 import { GoogleMapsStoreExtractor, type ExtractedStoreData } from '../admin/GoogleMapsStoreExtractor';
+import { logger } from '../../utils/logger';
 
 const baseStoreSchema = z.object({
   name: z.string().min(1, 'Store name is required'),
@@ -126,9 +127,9 @@ export function AddStoreForm({ onSuccess, onCancel }: AddStoreFormProps) {
   };
 
   const onSubmit = async (data: StoreFormData) => {
-    console.log('✅ Form submitted successfully!');
-    console.log('Store data:', data);
-    console.log('Selected categories:', selectedCategories);
+    logger.log('✅ Form submitted successfully!');
+    logger.log('Store data:', data);
+    logger.log('Selected categories:', selectedCategories);
     
     setIsSubmitting(true);
     try {
@@ -156,7 +157,7 @@ export function AddStoreForm({ onSuccess, onCancel }: AddStoreFormProps) {
         verified: data.verified ?? true,
       };
 
-      console.log('Inserting store data:', storeData);
+      logger.log('Inserting store data:', storeData);
 
       const { error } = await (supabase.from('stores') as any).insert([storeData]);
 
@@ -198,7 +199,7 @@ export function AddStoreForm({ onSuccess, onCancel }: AddStoreFormProps) {
 
       <form 
         onSubmit={handleSubmit(onSubmit, (errors) => {
-          console.log('Form validation errors:', errors);
+          logger.log('Form validation errors:', errors);
           alert('Form has validation errors! Check console for details.');
         })} 
         className="space-y-4"
@@ -481,11 +482,11 @@ export function AddStoreForm({ onSuccess, onCancel }: AddStoreFormProps) {
             variant="secondary" 
             onClick={() => {
               const formValues = watch();
-              console.log('=== DEBUG FORM STATE ===');
-              console.log('Current form values:', formValues);
-              console.log('Selected categories state:', selectedCategories);
-              console.log('Form errors:', errors);
-              console.log('=======================');
+              logger.log('=== DEBUG FORM STATE ===');
+              logger.log('Current form values:', formValues);
+              logger.log('Selected categories state:', selectedCategories);
+              logger.log('Form errors:', errors);
+              logger.log('=======================');
               alert(`Form State:\nCategories in form: ${JSON.stringify(formValues.categories)}\nCategories in state: ${JSON.stringify(selectedCategories)}\nMain Category: ${formValues.mainCategory}`);
             }}
           >
@@ -496,7 +497,7 @@ export function AddStoreForm({ onSuccess, onCancel }: AddStoreFormProps) {
             disabled={isSubmitting} 
             className="flex-1"
             onClick={() => {
-              console.log('Submit button clicked!');
+              logger.log('Submit button clicked!');
             }}
           >
             {isSubmitting ? 'Adding Store...' : 'Add Store'}

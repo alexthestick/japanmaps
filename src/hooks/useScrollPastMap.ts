@@ -1,4 +1,5 @@
 import { useEffect, useState, RefObject } from 'react';
+import { logger } from '../utils/logger';
 
 /**
  * Hook to detect when user scrolls past the map container into footer area
@@ -25,7 +26,7 @@ export function useScrollPastMap(sentinelRef: RefObject<HTMLElement>) {
 
         // Debug logging
         if (process.env.NODE_ENV === 'development') {
-          console.log('[useScrollPastMap] Intersection Observer:', {
+          logger.log('[useScrollPastMap] Intersection Observer:', {
             isIntersecting: entry.isIntersecting,
             intersectionRatio: entry.intersectionRatio,
             shouldHide,

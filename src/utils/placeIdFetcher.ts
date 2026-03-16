@@ -3,6 +3,8 @@
  * Uses serverless function to bypass referrer restrictions
  */
 
+import { logger } from './logger';
+
 export interface PlaceIdSearchResult {
   placeId: string;
   name: string;
@@ -26,7 +28,7 @@ export async function searchPlaceId(
     }
     query += ' Japan'; // Always add Japan bias
 
-    console.log(`🔍 Searching Place ID for: "${query}"`);
+    logger.log(`🔍 Searching Place ID for: "${query}"`);
 
     const response = await fetch('/api/search-place', {
       method: 'POST',
@@ -50,7 +52,7 @@ export async function searchPlaceId(
     const places = result.places || [];
 
     if (places.length === 0) {
-      console.warn(`⚠️ No places found for "${storeName}"`);
+      logger.warn(`⚠️ No places found for "${storeName}"`);
       return [];
     }
 
@@ -66,7 +68,7 @@ export async function searchPlaceId(
       return { placeId, name, address, confidence };
     });
 
-    console.log(`✅ Found ${results.length} candidates for "${storeName}"`);
+    logger.log(`✅ Found ${results.length} candidates for "${storeName}"`);
     return results;
   } catch (error) {
     console.error(`❌ Error searching Place ID for "${storeName}":`, error);

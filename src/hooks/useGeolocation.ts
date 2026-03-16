@@ -1,4 +1,5 @@
 import { useState, useCallback, useEffect } from 'react';
+import { logger } from '../utils/logger';
 
 interface GeolocationPosition {
   latitude: number;
@@ -38,11 +39,11 @@ export function useGeolocation(): UseGeolocationReturn {
     setLoading(true);
     setError(null);
 
-    console.log('Requesting geolocation...');
+    logger.log('Requesting geolocation...');
 
     navigator.geolocation.getCurrentPosition(
       (pos) => {
-        console.log('Geolocation success:', pos.coords);
+        logger.log('Geolocation success:', pos.coords);
         setPosition({
           latitude: pos.coords.latitude,
           longitude: pos.coords.longitude,

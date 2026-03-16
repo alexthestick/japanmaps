@@ -8,6 +8,7 @@ import type { BulkImportQueueItem } from '../../types/bulkImport';
 import type { MainCategory, SubCategory } from '../../types/store';
 import type { PlaceDetails } from './FetchPlaceIdButton';
 import { Loader, CheckCircle, XCircle, AlertTriangle } from 'lucide-react';
+import { logger } from '../../utils/logger';
 
 interface BulkImportQueueProps {
   items: BulkImportQueueItem[];
@@ -45,7 +46,7 @@ export function BulkImportQueue({
    */
   const processItem = async (item: BulkImportQueueItem, index: number) => {
     try {
-      console.log(`🔄 Processing item ${index + 1}/${items.length}: ${item.csvData.title}`);
+      logger.log(`🔄 Processing item ${index + 1}/${items.length}: ${item.csvData.title}`);
 
       // Step 1: Check for duplicates
       const isDuplicate = await checkDuplicate(item);
@@ -116,7 +117,7 @@ export function BulkImportQueue({
         status: 'ready',
       });
 
-      console.log(`✅ Item ${index + 1} ready for approval`);
+      logger.log(`✅ Item ${index + 1} ready for approval`);
     } catch (error) {
       console.error(`❌ Error processing item ${index + 1}:`, error);
       onMarkFailed(index, error instanceof Error ? error.message : 'Unknown error');
@@ -182,7 +183,7 @@ export function BulkImportQueue({
     // Clean up placeId - remove 'places/' prefix if present
     const cleanPlaceId = placeId.replace('places/', '');
 
-    console.log(`🔍 Fetching place details via serverless for: ${cleanPlaceId}`);
+    logger.log(`🔍 Fetching place details via serverless for: ${cleanPlaceId}`);
 
     const response = await fetch('/api/fetch-place-details', {
       method: 'POST',
@@ -204,7 +205,7 @@ export function BulkImportQueue({
       throw new Error(result.error || 'Failed to fetch place details');
     }
 
-    console.log(`✅ Place details fetched: ${result.placeDetails.name}`);
+    logger.log(`✅ Place details fetched: ${result.placeDetails.name}`);
 
     return result.placeDetails;
   };
@@ -224,7 +225,7 @@ export function BulkImportQueue({
     setIsSaving(true);
 
     try {
-      console.log(`💾 Saving store: ${currentItem.placeName}`);
+      logger.log(`💾 Saving store: ${currentItem.placeName}`);
 
       // Use manual city/neighborhood if provided, otherwise extract from address
       const city = manualCity || extractCity(currentItem.placeAddress || '');
@@ -263,11 +264,11 @@ export function BulkImportQueue({
         throw new Error(`Database insert failed: ${insertError.message}`);
       }
 
-      console.log(`✅ Store inserted with ID: ${store.id}`);
+      logger.log(`✅ Store inserted with ID: ${store.id}`);
 
       // Migrate photos - always try if we have a placeId (serverless function fetches from Google directly)
       if (currentItem.placeId) {
-        console.log(`📸 Fetching photos from Google for place: ${currentItem.placeId}...`);
+        logger.log(`📸 Fetching photos from Google for place: ${currentItem.placeId}...`);
 
         try {
           const photoUrls = await migrateStorePhotosViaEdge(
@@ -283,9 +284,9 @@ export function BulkImportQueue({
               .update({ photos: photoUrls })
               .eq('id', store.id);
 
-            console.log(`✅ Photos uploaded: ${photoUrls.length} URLs`);
+            logger.log(`✅ Photos uploaded: ${photoUrls.length} URLs`);
           } else {
-            console.log('ℹ️ No photos found for this place');
+            logger.log('ℹ️ No photos found for this place');
           }
         } catch (photoError) {
           console.error('⚠️ Photo fetch failed (continuing anyway):', photoError);
@@ -399,7 +400,7 @@ export function BulkImportQueue({
    * Handle manual Place ID retry
    */
   const handleRetryWithPlaceId = async (placeId: string) => {
-    console.log(`🔄 Retrying with manual Place ID: ${placeId}`);
+    logger.log(`🔄 Retrying with manual Place ID: ${placeId}`);
 
     try {
       // Update item with new Place ID
@@ -428,7 +429,7 @@ export function BulkImportQueue({
         status: 'ready',
       });
 
-      console.log(`✅ Manual Place ID fetch successful`);
+      logger.log(`✅ Manual Place ID fetch successful`);
     } catch (error) {
       console.error(`❌ Manual Place ID fetch failed:`, error);
       onMarkFailed(currentIndex, error instanceof Error ? error.message : 'Manual fetch failed');

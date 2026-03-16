@@ -13,6 +13,7 @@ import { getNeighborhoodStoreCounts } from '../utils/neighborhoodData';
 import { useCityStorePreviews } from '../hooks/useCityStorePreviews';
 import { cityToSlug } from '../utils/cityData';
 import type { Store } from '../types/store';
+import { logger } from '../utils/logger';
 
 interface CityData {
   id: string;
@@ -297,7 +298,7 @@ export function CitiesPage() {
       } else {
         images = [`/images/cities/preview/${imageSlug}-preview.jpg`];
       }
-      console.log(`City: ${cityStr}, Image Slug: ${imageSlug}, Images:`, images);
+      logger.log(`City: ${cityStr}, Image Slug: ${imageSlug}, Images:`, images);
 
       items.push({
         id: cityStr,

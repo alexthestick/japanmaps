@@ -1,6 +1,7 @@
 import { createContext, useContext, useState, useEffect, useRef, type ReactNode } from 'react';
 import { supabase } from '../lib/supabase';
 import type { User } from '@supabase/supabase-js';
+import { logger } from '../utils/logger';
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
@@ -107,7 +108,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     // Hard timeout — should never be needed, just a last-resort safety net
     const timeout = setTimeout(() => {
-      console.warn('[Auth] Session fetch timed out');
+      logger.warn('[Auth] Session fetch timed out');
       setLoading(false);
     }, 8000);
 
@@ -177,7 +178,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       });
 
     if (profileError) {
-      console.warn('[Auth] Could not create profile:', profileError.message);
+      logger.warn('[Auth] Could not create profile:', profileError.message);
     }
 
     return { error: null };

@@ -15,6 +15,7 @@ import { SubstackImporter } from '../components/admin/SubstackImporter';
 import { Modal } from '../components/common/Modal';
 import type { StoreSuggestion, Store } from '../types/store';
 import type { ParallaxStoreSection } from '../types/blog';
+import { logger } from '../utils/logger';
 
 // Module-level cache to persist data across component remounts
 let adminDataCache: {
@@ -114,7 +115,7 @@ export function AdminDashboard() {
         .from('field_notes')
         .select('*, profiles(username, display_name)')
         .order('created_at', { ascending: false });
-      console.log('[Admin] fetchPendingFinds:', { data, error });
+      logger.log('[Admin] fetchPendingFinds:', { data, error });
       if (error) throw error;
       setPendingFinds(data || []);
     } catch (err) {

@@ -1,4 +1,5 @@
 import { supabase } from '../lib/supabase';
+import { logger } from './logger';
 
 /**
  * Download a Google photo and upload to Supabase Storage
@@ -70,7 +71,7 @@ export async function migrateStorePhotos(storeId: string, googlePhotoUrls: strin
       continue;
     }
 
-    console.log(`Migrating photo ${i + 1}/${googlePhotoUrls.length}...`);
+    logger.log(`Migrating photo ${i + 1}/${googlePhotoUrls.length}...`);
     const newUrl = await migrateGooglePhotoToSupabase(url, storeId, i);
 
     if (newUrl) {

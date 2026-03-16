@@ -19,6 +19,7 @@ import { parseLocation } from '../utils/helpers';
 import { isUUID, generateSlug } from '../utils/slugify';
 import { ikUrl } from '../utils/ikUrl';
 import { MAIN_CATEGORY_COLORS } from '../lib/constants';
+import { logger } from '../utils/logger';
 import { cityToSlug, neighborhoodToSlug } from '../utils/cityData';
 import { MAPBOX_TOKEN, MAP_STYLE_DAY } from '../lib/mapbox';
 import { useIsMobile } from '../hooks/useMediaQuery';
@@ -51,7 +52,7 @@ export function StoreDetailPage() {
   // Update map view when store loads
   useEffect(() => {
     if (store) {
-      console.log('StoreDetailPage: Setting viewState with store coords:', {
+      logger.log('StoreDetailPage: Setting viewState with store coords:', {
         lng: store.longitude,
         lat: store.latitude,
       });
@@ -216,8 +217,8 @@ export function StoreDetailPage() {
       const storeData = data as any;
 
       // Debug log coordinates
-      console.log('StoreDetailPage: Raw location data:', (data as any).location);
-      console.log('StoreDetailPage: Parsed coordinates:', { latitude, longitude });
+      logger.log('StoreDetailPage: Raw location data:', (data as any).location);
+      logger.log('StoreDetailPage: Parsed coordinates:', { latitude, longitude });
 
       const transformedStore: Store = {
         id: storeData.id,

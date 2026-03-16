@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { MapPin, Loader, CheckCircle, AlertCircle } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 import type { Store } from '../../types/store';
+import { logger } from '../../utils/logger';
 
 export interface PlaceDetails {
   placeId: string;
@@ -234,8 +235,8 @@ export function FetchPlaceIdButton({ store, onSuccess }: FetchPlaceIdButtonProps
       const goodMatches = allPlaces.filter((p: any) => !p.isBadMatch);
       const clothingMatches = goodMatches.filter((p: any) => p.isClothingRelated);
 
-      console.log('All results:', allPlaces.length, '| Good matches:', goodMatches.length, '| Clothing matches:', clothingMatches.length);
-      console.log('Results:', goodMatches);
+      logger.log('All results:', allPlaces.length, '| Good matches:', goodMatches.length, '| Clothing matches:', clothingMatches.length);
+      logger.log('Results:', goodMatches);
 
       // Show clothing matches first, then other good matches
       const placesToShow = clothingMatches.length > 0

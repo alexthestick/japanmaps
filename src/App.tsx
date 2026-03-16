@@ -1,8 +1,9 @@
 import { BrowserRouter, Routes, Route, useLocation } from 'react-router-dom';
+import { logger } from './utils/logger';
 
 // VERSION INDICATOR - Check browser console to verify deployment
 // If you see this message, the new code is deployed
-console.log('[Lost in Transit] Build Version: 2026-02-23-PHASE4 - Finds, Admin Approval & Community Feed');
+logger.log('[Lost in Transit] Build Version: 2026-02-23-PHASE4 - Finds, Admin Approval & Community Feed');
 import { AuthProvider } from './contexts/AuthContext';
 import { Layout } from './components/layout/Layout';
 import { NewLandingPage } from './pages/NewLandingPage';

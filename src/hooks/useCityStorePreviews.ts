@@ -1,6 +1,7 @@
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '../lib/supabase';
 import type { Store, MainCategory } from '../types/store';
+import { logger } from '../utils/logger';
 
 export interface CityStorePreview {
   category: MainCategory;
@@ -23,7 +24,7 @@ async function fetchCityStorePreviews(cityName: string): Promise<CityStorePrevie
     }
 
     if (!allStores || allStores.length === 0) {
-      console.warn('No stores found in database');
+      logger.warn('No stores found in database');
       return [];
     }
 

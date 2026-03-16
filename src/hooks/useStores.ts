@@ -2,6 +2,7 @@ import { useQuery } from '@tanstack/react-query';
 import { supabase } from '../lib/supabase';
 import type { Store, StoreFilters } from '../types/store';
 import { generateSlug } from '../utils/slugify';
+import { logger } from '../utils/logger';
 
 /**
  * Fetch all stores from database
@@ -16,7 +17,7 @@ async function fetchAllStores(): Promise<Store[]> {
   }
 
   if (!data || data.length === 0) {
-    console.warn('No stores returned from database');
+    logger.warn('No stores returned from database');
     return [];
   }
 

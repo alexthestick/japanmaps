@@ -1,5 +1,6 @@
 import { supabase } from '../lib/supabase';
 import { LOCATIONS } from '../lib/constants';
+import { logger } from './logger';
 
 export interface CityData {
   name: string;
@@ -88,7 +89,7 @@ export async function getCityDataWithCounts(): Promise<CityData[]> {
       }))
       .sort((a, b) => b.storeCount - a.storeCount);
 
-    console.log('Final city data being returned:', cityData);
+    logger.log('Final city data being returned:', cityData);
     return cityData;
   } catch (err) {
     console.error('Error in getCityDataWithCounts:', err);

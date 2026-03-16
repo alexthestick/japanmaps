@@ -3,6 +3,8 @@
  * Client-side functions for importing stores from Google Maps
  */
 
+import { logger } from './logger';
+
 export interface ImportStoreResult {
   success: boolean;
   placeId: string;
@@ -45,7 +47,7 @@ export async function importStoreFromGoogle(
   input: string
 ): Promise<ImportStoreResult> {
   try {
-    console.log(`🔄 Importing store from: ${input}`);
+    logger.log(`🔄 Importing store from: ${input}`);
 
     const response = await fetch('/api/import-store', {
       method: 'POST',
@@ -70,7 +72,7 @@ export async function importStoreFromGoogle(
       throw new Error('Import failed');
     }
 
-    console.log(`✅ Store imported successfully: ${result.name}`);
+    logger.log(`✅ Store imported successfully: ${result.name}`);
     return result;
 
   } catch (error) {

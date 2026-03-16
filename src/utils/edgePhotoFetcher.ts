@@ -1,5 +1,6 @@
 import { supabase } from '../lib/supabase';
 import { uploadStorePhoto } from './upload';
+import { logger } from './logger';
 
 export interface PhotoFetchResult {
   success: boolean;
@@ -24,7 +25,7 @@ export async function fetchGooglePhotosServerless(
   maxPhotos: number = 5
 ): Promise<string[]> {
   try {
-    console.log(`📸 Fetching photos via serverless function for place: ${placeId}`);
+    logger.log(`📸 Fetching photos via serverless function for place: ${placeId}`);
 
     const response = await fetch('/api/fetch-google-photos', {
       method: 'POST',
@@ -49,7 +50,7 @@ export async function fetchGooglePhotosServerless(
       throw new Error(result.error || 'Failed to fetch photos');
     }
 
-    console.log(`✅ Fetched ${result.count} photos successfully`);
+    logger.log(`✅ Fetched ${result.count} photos successfully`);
     return result.urls || [];
 
   } catch (err) {
@@ -77,7 +78,7 @@ export async function fetchMultipleGooglePhotos(
   const photoUrls: string[] = [];
   const photosToFetch = photos.slice(0, maxPhotos);
 
-  console.log(
+  logger.log(
     `${dryRun ? '[DRY RUN]' : ''} Fetching ${photosToFetch.length} photos for store ${storeId}`
   );
 
@@ -99,7 +100,7 @@ export async function fetchMultipleGooglePhotos(
 
       if (result.success && result.url) {
         photoUrls.push(result.url);
-        console.log(
+        logger.log(
           `✓ Photo ${i + 1}/${photosToFetch.length}: ${result.dryRun ? 'Validated (dry run)' : 'Uploaded'}`
         );
 
@@ -119,7 +120,7 @@ export async function fetchMultipleGooglePhotos(
     }
   }
 
-  console.log(
+  logger.log(
     `${dryRun ? '[DRY RUN]' : ''} Completed: ${photoUrls.length}/${photosToFetch.length} photos ${dryRun ? 'validated' : 'uploaded'}`
   );
 
@@ -142,11 +143,11 @@ export async function migrateStorePhotosViaEdge(
 ): Promise<string[]> {
   try {
     if (dryRun) {
-      console.log('[DRY RUN] Would fetch photos for:', placeId);
+      logger.log('[DRY RUN] Would fetch photos for:', placeId);
       return [];
     }
 
-    console.log(`📸 Migrating photos for store ${storeId} from place ${placeId}`);
+    logger.log(`📸 Migrating photos for store ${storeId} from place ${placeId}`);
 
     // Use the new serverless function
     const photoUrls = await fetchGooglePhotosServerless(placeId, storeId, 5);

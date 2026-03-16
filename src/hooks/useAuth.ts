@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { supabase } from '../lib/supabase';
 import type { User } from '@supabase/supabase-js';
+import { logger } from '../utils/logger';
 
 // Session storage key for caching admin status
 const ADMIN_CACHE_KEY = 'lit_admin_status';
@@ -98,7 +99,7 @@ export function useAuth() {
   useEffect(() => {
     // Get initial session with timeout
     const sessionTimeout = setTimeout(() => {
-      console.warn('Session fetch timed out, assuming no session');
+      logger.warn('Session fetch timed out, assuming no session');
       setLoading(false);
       setCheckingAdmin(false);
     }, 5000);

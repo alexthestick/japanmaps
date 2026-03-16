@@ -1,4 +1,5 @@
 import type { PlaceDetails } from '../components/admin/FetchPlaceIdButton';
+import { logger } from './logger';
 
 export interface EnhancedPlaceData {
   description: string;
@@ -20,7 +21,7 @@ async function waitForRateLimit(): Promise<void> {
 
   if (timeSinceLastCall < MIN_DELAY_BETWEEN_CALLS) {
     const waitTime = MIN_DELAY_BETWEEN_CALLS - timeSinceLastCall;
-    console.log(`⏳ Rate limiting: waiting ${waitTime}ms before next API call...`);
+    logger.log(`⏳ Rate limiting: waiting ${waitTime}ms before next API call...`);
     await new Promise(resolve => setTimeout(resolve, waitTime));
   }
 
@@ -48,7 +49,7 @@ async function retryWithBackoff<T>(
 
       // Exponential backoff: 2s, 4s, 8s
       const delay = baseDelay * Math.pow(2, i);
-      console.log(`⚠️ Rate limit hit (429), retrying in ${delay}ms... (attempt ${i + 1}/${maxRetries})`);
+      logger.log(`⚠️ Rate limit hit (429), retrying in ${delay}ms... (attempt ${i + 1}/${maxRetries})`);
       await new Promise(resolve => setTimeout(resolve, delay));
     }
   }
@@ -68,14 +69,14 @@ export async function enhancePlaceDetailsWithAI(
   const apiKey = import.meta.env.VITE_GOOGLE_GEMINI_API_KEY;
 
   if (!apiKey || apiKey === 'YOUR_KEY_HERE') {
-    console.warn('Gemini API key not configured, using fallback data');
+    logger.warn('Gemini API key not configured, using fallback data');
     return {
       description: placeDetails.editorialSummary || placeDetails.description || `${placeDetails.name} is located at ${placeDetails.address}.`,
     };
   }
 
   try {
-    console.log(`🤖 Enhancing place details with Gemini AI... (Category: ${category})`);
+    logger.log(`🤖 Enhancing place details with Gemini AI... (Category: ${category})`);
 
     const name = placeDetails.name;
     const address = placeDetails.address;
@@ -86,7 +87,7 @@ export async function enhancePlaceDetailsWithAI(
     const editorialSummary = placeDetails.editorialSummary || '';
     const website = placeDetails.website || '';
 
-    console.log(`📊 Place data: ${name}, ${reviews.length} reviews, types: ${types.join(', ')}`);
+    logger.log(`📊 Place data: ${name}, ${reviews.length} reviews, types: ${types.join(', ')}`);
 
     // Prepare review excerpts (top 5 reviews)
     const reviewTexts = reviews
@@ -277,7 +278,7 @@ Write ONLY valid JSON, nothing else.`;
 
     const text = data.candidates?.[0]?.content?.parts?.[0]?.text || '';
 
-    console.log('🤖 Gemini raw response:', text);
+    logger.log('🤖 Gemini raw response:', text);
 
     // Parse JSON response
     const jsonMatch = text.match(/\{[\s\S]*\}/);
@@ -293,7 +294,7 @@ Write ONLY valid JSON, nothing else.`;
       instagram: parsed.instagram !== 'not_found' ? parsed.instagram : undefined,
     };
 
-    console.log('✅ Enhanced data:', enhanced);
+    logger.log('✅ Enhanced data:', enhanced);
     return enhanced;
   } catch (error) {
     console.error('❌ AI enhancement error (returning fallback):', error);

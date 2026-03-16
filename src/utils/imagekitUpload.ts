@@ -15,6 +15,7 @@
  */
 import imageCompression from 'browser-image-compression';
 import { supabase } from '../lib/supabase';
+import { logger } from './logger';
 
 const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB before compression
 const ALLOWED_TYPES = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
@@ -47,14 +48,14 @@ async function compressImage(file: File): Promise<File> {
     const endSize = compressedFile.size;
     const savings = ((1 - endSize / startSize) * 100).toFixed(1);
 
-    console.log(
+    logger.log(
       `📦 Compression: ${(startSize / 1024 / 1024).toFixed(2)}MB → ` +
       `${(endSize / 1024 / 1024).toFixed(2)}MB (${savings}% smaller)`
     );
 
     return compressedFile;
   } catch (error) {
-    console.warn('⚠️ Compression failed, using original:', error);
+    logger.warn('⚠️ Compression failed, using original:', error);
     return file;
   }
 }
@@ -82,7 +83,7 @@ async function uploadToServerProxy(
   for (let attempt = 0; attempt <= maxRetries; attempt++) {
     try {
       if (attempt > 0) {
-        console.log(`🔄 Retry attempt ${attempt}/${maxRetries}`);
+        logger.log(`🔄 Retry attempt ${attempt}/${maxRetries}`);
         await new Promise(resolve => setTimeout(resolve, 1000 * Math.pow(2, attempt - 1)));
       }
 
@@ -167,7 +168,7 @@ export async function uploadStorePhoto(file: File): Promise<UploadResult> {
 
     const result = await uploadToServerProxy(compressedFile, metadata);
 
-    console.log('✅ Upload successful:', {
+    logger.log('✅ Upload successful:', {
       url: result.url,
       fileId: result.fileId,
       size: `${(result.size / 1024).toFixed(1)}KB`,
@@ -217,7 +218,7 @@ export async function deleteStorePhoto(fileId: string): Promise<boolean> {
       throw new Error('Failed to delete image');
     }
 
-    console.log('✅ Image deleted:', fileId);
+    logger.log('✅ Image deleted:', fileId);
     return true;
   } catch (error) {
     console.error('❌ Delete failed:', error);

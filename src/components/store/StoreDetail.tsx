@@ -3,6 +3,7 @@ import type { Store } from '../../types/store';
 import { getGoogleMapsUrl } from '../../utils/formatters';
 import { useEffect } from 'react';
 import { motion } from 'framer-motion';
+import { logger } from '../../utils/logger';
 
 interface StoreDetailProps {
   store: Store;
@@ -11,7 +12,7 @@ interface StoreDetailProps {
 
 export function StoreDetail({ store, onClose }: StoreDetailProps) {
   // Debug log
-  console.log('StoreDetail rendered with store:', store?.name);
+  logger.log('StoreDetail rendered with store:', store?.name);
 
   // Close on Escape key
   useEffect(() => {

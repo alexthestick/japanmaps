@@ -5,6 +5,8 @@
  * 2. Simple export (only Title and URL)
  */
 
+import { logger } from './logger';
+
 export interface ParsedStoreRow {
   title: string;
   note?: string;
@@ -52,11 +54,11 @@ export function extractPlaceIdFromUrl(url: string): string | null {
     // Return null so we search by name instead
     const hexMatch = url.match(/1s0x[a-fA-F0-9]+:0x[a-fA-F0-9]+/);
     if (hexMatch) {
-      console.log(`⚠️ Found hex Place ID in URL - will search by name instead`);
+      logger.log(`⚠️ Found hex Place ID in URL - will search by name instead`);
       return null; // Let the system search by store name
     }
 
-    console.warn('⚠️ Could not extract valid Place ID from URL:', url);
+    logger.warn('⚠️ Could not extract valid Place ID from URL:', url);
     return null;
   } catch (error) {
     console.error('❌ Error extracting Place ID:', error);
@@ -83,8 +85,8 @@ export function parseGoogleMapsCsv(csvContent: string): CSVParseResult {
   const hasFormattedAddress = header.includes('Formatted Address');
   const format: 'full' | 'simple' = (hasPlaceId && hasFormattedAddress) ? 'full' : 'simple';
 
-  console.log(`📊 Detected CSV format: ${format.toUpperCase()}`);
-  console.log(`📋 Headers:`, header);
+  logger.log(`📊 Detected CSV format: ${format.toUpperCase()}`);
+  logger.log(`📋 Headers:`, header);
 
   // Parse each row
   for (let i = 1; i < lines.length; i++) {
@@ -153,7 +155,7 @@ export function parseGoogleMapsCsv(csvContent: string): CSVParseResult {
     }
   }
 
-  console.log(`✅ Parsed ${stores.length} stores, ${errors.length} errors`);
+  logger.log(`✅ Parsed ${stores.length} stores, ${errors.length} errors`);
 
   return { stores, errors, format };
 }

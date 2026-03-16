@@ -1,5 +1,6 @@
 import { PIN_COLORS } from '../../lib/constants';
 import type { Store } from '../../types/store';
+import { logger } from '../../utils/logger';
 
 interface StoreMarkerProps {
   store: Store;
@@ -12,7 +13,7 @@ export function StoreMarker({ store, onHoverChange }: StoreMarkerProps) {
 
   // Debug logging - check if category is recognized
   if (!PIN_COLORS[primaryCategory as keyof typeof PIN_COLORS]) {
-    console.log('⚠️ Unknown category for:', store.name, '| Category:', primaryCategory, '| Available:', Object.keys(PIN_COLORS));
+    logger.log('⚠️ Unknown category for:', store.name, '| Category:', primaryCategory, '| Available:', Object.keys(PIN_COLORS));
   }
 
   const handleMouseEnter = () => {

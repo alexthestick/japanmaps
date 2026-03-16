@@ -5,6 +5,7 @@ import { useBulkImport } from '../hooks/useBulkImport';
 import { BulkImportQueue } from '../components/admin/BulkImportQueue';
 import { Button } from '../components/common/Button';
 import type { BulkImportQueueItem } from '../types/bulkImport';
+import { logger } from '../utils/logger';
 
 export default function BulkImportPage() {
   const [uploadError, setUploadError] = useState<string | null>(null);
@@ -39,7 +40,7 @@ export default function BulkImportPage() {
       const { valid, invalid } = validateStores(stores);
 
       if (invalid.length > 0) {
-        console.warn(`⚠️ ${invalid.length} invalid rows:`, invalid);
+        logger.warn(`⚠️ ${invalid.length} invalid rows:`, invalid);
       }
 
       // Convert to queue items
@@ -60,7 +61,7 @@ export default function BulkImportPage() {
         setUploadSuccess(prev => `${prev}\n⚠️ ${errors.length} rows had errors (see console)`);
       }
 
-      console.log(`📊 CSV Upload Summary:
+      logger.log(`📊 CSV Upload Summary:
 - Total rows: ${stores.length}
 - Valid: ${valid.length}
 - Invalid: ${invalid.length}

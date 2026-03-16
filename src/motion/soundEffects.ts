@@ -3,6 +3,8 @@
  * Handles audio playback for motion events (train arrival, vending machine buttons, etc.)
  */
 
+import { logger } from '../utils/logger';
+
 // Web Audio API context
 let audioContext: AudioContext | null = null;
 
@@ -40,7 +42,7 @@ export function playBeep(frequency: number = 800, duration: number = 150, volume
     oscillator.start(ctx.currentTime);
     oscillator.stop(ctx.currentTime + duration / 1000);
   } catch (error) {
-    console.warn('Sound playback failed:', error);
+    logger.warn('Sound playback failed:', error);
     // Silently fail - don't break user experience if audio fails
   }
 }

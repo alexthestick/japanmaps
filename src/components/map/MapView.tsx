@@ -18,6 +18,7 @@ import { useSearchArea } from '../../hooks/useSearchArea';
 import type { Store } from '../../types/store';
 import type { Map as MapboxMap } from 'mapbox-gl';
 import 'mapbox-gl/dist/mapbox-gl.css';
+import { logger } from '../../utils/logger';
 
 // 🎯 PHASE 1: Marker Tier System for Performance
 // Tier 0 (zoom < 12): Tiny glowing dots - atmosphere mode
@@ -235,7 +236,7 @@ export const MapView = forwardRef<MapViewHandle, MapViewProps>(({ stores, onStor
 
       const neighborhoodCoords = NEIGHBORHOOD_COORDINATES[selectedNeighborhood];
       if (neighborhoodCoords) {
-        console.log('Zooming to neighborhood:', selectedNeighborhood, neighborhoodCoords);
+        logger.log('Zooming to neighborhood:', selectedNeighborhood, neighborhoodCoords);
         setViewState({
           longitude: neighborhoodCoords.longitude,
           latitude: neighborhoodCoords.latitude,
@@ -259,7 +260,7 @@ export const MapView = forwardRef<MapViewHandle, MapViewProps>(({ stores, onStor
 
       const cityCoords = CITY_COORDINATES[selectedCity];
       if (cityCoords) {
-        console.log('Zooming to city:', selectedCity, cityCoords);
+        logger.log('Zooming to city:', selectedCity, cityCoords);
         setViewState({
           longitude: cityCoords.longitude,
           latitude: cityCoords.latitude,
@@ -300,7 +301,7 @@ export const MapView = forwardRef<MapViewHandle, MapViewProps>(({ stores, onStor
       
       if (stores.length === 1) {
         // Single store: ALWAYS zoom (search result or click)
-        console.log('Zooming to single store:', stores[0].name, stores[0].latitude, stores[0].longitude);
+        logger.log('Zooming to single store:', stores[0].name, stores[0].latitude, stores[0].longitude);
         setViewState({
           longitude: stores[0].longitude,
           latitude: stores[0].latitude,
@@ -334,7 +335,7 @@ export const MapView = forwardRef<MapViewHandle, MapViewProps>(({ stores, onStor
           else if (maxDiff > 0.2) zoom = 11; // District level
           else if (maxDiff < 0.05) zoom = 14; // Very close stores
           
-          console.log('Zooming to multiple stores:', stores.length, 'at zoom', zoom);
+          logger.log('Zooming to multiple stores:', stores.length, 'at zoom', zoom);
           setViewState({
             longitude: centerLng,
             latitude: centerLat,
@@ -347,7 +348,7 @@ export const MapView = forwardRef<MapViewHandle, MapViewProps>(({ stores, onStor
 
   const handleMarkerClick = useCallback((e: any, store: Store) => {
     e.originalEvent.stopPropagation();
-    console.log('Marker clicked:', store.name);
+    logger.log('Marker clicked:', store.name);
     onStoreClick(store);
   }, [onStoreClick]);
 
@@ -430,7 +431,7 @@ export const MapView = forwardRef<MapViewHandle, MapViewProps>(({ stores, onStor
       }
     });
 
-    console.log('Map labels configured: POI hidden, transit stations visible');
+    logger.log('Map labels configured: POI hidden, transit stations visible');
 
     // PHASE 2.2: Initialize search area tracking on map load
     initializeSearch();

@@ -3,6 +3,7 @@ import { supabase } from '../../lib/supabase';
 import { Button } from '../common/Button';
 import { Loader, CheckCircle, AlertCircle, Tag } from 'lucide-react';
 import type { MainCategory } from '../../types/store';
+import { logger } from '../../utils/logger';
 
 interface MigrationStats {
   total: number;
@@ -18,7 +19,7 @@ export function MainCategoryMigration() {
   const [logs, setLogs] = useState<string[]>([]);
 
   const addLog = (message: string) => {
-    console.log(message);
+    logger.log(message);
     setLogs(prev => [...prev, message]);
   };
 

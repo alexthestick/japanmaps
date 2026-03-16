@@ -14,6 +14,7 @@ import { FetchPlaceIdButton, type PlaceDetails } from '../admin/FetchPlaceIdButt
 import { MAIN_CATEGORIES, MAIN_CATEGORY_ICONS, FASHION_SUB_CATEGORIES, FOOD_SUB_CATEGORIES, HOME_GOODS_SUB_CATEGORIES, PRICE_RANGES } from '../../lib/constants';
 import { formatLocationForDB } from '../../utils/helpers';
 import type { Store } from '../../types/store';
+import { logger } from '../../utils/logger';
 
 const baseStoreSchema = z.object({
   name: z.string().min(1, 'Store name is required'),
@@ -183,11 +184,11 @@ export function EditStoreForm({ store, onSuccess, onCancel }: EditStoreFormProps
 
     // Enhance with AI (get description, Instagram, price range, categories)
     try {
-      console.log('🔍 Starting AI enhancement with details:', details);
+      logger.log('🔍 Starting AI enhancement with details:', details);
       const { enhancePlaceDetailsWithAI } = await import('../../utils/aiPlaceEnhancer');
       const enhanced = await enhancePlaceDetailsWithAI(details as any, (selectedMainCategory as any) || 'Fashion');
 
-      console.log('✅ AI enhancement successful:', enhanced);
+      logger.log('✅ AI enhancement successful:', enhanced);
 
       // Store enhanced data for preview (DON'T auto-fill yet)
       setEnhancedData({
@@ -224,39 +225,39 @@ export function EditStoreForm({ store, onSuccess, onCancel }: EditStoreFormProps
   const applyEnhancedDataToForm = () => {
     if (!enhancedData) return;
 
-    console.log('📝 Applying enhanced data to form:', enhancedData);
+    logger.log('📝 Applying enhanced data to form:', enhancedData);
 
     // Apply basic fields (ALWAYS apply, overwrite existing)
     if (enhancedData.hours) {
       setValue('hours', enhancedData.hours);
-      console.log('✓ Applied hours:', enhancedData.hours);
+      logger.log('✓ Applied hours:', enhancedData.hours);
     }
     if (enhancedData.website) {
       setValue('website', enhancedData.website);
-      console.log('✓ Applied website:', enhancedData.website);
+      logger.log('✓ Applied website:', enhancedData.website);
     }
     if (enhancedData.latitude && enhancedData.longitude) {
       setValue('latitude', enhancedData.latitude);
       setValue('longitude', enhancedData.longitude);
-      console.log('✓ Applied coordinates:', enhancedData.latitude, enhancedData.longitude);
+      logger.log('✓ Applied coordinates:', enhancedData.latitude, enhancedData.longitude);
     }
     if (enhancedData.address) {
       setValue('address', enhancedData.address);
-      console.log('✓ Applied address:', enhancedData.address);
+      logger.log('✓ Applied address:', enhancedData.address);
     }
 
     // Apply AI-enhanced fields (ALWAYS apply, overwrite existing)
     if (enhancedData.description) {
       setValue('description', enhancedData.description);
-      console.log('✓ Applied description:', enhancedData.description.substring(0, 50) + '...');
+      logger.log('✓ Applied description:', enhancedData.description.substring(0, 50) + '...');
     }
     if (enhancedData.instagram) {
       setValue('instagram', enhancedData.instagram);
-      console.log('✓ Applied instagram:', enhancedData.instagram);
+      logger.log('✓ Applied instagram:', enhancedData.instagram);
     }
     if (enhancedData.priceRange) {
       setValue('priceRange', enhancedData.priceRange);
-      console.log('✓ Applied priceRange:', enhancedData.priceRange);
+      logger.log('✓ Applied priceRange:', enhancedData.priceRange);
     }
     if (enhancedData.categories && enhancedData.categories.length > 0) {
       const mappedCategories = enhancedData.categories.filter((cat: string) =>
@@ -265,11 +266,11 @@ export function EditStoreForm({ store, onSuccess, onCancel }: EditStoreFormProps
       if (mappedCategories.length > 0) {
         setSelectedCategories(mappedCategories);
         setValue('categories', mappedCategories);
-        console.log('✓ Applied categories:', mappedCategories);
+        logger.log('✓ Applied categories:', mappedCategories);
       }
     }
 
-    console.log('✅ All data applied successfully!');
+    logger.log('✅ All data applied successfully!');
 
     // Close preview
     setShowPreview(false);
@@ -326,8 +327,8 @@ export function EditStoreForm({ store, onSuccess, onCancel }: EditStoreFormProps
         verified: data.verified ?? true,
       };
 
-      console.log('Updating store:', store.id);
-      console.log('Update data:', updateData);
+      logger.log('Updating store:', store.id);
+      logger.log('Update data:', updateData);
 
       const { data: result, error } = await (supabase.from('stores') as any)
         .update(updateData)
@@ -339,7 +340,7 @@ export function EditStoreForm({ store, onSuccess, onCancel }: EditStoreFormProps
         throw error;
       }
 
-      console.log('Update result:', result);
+      logger.log('Update result:', result);
       alert('Store updated successfully!');
       onSuccess?.();
     } catch (error: any) {
