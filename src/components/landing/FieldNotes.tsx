@@ -157,6 +157,7 @@ function NoteCard({ note, index }: NoteCardProps) {
   const ref = useRef<HTMLDivElement>(null);
   const isInView = useInView(ref, { once: true, margin: '-40px' });
   const navigate = useNavigate();
+  const [imgLoaded, setImgLoaded] = useState(false);
 
   const isVisit = note.type === 'visit';
   const typeColor = isVisit ? '#22d9ee' : '#a855f7';
@@ -192,11 +193,27 @@ function NoteCard({ note, index }: NoteCardProps) {
     >
       {/* ── Photo ── */}
       <div className="relative w-full overflow-hidden" style={{ paddingBottom: '125%' }}>
+        {/* Blur-up placeholder — tiny 20px version, shown until full image loads */}
+        {note.photo_url && !imgLoaded && (
+          <div
+            className="absolute inset-0 bg-gray-800"
+            style={{
+              backgroundImage: `url(${ikUrl(note.photo_url, 'thumb').replace('w-400', 'w-20')})`,
+              backgroundSize: 'cover',
+              backgroundPosition: 'center',
+              filter: 'blur(12px)',
+              transform: 'scale(1.1)', // Prevent blur edge showing
+            }}
+          />
+        )}
         <img
           src={ikUrl(note.photo_url, 'thumb')}
           alt={note.store_name}
           loading="lazy"
-          className="absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
+          decoding="async"
+          onLoad={() => setImgLoaded(true)}
+          className="absolute inset-0 w-full h-full object-cover transition-all duration-700 group-hover:scale-105"
+          style={{ opacity: imgLoaded ? 1 : 0, transition: 'opacity 0.5s ease, transform 0.7s ease' }}
         />
 
         {/* Bottom gradient */}

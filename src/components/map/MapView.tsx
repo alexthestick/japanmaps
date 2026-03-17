@@ -902,9 +902,10 @@ export const MapView = forwardRef<MapViewHandle, MapViewProps>(({ stores, onStor
       />
 
       {/* PHASE 2.2: Search This Area Button - DEBUG: Always visible at zoom >= 14 */}
-      {!selectedStore && viewState.zoom >= 14 && (
+      {viewState.zoom >= 14 && (
         <SearchAreaButton
           onClick={handleSearchArea}
+          isActive={isSpotlightMode}
         />
       )}
 

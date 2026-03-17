@@ -3,12 +3,13 @@ import { Link, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   MapPin, ShoppingBag, Camera, X, ChevronDown, Plus,
-  Upload, Search,
+  Search, ArrowRight, ArrowLeft, Check,
 } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { useAuthContext } from '../contexts/AuthContext';
 import { generateFindSlug, getDisplayUsername } from '../utils/slugify';
 import { ikUrl } from '../utils/ikUrl';
+import { MAJOR_CITIES_JAPAN, LOCATIONS } from '../lib/constants';
 
 // ─── Types ─────────────────────────────────────────────────────────────────────
 
@@ -174,8 +175,12 @@ interface SubmitModalProps {
 export function SubmitModal({ onClose, onSubmitted, prefill }: SubmitModalProps) {
   const { user } = useAuthContext();
   const navigate = useNavigate();
+
+  // ── Step management ───────────────────────────────────────────────────────────
+  const [step, setStep] = useState<1 | 2>(1);
+
+  // ── Step 1 fields ─────────────────────────────────────────────────────────────
   const [type, setType] = useState<'visit' | 'haul'>(prefill?.defaultType || 'visit');
-  const [storeName, setStoreName] = useState(prefill?.storeName || '');
   const [storeSearch, setStoreSearch] = useState('');
   const [storeResults, setStoreResults] = useState<{ id: string; name: string; city: string; neighborhood: string | null }[]>([]);
   const [selectedStore, setSelectedStore] = useState<{ id: string; name: string; city: string; neighborhood: string | null } | null>(
@@ -183,8 +188,15 @@ export function SubmitModal({ onClose, onSubmitted, prefill }: SubmitModalProps)
       ? { id: prefill.storeId, name: prefill.storeName, city: prefill.storeCity || '', neighborhood: prefill.storeNeighborhood || null }
       : null
   );
+  const [storeName, setStoreName] = useState(prefill?.storeName || '');
   const [city, setCity] = useState(prefill?.storeCity || '');
   const [neighborhood, setNeighborhood] = useState(prefill?.storeNeighborhood || '');
+  const [cityOpen, setCityOpen] = useState(false);
+  const [neighborhoodOpen, setNeighborhoodOpen] = useState(false);
+  const [neighborhoodSearch, setNeighborhoodSearch] = useState('');
+  const [step1Error, setStep1Error] = useState('');
+
+  // ── Step 2 fields ─────────────────────────────────────────────────────────────
   const [itemName, setItemName] = useState('');
   const [caption, setCaption] = useState('');
   const [photoFile, setPhotoFile] = useState<File | null>(null);
@@ -193,7 +205,17 @@ export function SubmitModal({ onClose, onSubmitted, prefill }: SubmitModalProps)
   const [error, setError] = useState('');
   const fileRef = useRef<HTMLInputElement>(null);
 
-  // Search stores as user types
+  const typeColor = type === 'visit' ? '#22d9ee' : '#a855f7';
+
+  // ── Neighborhood options for selected city ────────────────────────────────────
+  const neighborhoodOptions: string[] = city in LOCATIONS
+    ? (LOCATIONS as unknown as Record<string, string[]>)[city]
+    : [];
+  const filteredNeighborhoods = neighborhoodSearch
+    ? neighborhoodOptions.filter(n => n.toLowerCase().includes(neighborhoodSearch.toLowerCase()))
+    : neighborhoodOptions;
+
+  // ── Store search debounce ─────────────────────────────────────────────────────
   useEffect(() => {
     if (storeSearch.length < 2) { setStoreResults([]); return; }
     const timer = setTimeout(async () => {
@@ -225,13 +247,42 @@ export function SubmitModal({ onClose, onSubmitted, prefill }: SubmitModalProps)
     setStoreResults([]);
   }
 
+  function clearStore() {
+    setSelectedStore(null);
+    setStoreName('');
+    setCity('');
+    setNeighborhood('');
+  }
+
+  function handleCitySelect(c: string) {
+    setCity(c);
+    setNeighborhood('');
+    setNeighborhoodSearch('');
+    setCityOpen(false);
+  }
+
+  function handleNeighborhoodSelect(n: string) {
+    setNeighborhood(n);
+    setNeighborhoodSearch('');
+    setNeighborhoodOpen(false);
+  }
+
+  function handleStep1Next() {
+    if (!storeName.trim()) {
+      setStep1Error('Please select or enter a store name.');
+      return;
+    }
+    if (!city.trim()) {
+      setStep1Error('Please select a city.');
+      return;
+    }
+    setStep1Error('');
+    setStep(2);
+  }
+
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     if (!user) { navigate('/login'); return; }
-    if (!storeName.trim() || !city.trim()) {
-      setError('Store name and city are required.');
-      return;
-    }
     if (type === 'haul' && !itemName.trim()) {
       setError('Item name is required for pickup posts.');
       return;
@@ -242,7 +293,6 @@ export function SubmitModal({ onClose, onSubmitted, prefill }: SubmitModalProps)
 
     let photo_url: string | null = null;
 
-    // Upload photo if provided
     if (photoFile) {
       const ext = photoFile.name.split('.').pop();
       const path = `field-notes/${user.id}/${Date.now()}.${ext}`;
@@ -296,224 +346,455 @@ export function SubmitModal({ onClose, onSubmitted, prefill }: SubmitModalProps)
         animate={{ y: 0, opacity: 1 }}
         exit={{ y: 60, opacity: 0 }}
         transition={{ type: 'spring', damping: 25 }}
-        className="w-full max-w-lg bg-gray-950 border border-gray-800 rounded-2xl overflow-hidden max-h-[90vh] overflow-y-auto"
+        className="w-full max-w-lg bg-gray-950 border border-gray-800 rounded-2xl overflow-hidden max-h-[92vh] flex flex-col"
       >
-        {/* Header */}
-        <div className="flex items-center justify-between p-5 border-b border-gray-800">
-          <h2 className="text-lg font-bold text-white">Submit a Find</h2>
-          <button onClick={onClose} className="text-gray-500 hover:text-white transition-colors">
-            <X className="h-5 w-5" />
-          </button>
-        </div>
-
-        <form onSubmit={handleSubmit} className="p-5 space-y-5">
-          {/* Type toggle */}
-          <div>
-            <label className="block text-sm font-medium text-gray-400 mb-2">Type</label>
-            <div className="flex gap-2">
-              {([
-                { id: 'visit' as const, label: 'Visited', icon: MapPin, color: '#22d9ee' },
-                { id: 'haul' as const, label: 'Picked up', icon: ShoppingBag, color: '#a855f7' },
-              ]).map(opt => (
-                <button
-                  key={opt.id}
-                  type="button"
-                  onClick={() => setType(opt.id)}
-                  className="flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-medium transition-all"
-                  style={{
-                    backgroundColor: type === opt.id ? `${opt.color}20` : 'rgb(17,24,39)',
-                    border: `1px solid ${type === opt.id ? `${opt.color}60` : 'rgb(31,41,55)'}`,
-                    color: type === opt.id ? opt.color : 'rgb(156,163,175)',
-                  }}
-                >
-                  <opt.icon className="h-4 w-4" />
-                  {opt.label}
-                </button>
-              ))}
-            </div>
+        {/* ── Header ── */}
+        <div className="flex items-center justify-between px-5 py-4 border-b border-gray-800 shrink-0">
+          <div className="flex items-center gap-3">
+            {step === 2 && (
+              <button
+                type="button"
+                onClick={() => setStep(1)}
+                className="text-gray-500 hover:text-white transition-colors"
+              >
+                <ArrowLeft className="h-4 w-4" />
+              </button>
+            )}
+            <h2 className="text-base font-bold text-white">
+              {step === 1 ? 'Submit a Find' : 'Add details'}
+            </h2>
           </div>
 
-          {/* Store search */}
-          <div className="relative">
-            <label className="block text-sm font-medium text-gray-400 mb-2">Store</label>
-            {selectedStore ? (
-              <div className="flex items-center gap-2 p-3 bg-gray-900 border border-gray-700 rounded-xl">
-                <div className="flex-1">
-                  <p className="text-white text-sm font-medium">{selectedStore.name}</p>
-                  <p className="text-gray-500 text-xs">{selectedStore.neighborhood || selectedStore.city}</p>
-                </div>
-                <button
-                  type="button"
-                  onClick={() => { setSelectedStore(null); setStoreName(''); setCity(''); setNeighborhood(''); }}
-                  className="text-gray-500 hover:text-white"
+          {/* Step indicator */}
+          <div className="flex items-center gap-3">
+            <div className="flex items-center gap-1.5">
+              {[1, 2].map(s => (
+                <div
+                  key={s}
+                  className="flex items-center justify-center rounded-full text-[10px] font-black transition-all duration-300"
+                  style={{
+                    width: 22,
+                    height: 22,
+                    backgroundColor: step === s ? typeColor : step > s ? `${typeColor}30` : 'rgb(31,41,55)',
+                    color: step === s ? '#000' : step > s ? typeColor : 'rgb(75,85,99)',
+                    border: step > s ? `1px solid ${typeColor}50` : 'none',
+                  }}
                 >
-                  <X className="h-4 w-4" />
-                </button>
-              </div>
-            ) : (
-              <>
-                <div className="relative">
-                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-500" />
-                  <input
-                    type="text"
-                    value={storeSearch}
-                    onChange={e => setStoreSearch(e.target.value)}
-                    placeholder="Search for a store..."
-                    className="w-full bg-gray-900 border border-gray-700 rounded-xl pl-9 pr-4 py-2.5 text-white text-sm placeholder-gray-600 focus:outline-none focus:border-cyan-500 transition-colors"
-                  />
+                  {step > s ? <Check className="h-3 w-3" /> : s}
                 </div>
-                {storeResults.length > 0 && (
-                  <div className="absolute z-10 w-full mt-1 bg-gray-900 border border-gray-700 rounded-xl overflow-hidden shadow-xl">
-                    {storeResults.map(store => (
+              ))}
+            </div>
+            <button onClick={onClose} className="text-gray-500 hover:text-white transition-colors ml-1">
+              <X className="h-5 w-5" />
+            </button>
+          </div>
+        </div>
+
+        {/* ── Body (scrollable) ── */}
+        <div className="overflow-y-auto flex-1">
+          <AnimatePresence mode="wait">
+            {step === 1 ? (
+              <motion.div
+                key="step1"
+                initial={{ opacity: 0, x: -20 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: -20 }}
+                transition={{ duration: 0.2 }}
+                className="p-5 space-y-5"
+              >
+                {/* Type toggle */}
+                <div>
+                  <label className="block text-xs font-bold text-gray-500 uppercase tracking-widest mb-2">What are you sharing?</label>
+                  <div className="flex gap-2">
+                    {([
+                      { id: 'visit' as const, label: 'Visited a store', icon: MapPin, color: '#22d9ee' },
+                      { id: 'haul' as const, label: 'Picked something up', icon: ShoppingBag, color: '#a855f7' },
+                    ]).map(opt => (
                       <button
-                        key={store.id}
+                        key={opt.id}
                         type="button"
-                        onClick={() => selectStore(store)}
-                        className="w-full text-left px-4 py-2.5 hover:bg-gray-800 transition-colors"
+                        onClick={() => setType(opt.id)}
+                        className="flex-1 flex items-center justify-center gap-2 py-3 rounded-xl text-sm font-medium transition-all"
+                        style={{
+                          backgroundColor: type === opt.id ? `${opt.color}15` : 'rgb(17,24,39)',
+                          border: `1px solid ${type === opt.id ? `${opt.color}60` : 'rgb(31,41,55)'}`,
+                          color: type === opt.id ? opt.color : 'rgb(107,114,128)',
+                        }}
                       >
-                        <p className="text-white text-sm">{store.name}</p>
-                        <p className="text-gray-500 text-xs">{store.neighborhood || store.city}</p>
+                        <opt.icon className="h-4 w-4" />
+                        <span className="hidden sm:inline">{opt.label}</span>
+                        <span className="sm:hidden">{opt.id === 'visit' ? 'Visited' : 'Pickup'}</span>
                       </button>
                     ))}
                   </div>
-                )}
-                {/* Manual entry fallback */}
-                {storeSearch && storeResults.length === 0 && (
+                </div>
+
+                {/* Store search */}
+                <div className="relative">
+                  <label className="block text-xs font-bold text-gray-500 uppercase tracking-widest mb-2">Store *</label>
+                  {selectedStore ? (
+                    <div
+                      className="flex items-center gap-3 p-3 rounded-xl border"
+                      style={{ backgroundColor: `${typeColor}08`, borderColor: `${typeColor}30` }}
+                    >
+                      <div
+                        className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0"
+                        style={{ backgroundColor: `${typeColor}20` }}
+                      >
+                        <MapPin className="h-4 w-4" style={{ color: typeColor }} />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-white text-sm font-semibold truncate">{selectedStore.name}</p>
+                        <p className="text-gray-500 text-xs">{selectedStore.neighborhood ? `${selectedStore.neighborhood}, ` : ''}{selectedStore.city}</p>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={clearStore}
+                        className="text-gray-600 hover:text-white transition-colors shrink-0"
+                      >
+                        <X className="h-4 w-4" />
+                      </button>
+                    </div>
+                  ) : (
+                    <>
+                      <div className="relative">
+                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-500" />
+                        <input
+                          type="text"
+                          value={storeSearch}
+                          onChange={e => setStoreSearch(e.target.value)}
+                          placeholder="Search stores on the map..."
+                          className="w-full bg-gray-900 border border-gray-800 rounded-xl pl-9 pr-4 py-2.5 text-white text-sm placeholder-gray-600 focus:outline-none focus:border-gray-600 transition-colors"
+                        />
+                      </div>
+                      {storeResults.length > 0 && (
+                        <div className="absolute z-10 w-full mt-1 bg-gray-900 border border-gray-700 rounded-xl overflow-hidden shadow-2xl">
+                          {storeResults.map(store => (
+                            <button
+                              key={store.id}
+                              type="button"
+                              onClick={() => selectStore(store)}
+                              className="w-full text-left px-4 py-2.5 hover:bg-gray-800 transition-colors flex items-center gap-3"
+                            >
+                              <MapPin className="h-3.5 w-3.5 text-gray-500 shrink-0" />
+                              <div>
+                                <p className="text-white text-sm font-medium">{store.name}</p>
+                                <p className="text-gray-500 text-xs">{store.neighborhood ? `${store.neighborhood}, ` : ''}{store.city}</p>
+                              </div>
+                            </button>
+                          ))}
+                        </div>
+                      )}
+                      {storeSearch.length >= 2 && storeResults.length === 0 && (
+                        <button
+                          type="button"
+                          onClick={() => { setStoreName(storeSearch); setStoreSearch(''); }}
+                          className="w-full mt-1 text-left px-4 py-2.5 bg-gray-900 border border-dashed border-gray-700 rounded-xl text-gray-400 text-sm hover:border-gray-600 transition-colors flex items-center gap-2"
+                        >
+                          <Plus className="h-4 w-4" />
+                          Add <span className="text-white font-medium">"{storeSearch}"</span> as a new store
+                        </button>
+                      )}
+                      {storeName && !selectedStore && (
+                        <p className="text-gray-600 text-xs mt-1.5">
+                          Adding as new: <span className="text-gray-300 font-medium">{storeName}</span>
+                          <button
+                            type="button"
+                            onClick={() => setStoreName('')}
+                            className="ml-2 text-gray-600 hover:text-gray-400 underline"
+                          >
+                            clear
+                          </button>
+                        </p>
+                      )}
+                    </>
+                  )}
+                </div>
+
+                {/* City dropdown */}
+                <div className="relative">
+                  <label className="block text-xs font-bold text-gray-500 uppercase tracking-widest mb-2">City *</label>
                   <button
                     type="button"
-                    onClick={() => { setStoreName(storeSearch); setStoreSearch(''); }}
-                    className="w-full mt-1 text-left px-4 py-2.5 bg-gray-900 border border-dashed border-gray-700 rounded-xl text-gray-400 text-sm hover:border-gray-500 transition-colors"
+                    onClick={() => { setCityOpen(o => !o); setNeighborhoodOpen(false); }}
+                    className="w-full flex items-center justify-between bg-gray-900 border border-gray-800 rounded-xl px-4 py-2.5 text-sm transition-colors hover:border-gray-700 focus:outline-none"
+                    style={{ borderColor: city ? `${typeColor}40` : undefined }}
                   >
-                    + Add "{storeSearch}" as new store
+                    <span className={city ? 'text-white font-medium' : 'text-gray-600'}>
+                      {city || 'Select a city'}
+                    </span>
+                    <ChevronDown className={`h-4 w-4 text-gray-500 transition-transform duration-200 ${cityOpen ? 'rotate-180' : ''}`} />
                   </button>
+                  {cityOpen && (
+                    <div className="absolute z-20 w-full mt-1 bg-gray-900 border border-gray-700 rounded-xl overflow-hidden shadow-2xl max-h-52 overflow-y-auto">
+                      {MAJOR_CITIES_JAPAN.map(c => (
+                        <button
+                          key={c}
+                          type="button"
+                          onClick={() => handleCitySelect(c)}
+                          className="w-full text-left px-4 py-2.5 text-sm hover:bg-gray-800 transition-colors flex items-center justify-between"
+                          style={{ color: city === c ? typeColor : 'rgb(209,213,219)' }}
+                        >
+                          {c}
+                          {city === c && <Check className="h-3.5 w-3.5" />}
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
+
+                {/* Neighborhood dropdown/combobox */}
+                <div className="relative">
+                  <label className="block text-xs font-bold text-gray-500 uppercase tracking-widest mb-2">
+                    Neighborhood <span className="text-gray-700 normal-case font-normal">(optional)</span>
+                  </label>
+                  {neighborhoodOptions.length > 0 ? (
+                    <>
+                      <button
+                        type="button"
+                        onClick={() => { setNeighborhoodOpen(o => !o); setCityOpen(false); }}
+                        className="w-full flex items-center justify-between bg-gray-900 border border-gray-800 rounded-xl px-4 py-2.5 text-sm transition-colors hover:border-gray-700 focus:outline-none"
+                        style={{ borderColor: neighborhood ? `${typeColor}40` : undefined }}
+                      >
+                        <span className={neighborhood ? 'text-white font-medium' : 'text-gray-600'}>
+                          {neighborhood || 'Select a neighborhood'}
+                        </span>
+                        <ChevronDown className={`h-4 w-4 text-gray-500 transition-transform duration-200 ${neighborhoodOpen ? 'rotate-180' : ''}`} />
+                      </button>
+                      {neighborhoodOpen && (
+                        <div className="absolute z-20 w-full mt-1 bg-gray-900 border border-gray-700 rounded-xl overflow-hidden shadow-2xl">
+                          <div className="p-2 border-b border-gray-800">
+                            <input
+                              type="text"
+                              value={neighborhoodSearch}
+                              onChange={e => setNeighborhoodSearch(e.target.value)}
+                              placeholder="Search neighborhoods..."
+                              className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-1.5 text-sm text-white placeholder-gray-600 focus:outline-none"
+                              autoFocus
+                            />
+                          </div>
+                          <div className="max-h-44 overflow-y-auto">
+                            {neighborhood && (
+                              <button
+                                type="button"
+                                onClick={() => handleNeighborhoodSelect('')}
+                                className="w-full text-left px-4 py-2 text-sm text-gray-500 hover:bg-gray-800 italic"
+                              >
+                                Clear selection
+                              </button>
+                            )}
+                            {filteredNeighborhoods.map(n => (
+                              <button
+                                key={n}
+                                type="button"
+                                onClick={() => handleNeighborhoodSelect(n)}
+                                className="w-full text-left px-4 py-2.5 text-sm hover:bg-gray-800 transition-colors flex items-center justify-between"
+                                style={{ color: neighborhood === n ? typeColor : 'rgb(209,213,219)' }}
+                              >
+                                {n}
+                                {neighborhood === n && <Check className="h-3.5 w-3.5" />}
+                              </button>
+                            ))}
+                            {filteredNeighborhoods.length === 0 && (
+                              <button
+                                type="button"
+                                onClick={() => { setNeighborhood(neighborhoodSearch); setNeighborhoodOpen(false); setNeighborhoodSearch(''); }}
+                                className="w-full text-left px-4 py-2.5 text-sm text-gray-400 hover:bg-gray-800 flex items-center gap-2"
+                              >
+                                <Plus className="h-3.5 w-3.5" />
+                                Add "{neighborhoodSearch}"
+                              </button>
+                            )}
+                          </div>
+                        </div>
+                      )}
+                    </>
+                  ) : (
+                    <input
+                      type="text"
+                      value={neighborhood}
+                      onChange={e => setNeighborhood(e.target.value)}
+                      placeholder={city ? 'Enter neighborhood' : 'Select a city first'}
+                      disabled={!city}
+                      className="w-full bg-gray-900 border border-gray-800 rounded-xl px-4 py-2.5 text-white text-sm placeholder-gray-600 focus:outline-none focus:border-gray-600 transition-colors disabled:opacity-40"
+                    />
+                  )}
+                </div>
+
+                {step1Error && (
+                  <div className="bg-red-500/10 border border-red-500/30 rounded-xl px-4 py-3 text-red-400 text-sm">
+                    {step1Error}
+                  </div>
                 )}
-                {storeName && !selectedStore && (
-                  <p className="text-gray-500 text-xs mt-1">Using: <span className="text-white">{storeName}</span></p>
-                )}
-              </>
-            )}
-          </div>
 
-          {/* City + Neighborhood */}
-          <div className="grid grid-cols-2 gap-3">
-            <div>
-              <label className="block text-sm font-medium text-gray-400 mb-2">City *</label>
-              <input
-                type="text"
-                value={city}
-                onChange={e => setCity(e.target.value)}
-                required
-                placeholder="Tokyo"
-                className="w-full bg-gray-900 border border-gray-700 rounded-xl px-4 py-2.5 text-white text-sm placeholder-gray-600 focus:outline-none focus:border-cyan-500 transition-colors"
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-400 mb-2">Neighborhood</label>
-              <input
-                type="text"
-                value={neighborhood}
-                onChange={e => setNeighborhood(e.target.value)}
-                placeholder="Shimokitazawa"
-                className="w-full bg-gray-900 border border-gray-700 rounded-xl px-4 py-2.5 text-white text-sm placeholder-gray-600 focus:outline-none focus:border-cyan-500 transition-colors"
-              />
-            </div>
-          </div>
-
-          {/* Item name (pickup only) */}
-          {type === 'haul' && (
-            <div>
-              <label className="block text-sm font-medium text-gray-400 mb-2">Item picked up *</label>
-              <input
-                type="text"
-                value={itemName}
-                onChange={e => setItemName(e.target.value)}
-                placeholder="e.g. Issey Miyake Pleats Please jacket"
-                className="w-full bg-gray-900 border border-gray-700 rounded-xl px-4 py-2.5 text-white text-sm placeholder-gray-600 focus:outline-none focus:border-purple-500 transition-colors"
-              />
-            </div>
-          )}
-
-          {/* Caption */}
-          <div>
-            <label className="block text-sm font-medium text-gray-400 mb-2">Caption <span className="text-gray-600">(optional)</span></label>
-            <textarea
-              value={caption}
-              onChange={e => setCaption(e.target.value)}
-              maxLength={280}
-              rows={2}
-              placeholder="Share what made this place special..."
-              className="w-full bg-gray-900 border border-gray-700 rounded-xl px-4 py-2.5 text-white text-sm placeholder-gray-600 focus:outline-none focus:border-cyan-500 resize-none transition-colors"
-            />
-            <p className="text-gray-600 text-xs mt-1 text-right">{caption.length}/280</p>
-          </div>
-
-          {/* Photo upload */}
-          <div>
-            <label className="block text-sm font-medium text-gray-400 mb-2">
-              Photo <span className="text-gray-600">(optional{type === 'haul' ? ', recommended' : ''})</span>
-            </label>
-            {photoPreview ? (
-              <div className="relative">
-                <img src={photoPreview} alt="" className="w-full h-48 object-cover rounded-xl" />
+                {/* Next button */}
                 <button
                   type="button"
-                  onClick={() => { setPhotoFile(null); setPhotoPreview(null); }}
-                  className="absolute top-2 right-2 p-1.5 bg-black/60 rounded-full text-white hover:bg-black/80 transition-colors"
+                  onClick={handleStep1Next}
+                  className="w-full flex items-center justify-center gap-2 py-3.5 rounded-xl font-black text-sm uppercase tracking-wider transition-all hover:scale-[1.02] active:scale-[0.98]"
+                  style={{
+                    background: `linear-gradient(135deg, ${typeColor}, ${type === 'visit' ? '#3b82f6' : '#7c3aed'})`,
+                    color: '#000',
+                    boxShadow: `0 0 24px ${typeColor}40`,
+                  }}
                 >
-                  <X className="h-4 w-4" />
+                  Continue
+                  <ArrowRight className="h-4 w-4" />
                 </button>
-              </div>
+              </motion.div>
             ) : (
-              <button
-                type="button"
-                onClick={() => fileRef.current?.click()}
-                className="w-full h-32 border-2 border-dashed border-gray-700 hover:border-gray-500 rounded-xl flex flex-col items-center justify-center gap-2 text-gray-500 hover:text-gray-300 transition-all"
+              <motion.form
+                key="step2"
+                onSubmit={handleSubmit}
+                initial={{ opacity: 0, x: 20 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: 20 }}
+                transition={{ duration: 0.2 }}
+                className="p-5 space-y-5"
               >
-                <Upload className="h-6 w-6" />
-                <span className="text-sm">Click to upload photo</span>
-              </button>
+                {/* Summary of step 1 */}
+                <div
+                  className="flex items-center gap-3 p-3 rounded-xl border"
+                  style={{ backgroundColor: `${typeColor}08`, borderColor: `${typeColor}25` }}
+                >
+                  {type === 'visit'
+                    ? <MapPin className="h-4 w-4 shrink-0" style={{ color: typeColor }} />
+                    : <ShoppingBag className="h-4 w-4 shrink-0" style={{ color: typeColor }} />
+                  }
+                  <div className="min-w-0">
+                    <p className="text-white text-sm font-semibold truncate">{storeName}</p>
+                    <p className="text-gray-500 text-xs">{neighborhood ? `${neighborhood}, ` : ''}{city}</p>
+                  </div>
+                  <span
+                    className="ml-auto text-[10px] font-black uppercase tracking-widest shrink-0 px-2 py-1 rounded-full"
+                    style={{ backgroundColor: `${typeColor}20`, color: typeColor }}
+                  >
+                    {type === 'visit' ? 'Visited' : 'Pickup'}
+                  </span>
+                </div>
+
+                {/* Photo upload — hero position for step 2 */}
+                <div>
+                  <label className="block text-xs font-bold text-gray-500 uppercase tracking-widest mb-2">
+                    Photo {type === 'haul' ? <span style={{ color: typeColor }}>*</span> : <span className="text-gray-700 normal-case font-normal">(optional)</span>}
+                  </label>
+                  {photoPreview ? (
+                    <div className="relative rounded-xl overflow-hidden">
+                      <img src={photoPreview} alt="" className="w-full h-56 object-cover" />
+                      <div className="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent pointer-events-none" />
+                      <button
+                        type="button"
+                        onClick={() => { setPhotoFile(null); setPhotoPreview(null); }}
+                        className="absolute top-2.5 right-2.5 p-1.5 bg-black/70 rounded-full text-white hover:bg-black/90 transition-colors"
+                      >
+                        <X className="h-4 w-4" />
+                      </button>
+                      <div className="absolute bottom-2.5 left-2.5 text-xs text-white/60 font-medium">
+                        Tap × to change
+                      </div>
+                    </div>
+                  ) : (
+                    <button
+                      type="button"
+                      onClick={() => fileRef.current?.click()}
+                      className="w-full h-40 border-2 border-dashed rounded-xl flex flex-col items-center justify-center gap-3 transition-all group"
+                      style={{
+                        borderColor: `${typeColor}30`,
+                        backgroundColor: `${typeColor}05`,
+                      }}
+                      onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.borderColor = `${typeColor}60`; }}
+                      onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.borderColor = `${typeColor}30`; }}
+                    >
+                      <div
+                        className="w-12 h-12 rounded-2xl flex items-center justify-center"
+                        style={{ backgroundColor: `${typeColor}15` }}
+                      >
+                        <Camera className="h-5 w-5" style={{ color: typeColor }} />
+                      </div>
+                      <div className="text-center">
+                        <p className="text-white text-sm font-semibold">Add a photo</p>
+                        <p className="text-gray-600 text-xs mt-0.5">
+                          {type === 'haul' ? 'Show off what you picked up' : 'Show what the store looks like'}
+                        </p>
+                      </div>
+                    </button>
+                  )}
+                  <input
+                    ref={fileRef}
+                    type="file"
+                    accept="image/*"
+                    className="hidden"
+                    onChange={handlePhotoChange}
+                  />
+                </div>
+
+                {/* Item name (haul only) */}
+                {type === 'haul' && (
+                  <div>
+                    <label className="block text-xs font-bold text-gray-500 uppercase tracking-widest mb-2">
+                      What did you pick up? <span style={{ color: typeColor }}>*</span>
+                    </label>
+                    <input
+                      type="text"
+                      value={itemName}
+                      onChange={e => setItemName(e.target.value)}
+                      placeholder="e.g. Issey Miyake Pleats Please jacket"
+                      className="w-full bg-gray-900 border border-gray-800 rounded-xl px-4 py-2.5 text-white text-sm placeholder-gray-600 focus:outline-none focus:border-gray-600 transition-colors"
+                    />
+                  </div>
+                )}
+
+                {/* Caption */}
+                <div>
+                  <label className="block text-xs font-bold text-gray-500 uppercase tracking-widest mb-2">
+                    Caption <span className="text-gray-700 normal-case font-normal">(optional)</span>
+                  </label>
+                  <textarea
+                    value={caption}
+                    onChange={e => setCaption(e.target.value)}
+                    maxLength={280}
+                    rows={3}
+                    placeholder={type === 'haul'
+                      ? 'Tell the story behind the find...'
+                      : 'What made this place worth visiting?'}
+                    className="w-full bg-gray-900 border border-gray-800 rounded-xl px-4 py-2.5 text-white text-sm placeholder-gray-600 focus:outline-none focus:border-gray-600 resize-none transition-colors"
+                  />
+                  <p className="text-gray-700 text-xs mt-1 text-right">{caption.length}/280</p>
+                </div>
+
+                {error && (
+                  <div className="bg-red-500/10 border border-red-500/30 rounded-xl px-4 py-3 text-red-400 text-sm">
+                    {error}
+                  </div>
+                )}
+
+                <button
+                  type="submit"
+                  disabled={submitting}
+                  className="w-full flex items-center justify-center gap-2 py-3.5 rounded-xl font-black text-sm uppercase tracking-wider transition-all hover:scale-[1.02] active:scale-[0.98] disabled:opacity-50 disabled:pointer-events-none"
+                  style={{
+                    background: `linear-gradient(135deg, ${typeColor}, ${type === 'visit' ? '#3b82f6' : '#7c3aed'})`,
+                    color: '#000',
+                    boxShadow: `0 0 24px ${typeColor}40`,
+                  }}
+                >
+                  {submitting ? (
+                    <span className="animate-spin h-4 w-4 border-2 border-black border-t-transparent rounded-full" />
+                  ) : (
+                    <>
+                      <Check className="h-4 w-4" />
+                      Submit Find
+                    </>
+                  )}
+                </button>
+
+                <p className="text-center text-gray-700 text-xs">
+                  Finds are reviewed before appearing publicly.
+                </p>
+              </motion.form>
             )}
-            <input
-              ref={fileRef}
-              type="file"
-              accept="image/*"
-              className="hidden"
-              onChange={handlePhotoChange}
-            />
-          </div>
-
-          {error && (
-            <div className="bg-red-500/10 border border-red-500/30 rounded-xl px-4 py-3 text-red-400 text-sm">
-              {error}
-            </div>
-          )}
-
-          <button
-            type="submit"
-            disabled={submitting}
-            className="w-full flex items-center justify-center gap-2 py-3 rounded-xl font-bold text-sm transition-all disabled:opacity-50"
-            style={{
-              background: type === 'visit'
-                ? 'linear-gradient(135deg, #22d9ee40, #22d9ee20)'
-                : 'linear-gradient(135deg, #a855f740, #a855f720)',
-              border: `1px solid ${type === 'visit' ? '#22d9ee50' : '#a855f750'}`,
-              color: type === 'visit' ? '#22d9ee' : '#a855f7',
-            }}
-          >
-            {submitting ? (
-              <span className="animate-spin h-4 w-4 border-2 border-current border-t-transparent rounded-full" />
-            ) : (
-              <>
-                <Camera className="h-4 w-4" />
-                Submit Find
-              </>
-            )}
-          </button>
-
-          <p className="text-center text-gray-600 text-xs">
-            Finds are reviewed before appearing publicly.
-          </p>
-        </form>
+          </AnimatePresence>
+        </div>
       </motion.div>
     </motion.div>
   );

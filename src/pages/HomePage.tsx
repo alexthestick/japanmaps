@@ -7,6 +7,7 @@ import { StoreList } from '../components/store/StoreList';
 import { StoreDetail } from '../components/store/StoreDetail';
 import { BottomSheetStoreDetail } from '../components/store/BottomSheetStoreDetail';
 import { SpotlightBottomSheet } from '../components/store/SpotlightBottomSheet';
+import { DesktopSpotlightPanel } from '../components/map/DesktopSpotlightPanel';
 import { ScrollingBanner } from '../components/layout/ScrollingBanner';
 // import { StoreDetailModal } from '../components/store/StoreDetailModal'; // Not needed in new design
 import { FloatingSearchBar } from '../components/map/FloatingSearchBar';
@@ -466,16 +467,37 @@ export function HomePage() {
               onClose={() => setSelectedStore(null)}
             />
           ) : (
-            // Desktop: Right Sidebar (existing design)
-            <AnimatePresence mode="wait">
-              {selectedStore && (
-                <StoreDetail
-                  key={selectedStore.id}
-                  store={selectedStore}
-                  onClose={() => setSelectedStore(null)}
+            // Desktop: Spotlight panel + Right Sidebar
+            <>
+              {/* Desktop spotlight panel — shown when spotlight active and no store selected */}
+              {isSpotlightMode && !selectedStore && (
+                <DesktopSpotlightPanel
+                  stores={spotlightedStores}
+                  onStoreSelect={(store) => {
+                    setSelectedStore(store);
+                    if (mapViewRef.current?.flyToStore) {
+                      mapViewRef.current.flyToStore(store.latitude, store.longitude);
+                    }
+                  }}
+                  onDismiss={() => {
+                    setIsSpotlightMode(false);
+                    setSpotlightedStores([]);
+                  }}
                 />
               )}
-            </AnimatePresence>
+              <AnimatePresence mode="wait">
+                {selectedStore && (
+                  <StoreDetail
+                    key={selectedStore.id}
+                    store={selectedStore}
+                    onClose={() => {
+                      setSelectedStore(null);
+                      // If we came from spotlight, keep spotlight active so panel re-appears
+                    }}
+                  />
+                )}
+              </AnimatePresence>
+            </>
           )}
 
           {/* City/Neighborhood Selector Bottom Sheet (Mobile only) */}

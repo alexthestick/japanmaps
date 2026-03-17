@@ -1,19 +1,24 @@
-import { RefreshCw } from 'lucide-react';
+import { RefreshCw, X } from 'lucide-react';
 import { useState } from 'react';
 
 interface SearchAreaButtonProps {
   onClick: () => void;
+  isActive?: boolean;
 }
 
-export function SearchAreaButton({ onClick }: SearchAreaButtonProps) {
+export function SearchAreaButton({ onClick, isActive = false }: SearchAreaButtonProps) {
   const [isPulsing, setIsPulsing] = useState(false);
 
   const handleClick = () => {
-    setIsPulsing(true);
-    // Brief pulse animation before executing onClick
-    setTimeout(() => {
+    if (!isActive) {
+      setIsPulsing(true);
+      setTimeout(() => {
+        setIsPulsing(false);
+        onClick();
+      }, 150);
+    } else {
       onClick();
-    }, 150);
+    }
   };
 
   return (
@@ -21,29 +26,42 @@ export function SearchAreaButton({ onClick }: SearchAreaButtonProps) {
       onClick={handleClick}
       className={`
         absolute left-1/2 -translate-x-1/2 z-25
-        bg-white dark:bg-gray-800
-        text-gray-900 dark:text-gray-100
         px-3.5 py-2
         rounded-full
         shadow-lg
-        border border-gray-200 dark:border-gray-700
         flex items-center gap-2
         font-medium text-[13px]
         animate-in fade-in slide-in-from-bottom-2 duration-200
         transition-all
         hover:shadow-xl
-        ${isPulsing ? 'scale-110 shadow-[0_0_30px_rgba(34,217,238,0.6)]' : 'active:scale-95'}
+        ${isPulsing ? 'scale-110' : 'active:scale-95'}
       `}
       style={{
         touchAction: 'manipulation',
-        width: '130px',
-        // Mobile-only: absolute positioning at 80px from map container bottom + safe area
+        width: isActive ? '110px' : '130px',
         bottom: 'max(80px, calc(80px + env(safe-area-inset-bottom, 0px)))',
         transition: isPulsing ? 'all 0.15s ease-out' : 'all 0.2s ease-in-out',
+        // Active state: cyan glow; inactive: standard pill
+        backgroundColor: isActive ? 'rgba(34, 217, 238, 0.15)' : 'rgba(255, 255, 255, 0.95)',
+        border: isActive ? '1px solid rgba(34, 217, 238, 0.5)' : '1px solid rgba(200,200,200,0.4)',
+        color: isActive ? '#22d9ee' : 'rgb(17, 24, 39)',
+        boxShadow: isActive
+          ? `0 0 20px rgba(34, 217, 238, 0.3), 0 4px 12px rgba(0,0,0,0.3), ${isPulsing ? '0 0 30px rgba(34,217,238,0.6)' : ''}`
+          : '0 4px 12px rgba(0,0,0,0.15)',
+        backdropFilter: 'blur(12px)',
       }}
     >
-      <RefreshCw className={`w-4 h-4 ${isPulsing ? 'animate-spin' : ''}`} />
-      <span>Search area</span>
+      {isActive ? (
+        <>
+          <X className="w-4 h-4" />
+          <span>Clear</span>
+        </>
+      ) : (
+        <>
+          <RefreshCw className={`w-4 h-4 ${isPulsing ? 'animate-spin' : ''}`} />
+          <span>Search area</span>
+        </>
+      )}
     </button>
   );
 }

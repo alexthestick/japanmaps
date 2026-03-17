@@ -16,6 +16,54 @@ interface HeroFind {
 
 // ─── Photo Mosaic ─────────────────────────────────────────────────────────────
 
+function MosaicPhoto({ photo, index, rotation, delay }: { photo: HeroFind; index: number; rotation: number; delay: number }) {
+  const [loaded, setLoaded] = useState(false);
+  // First 2 photos are LCP candidates — load eagerly; rest lazy
+  const loadingAttr = index < 2 ? 'eager' : 'lazy';
+
+  return (
+    <motion.div
+      initial={{ opacity: 0, scale: 0.92, rotate: rotation * 2 }}
+      animate={{ opacity: 1, scale: 1, rotate: rotation }}
+      transition={{ duration: 0.8, delay: 0.4 + delay, ease: [0.22, 1, 0.36, 1] }}
+      className="relative overflow-hidden rounded-xl bg-gray-900"
+      style={{ boxShadow: '0 4px 24px rgba(0,0,0,0.6)' }}
+    >
+      {/* Blur-up placeholder */}
+      {!loaded && (
+        <div
+          className="absolute inset-0"
+          style={{
+            backgroundImage: `url(${ikUrl(photo.photo_url, 'thumb').replace('w-400', 'w-20')})`,
+            backgroundSize: 'cover',
+            backgroundPosition: 'center',
+            filter: 'blur(10px)',
+            transform: 'scale(1.1)',
+          }}
+        />
+      )}
+      <img
+        src={ikUrl(photo.photo_url, 'thumb')}
+        alt={photo.store_name}
+        loading={loadingAttr}
+        decoding="async"
+        onLoad={() => setLoaded(true)}
+        className="w-full h-full object-cover"
+        style={{ opacity: loaded ? 1 : 0, transition: 'opacity 0.4s ease' }}
+      />
+      {/* subtle overlay */}
+      <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
+      {/* city label */}
+      <div className="absolute bottom-2 left-2 text-[9px] font-black text-white/60 uppercase tracking-widest font-mono">
+        {photo.city}
+      </div>
+      {/* film corner marks */}
+      <div className="absolute top-1.5 left-1.5 w-2.5 h-2.5 border-t border-l border-white/20" />
+      <div className="absolute bottom-1.5 right-1.5 w-2.5 h-2.5 border-b border-r border-white/20" />
+    </motion.div>
+  );
+}
+
 function PhotoMosaic({ photos }: { photos: HeroFind[] }) {
   // Fill to 6 slots — repeat if fewer
   const slots = Array.from({ length: 6 }, (_, i) => photos[i % photos.length]);
@@ -26,30 +74,13 @@ function PhotoMosaic({ photos }: { photos: HeroFind[] }) {
   return (
     <div className="grid grid-cols-3 grid-rows-2 gap-2 h-full">
       {slots.map((photo, i) => (
-        <motion.div
+        <MosaicPhoto
           key={i}
-          initial={{ opacity: 0, scale: 0.92, rotate: rotations[i] * 2 }}
-          animate={{ opacity: 1, scale: 1, rotate: rotations[i] }}
-          transition={{ duration: 0.8, delay: 0.4 + delays[i], ease: [0.22, 1, 0.36, 1] }}
-          className="relative overflow-hidden rounded-xl"
-          style={{ boxShadow: '0 4px 24px rgba(0,0,0,0.6)' }}
-        >
-          <img
-            src={ikUrl(photo.photo_url, 'thumb')}
-            alt={photo.store_name}
-            loading="eager"
-            className="w-full h-full object-cover"
-          />
-          {/* subtle overlay */}
-          <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
-          {/* city label */}
-          <div className="absolute bottom-2 left-2 text-[9px] font-black text-white/60 uppercase tracking-widest font-mono">
-            {photo.city}
-          </div>
-          {/* film corner marks */}
-          <div className="absolute top-1.5 left-1.5 w-2.5 h-2.5 border-t border-l border-white/20" />
-          <div className="absolute bottom-1.5 right-1.5 w-2.5 h-2.5 border-b border-r border-white/20" />
-        </motion.div>
+          photo={photo}
+          index={i}
+          rotation={rotations[i]}
+          delay={delays[i]}
+        />
       ))}
     </div>
   );
