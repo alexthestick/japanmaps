@@ -182,8 +182,8 @@ export function SubmitModal({ onClose, onSubmitted, prefill }: SubmitModalProps)
   // ── Step 1 fields ─────────────────────────────────────────────────────────────
   const [type, setType] = useState<'visit' | 'haul'>(prefill?.defaultType || 'visit');
   const [storeSearch, setStoreSearch] = useState('');
-  const [storeResults, setStoreResults] = useState<{ id: string; name: string; city: string; neighborhood: string | null }[]>([]);
-  const [selectedStore, setSelectedStore] = useState<{ id: string; name: string; city: string; neighborhood: string | null } | null>(
+  const [storeResults, setStoreResults] = useState<{ id: string; name: string; city: string; neighborhood: string | null; photos?: string[] }[]>([]);
+  const [selectedStore, setSelectedStore] = useState<{ id: string; name: string; city: string; neighborhood: string | null; photos?: string[] } | null>(
     prefill?.storeId && prefill?.storeName
       ? { id: prefill.storeId, name: prefill.storeName, city: prefill.storeCity || '', neighborhood: prefill.storeNeighborhood || null }
       : null
@@ -204,8 +204,11 @@ export function SubmitModal({ onClose, onSubmitted, prefill }: SubmitModalProps)
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
   const fileRef = useRef<HTMLInputElement>(null);
+  const captionRef = useRef<HTMLTextAreaElement>(null);
 
   const typeColor = type === 'visit' ? '#22d9ee' : '#a855f7';
+  // Store photo for banner (first photo if available)
+  const storePhoto = selectedStore?.photos?.[0] ?? null;
 
   // ── Neighborhood options for selected city ────────────────────────────────────
   const neighborhoodOptions: string[] = city in LOCATIONS
@@ -221,13 +224,21 @@ export function SubmitModal({ onClose, onSubmitted, prefill }: SubmitModalProps)
     const timer = setTimeout(async () => {
       const { data } = await supabase
         .from('stores')
-        .select('id, name, city, neighborhood')
+        .select('id, name, city, neighborhood, photos')
         .ilike('name', `%${storeSearch}%`)
         .limit(6);
       setStoreResults(data || []);
     }, 300);
     return () => clearTimeout(timer);
   }, [storeSearch]);
+
+  // ── Auto-resize caption textarea ─────────────────────────────────────────────
+  useEffect(() => {
+    const el = captionRef.current;
+    if (!el) return;
+    el.style.height = 'auto';
+    el.style.height = `${Math.min(el.scrollHeight, 140)}px`;
+  }, [caption]);
 
   function handlePhotoChange(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
@@ -239,7 +250,7 @@ export function SubmitModal({ onClose, onSubmitted, prefill }: SubmitModalProps)
   }
 
   function selectStore(store: typeof storeResults[0]) {
-    setSelectedStore(store);
+    setSelectedStore({ ...store, photos: store.photos ?? [] });
     setStoreName(store.name);
     setCity(store.city);
     setNeighborhood(store.neighborhood || '');
@@ -338,7 +349,7 @@ export function SubmitModal({ onClose, onSubmitted, prefill }: SubmitModalProps)
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
-      className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-4 bg-black/80 backdrop-blur-sm"
+      className="fixed inset-0 z-50 flex items-end sm:items-center justify-center sm:p-4 bg-black/80 backdrop-blur-sm"
       onClick={e => { if (e.target === e.currentTarget) onClose(); }}
     >
       <motion.div
@@ -346,125 +357,178 @@ export function SubmitModal({ onClose, onSubmitted, prefill }: SubmitModalProps)
         animate={{ y: 0, opacity: 1 }}
         exit={{ y: 60, opacity: 0 }}
         transition={{ type: 'spring', damping: 25 }}
-        className="w-full max-w-lg bg-gray-950 border border-gray-800 rounded-2xl overflow-hidden max-h-[92vh] flex flex-col"
+        className="w-full sm:max-w-md bg-gray-950 sm:rounded-2xl overflow-hidden max-h-[92vh] flex flex-col"
+        style={{ border: '1px solid rgba(255,255,255,0.07)' }}
       >
-        {/* ── Header ── */}
-        <div className="flex items-center justify-between px-5 py-4 border-b border-gray-800 shrink-0">
-          <div className="flex items-center gap-3">
-            {step === 2 && (
+
+        {/* ── Step 2 store photo banner (full-bleed, replaces plain header) ── */}
+        {step === 2 && storePhoto ? (
+          <div className="relative h-28 shrink-0 overflow-hidden">
+            <img
+              src={ikUrl(storePhoto, 'card')}
+              alt={storeName}
+              className="w-full h-full object-cover"
+            />
+            {/* Strong gradient so header controls are always readable */}
+            <div className="absolute inset-0 bg-gradient-to-b from-black/70 via-black/30 to-black/80" />
+            {/* Header controls on top of banner */}
+            <div className="absolute inset-x-0 top-0 flex items-center justify-between px-4 pt-3.5">
               <button
                 type="button"
                 onClick={() => setStep(1)}
-                className="text-gray-500 hover:text-white transition-colors"
+                className="flex items-center gap-1.5 text-white/80 hover:text-white transition-colors text-sm font-medium"
               >
                 <ArrowLeft className="h-4 w-4" />
               </button>
-            )}
-            <h2 className="text-base font-bold text-white">
-              {step === 1 ? 'Submit a Find' : 'Add details'}
-            </h2>
+              <div className="flex items-center gap-2">
+                {[1, 2].map(s => (
+                  <div
+                    key={s}
+                    className="flex items-center justify-center rounded-full text-[10px] font-black transition-all duration-300"
+                    style={{
+                      width: 20, height: 20,
+                      backgroundColor: step === s ? typeColor : `${typeColor}40`,
+                      color: step === s ? '#000' : typeColor,
+                    }}
+                  >
+                    {step > s ? <Check className="h-2.5 w-2.5" /> : s}
+                  </div>
+                ))}
+                <button onClick={onClose} className="text-white/70 hover:text-white transition-colors ml-1">
+                  <X className="h-4.5 w-4.5" />
+                </button>
+              </div>
+            </div>
+            {/* Store name + type badge bottom of banner */}
+            <div className="absolute inset-x-0 bottom-0 px-4 pb-3 flex items-end justify-between">
+              <div>
+                <p className="text-white font-bold text-sm leading-tight">{storeName}</p>
+                <p className="text-white/50 text-xs">{neighborhood ? `${neighborhood} · ` : ''}{city}</p>
+              </div>
+              <span
+                className="text-[10px] font-black uppercase tracking-widest px-2 py-0.5 rounded-full shrink-0"
+                style={{ backgroundColor: `${typeColor}25`, color: typeColor, border: `1px solid ${typeColor}40` }}
+              >
+                {type === 'visit' ? 'Visit' : 'Pickup'}
+              </span>
+            </div>
           </div>
-
-          {/* Step indicator */}
-          <div className="flex items-center gap-3">
-            <div className="flex items-center gap-1.5">
+        ) : (
+          /* ── Standard header (step 1, or step 2 with no store photo) ── */
+          <div className="flex items-center justify-between px-4 py-3.5 border-b border-white/5 shrink-0">
+            <div className="flex items-center gap-2.5">
+              {step === 2 && (
+                <button type="button" onClick={() => setStep(1)} className="text-gray-500 hover:text-white transition-colors">
+                  <ArrowLeft className="h-4 w-4" />
+                </button>
+              )}
+              <h2 className="text-sm font-bold text-white">
+                {step === 1 ? 'Submit a Find' : 'Add details'}
+              </h2>
+            </div>
+            <div className="flex items-center gap-2">
               {[1, 2].map(s => (
                 <div
                   key={s}
                   className="flex items-center justify-center rounded-full text-[10px] font-black transition-all duration-300"
                   style={{
-                    width: 22,
-                    height: 22,
+                    width: 20, height: 20,
                     backgroundColor: step === s ? typeColor : step > s ? `${typeColor}30` : 'rgb(31,41,55)',
                     color: step === s ? '#000' : step > s ? typeColor : 'rgb(75,85,99)',
                     border: step > s ? `1px solid ${typeColor}50` : 'none',
                   }}
                 >
-                  {step > s ? <Check className="h-3 w-3" /> : s}
+                  {step > s ? <Check className="h-2.5 w-2.5" /> : s}
                 </div>
               ))}
+              <button onClick={onClose} className="text-gray-500 hover:text-white transition-colors ml-1">
+                <X className="h-4 w-4" />
+              </button>
             </div>
-            <button onClick={onClose} className="text-gray-500 hover:text-white transition-colors ml-1">
-              <X className="h-5 w-5" />
-            </button>
           </div>
-        </div>
+        )}
 
         {/* ── Body (scrollable) ── */}
         <div className="overflow-y-auto flex-1">
           <AnimatePresence mode="wait">
+
+            {/* ════════════════ STEP 1 ════════════════ */}
             {step === 1 ? (
               <motion.div
                 key="step1"
-                initial={{ opacity: 0, x: -20 }}
+                initial={{ opacity: 0, x: -16 }}
                 animate={{ opacity: 1, x: 0 }}
-                exit={{ opacity: 0, x: -20 }}
-                transition={{ duration: 0.2 }}
-                className="p-5 space-y-5"
+                exit={{ opacity: 0, x: -16 }}
+                transition={{ duration: 0.18 }}
+                className="p-4 space-y-4"
               >
-                {/* Type toggle */}
-                <div>
-                  <label className="block text-xs font-bold text-gray-500 uppercase tracking-widest mb-2">What are you sharing?</label>
-                  <div className="flex gap-2">
-                    {([
-                      { id: 'visit' as const, label: 'Visited a store', icon: MapPin, color: '#22d9ee' },
-                      { id: 'haul' as const, label: 'Picked something up', icon: ShoppingBag, color: '#a855f7' },
-                    ]).map(opt => (
-                      <button
-                        key={opt.id}
-                        type="button"
-                        onClick={() => setType(opt.id)}
-                        className="flex-1 flex items-center justify-center gap-2 py-3 rounded-xl text-sm font-medium transition-all"
-                        style={{
-                          backgroundColor: type === opt.id ? `${opt.color}15` : 'rgb(17,24,39)',
-                          border: `1px solid ${type === opt.id ? `${opt.color}60` : 'rgb(31,41,55)'}`,
-                          color: type === opt.id ? opt.color : 'rgb(107,114,128)',
-                        }}
-                      >
-                        <opt.icon className="h-4 w-4" />
-                        <span className="hidden sm:inline">{opt.label}</span>
-                        <span className="sm:hidden">{opt.id === 'visit' ? 'Visited' : 'Pickup'}</span>
-                      </button>
-                    ))}
-                  </div>
+                {/* ── Compact pill type toggle ── */}
+                <div
+                  className="flex p-1 rounded-xl gap-1"
+                  style={{ backgroundColor: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.06)' }}
+                >
+                  {([
+                    { id: 'visit' as const, label: 'Visited', icon: MapPin, color: '#22d9ee' },
+                    { id: 'haul' as const, label: 'Picked up', icon: ShoppingBag, color: '#a855f7' },
+                  ]).map(opt => (
+                    <button
+                      key={opt.id}
+                      type="button"
+                      onClick={() => setType(opt.id)}
+                      className="flex-1 flex items-center justify-center gap-1.5 py-2 rounded-lg text-xs font-bold transition-all duration-200"
+                      style={{
+                        backgroundColor: type === opt.id ? `${opt.color}20` : 'transparent',
+                        color: type === opt.id ? opt.color : 'rgb(107,114,128)',
+                        boxShadow: type === opt.id ? `0 0 12px ${opt.color}20` : 'none',
+                      }}
+                    >
+                      <opt.icon className="h-3.5 w-3.5" />
+                      {opt.label}
+                    </button>
+                  ))}
                 </div>
 
-                {/* Store search */}
+                {/* ── Store search / selected card ── */}
                 <div className="relative">
-                  <label className="block text-xs font-bold text-gray-500 uppercase tracking-widest mb-2">Store *</label>
+                  <label className="block text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-1.5">Store *</label>
                   {selectedStore ? (
+                    /* Selected store card with photo */
                     <div
-                      className="flex items-center gap-3 p-3 rounded-xl border"
-                      style={{ backgroundColor: `${typeColor}08`, borderColor: `${typeColor}30` }}
+                      className="flex items-center gap-3 p-2.5 rounded-xl border overflow-hidden"
+                      style={{ backgroundColor: `${typeColor}08`, borderColor: `${typeColor}25` }}
                     >
-                      <div
-                        className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0"
-                        style={{ backgroundColor: `${typeColor}20` }}
-                      >
-                        <MapPin className="h-4 w-4" style={{ color: typeColor }} />
+                      {/* Thumbnail */}
+                      <div className="w-12 h-12 rounded-lg overflow-hidden shrink-0 bg-gray-800 flex items-center justify-center">
+                        {selectedStore.photos?.[0] ? (
+                          <img
+                            src={ikUrl(selectedStore.photos[0], 'thumb')}
+                            alt={selectedStore.name}
+                            className="w-full h-full object-cover"
+                          />
+                        ) : (
+                          <MapPin className="h-4 w-4 text-gray-600" />
+                        )}
                       </div>
                       <div className="flex-1 min-w-0">
                         <p className="text-white text-sm font-semibold truncate">{selectedStore.name}</p>
-                        <p className="text-gray-500 text-xs">{selectedStore.neighborhood ? `${selectedStore.neighborhood}, ` : ''}{selectedStore.city}</p>
+                        <p className="text-gray-500 text-xs truncate">
+                          {selectedStore.neighborhood ? `${selectedStore.neighborhood}, ` : ''}{selectedStore.city}
+                        </p>
                       </div>
-                      <button
-                        type="button"
-                        onClick={clearStore}
-                        className="text-gray-600 hover:text-white transition-colors shrink-0"
-                      >
-                        <X className="h-4 w-4" />
+                      <button type="button" onClick={clearStore} className="text-gray-600 hover:text-white transition-colors shrink-0 p-1">
+                        <X className="h-3.5 w-3.5" />
                       </button>
                     </div>
                   ) : (
                     <>
                       <div className="relative">
-                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-500" />
+                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-gray-500" />
                         <input
                           type="text"
                           value={storeSearch}
                           onChange={e => setStoreSearch(e.target.value)}
-                          placeholder="Search stores on the map..."
-                          className="w-full bg-gray-900 border border-gray-800 rounded-xl pl-9 pr-4 py-2.5 text-white text-sm placeholder-gray-600 focus:outline-none focus:border-gray-600 transition-colors"
+                          placeholder="Search stores..."
+                          className="w-full bg-gray-900/80 border border-white/6 rounded-xl pl-8 pr-4 py-2.5 text-white text-sm placeholder-gray-600 focus:outline-none focus:border-white/15 transition-colors"
                         />
                       </div>
                       {storeResults.length > 0 && (
@@ -474,9 +538,15 @@ export function SubmitModal({ onClose, onSubmitted, prefill }: SubmitModalProps)
                               key={store.id}
                               type="button"
                               onClick={() => selectStore(store)}
-                              className="w-full text-left px-4 py-2.5 hover:bg-gray-800 transition-colors flex items-center gap-3"
+                              className="w-full text-left px-3 py-2.5 hover:bg-gray-800 transition-colors flex items-center gap-3"
                             >
-                              <MapPin className="h-3.5 w-3.5 text-gray-500 shrink-0" />
+                              <div className="w-8 h-8 rounded-lg overflow-hidden shrink-0 bg-gray-800 flex items-center justify-center">
+                                {store.photos?.[0] ? (
+                                  <img src={ikUrl(store.photos[0], 'thumb')} alt="" className="w-full h-full object-cover" />
+                                ) : (
+                                  <MapPin className="h-3.5 w-3.5 text-gray-600" />
+                                )}
+                              </div>
                               <div>
                                 <p className="text-white text-sm font-medium">{store.name}</p>
                                 <p className="text-gray-500 text-xs">{store.neighborhood ? `${store.neighborhood}, ` : ''}{store.city}</p>
@@ -489,136 +559,127 @@ export function SubmitModal({ onClose, onSubmitted, prefill }: SubmitModalProps)
                         <button
                           type="button"
                           onClick={() => { setStoreName(storeSearch); setStoreSearch(''); }}
-                          className="w-full mt-1 text-left px-4 py-2.5 bg-gray-900 border border-dashed border-gray-700 rounded-xl text-gray-400 text-sm hover:border-gray-600 transition-colors flex items-center gap-2"
+                          className="w-full mt-1 text-left px-3 py-2.5 bg-gray-900/80 border border-dashed border-white/8 rounded-xl text-gray-400 text-sm hover:border-white/15 transition-colors flex items-center gap-2"
                         >
                           <Plus className="h-4 w-4" />
-                          Add <span className="text-white font-medium">"{storeSearch}"</span> as a new store
+                          Add <span className="text-white font-medium ml-1">"{storeSearch}"</span>
                         </button>
                       )}
                       {storeName && !selectedStore && (
                         <p className="text-gray-600 text-xs mt-1.5">
-                          Adding as new: <span className="text-gray-300 font-medium">{storeName}</span>
-                          <button
-                            type="button"
-                            onClick={() => setStoreName('')}
-                            className="ml-2 text-gray-600 hover:text-gray-400 underline"
-                          >
-                            clear
-                          </button>
+                          Adding: <span className="text-gray-300">{storeName}</span>
+                          <button type="button" onClick={() => setStoreName('')} className="ml-2 underline hover:text-gray-400">clear</button>
                         </p>
                       )}
                     </>
                   )}
                 </div>
 
-                {/* City dropdown */}
-                <div className="relative">
-                  <label className="block text-xs font-bold text-gray-500 uppercase tracking-widest mb-2">City *</label>
-                  <button
-                    type="button"
-                    onClick={() => { setCityOpen(o => !o); setNeighborhoodOpen(false); }}
-                    className="w-full flex items-center justify-between bg-gray-900 border border-gray-800 rounded-xl px-4 py-2.5 text-sm transition-colors hover:border-gray-700 focus:outline-none"
-                    style={{ borderColor: city ? `${typeColor}40` : undefined }}
-                  >
-                    <span className={city ? 'text-white font-medium' : 'text-gray-600'}>
-                      {city || 'Select a city'}
-                    </span>
-                    <ChevronDown className={`h-4 w-4 text-gray-500 transition-transform duration-200 ${cityOpen ? 'rotate-180' : ''}`} />
-                  </button>
-                  {cityOpen && (
-                    <div className="absolute z-20 w-full mt-1 bg-gray-900 border border-gray-700 rounded-xl overflow-hidden shadow-2xl max-h-52 overflow-y-auto">
-                      {MAJOR_CITIES_JAPAN.map(c => (
-                        <button
-                          key={c}
-                          type="button"
-                          onClick={() => handleCitySelect(c)}
-                          className="w-full text-left px-4 py-2.5 text-sm hover:bg-gray-800 transition-colors flex items-center justify-between"
-                          style={{ color: city === c ? typeColor : 'rgb(209,213,219)' }}
-                        >
-                          {c}
-                          {city === c && <Check className="h-3.5 w-3.5" />}
-                        </button>
-                      ))}
-                    </div>
-                  )}
-                </div>
+                {/* ── City + Neighborhood side by side ── */}
+                <div className="grid grid-cols-2 gap-3">
+                  {/* City */}
+                  <div className="relative">
+                    <label className="block text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-1.5">City *</label>
+                    <button
+                      type="button"
+                      onClick={() => { setCityOpen(o => !o); setNeighborhoodOpen(false); }}
+                      className="w-full flex items-center justify-between bg-gray-900/80 border rounded-xl px-3 py-2.5 text-sm transition-colors hover:border-white/15 focus:outline-none"
+                      style={{ borderColor: city ? `${typeColor}40` : 'rgba(255,255,255,0.06)' }}
+                    >
+                      <span className={`truncate ${city ? 'text-white font-medium' : 'text-gray-600'}`} style={{ fontSize: 13 }}>
+                        {city || 'Select'}
+                      </span>
+                      <ChevronDown className={`h-3.5 w-3.5 text-gray-500 shrink-0 transition-transform duration-200 ${cityOpen ? 'rotate-180' : ''}`} />
+                    </button>
+                    {cityOpen && (
+                      <div className="absolute z-20 w-56 mt-1 bg-gray-900 border border-gray-700 rounded-xl overflow-hidden shadow-2xl max-h-52 overflow-y-auto">
+                        {MAJOR_CITIES_JAPAN.map(c => (
+                          <button
+                            key={c}
+                            type="button"
+                            onClick={() => handleCitySelect(c)}
+                            className="w-full text-left px-3 py-2 text-sm hover:bg-gray-800 transition-colors flex items-center justify-between"
+                            style={{ color: city === c ? typeColor : 'rgb(209,213,219)' }}
+                          >
+                            {c}
+                            {city === c && <Check className="h-3 w-3" />}
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                  </div>
 
-                {/* Neighborhood dropdown/combobox */}
-                <div className="relative">
-                  <label className="block text-xs font-bold text-gray-500 uppercase tracking-widest mb-2">
-                    Neighborhood <span className="text-gray-700 normal-case font-normal">(optional)</span>
-                  </label>
-                  {neighborhoodOptions.length > 0 ? (
-                    <>
-                      <button
-                        type="button"
-                        onClick={() => { setNeighborhoodOpen(o => !o); setCityOpen(false); }}
-                        className="w-full flex items-center justify-between bg-gray-900 border border-gray-800 rounded-xl px-4 py-2.5 text-sm transition-colors hover:border-gray-700 focus:outline-none"
-                        style={{ borderColor: neighborhood ? `${typeColor}40` : undefined }}
-                      >
-                        <span className={neighborhood ? 'text-white font-medium' : 'text-gray-600'}>
-                          {neighborhood || 'Select a neighborhood'}
-                        </span>
-                        <ChevronDown className={`h-4 w-4 text-gray-500 transition-transform duration-200 ${neighborhoodOpen ? 'rotate-180' : ''}`} />
-                      </button>
-                      {neighborhoodOpen && (
-                        <div className="absolute z-20 w-full mt-1 bg-gray-900 border border-gray-700 rounded-xl overflow-hidden shadow-2xl">
-                          <div className="p-2 border-b border-gray-800">
-                            <input
-                              type="text"
-                              value={neighborhoodSearch}
-                              onChange={e => setNeighborhoodSearch(e.target.value)}
-                              placeholder="Search neighborhoods..."
-                              className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-1.5 text-sm text-white placeholder-gray-600 focus:outline-none"
-                              autoFocus
-                            />
+                  {/* Neighborhood */}
+                  <div className="relative">
+                    <label className="block text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-1.5">Area</label>
+                    {neighborhoodOptions.length > 0 ? (
+                      <>
+                        <button
+                          type="button"
+                          onClick={() => { setNeighborhoodOpen(o => !o); setCityOpen(false); }}
+                          className="w-full flex items-center justify-between bg-gray-900/80 border rounded-xl px-3 py-2.5 text-sm transition-colors hover:border-white/15 focus:outline-none"
+                          style={{ borderColor: neighborhood ? `${typeColor}40` : 'rgba(255,255,255,0.06)' }}
+                        >
+                          <span className={`truncate ${neighborhood ? 'text-white font-medium' : 'text-gray-600'}`} style={{ fontSize: 13 }}>
+                            {neighborhood || 'Select'}
+                          </span>
+                          <ChevronDown className={`h-3.5 w-3.5 text-gray-500 shrink-0 transition-transform duration-200 ${neighborhoodOpen ? 'rotate-180' : ''}`} />
+                        </button>
+                        {neighborhoodOpen && (
+                          <div className="absolute z-20 w-56 right-0 mt-1 bg-gray-900 border border-gray-700 rounded-xl overflow-hidden shadow-2xl">
+                            <div className="p-2 border-b border-gray-800">
+                              <input
+                                type="text"
+                                value={neighborhoodSearch}
+                                onChange={e => setNeighborhoodSearch(e.target.value)}
+                                placeholder="Search..."
+                                className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-1.5 text-sm text-white placeholder-gray-600 focus:outline-none"
+                                autoFocus
+                              />
+                            </div>
+                            <div className="max-h-44 overflow-y-auto">
+                              {neighborhood && (
+                                <button type="button" onClick={() => handleNeighborhoodSelect('')} className="w-full text-left px-3 py-2 text-xs text-gray-500 hover:bg-gray-800 italic">
+                                  Clear
+                                </button>
+                              )}
+                              {filteredNeighborhoods.map(n => (
+                                <button
+                                  key={n}
+                                  type="button"
+                                  onClick={() => handleNeighborhoodSelect(n)}
+                                  className="w-full text-left px-3 py-2 text-sm hover:bg-gray-800 transition-colors flex items-center justify-between"
+                                  style={{ color: neighborhood === n ? typeColor : 'rgb(209,213,219)' }}
+                                >
+                                  {n}
+                                  {neighborhood === n && <Check className="h-3 w-3" />}
+                                </button>
+                              ))}
+                              {filteredNeighborhoods.length === 0 && (
+                                <button
+                                  type="button"
+                                  onClick={() => { setNeighborhood(neighborhoodSearch); setNeighborhoodOpen(false); setNeighborhoodSearch(''); }}
+                                  className="w-full text-left px-3 py-2 text-sm text-gray-400 hover:bg-gray-800 flex items-center gap-2"
+                                >
+                                  <Plus className="h-3.5 w-3.5" />
+                                  Add "{neighborhoodSearch}"
+                                </button>
+                              )}
+                            </div>
                           </div>
-                          <div className="max-h-44 overflow-y-auto">
-                            {neighborhood && (
-                              <button
-                                type="button"
-                                onClick={() => handleNeighborhoodSelect('')}
-                                className="w-full text-left px-4 py-2 text-sm text-gray-500 hover:bg-gray-800 italic"
-                              >
-                                Clear selection
-                              </button>
-                            )}
-                            {filteredNeighborhoods.map(n => (
-                              <button
-                                key={n}
-                                type="button"
-                                onClick={() => handleNeighborhoodSelect(n)}
-                                className="w-full text-left px-4 py-2.5 text-sm hover:bg-gray-800 transition-colors flex items-center justify-between"
-                                style={{ color: neighborhood === n ? typeColor : 'rgb(209,213,219)' }}
-                              >
-                                {n}
-                                {neighborhood === n && <Check className="h-3.5 w-3.5" />}
-                              </button>
-                            ))}
-                            {filteredNeighborhoods.length === 0 && (
-                              <button
-                                type="button"
-                                onClick={() => { setNeighborhood(neighborhoodSearch); setNeighborhoodOpen(false); setNeighborhoodSearch(''); }}
-                                className="w-full text-left px-4 py-2.5 text-sm text-gray-400 hover:bg-gray-800 flex items-center gap-2"
-                              >
-                                <Plus className="h-3.5 w-3.5" />
-                                Add "{neighborhoodSearch}"
-                              </button>
-                            )}
-                          </div>
-                        </div>
-                      )}
-                    </>
-                  ) : (
-                    <input
-                      type="text"
-                      value={neighborhood}
-                      onChange={e => setNeighborhood(e.target.value)}
-                      placeholder={city ? 'Enter neighborhood' : 'Select a city first'}
-                      disabled={!city}
-                      className="w-full bg-gray-900 border border-gray-800 rounded-xl px-4 py-2.5 text-white text-sm placeholder-gray-600 focus:outline-none focus:border-gray-600 transition-colors disabled:opacity-40"
-                    />
-                  )}
+                        )}
+                      </>
+                    ) : (
+                      <input
+                        type="text"
+                        value={neighborhood}
+                        onChange={e => setNeighborhood(e.target.value)}
+                        placeholder={city ? 'Enter area' : '—'}
+                        disabled={!city}
+                        className="w-full bg-gray-900/80 border border-white/6 rounded-xl px-3 py-2.5 text-white text-sm placeholder-gray-600 focus:outline-none focus:border-white/15 transition-colors disabled:opacity-40"
+                      />
+                    )}
+                  </div>
                 </div>
 
                 {step1Error && (
@@ -627,89 +688,113 @@ export function SubmitModal({ onClose, onSubmitted, prefill }: SubmitModalProps)
                   </div>
                 )}
 
-                {/* Next button */}
                 <button
                   type="button"
                   onClick={handleStep1Next}
-                  className="w-full flex items-center justify-center gap-2 py-3.5 rounded-xl font-black text-sm uppercase tracking-wider transition-all hover:scale-[1.02] active:scale-[0.98]"
+                  className="w-full flex items-center justify-center gap-2 py-3 rounded-xl font-black text-sm uppercase tracking-wider transition-all hover:scale-[1.01] active:scale-[0.99]"
                   style={{
                     background: `linear-gradient(135deg, ${typeColor}, ${type === 'visit' ? '#3b82f6' : '#7c3aed'})`,
                     color: '#000',
-                    boxShadow: `0 0 24px ${typeColor}40`,
+                    boxShadow: `0 0 20px ${typeColor}35`,
                   }}
                 >
                   Continue
                   <ArrowRight className="h-4 w-4" />
                 </button>
               </motion.div>
+
             ) : (
+            /* ════════════════ STEP 2 ════════════════ */
               <motion.form
                 key="step2"
                 onSubmit={handleSubmit}
-                initial={{ opacity: 0, x: 20 }}
+                initial={{ opacity: 0, x: 16 }}
                 animate={{ opacity: 1, x: 0 }}
-                exit={{ opacity: 0, x: 20 }}
-                transition={{ duration: 0.2 }}
-                className="p-5 space-y-5"
+                exit={{ opacity: 0, x: 16 }}
+                transition={{ duration: 0.18 }}
+                className="p-4 space-y-4"
               >
-                {/* Summary of step 1 */}
-                <div
-                  className="flex items-center gap-3 p-3 rounded-xl border"
-                  style={{ backgroundColor: `${typeColor}08`, borderColor: `${typeColor}25` }}
-                >
-                  {type === 'visit'
-                    ? <MapPin className="h-4 w-4 shrink-0" style={{ color: typeColor }} />
-                    : <ShoppingBag className="h-4 w-4 shrink-0" style={{ color: typeColor }} />
-                  }
-                  <div className="min-w-0">
-                    <p className="text-white text-sm font-semibold truncate">{storeName}</p>
-                    <p className="text-gray-500 text-xs">{neighborhood ? `${neighborhood}, ` : ''}{city}</p>
-                  </div>
-                  <span
-                    className="ml-auto text-[10px] font-black uppercase tracking-widest shrink-0 px-2 py-1 rounded-full"
-                    style={{ backgroundColor: `${typeColor}20`, color: typeColor }}
+                {/* Summary bar (only when no store photo banner) */}
+                {!storePhoto && (
+                  <div
+                    className="flex items-center gap-3 px-3 py-2.5 rounded-xl border"
+                    style={{ backgroundColor: `${typeColor}08`, borderColor: `${typeColor}20` }}
                   >
-                    {type === 'visit' ? 'Visited' : 'Pickup'}
-                  </span>
-                </div>
+                    {type === 'visit'
+                      ? <MapPin className="h-4 w-4 shrink-0" style={{ color: typeColor }} />
+                      : <ShoppingBag className="h-4 w-4 shrink-0" style={{ color: typeColor }} />
+                    }
+                    <div className="min-w-0 flex-1">
+                      <p className="text-white text-sm font-semibold truncate">{storeName}</p>
+                      <p className="text-gray-500 text-xs truncate">{neighborhood ? `${neighborhood}, ` : ''}{city}</p>
+                    </div>
+                    <span className="text-[10px] font-black uppercase tracking-widest shrink-0 px-2 py-0.5 rounded-full"
+                      style={{ backgroundColor: `${typeColor}20`, color: typeColor }}>
+                      {type === 'visit' ? 'Visit' : 'Pickup'}
+                    </span>
+                  </div>
+                )}
 
-                {/* Photo upload — hero position for step 2 */}
+                {/* ── Photo upload as post-preview card ── */}
                 <div>
-                  <label className="block text-xs font-bold text-gray-500 uppercase tracking-widest mb-2">
-                    Photo {type === 'haul' ? <span style={{ color: typeColor }}>*</span> : <span className="text-gray-700 normal-case font-normal">(optional)</span>}
-                  </label>
-                  {photoPreview ? (
-                    <div className="relative rounded-xl overflow-hidden">
-                      <img src={photoPreview} alt="" className="w-full h-56 object-cover" />
-                      <div className="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent pointer-events-none" />
+                  <div className="flex items-center justify-between mb-1.5">
+                    <label className="text-[10px] font-bold text-gray-500 uppercase tracking-widest">
+                      Photo {type === 'haul'
+                        ? <span style={{ color: typeColor }}>*</span>
+                        : <span className="text-gray-600 normal-case font-normal">(optional)</span>}
+                    </label>
+                    {photoPreview && (
                       <button
                         type="button"
                         onClick={() => { setPhotoFile(null); setPhotoPreview(null); }}
-                        className="absolute top-2.5 right-2.5 p-1.5 bg-black/70 rounded-full text-white hover:bg-black/90 transition-colors"
+                        className="text-xs text-gray-500 hover:text-white transition-colors flex items-center gap-1"
                       >
-                        <X className="h-4 w-4" />
+                        <X className="h-3 w-3" /> Remove
                       </button>
-                      <div className="absolute bottom-2.5 left-2.5 text-xs text-white/60 font-medium">
-                        Tap × to change
+                    )}
+                  </div>
+
+                  {photoPreview ? (
+                    /* Preview looks like the final find card */
+                    <div
+                      className="relative w-full rounded-xl overflow-hidden cursor-pointer"
+                      style={{ paddingBottom: '125%' }}
+                      onClick={() => fileRef.current?.click()}
+                    >
+                      <img src={photoPreview} alt="" className="absolute inset-0 w-full h-full object-cover" />
+                      <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent pointer-events-none" />
+                      {/* Tap to change hint */}
+                      <div className="absolute bottom-3 inset-x-0 flex justify-center">
+                        <span className="text-white/50 text-xs px-3 py-1 rounded-full bg-black/40 backdrop-blur-sm">
+                          Tap to change
+                        </span>
+                      </div>
+                      {/* Type badge preview */}
+                      <div
+                        className="absolute top-2.5 left-2.5 flex items-center gap-1 px-2 py-0.5 rounded-sm text-[10px] font-black uppercase tracking-widest backdrop-blur-sm"
+                        style={{ backgroundColor: `${typeColor}25`, border: `1px solid ${typeColor}50`, color: typeColor }}
+                      >
+                        {type === 'visit' ? <MapPin className="h-2.5 w-2.5" /> : <ShoppingBag className="h-2.5 w-2.5" />}
+                        {type === 'visit' ? 'Visited' : 'Picked up'}
                       </div>
                     </div>
                   ) : (
                     <button
                       type="button"
                       onClick={() => fileRef.current?.click()}
-                      className="w-full h-40 border-2 border-dashed rounded-xl flex flex-col items-center justify-center gap-3 transition-all group"
+                      className="w-full rounded-xl flex flex-col items-center justify-center gap-3 transition-all group"
                       style={{
-                        borderColor: `${typeColor}30`,
-                        backgroundColor: `${typeColor}05`,
+                        height: 140,
+                        borderWidth: 1.5,
+                        borderStyle: 'dashed',
+                        borderColor: `${typeColor}25`,
+                        backgroundColor: `${typeColor}04`,
                       }}
-                      onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.borderColor = `${typeColor}60`; }}
-                      onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.borderColor = `${typeColor}30`; }}
+                      onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.borderColor = `${typeColor}50`; }}
+                      onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.borderColor = `${typeColor}25`; }}
                     >
-                      <div
-                        className="w-12 h-12 rounded-2xl flex items-center justify-center"
-                        style={{ backgroundColor: `${typeColor}15` }}
-                      >
-                        <Camera className="h-5 w-5" style={{ color: typeColor }} />
+                      <div className="w-10 h-10 rounded-2xl flex items-center justify-center" style={{ backgroundColor: `${typeColor}12` }}>
+                        <Camera className="h-4.5 w-4.5" style={{ color: typeColor }} />
                       </div>
                       <div className="text-center">
                         <p className="text-white text-sm font-semibold">Add a photo</p>
@@ -719,19 +804,13 @@ export function SubmitModal({ onClose, onSubmitted, prefill }: SubmitModalProps)
                       </div>
                     </button>
                   )}
-                  <input
-                    ref={fileRef}
-                    type="file"
-                    accept="image/*"
-                    className="hidden"
-                    onChange={handlePhotoChange}
-                  />
+                  <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={handlePhotoChange} />
                 </div>
 
-                {/* Item name (haul only) */}
+                {/* ── Item name (haul only) ── */}
                 {type === 'haul' && (
                   <div>
-                    <label className="block text-xs font-bold text-gray-500 uppercase tracking-widest mb-2">
+                    <label className="block text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-1.5">
                       What did you pick up? <span style={{ color: typeColor }}>*</span>
                     </label>
                     <input
@@ -739,27 +818,27 @@ export function SubmitModal({ onClose, onSubmitted, prefill }: SubmitModalProps)
                       value={itemName}
                       onChange={e => setItemName(e.target.value)}
                       placeholder="e.g. Issey Miyake Pleats Please jacket"
-                      className="w-full bg-gray-900 border border-gray-800 rounded-xl px-4 py-2.5 text-white text-sm placeholder-gray-600 focus:outline-none focus:border-gray-600 transition-colors"
+                      className="w-full bg-gray-900/80 border border-white/6 rounded-xl px-4 py-2.5 text-white text-sm placeholder-gray-600 focus:outline-none focus:border-white/15 transition-colors"
                     />
                   </div>
                 )}
 
-                {/* Caption */}
+                {/* ── Caption (auto-expand) ── */}
                 <div>
-                  <label className="block text-xs font-bold text-gray-500 uppercase tracking-widest mb-2">
-                    Caption <span className="text-gray-700 normal-case font-normal">(optional)</span>
+                  <label className="block text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-1.5">
+                    Caption <span className="text-gray-600 normal-case font-normal">(optional)</span>
                   </label>
                   <textarea
+                    ref={captionRef}
                     value={caption}
                     onChange={e => setCaption(e.target.value)}
                     maxLength={280}
-                    rows={3}
-                    placeholder={type === 'haul'
-                      ? 'Tell the story behind the find...'
-                      : 'What made this place worth visiting?'}
-                    className="w-full bg-gray-900 border border-gray-800 rounded-xl px-4 py-2.5 text-white text-sm placeholder-gray-600 focus:outline-none focus:border-gray-600 resize-none transition-colors"
+                    rows={2}
+                    placeholder={type === 'haul' ? 'Tell the story behind the find...' : 'What made this place worth visiting?'}
+                    className="w-full bg-gray-900/80 border border-white/6 rounded-xl px-4 py-2.5 text-white text-sm placeholder-gray-600 focus:outline-none focus:border-white/15 resize-none transition-colors overflow-hidden"
+                    style={{ minHeight: 68 }}
                   />
-                  <p className="text-gray-700 text-xs mt-1 text-right">{caption.length}/280</p>
+                  <p className="text-gray-700 text-[11px] mt-1 text-right">{caption.length}/280</p>
                 </div>
 
                 {error && (
@@ -771,24 +850,21 @@ export function SubmitModal({ onClose, onSubmitted, prefill }: SubmitModalProps)
                 <button
                   type="submit"
                   disabled={submitting}
-                  className="w-full flex items-center justify-center gap-2 py-3.5 rounded-xl font-black text-sm uppercase tracking-wider transition-all hover:scale-[1.02] active:scale-[0.98] disabled:opacity-50 disabled:pointer-events-none"
+                  className="w-full flex items-center justify-center gap-2 py-3 rounded-xl font-black text-sm uppercase tracking-wider transition-all hover:scale-[1.01] active:scale-[0.99] disabled:opacity-50 disabled:pointer-events-none"
                   style={{
                     background: `linear-gradient(135deg, ${typeColor}, ${type === 'visit' ? '#3b82f6' : '#7c3aed'})`,
                     color: '#000',
-                    boxShadow: `0 0 24px ${typeColor}40`,
+                    boxShadow: `0 0 20px ${typeColor}35`,
                   }}
                 >
                   {submitting ? (
                     <span className="animate-spin h-4 w-4 border-2 border-black border-t-transparent rounded-full" />
                   ) : (
-                    <>
-                      <Check className="h-4 w-4" />
-                      Submit Find
-                    </>
+                    <><Check className="h-4 w-4" /> Submit Find</>
                   )}
                 </button>
 
-                <p className="text-center text-gray-700 text-xs">
+                <p className="text-center text-gray-700 text-[11px] pb-1">
                   Finds are reviewed before appearing publicly.
                 </p>
               </motion.form>
