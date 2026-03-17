@@ -460,11 +460,11 @@ export function SubmitModal({ onClose, onSubmitted, prefill }: SubmitModalProps)
                 animate={{ opacity: 1, x: 0 }}
                 exit={{ opacity: 0, x: -16 }}
                 transition={{ duration: 0.18 }}
-                className="p-4 space-y-4"
+                className="p-4 space-y-3.5"
               >
-                {/* ── Compact pill type toggle ── */}
+                {/* ── Inline type toggle — small, secondary ── */}
                 <div
-                  className="flex p-1 rounded-xl gap-1"
+                  className="flex p-0.5 rounded-lg gap-0.5"
                   style={{ backgroundColor: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.06)' }}
                 >
                   {([
@@ -475,49 +475,59 @@ export function SubmitModal({ onClose, onSubmitted, prefill }: SubmitModalProps)
                       key={opt.id}
                       type="button"
                       onClick={() => setType(opt.id)}
-                      className="flex-1 flex items-center justify-center gap-1.5 py-2 rounded-lg text-xs font-bold transition-all duration-200"
+                      className="flex-1 flex items-center justify-center gap-1.5 py-1.5 rounded-md text-xs font-semibold transition-all duration-200"
                       style={{
-                        backgroundColor: type === opt.id ? `${opt.color}20` : 'transparent',
+                        backgroundColor: type === opt.id ? `${opt.color}18` : 'transparent',
                         color: type === opt.id ? opt.color : 'rgb(107,114,128)',
-                        boxShadow: type === opt.id ? `0 0 12px ${opt.color}20` : 'none',
                       }}
                     >
-                      <opt.icon className="h-3.5 w-3.5" />
+                      <opt.icon className="h-3 w-3" />
                       {opt.label}
                     </button>
                   ))}
                 </div>
 
-                {/* ── Store search / selected card ── */}
+                {/* ── Store search / hero selected card ── */}
                 <div className="relative">
-                  <label className="block text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-1.5">Store *</label>
+                  <label className="block text-[11px] font-semibold text-gray-500 mb-1.5">Store</label>
                   {selectedStore ? (
-                    /* Selected store card with photo */
+                    /* Hero store card — larger photo, prominent layout */
                     <div
-                      className="flex items-center gap-3 p-2.5 rounded-xl border overflow-hidden"
-                      style={{ backgroundColor: `${typeColor}08`, borderColor: `${typeColor}25` }}
+                      className="relative rounded-xl overflow-hidden border"
+                      style={{ borderColor: `${typeColor}20` }}
                     >
-                      {/* Thumbnail */}
-                      <div className="w-12 h-12 rounded-lg overflow-hidden shrink-0 bg-gray-800 flex items-center justify-center">
-                        {selectedStore.photos?.[0] ? (
+                      {/* Photo banner or gradient fallback */}
+                      {selectedStore.photos?.[0] ? (
+                        <div className="relative h-20 overflow-hidden">
                           <img
-                            src={ikUrl(selectedStore.photos[0], 'thumb')}
+                            src={ikUrl(selectedStore.photos[0], 'card')}
                             alt={selectedStore.name}
                             className="w-full h-full object-cover"
                           />
-                        ) : (
-                          <MapPin className="h-4 w-4 text-gray-600" />
-                        )}
+                          <div className="absolute inset-0 bg-gradient-to-t from-gray-950 via-gray-950/60 to-transparent" />
+                        </div>
+                      ) : (
+                        <div className="h-10" style={{ background: `linear-gradient(135deg, ${typeColor}15, transparent)` }} />
+                      )}
+                      {/* Store info overlaid at bottom of banner */}
+                      <div className="relative px-3 pb-3" style={{ marginTop: selectedStore.photos?.[0] ? '-28px' : '0' }}>
+                        <div className="flex items-end justify-between gap-2">
+                          <div className="min-w-0 flex-1">
+                            <p className="text-white font-bold text-[15px] leading-tight truncate">{selectedStore.name}</p>
+                            <p className="text-gray-400 text-xs mt-0.5 flex items-center gap-1">
+                              <MapPin className="h-2.5 w-2.5 shrink-0" />
+                              {selectedStore.neighborhood ? `${selectedStore.neighborhood}, ` : ''}{selectedStore.city}
+                            </p>
+                          </div>
+                          <button
+                            type="button"
+                            onClick={clearStore}
+                            className="text-gray-600 hover:text-white transition-colors shrink-0 p-1 -mb-0.5"
+                          >
+                            <X className="h-3.5 w-3.5" />
+                          </button>
+                        </div>
                       </div>
-                      <div className="flex-1 min-w-0">
-                        <p className="text-white text-sm font-semibold truncate">{selectedStore.name}</p>
-                        <p className="text-gray-500 text-xs truncate">
-                          {selectedStore.neighborhood ? `${selectedStore.neighborhood}, ` : ''}{selectedStore.city}
-                        </p>
-                      </div>
-                      <button type="button" onClick={clearStore} className="text-gray-600 hover:text-white transition-colors shrink-0 p-1">
-                        <X className="h-3.5 w-3.5" />
-                      </button>
                     </div>
                   ) : (
                     <>
@@ -540,16 +550,16 @@ export function SubmitModal({ onClose, onSubmitted, prefill }: SubmitModalProps)
                               onClick={() => selectStore(store)}
                               className="w-full text-left px-3 py-2.5 hover:bg-gray-800 transition-colors flex items-center gap-3"
                             >
-                              <div className="w-8 h-8 rounded-lg overflow-hidden shrink-0 bg-gray-800 flex items-center justify-center">
+                              <div className="w-9 h-9 rounded-lg overflow-hidden shrink-0 bg-gray-800 flex items-center justify-center">
                                 {store.photos?.[0] ? (
                                   <img src={ikUrl(store.photos[0], 'thumb')} alt="" className="w-full h-full object-cover" />
                                 ) : (
                                   <MapPin className="h-3.5 w-3.5 text-gray-600" />
                                 )}
                               </div>
-                              <div>
-                                <p className="text-white text-sm font-medium">{store.name}</p>
-                                <p className="text-gray-500 text-xs">{store.neighborhood ? `${store.neighborhood}, ` : ''}{store.city}</p>
+                              <div className="min-w-0 flex-1">
+                                <p className="text-white text-sm font-medium truncate">{store.name}</p>
+                                <p className="text-gray-500 text-xs truncate">{store.neighborhood ? `${store.neighborhood}, ` : ''}{store.city}</p>
                               </div>
                             </button>
                           ))}
@@ -575,112 +585,117 @@ export function SubmitModal({ onClose, onSubmitted, prefill }: SubmitModalProps)
                   )}
                 </div>
 
-                {/* ── City + Neighborhood side by side ── */}
-                <div className="grid grid-cols-2 gap-3">
-                  {/* City */}
-                  <div className="relative">
-                    <label className="block text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-1.5">City *</label>
-                    <button
-                      type="button"
-                      onClick={() => { setCityOpen(o => !o); setNeighborhoodOpen(false); }}
-                      className="w-full flex items-center justify-between bg-gray-900/80 border rounded-xl px-3 py-2.5 text-sm transition-colors hover:border-white/15 focus:outline-none"
-                      style={{ borderColor: city ? `${typeColor}40` : 'rgba(255,255,255,0.06)' }}
-                    >
-                      <span className={`truncate ${city ? 'text-white font-medium' : 'text-gray-600'}`} style={{ fontSize: 13 }}>
-                        {city || 'Select'}
-                      </span>
-                      <ChevronDown className={`h-3.5 w-3.5 text-gray-500 shrink-0 transition-transform duration-200 ${cityOpen ? 'rotate-180' : ''}`} />
-                    </button>
-                    {cityOpen && (
-                      <div className="absolute z-20 w-56 mt-1 bg-gray-900 border border-gray-700 rounded-xl overflow-hidden shadow-2xl max-h-52 overflow-y-auto">
-                        {MAJOR_CITIES_JAPAN.map(c => (
-                          <button
-                            key={c}
-                            type="button"
-                            onClick={() => handleCitySelect(c)}
-                            className="w-full text-left px-3 py-2 text-sm hover:bg-gray-800 transition-colors flex items-center justify-between"
-                            style={{ color: city === c ? typeColor : 'rgb(209,213,219)' }}
-                          >
-                            {c}
-                            {city === c && <Check className="h-3 w-3" />}
-                          </button>
-                        ))}
-                      </div>
-                    )}
-                  </div>
+                {/* ── City + Neighborhood ── */}
+                {/* When store is selected, collapse to read-only since values auto-filled */}
+                {selectedStore ? (
+                  <></> // Location shown in the hero card above — no need to repeat
+                ) : (
+                  <div className="grid grid-cols-2 gap-3">
+                    {/* City */}
+                    <div className="relative">
+                      <label className="block text-[11px] font-semibold text-gray-500 mb-1.5">City</label>
+                      <button
+                        type="button"
+                        onClick={() => { setCityOpen(o => !o); setNeighborhoodOpen(false); }}
+                        className="w-full flex items-center justify-between bg-gray-900/80 border rounded-xl px-3 py-2.5 text-sm transition-colors hover:border-white/15 focus:outline-none"
+                        style={{ borderColor: city ? `${typeColor}40` : 'rgba(255,255,255,0.06)' }}
+                      >
+                        <span className={`truncate ${city ? 'text-white font-medium' : 'text-gray-600'}`} style={{ fontSize: 13 }}>
+                          {city || 'Select'}
+                        </span>
+                        <ChevronDown className={`h-3.5 w-3.5 text-gray-500 shrink-0 transition-transform duration-200 ${cityOpen ? 'rotate-180' : ''}`} />
+                      </button>
+                      {cityOpen && (
+                        <div className="absolute z-20 w-56 mt-1 bg-gray-900 border border-gray-700 rounded-xl overflow-hidden shadow-2xl max-h-52 overflow-y-auto">
+                          {MAJOR_CITIES_JAPAN.map(c => (
+                            <button
+                              key={c}
+                              type="button"
+                              onClick={() => handleCitySelect(c)}
+                              className="w-full text-left px-3 py-2 text-sm hover:bg-gray-800 transition-colors flex items-center justify-between"
+                              style={{ color: city === c ? typeColor : 'rgb(209,213,219)' }}
+                            >
+                              {c}
+                              {city === c && <Check className="h-3 w-3" />}
+                            </button>
+                          ))}
+                        </div>
+                      )}
+                    </div>
 
-                  {/* Neighborhood */}
-                  <div className="relative">
-                    <label className="block text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-1.5">Area</label>
-                    {neighborhoodOptions.length > 0 ? (
-                      <>
-                        <button
-                          type="button"
-                          onClick={() => { setNeighborhoodOpen(o => !o); setCityOpen(false); }}
-                          className="w-full flex items-center justify-between bg-gray-900/80 border rounded-xl px-3 py-2.5 text-sm transition-colors hover:border-white/15 focus:outline-none"
-                          style={{ borderColor: neighborhood ? `${typeColor}40` : 'rgba(255,255,255,0.06)' }}
-                        >
-                          <span className={`truncate ${neighborhood ? 'text-white font-medium' : 'text-gray-600'}`} style={{ fontSize: 13 }}>
-                            {neighborhood || 'Select'}
-                          </span>
-                          <ChevronDown className={`h-3.5 w-3.5 text-gray-500 shrink-0 transition-transform duration-200 ${neighborhoodOpen ? 'rotate-180' : ''}`} />
-                        </button>
-                        {neighborhoodOpen && (
-                          <div className="absolute z-20 w-56 right-0 mt-1 bg-gray-900 border border-gray-700 rounded-xl overflow-hidden shadow-2xl">
-                            <div className="p-2 border-b border-gray-800">
-                              <input
-                                type="text"
-                                value={neighborhoodSearch}
-                                onChange={e => setNeighborhoodSearch(e.target.value)}
-                                placeholder="Search..."
-                                className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-1.5 text-sm text-white placeholder-gray-600 focus:outline-none"
-                                autoFocus
-                              />
+                    {/* Neighborhood */}
+                    <div className="relative">
+                      <label className="block text-[11px] font-semibold text-gray-500 mb-1.5">Area</label>
+                      {neighborhoodOptions.length > 0 ? (
+                        <>
+                          <button
+                            type="button"
+                            onClick={() => { setNeighborhoodOpen(o => !o); setCityOpen(false); }}
+                            className="w-full flex items-center justify-between bg-gray-900/80 border rounded-xl px-3 py-2.5 text-sm transition-colors hover:border-white/15 focus:outline-none"
+                            style={{ borderColor: neighborhood ? `${typeColor}40` : 'rgba(255,255,255,0.06)' }}
+                          >
+                            <span className={`truncate ${neighborhood ? 'text-white font-medium' : 'text-gray-600'}`} style={{ fontSize: 13 }}>
+                              {neighborhood || 'Select'}
+                            </span>
+                            <ChevronDown className={`h-3.5 w-3.5 text-gray-500 shrink-0 transition-transform duration-200 ${neighborhoodOpen ? 'rotate-180' : ''}`} />
+                          </button>
+                          {neighborhoodOpen && (
+                            <div className="absolute z-20 w-56 right-0 mt-1 bg-gray-900 border border-gray-700 rounded-xl overflow-hidden shadow-2xl">
+                              <div className="p-2 border-b border-gray-800">
+                                <input
+                                  type="text"
+                                  value={neighborhoodSearch}
+                                  onChange={e => setNeighborhoodSearch(e.target.value)}
+                                  placeholder="Search..."
+                                  className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-1.5 text-sm text-white placeholder-gray-600 focus:outline-none"
+                                  autoFocus
+                                />
+                              </div>
+                              <div className="max-h-44 overflow-y-auto">
+                                {neighborhood && (
+                                  <button type="button" onClick={() => handleNeighborhoodSelect('')} className="w-full text-left px-3 py-2 text-xs text-gray-500 hover:bg-gray-800 italic">
+                                    Clear
+                                  </button>
+                                )}
+                                {filteredNeighborhoods.map(n => (
+                                  <button
+                                    key={n}
+                                    type="button"
+                                    onClick={() => handleNeighborhoodSelect(n)}
+                                    className="w-full text-left px-3 py-2 text-sm hover:bg-gray-800 transition-colors flex items-center justify-between"
+                                    style={{ color: neighborhood === n ? typeColor : 'rgb(209,213,219)' }}
+                                  >
+                                    {n}
+                                    {neighborhood === n && <Check className="h-3 w-3" />}
+                                  </button>
+                                ))}
+                                {filteredNeighborhoods.length === 0 && (
+                                  <button
+                                    type="button"
+                                    onClick={() => { setNeighborhood(neighborhoodSearch); setNeighborhoodOpen(false); setNeighborhoodSearch(''); }}
+                                    className="w-full text-left px-3 py-2 text-sm text-gray-400 hover:bg-gray-800 flex items-center gap-2"
+                                  >
+                                    <Plus className="h-3.5 w-3.5" />
+                                    Add "{neighborhoodSearch}"
+                                  </button>
+                                )}
+                              </div>
                             </div>
-                            <div className="max-h-44 overflow-y-auto">
-                              {neighborhood && (
-                                <button type="button" onClick={() => handleNeighborhoodSelect('')} className="w-full text-left px-3 py-2 text-xs text-gray-500 hover:bg-gray-800 italic">
-                                  Clear
-                                </button>
-                              )}
-                              {filteredNeighborhoods.map(n => (
-                                <button
-                                  key={n}
-                                  type="button"
-                                  onClick={() => handleNeighborhoodSelect(n)}
-                                  className="w-full text-left px-3 py-2 text-sm hover:bg-gray-800 transition-colors flex items-center justify-between"
-                                  style={{ color: neighborhood === n ? typeColor : 'rgb(209,213,219)' }}
-                                >
-                                  {n}
-                                  {neighborhood === n && <Check className="h-3 w-3" />}
-                                </button>
-                              ))}
-                              {filteredNeighborhoods.length === 0 && (
-                                <button
-                                  type="button"
-                                  onClick={() => { setNeighborhood(neighborhoodSearch); setNeighborhoodOpen(false); setNeighborhoodSearch(''); }}
-                                  className="w-full text-left px-3 py-2 text-sm text-gray-400 hover:bg-gray-800 flex items-center gap-2"
-                                >
-                                  <Plus className="h-3.5 w-3.5" />
-                                  Add "{neighborhoodSearch}"
-                                </button>
-                              )}
-                            </div>
-                          </div>
-                        )}
-                      </>
-                    ) : (
-                      <input
-                        type="text"
-                        value={neighborhood}
-                        onChange={e => setNeighborhood(e.target.value)}
-                        placeholder={city ? 'Enter area' : '—'}
-                        disabled={!city}
-                        className="w-full bg-gray-900/80 border border-white/6 rounded-xl px-3 py-2.5 text-white text-sm placeholder-gray-600 focus:outline-none focus:border-white/15 transition-colors disabled:opacity-40"
-                      />
-                    )}
+                          )}
+                        </>
+                      ) : (
+                        <input
+                          type="text"
+                          value={neighborhood}
+                          onChange={e => setNeighborhood(e.target.value)}
+                          placeholder={city ? 'Enter area' : '—'}
+                          disabled={!city}
+                          className="w-full bg-gray-900/80 border border-white/6 rounded-xl px-3 py-2.5 text-white text-sm placeholder-gray-600 focus:outline-none focus:border-white/15 transition-colors disabled:opacity-40"
+                        />
+                      )}
+                    </div>
                   </div>
-                </div>
+                )}
 
                 {step1Error && (
                   <div className="bg-red-500/10 border border-red-500/30 rounded-xl px-4 py-3 text-red-400 text-sm">
@@ -691,11 +706,11 @@ export function SubmitModal({ onClose, onSubmitted, prefill }: SubmitModalProps)
                 <button
                   type="button"
                   onClick={handleStep1Next}
-                  className="w-full flex items-center justify-center gap-2 py-3 rounded-xl font-black text-sm uppercase tracking-wider transition-all hover:scale-[1.01] active:scale-[0.99]"
+                  className="w-full flex items-center justify-center gap-2 py-3 rounded-xl font-bold text-sm tracking-wide transition-all hover:scale-[1.01] active:scale-[0.99]"
                   style={{
                     background: `linear-gradient(135deg, ${typeColor}, ${type === 'visit' ? '#3b82f6' : '#7c3aed'})`,
                     color: '#000',
-                    boxShadow: `0 0 20px ${typeColor}35`,
+                    boxShadow: `0 0 20px ${typeColor}30`,
                   }}
                 >
                   Continue
@@ -738,10 +753,10 @@ export function SubmitModal({ onClose, onSubmitted, prefill }: SubmitModalProps)
                 {/* ── Photo upload as post-preview card ── */}
                 <div>
                   <div className="flex items-center justify-between mb-1.5">
-                    <label className="text-[10px] font-bold text-gray-500 uppercase tracking-widest">
+                    <label className="text-[11px] font-semibold text-gray-500">
                       Photo {type === 'haul'
                         ? <span style={{ color: typeColor }}>*</span>
-                        : <span className="text-gray-600 normal-case font-normal">(optional)</span>}
+                        : <span className="text-gray-600 font-normal">(optional)</span>}
                     </label>
                     {photoPreview && (
                       <button
@@ -810,7 +825,7 @@ export function SubmitModal({ onClose, onSubmitted, prefill }: SubmitModalProps)
                 {/* ── Item name (haul only) ── */}
                 {type === 'haul' && (
                   <div>
-                    <label className="block text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-1.5">
+                    <label className="block text-[11px] font-semibold text-gray-500 mb-1.5">
                       What did you pick up? <span style={{ color: typeColor }}>*</span>
                     </label>
                     <input
@@ -825,8 +840,8 @@ export function SubmitModal({ onClose, onSubmitted, prefill }: SubmitModalProps)
 
                 {/* ── Caption (auto-expand) ── */}
                 <div>
-                  <label className="block text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-1.5">
-                    Caption <span className="text-gray-600 normal-case font-normal">(optional)</span>
+                  <label className="block text-[11px] font-semibold text-gray-500 mb-1.5">
+                    Caption <span className="text-gray-600 font-normal">(optional)</span>
                   </label>
                   <textarea
                     ref={captionRef}
