@@ -476,7 +476,14 @@ export function HomePage() {
                   onStoreSelect={(store) => {
                     setSelectedStore(store);
                     if (mapViewRef.current?.flyToStore) {
-                      mapViewRef.current.flyToStore(store.latitude, store.longitude);
+                      // Desktop: zoom in tight (16) and offset left so pin sits
+                      // in the visible map area, clear of the StoreDetail sidebar.
+                      // Negative X shifts the target point left → pin appears
+                      // more centered in the left ~60% of the viewport.
+                      mapViewRef.current.flyToStore(store.latitude, store.longitude, {
+                        zoom: 16,
+                        offset: [-160, 0],
+                      });
                     }
                   }}
                   onDismiss={() => {

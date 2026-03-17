@@ -95,7 +95,7 @@ interface MapViewProps {
 }
 
 export interface MapViewHandle {
-  flyToStore: (latitude: number, longitude: number, options?: { offset?: [number, number] }) => void;
+  flyToStore: (latitude: number, longitude: number, options?: { offset?: [number, number]; zoom?: number }) => void;
 }
 
 export const MapView = forwardRef<MapViewHandle, MapViewProps>(({ stores, onStoreClick, selectedCity, selectedNeighborhood, isSearchActive = false, activeMainCategory, activeSubCategory, styleMode: controlledStyleMode, onStyleModeChange, tappedStoreId, onLabelClick, onSearchArea, selectedStore, onViewportChange, spotlightedStoreIds = [], isSpotlightMode = false }, ref) => {
@@ -354,17 +354,14 @@ export const MapView = forwardRef<MapViewHandle, MapViewProps>(({ stores, onStor
 
   // Expose flyToStore method via ref
   useImperativeHandle(ref, () => ({
-    flyToStore: (latitude: number, longitude: number, options?: { offset?: [number, number] }) => {
+    flyToStore: (latitude: number, longitude: number, options?: { offset?: [number, number]; zoom?: number }) => {
       if (mapRef.current) {
         mapRef.current.flyTo({
           center: [longitude, latitude],
-          zoom: 14, // Wider view to show context around the store
+          zoom: options?.zoom ?? 14,
           duration: 1500,
           essential: true,
-          // Offset the center point to account for bottom sheet in peek mode
-          // Zoom 14 shows wider area, so we need less aggressive offset
-          // 250px shift positions marker in upper-middle area, clearly visible above carousel
-          offset: options?.offset || [0, -250]
+          offset: options?.offset || [0, -250],
         });
       }
     }
@@ -901,8 +898,10 @@ export const MapView = forwardRef<MapViewHandle, MapViewProps>(({ stores, onStor
         hasLocation={!!userPosition}
       />
 
-      {/* PHASE 2.2: Search This Area Button - DEBUG: Always visible at zoom >= 14 */}
-      {viewState.zoom >= 14 && (
+      {/* Search This Area Button — visible at zoom >= 14.
+          On desktop: hide when spotlight panel is open (panel X handles dismiss).
+          On mobile: always show so user can clear from the map. */}
+      {viewState.zoom >= 14 && (isMobile || !isSpotlightMode) && (
         <SearchAreaButton
           onClick={handleSearchArea}
           isActive={isSpotlightMode}
