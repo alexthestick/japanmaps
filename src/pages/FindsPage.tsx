@@ -979,10 +979,17 @@ export function FindsPage() {
       {/* Header */}
       <div className="relative border-b border-gray-900">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 py-8 sm:py-12">
-          <Link to="/" className="inline-flex items-center gap-1.5 text-gray-600 hover:text-gray-400 text-sm mb-6 transition-colors">
-            <MapPin className="h-3.5 w-3.5" />
-            Lost in Transit
-          </Link>
+          <div className="flex items-center gap-4 mb-6">
+            <Link to="/map" className="inline-flex items-center gap-1.5 text-gray-600 hover:text-gray-400 text-sm transition-colors">
+              <ArrowLeft className="h-3.5 w-3.5" />
+              Back to map
+            </Link>
+            <span className="text-gray-800">·</span>
+            <Link to="/" className="inline-flex items-center gap-1.5 text-gray-600 hover:text-gray-400 text-sm transition-colors">
+              <MapPin className="h-3.5 w-3.5" />
+              Lost in Transit
+            </Link>
+          </div>
 
           <div className="flex items-start justify-between gap-4">
             <div>
