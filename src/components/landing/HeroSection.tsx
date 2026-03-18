@@ -113,7 +113,6 @@ export function HeroSection() {
   });
 
   const opacity = useTransform(scrollYProgress, [0, 0.6], [1, 0]);
-  const y = useTransform(scrollYProgress, [0, 1], ['0%', '20%']);
 
   const [isLoaded, setIsLoaded] = useState(false);
   const [photos, setPhotos] = useState<HeroFind[]>([]);
@@ -141,22 +140,10 @@ export function HeroSection() {
         {/* Base gradient */}
         <div className="absolute inset-0 bg-gradient-to-br from-cyan-500/20 via-purple-500/20 to-blue-500/20" />
 
-        {/* Animated orbs */}
-        <motion.div
-          animate={{ scale: [1, 1.2, 1], opacity: [0.3, 0.4, 0.3] }}
-          transition={{ duration: 8, repeat: Infinity, ease: 'easeInOut' }}
-          className="absolute top-0 left-1/4 w-96 h-96 bg-cyan-400/30 rounded-full blur-3xl"
-        />
-        <motion.div
-          animate={{ scale: [1, 1.3, 1], opacity: [0.3, 0.5, 0.3] }}
-          transition={{ duration: 10, repeat: Infinity, ease: 'easeInOut', delay: 2 }}
-          className="absolute bottom-0 right-1/4 w-96 h-96 bg-purple-400/30 rounded-full blur-3xl"
-        />
-        <motion.div
-          animate={{ scale: [1, 1.1, 1], opacity: [0.2, 0.3, 0.2] }}
-          transition={{ duration: 12, repeat: Infinity, ease: 'easeInOut', delay: 4 }}
-          className="absolute top-1/2 left-1/2 w-96 h-96 bg-blue-400/20 rounded-full blur-3xl"
-        />
+        {/* Static ambient orbs — removing animation eliminates constant GPU repaint */}
+        <div className="absolute top-0 left-1/4 w-96 h-96 bg-cyan-400/25 rounded-full blur-3xl" />
+        <div className="absolute bottom-0 right-1/4 w-96 h-96 bg-purple-400/25 rounded-full blur-3xl" />
+        <div className="absolute top-1/2 left-1/2 w-96 h-96 bg-blue-400/15 rounded-full blur-3xl" />
 
         {/* Map lines */}
         <div className="absolute inset-0 opacity-20">

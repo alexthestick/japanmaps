@@ -1,5 +1,5 @@
-import { useEffect, useState } from 'react';
-import { motion, useScroll, AnimatePresence } from 'framer-motion';
+import { useEffect, useRef, useState } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import Lenis from 'lenis';
 import { useNavigate } from 'react-router-dom';
 import { Map } from 'lucide-react';
@@ -15,9 +15,9 @@ import { NeighborhoodsShowcase } from '../components/landing/NeighborhoodsShowca
 import { SEOHead, generateWebsiteSchema, generateOrganizationSchema } from '../components/seo';
 
 export function NewLandingPage() {
-  const { scrollYProgress } = useScroll();
   const navigate = useNavigate();
   const [showFloatingCTA, setShowFloatingCTA] = useState(false);
+  const ctaTriggerRef = useRef<HTMLDivElement>(null);
 
   // Initialize Lenis smooth scroll
   useEffect(() => {
@@ -43,14 +43,18 @@ export function NewLandingPage() {
     };
   }, []);
 
-  // Show floating CTA after hero scrolls out of view
+  // Show floating CTA once hero scrolls out — IntersectionObserver fires once,
+  // not on every scroll frame like scrollYProgress.on('change') did
   useEffect(() => {
-    const unsubscribe = scrollYProgress.on('change', (v) => {
-      // hero is roughly the first 15% of scroll progress
-      setShowFloatingCTA(v > 0.08);
-    });
-    return unsubscribe;
-  }, [scrollYProgress]);
+    const el = ctaTriggerRef.current;
+    if (!el) return;
+    const observer = new IntersectionObserver(
+      ([entry]) => setShowFloatingCTA(!entry.isIntersecting),
+      { threshold: 0 }
+    );
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, []);
 
   // Generate structured data for homepage
   const websiteSchema = generateWebsiteSchema();
@@ -63,22 +67,10 @@ export function NewLandingPage() {
       <div className="fixed inset-0 pointer-events-none z-0">
         {/* Base gradient */}
         <div className="absolute inset-0 bg-gradient-to-br from-cyan-500/10 via-purple-500/10 to-blue-500/10" />
-        {/* Slow drifting orbs */}
-        <motion.div
-          animate={{ scale: [1, 1.15, 1], opacity: [0.15, 0.22, 0.15], x: [0, 30, 0], y: [0, -20, 0] }}
-          transition={{ duration: 18, repeat: Infinity, ease: 'easeInOut' }}
-          className="absolute top-1/4 left-1/4 w-[600px] h-[600px] bg-cyan-400/20 rounded-full blur-3xl"
-        />
-        <motion.div
-          animate={{ scale: [1, 1.2, 1], opacity: [0.12, 0.2, 0.12], x: [0, -25, 0], y: [0, 20, 0] }}
-          transition={{ duration: 22, repeat: Infinity, ease: 'easeInOut', delay: 4 }}
-          className="absolute bottom-1/4 right-1/4 w-[500px] h-[500px] bg-purple-400/20 rounded-full blur-3xl"
-        />
-        <motion.div
-          animate={{ scale: [1, 1.1, 1], opacity: [0.08, 0.15, 0.08] }}
-          transition={{ duration: 26, repeat: Infinity, ease: 'easeInOut', delay: 8 }}
-          className="absolute top-2/3 left-1/2 w-[400px] h-[400px] bg-blue-400/15 rounded-full blur-3xl"
-        />
+        {/* Static ambient orbs — removing animation eliminates constant GPU repaint */}
+        <div className="absolute top-1/4 left-1/4 w-[600px] h-[600px] bg-cyan-400/15 rounded-full blur-3xl" />
+        <div className="absolute bottom-1/4 right-1/4 w-[500px] h-[500px] bg-purple-400/12 rounded-full blur-3xl" />
+        <div className="absolute top-2/3 left-1/2 w-[400px] h-[400px] bg-blue-400/10 rounded-full blur-3xl" />
         {/* Map lines */}
         <div className="absolute inset-0 opacity-10">
           <svg className="w-full h-full" xmlns="http://www.w3.org/2000/svg">
@@ -106,6 +98,9 @@ export function NewLandingPage() {
           url="/"
           jsonLd={[websiteSchema, organizationSchema]}
         />
+
+        {/* Sentinel: when this leaves viewport the floating CTA appears */}
+        <div ref={ctaTriggerRef} className="absolute top-[90vh] h-px w-px pointer-events-none" aria-hidden />
 
         <HeroSection />
         <StatsBar />

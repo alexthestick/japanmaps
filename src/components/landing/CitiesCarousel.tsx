@@ -59,10 +59,10 @@ export function CitiesCarousel() {
       {/* Film grain texture */}
       <div className="absolute inset-0 film-grain opacity-20" />
 
-      {/* Animated gradient background */}
+      {/* Static ambient orbs */}
       <div className="absolute inset-0 opacity-30">
-        <div className="absolute top-0 left-1/4 w-96 h-96 bg-cyan-400/20 rounded-full blur-3xl animate-pulse" />
-        <div className="absolute bottom-0 right-1/4 w-96 h-96 bg-purple-400/20 rounded-full blur-3xl animate-pulse" style={{ animationDelay: '1s' }} />
+        <div className="absolute top-0 left-1/4 w-96 h-96 bg-cyan-400/20 rounded-full blur-3xl" />
+        <div className="absolute bottom-0 right-1/4 w-96 h-96 bg-purple-400/20 rounded-full blur-3xl" />
       </div>
 
       <div className="relative mx-auto max-w-[1800px] px-6">
@@ -117,7 +117,7 @@ export function CitiesCarousel() {
                   animate={isInView ? { opacity: 1, scale: 1 } : {}}
                   transition={{
                     duration: 0.6,
-                    delay: 0.1 * index,
+                    delay: Math.min(index * 0.04, 0.16),
                     ease: [0.22, 1, 0.36, 1],
                   }}
                   onClick={() => handleCityClick(city.name)}
