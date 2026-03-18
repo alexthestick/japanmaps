@@ -113,6 +113,9 @@ export const MapView = forwardRef<MapViewHandle, MapViewProps>(({ stores, onStor
   const [isMapMoving, setIsMapMoving] = useState(false);
   const moveTimeoutRef = useRef<NodeJS.Timeout>();
 
+  // Throttle ref for onViewportChange — fires at most every 250ms
+  const viewportThrottleRef = useRef<number>(0);
+
   // PHASE 1.6A: Search Area feature with smart context switching
   const { showSearchButton, hideSearchButton, initializeSearch, getCurrentBounds, detectCurrentCity } = useSearchArea(mapRef);
 
@@ -157,12 +160,29 @@ export const MapView = forwardRef<MapViewHandle, MapViewProps>(({ stores, onStor
     }
   }, [selectedCity, selectedNeighborhood, activeMainCategory, activeSubCategory, initializeSearch]);
 
+  // Snap coordinates to a ~100m grid so memos only invalidate on meaningful movement
+  // 3 decimal places ≈ 111m precision at the equator (fine for label sorting)
+  const snappedLng = Math.round(viewState.longitude * 1000) / 1000;
+  const snappedLat = Math.round(viewState.latitude * 1000) / 1000;
+
   // 🎮 DISCOVERY LENS: Active Zone System
   const activeZoneCenter = useMemo(() => {
     if (!mapRef.current) return null;
     const center = mapRef.current.getCenter();
     return { lng: center.lng, lat: center.lat };
-  }, [viewState.longitude, viewState.latitude]);
+  }, [snappedLng, snappedLat]);
+
+  // Pre-sorted store list by distance to map center — only recomputes every ~100m of movement
+  const storesSortedByDistance = useMemo(() => {
+    return stores
+      .map(store => {
+        const dx = store.longitude - snappedLng;
+        const dy = store.latitude - snappedLat;
+        return { store, distance: dx * dx + dy * dy }; // skip sqrt — we only need ordering
+      })
+      .sort((a, b) => a.distance - b.distance)
+      .map(({ store }) => store);
+  }, [stores, snappedLng, snappedLat]);
 
   // Calculate adaptive radius based on store density
   // 🎬 OPTION 1: Activate at zoom 16 (sync with full pins)
@@ -170,7 +190,6 @@ export const MapView = forwardRef<MapViewHandle, MapViewProps>(({ stores, onStor
     // Only activate at street-level zoom (> 16)
     if (viewState.zoom <= 16) return null;
 
-    // Count stores in viewport
     if (!mapRef.current) return 500; // Default 500m
 
     const bounds = mapRef.current.getBounds();
@@ -182,14 +201,11 @@ export const MapView = forwardRef<MapViewHandle, MapViewProps>(({ stores, onStor
     });
 
     const density = storesInView.length;
-
-    // Dense area (40+ stores): 300m radius
-    // Medium area (20-40 stores): 500m radius
-    // Sparse area (< 20 stores): 800m radius
     if (density >= 40) return 300;
     if (density >= 20) return 500;
     return 800;
-  }, [stores, viewState]);
+  // snappedLat/Lng used so this only recomputes every ~100m, not every frame
+  }, [stores, viewState.zoom, snappedLat, snappedLng]);
 
   // 🎬 OPTION 4: Progressive glow intensity (15-16 = subtle hint, 16+ = full)
   const lensIntensity = useMemo(() => {
@@ -436,30 +452,34 @@ export const MapView = forwardRef<MapViewHandle, MapViewProps>(({ stores, onStor
 
   // PHASE 1.5G: Handle map movement - hide city labels during pan/zoom
   const handleMapMove = useCallback((evt: any) => {
+    // Single state update — viewState drives all derived memos
     setViewState(evt.viewState);
 
-    // Hide city labels immediately when map starts moving
-    setIsMapMoving(true);
+    // Batch: set moving flag only if it isn't already true (avoids extra renders)
+    setIsMapMoving(prev => (prev ? prev : true));
 
-    // Clear existing timeout
+    // Debounce city label restore
     if (moveTimeoutRef.current) {
       clearTimeout(moveTimeoutRef.current);
     }
-
-    // Show city labels after 500ms of idle time
     moveTimeoutRef.current = setTimeout(() => {
       setIsMapMoving(false);
     }, 500);
 
-    // PHASE 3: Track viewport bounds for spotlight mode
+    // PHASE 3: Throttle viewport bounds updates to max 4/sec (250ms)
+    // The spotlight algorithm doesn't need sub-frame accuracy
     if (mapRef.current && onViewportChange) {
-      const bounds = mapRef.current.getBounds();
-      onViewportChange({
-        north: bounds.getNorth(),
-        south: bounds.getSouth(),
-        east: bounds.getEast(),
-        west: bounds.getWest(),
-      });
+      const now = Date.now();
+      if (now - viewportThrottleRef.current >= 250) {
+        viewportThrottleRef.current = now;
+        const bounds = mapRef.current.getBounds();
+        onViewportChange({
+          north: bounds.getNorth(),
+          south: bounds.getSouth(),
+          east: bounds.getEast(),
+          west: bounds.getWest(),
+        });
+      }
     }
   }, [onViewportChange]);
 
@@ -843,37 +863,8 @@ export const MapView = forwardRef<MapViewHandle, MapViewProps>(({ stores, onStor
           // 🎯 PHASE 1.5A: Responsive label limits
           const maxLabels = isMobile ? 10 : 15;
 
-          // Calculate map center and sort stores by distance
-          const mapCenter = mapRef.current?.getCenter();
-          if (!mapCenter) {
-            // Fallback: show limited stores
-            return stores.slice(0, maxLabels).map((store, index) => (
-              <StoreLabel
-                key={`label-${store.id}`}
-                store={store}
-                map={mapRef.current}
-                isSearchActive={isSearchActive}
-                isHovered={hoveredStoreId === store.id || tappedStoreId === store.id}
-                index={index}
-                activeZoneCenter={activeZoneCenter}
-                activeZoneRadius={calculateActiveZoneRadius}
-                onClick={onLabelClick}
-              />
-            ));
-          }
-
-          // Sort stores by distance to map center (closest first)
-          const storesWithDistance = stores.map(store => {
-            const dx = store.longitude - mapCenter.lng;
-            const dy = store.latitude - mapCenter.lat;
-            const distance = Math.sqrt(dx * dx + dy * dy);
-            return { store, distance };
-          });
-
-          storesWithDistance.sort((a, b) => a.distance - b.distance);
-
-          // 🎯 Take closest stores based on device - updates dynamically as user pans
-          const closestStores = storesWithDistance.slice(0, maxLabels);
+          // Use pre-sorted list (memoized, only recomputes every ~100m of movement)
+          const closestStores = storesSortedByDistance.slice(0, maxLabels);
 
           return closestStores.map(({ store }, index) => (
             <StoreLabel

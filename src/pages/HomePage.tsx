@@ -259,8 +259,13 @@ export function HomePage() {
     setSelectedNeighborhood(null);
   };
 
-  // PHASE 3: Get curated spotlight stores whenever viewport or filters change
-  const curatedSpotlightStores = useSpotlightStores(filteredStores, viewportBounds, { count: 5 });
+  // PHASE 3: Get curated spotlight stores — only compute when spotlight is active.
+  // Passing null bounds when inactive skips the entire scoring algorithm.
+  const curatedSpotlightStores = useSpotlightStores(
+    filteredStores,
+    isSpotlightMode ? viewportBounds : null,
+    { count: 5 }
+  );
 
   // PHASE 3: Handle spotlight mode toggle
   const handleSearchArea = useCallback(() => {
