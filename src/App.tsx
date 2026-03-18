@@ -1,4 +1,5 @@
 import { BrowserRouter, Routes, Route, useLocation } from 'react-router-dom';
+import { lazy, Suspense } from 'react';
 import { logger } from './utils/logger';
 
 // VERSION INDICATOR - Check browser console to verify deployment
@@ -6,31 +7,34 @@ import { logger } from './utils/logger';
 logger.log('[Lost in Transit] Build Version: 2026-02-23-PHASE4 - Finds, Admin Approval & Community Feed');
 import { AuthProvider } from './contexts/AuthContext';
 import { Layout } from './components/layout/Layout';
-import { NewLandingPage } from './pages/NewLandingPage';
-import { HomePage } from './pages/HomePage';
-import { StoreDetailPage } from './pages/StoreDetailPage';
-import { SavedStoresPage } from './pages/SavedStoresPage';
-import { SuggestStorePage } from './pages/SuggestStorePage';
-import { BlogPage } from './pages/BlogPage';
-import { BlogPostPage } from './pages/BlogPostPage';
-import { AboutPage } from './pages/AboutPage';
-import { ProfilePage } from './pages/ProfilePage';
-import { AdminDashboard } from './pages/AdminDashboard';
-import BulkImportPage from './pages/BulkImportPage';
-import { DiagnosticPage } from './pages/DiagnosticPage';
-import { NotFoundPage } from './pages/NotFoundPage';
-import { CityPage } from './pages/CityPage';
-import { NeighborhoodPage } from './pages/NeighborhoodPage';
-import { CitiesPage } from './pages/CitiesPage';
-import { NeighborhoodsPage } from './pages/NeighborhoodsPage';
-import { CategoryPage } from './pages/CategoryPage';
-import { LoginPage } from './pages/LoginPage';
-import { SignupPage } from './pages/SignupPage';
-import { FindsPage } from './pages/FindsPage';
-import { FindDetailPage } from './pages/FindDetailPage';
-import { ResetPasswordPage } from './pages/ResetPasswordPage';
 import { motion } from 'framer-motion';
 import { ScrollToTop } from './components/common/ScrollToTop';
+import { Loader } from './components/common/Loader';
+
+// Route-level code splitting — each page loads only when first visited
+const NewLandingPage = lazy(() => import('./pages/NewLandingPage').then(m => ({ default: m.NewLandingPage })));
+const HomePage = lazy(() => import('./pages/HomePage').then(m => ({ default: m.HomePage })));
+const StoreDetailPage = lazy(() => import('./pages/StoreDetailPage').then(m => ({ default: m.StoreDetailPage })));
+const SavedStoresPage = lazy(() => import('./pages/SavedStoresPage').then(m => ({ default: m.SavedStoresPage })));
+const SuggestStorePage = lazy(() => import('./pages/SuggestStorePage').then(m => ({ default: m.SuggestStorePage })));
+const BlogPage = lazy(() => import('./pages/BlogPage').then(m => ({ default: m.BlogPage })));
+const BlogPostPage = lazy(() => import('./pages/BlogPostPage').then(m => ({ default: m.BlogPostPage })));
+const AboutPage = lazy(() => import('./pages/AboutPage').then(m => ({ default: m.AboutPage })));
+const ProfilePage = lazy(() => import('./pages/ProfilePage').then(m => ({ default: m.ProfilePage })));
+const AdminDashboard = lazy(() => import('./pages/AdminDashboard').then(m => ({ default: m.AdminDashboard })));
+const BulkImportPage = lazy(() => import('./pages/BulkImportPage'));
+const DiagnosticPage = lazy(() => import('./pages/DiagnosticPage').then(m => ({ default: m.DiagnosticPage })));
+const NotFoundPage = lazy(() => import('./pages/NotFoundPage').then(m => ({ default: m.NotFoundPage })));
+const CityPage = lazy(() => import('./pages/CityPage').then(m => ({ default: m.CityPage })));
+const NeighborhoodPage = lazy(() => import('./pages/NeighborhoodPage').then(m => ({ default: m.NeighborhoodPage })));
+const CitiesPage = lazy(() => import('./pages/CitiesPage').then(m => ({ default: m.CitiesPage })));
+const NeighborhoodsPage = lazy(() => import('./pages/NeighborhoodsPage').then(m => ({ default: m.NeighborhoodsPage })));
+const CategoryPage = lazy(() => import('./pages/CategoryPage').then(m => ({ default: m.CategoryPage })));
+const LoginPage = lazy(() => import('./pages/LoginPage').then(m => ({ default: m.LoginPage })));
+const SignupPage = lazy(() => import('./pages/SignupPage').then(m => ({ default: m.SignupPage })));
+const FindsPage = lazy(() => import('./pages/FindsPage').then(m => ({ default: m.FindsPage })));
+const FindDetailPage = lazy(() => import('./pages/FindDetailPage').then(m => ({ default: m.FindDetailPage })));
+const ResetPasswordPage = lazy(() => import('./pages/ResetPasswordPage').then(m => ({ default: m.ResetPasswordPage })));
 
 function AnimatedRoutes() {
   const location = useLocation();
@@ -40,6 +44,7 @@ function AnimatedRoutes() {
       {/* Exclude store detail pages to maintain list scroll position when user goes back */}
       <ScrollToTop excludePaths={['/store/']} />
 
+      <Suspense fallback={<Loader />}>
       <Routes location={location} key={location.pathname}>
         {/* New Premium Landing Page (no layout) */}
         <Route path="/" element={
@@ -194,6 +199,7 @@ function AnimatedRoutes() {
           <Route path="*" element={<NotFoundPage />} />
         </Route>
       </Routes>
+      </Suspense>
     </>
   );
 }

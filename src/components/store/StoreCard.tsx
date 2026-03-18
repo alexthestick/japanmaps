@@ -72,7 +72,7 @@ function StoreCardComponent({ store, onClick }: StoreCardProps) {
         {/* Image Container */}
         <div className="relative w-full aspect-[4/5] overflow-hidden bg-gray-800">
           <img
-            src={ikUrl(store.photos[0], 'thumb') || 'https://images.unsplash.com/photo-1578662996442-48f60103fc96?w=400&h=500&fit=crop&q=65'}
+            src={ikUrl(store.photos[0], 'card') || 'https://images.unsplash.com/photo-1578662996442-48f60103fc96?w=800&h=1000&fit=crop&q=75'}
             alt={store.name}
             loading="lazy"
             className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
