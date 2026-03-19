@@ -30,13 +30,13 @@ export function BottomSheet({ isOpen, onClose, title, children }: BottomSheetPro
     <AnimatePresence>
       {isOpen && (
         <>
-          {/* Backdrop */}
+          {/* Backdrop — z-[200] clears all page stacking contexts (header z-50, search bar z-50, etc.) */}
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             onClick={onClose}
-            className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50"
+            className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[200]"
           />
 
           {/* Bottom Sheet */}
@@ -45,7 +45,7 @@ export function BottomSheet({ isOpen, onClose, title, children }: BottomSheetPro
             animate={{ y: 0 }}
             exit={{ y: '100%' }}
             transition={{ type: 'spring', damping: 30, stiffness: 300 }}
-            className="fixed bottom-0 left-0 right-0 z-50"
+            className="fixed bottom-0 left-0 right-0 z-[201]"
           >
             <div className="bg-gray-900 rounded-t-3xl shadow-2xl border-t-2 border-cyan-400/30 max-h-[80vh] overflow-hidden">
               {/* Kirby neon glow */}

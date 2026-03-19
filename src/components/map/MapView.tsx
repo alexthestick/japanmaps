@@ -446,9 +446,21 @@ export const MapView = forwardRef<MapViewHandle, MapViewProps>(({ stores, onStor
 
     logger.log('Map labels configured: POI hidden, transit stations visible');
 
+    // Emit initial viewport bounds so spotlight mode works on first tap
+    // without requiring the user to pan the map first
+    if (onViewportChange) {
+      const bounds = map.getBounds();
+      onViewportChange({
+        north: bounds.getNorth(),
+        south: bounds.getSouth(),
+        east: bounds.getEast(),
+        west: bounds.getWest(),
+      });
+    }
+
     // PHASE 2.2: Initialize search area tracking on map load
     initializeSearch();
-  }, [initializeSearch]);
+  }, [initializeSearch, onViewportChange]);
 
   // PHASE 1.5G: Handle map movement - hide city labels during pan/zoom
   const handleMapMove = useCallback((evt: any) => {
