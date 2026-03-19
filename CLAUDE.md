@@ -35,7 +35,7 @@ Reference this file at the start of every session. It captures the project visio
 ### Data fetching
 - **Never `SELECT *` from `stores` in a loop or on a per-page basis.** The main store list is fetched once via `useStores` hook → `get_stores_with_coordinates` RPC → React Query cache (5 min staleTime).
 - Store detail pages use `WHERE slug = ?` (indexed). UUID fallback exists as a shim — do not remove it until all legacy URLs expire.
-- `useSpotlightStores` is gated: only runs when `isSpotlightMode === true`. Pass `null` bounds when inactive.
+- `useSpotlightStores` runs **unconditionally** — never gate it on `isSpotlightMode`. The result must be pre-computed before the button fires. Gating it caused a one-render race where the result was always `[]` on first tap.
 
 ### Performance — what we've fixed and why
 - **Animated `blur-3xl` orbs cause constant GPU repaint.** Always use static `blur-3xl` divs. Never add `animate-pulse`, `animate-spin`, or `repeat: Infinity` to large blur elements.
