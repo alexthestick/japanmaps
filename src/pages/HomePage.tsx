@@ -259,11 +259,13 @@ export function HomePage() {
     setSelectedNeighborhood(null);
   };
 
-  // PHASE 3: Get curated spotlight stores — only compute when spotlight is active.
-  // Passing null bounds when inactive skips the entire scoring algorithm.
+  // PHASE 3: Always compute spotlight stores against current viewport so the
+  // result is ready the instant the button is pressed (not one render behind).
+  // The scoring memo inside useSpotlightStores is cheap (~1ms for 899 stores)
+  // and only re-runs when filteredStores or viewportBounds actually change.
   const curatedSpotlightStores = useSpotlightStores(
     filteredStores,
-    isSpotlightMode ? viewportBounds : null,
+    viewportBounds,
     { count: 5 }
   );
 
