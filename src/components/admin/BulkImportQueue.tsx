@@ -9,6 +9,7 @@ import type { MainCategory, SubCategory } from '../../types/store';
 import type { PlaceDetails } from './FetchPlaceIdButton';
 import { Loader, CheckCircle, XCircle, AlertTriangle } from 'lucide-react';
 import { logger } from '../../utils/logger';
+import { generateSlug } from '../../utils/slugify';
 
 interface BulkImportQueueProps {
   items: BulkImportQueueItem[];
@@ -235,10 +236,14 @@ export function BulkImportQueue({
       const latitude = currentItem.placeDetails?.latitude || 0;
       const longitude = currentItem.placeDetails?.longitude || 0;
 
+      const storeName = currentItem.placeName || currentItem.csvData.title;
+      const storeCity = city || 'Tokyo';
+
       const storeData: any = {
-        name: currentItem.placeName || currentItem.csvData.title,
+        name: storeName,
+        slug: generateSlug(storeName, storeCity),
         address: currentItem.placeAddress || currentItem.csvData.address || '',
-        city: city || 'Tokyo', // Fallback to Tokyo
+        city: storeCity,
         neighborhood: neighborhood || currentItem.csvData.neighborhood || null,
         country: 'Japan',
         location: `POINT(${longitude} ${latitude})`, // PostGIS format

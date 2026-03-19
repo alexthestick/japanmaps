@@ -192,21 +192,33 @@ export function StoreDetailPage() {
         data = result.data;
         fetchError = result.error;
       } else {
-        // For slugs, fetch all stores and match by generated slug
-        const { data: allStores, error } = await supabase
+        // Slug lookup — query the indexed slug column directly (O(1) vs full table scan)
+        const slugResult = await supabase
           .from('stores')
-          .select('*');
+          .select('*')
+          .eq('slug', idOrSlug)
+          .maybeSingle();
 
-        if (error) {
-          fetchError = error;
-        } else if (allStores) {
-          // Find store by matching generated slug
-          data = allStores.find((s: any) =>
-            generateSlug(s.name, s.city) === idOrSlug
-          );
-          if (!data) {
-            fetchError = new Error('Store not found');
+        if (slugResult.data) {
+          data = slugResult.data;
+        } else if (!slugResult.error) {
+          // Slug column may not be populated yet (pre-migration) — fall back to
+          // client-side match. This shim can be removed once the migration has run
+          // and all slugs are confirmed populated.
+          const { data: allStores, error: fallbackError } = await supabase
+            .from('stores')
+            .select('*');
+
+          if (fallbackError) {
+            fetchError = fallbackError;
+          } else if (allStores) {
+            data = allStores.find((s: any) =>
+              generateSlug(s.name, s.city) === idOrSlug
+            );
+            if (!data) fetchError = new Error('Store not found');
           }
+        } else {
+          fetchError = slugResult.error;
         }
       }
 

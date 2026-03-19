@@ -9,6 +9,7 @@ import { MAIN_CATEGORIES, MAIN_CATEGORY_ICONS, FASHION_SUB_CATEGORIES, FOOD_SUB_
 import { formatLocationForDB } from '../../utils/helpers';
 import { GoogleMapsStoreExtractor, type ExtractedStoreData } from '../admin/GoogleMapsStoreExtractor';
 import { logger } from '../../utils/logger';
+import { generateSlug } from '../../utils/slugify';
 
 const baseStoreSchema = z.object({
   name: z.string().min(1, 'Store name is required'),
@@ -141,6 +142,7 @@ export function AddStoreForm({ onSuccess, onCancel }: AddStoreFormProps) {
 
       const storeData = {
         name: data.name,
+        slug: generateSlug(data.name, data.city),
         address: data.address,
         city: data.city,
         neighborhood: data.neighborhood || null,
