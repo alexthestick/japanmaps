@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect, useRef, useImperativeHandle, forwardRef, useMemo } from 'react';
+import { useState, useCallback, useEffect, useRef, useImperativeHandle, forwardRef, useMemo, memo } from 'react';
 import Map, { Marker, NavigationControl } from 'react-map-gl';
 import { MAPBOX_TOKEN, MAP_STYLE_DAY, MAP_STYLE_NIGHT, DEFAULT_CENTER, DEFAULT_ZOOM } from '../../lib/mapbox';
 import { CITY_COORDINATES, NEIGHBORHOOD_COORDINATES, MAIN_CATEGORY_COLORS } from '../../lib/constants';
@@ -36,7 +36,8 @@ function getMarkerTier(zoom: number): MarkerTier {
 }
 
 // 🎨 Atmosphere Dot Component (Tier 0) - Minimal, glowing presence
-const AtmosphereDot = ({ store, onClick }: { store: Store; onClick: (e: any) => void }) => {
+// memo: store.mainCategory and store.id never change, so this never re-renders during pan/zoom
+const AtmosphereDot = memo(({ store, onClick }: { store: Store; onClick: (e: any) => void }) => {
   const color = MAIN_CATEGORY_COLORS[store.mainCategory || 'Fashion'] || '#22D9EE';
   return (
     <div
@@ -53,10 +54,12 @@ const AtmosphereDot = ({ store, onClick }: { store: Store; onClick: (e: any) => 
       title={store.name}
     />
   );
-};
+});
+AtmosphereDot.displayName = 'AtmosphereDot';
 
 // 🎨 Discovery Dot Component (Tier 1) - Category-colored, slightly larger
-const DiscoveryDot = ({ store, onClick }: { store: Store; onClick: (e: any) => void }) => {
+// memo: same reasoning as AtmosphereDot
+const DiscoveryDot = memo(({ store, onClick }: { store: Store; onClick: (e: any) => void }) => {
   const color = MAIN_CATEGORY_COLORS[store.mainCategory || 'Fashion'] || '#22D9EE';
   return (
     <div
@@ -73,7 +76,8 @@ const DiscoveryDot = ({ store, onClick }: { store: Store; onClick: (e: any) => v
       title={store.name}
     />
   );
-};
+});
+DiscoveryDot.displayName = 'DiscoveryDot';
 
 interface MapViewProps {
   stores: Store[];
@@ -182,6 +186,20 @@ export const MapView = forwardRef<MapViewHandle, MapViewProps>(({ stores, onStor
       })
       .sort((a, b) => a.distance - b.distance)
       .map(({ store }) => store);
+  }, [stores, snappedLng, snappedLat]);
+
+  // Viewport-culled store list — memoized so the filter only re-runs every ~100m of movement
+  // (keyed on snappedLng/snappedLat, same grid as storesSortedByDistance)
+  const visibleStores = useMemo(() => {
+    const bounds = mapRef.current?.getBounds();
+    if (!bounds) return stores;
+    const buffer = 0.01; // ~1km buffer to prevent pop-in at edges
+    return stores.filter(store =>
+      store.latitude  >= bounds.getSouth() - buffer &&
+      store.latitude  <= bounds.getNorth() + buffer &&
+      store.longitude >= bounds.getWest()  - buffer &&
+      store.longitude <= bounds.getEast()  + buffer
+    );
   }, [stores, snappedLng, snappedLat]);
 
   // Calculate adaptive radius based on store density
@@ -515,18 +533,7 @@ export const MapView = forwardRef<MapViewHandle, MapViewProps>(({ stores, onStor
         {(() => {
           const currentTier = getMarkerTier(viewState.zoom);
 
-          // 🔹 Viewport Culling: Only render markers in visible bounds (with buffer)
-          const bounds = mapRef.current?.getBounds();
-          const buffer = 0.01; // ~1km buffer to prevent pop-in
-
-          const visibleStores = bounds
-            ? stores.filter(store => {
-                return store.latitude >= bounds.getSouth() - buffer &&
-                       store.latitude <= bounds.getNorth() + buffer &&
-                       store.longitude >= bounds.getWest() - buffer &&
-                       store.longitude <= bounds.getEast() + buffer;
-              })
-            : stores;
+          // 🔹 visibleStores is memoized above — no inline filter needed here
 
           // 🔹 Limit markers at very low zoom for performance
           const maxMarkers = currentTier === 'atmosphere' ? 200 :
