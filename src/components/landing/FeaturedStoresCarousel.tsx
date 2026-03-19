@@ -26,7 +26,7 @@ export function FeaturedStoresCarousel() {
     async function fetchFeaturedStores() {
       const { data, error } = await supabase
         .from('stores')
-        .select('*')
+        .select('id, slug, name, city, neighborhood, photos, categories, description, main_category, save_count')
         .eq('verified', true)
         .limit(6)
         .order('save_count', { ascending: false });
@@ -36,12 +36,12 @@ export function FeaturedStoresCarousel() {
           ...store,
           slug: store.slug || generateSlug(store.name, store.city),
           mainCategory: store.main_category,
-          priceRange: store.price_range,
-          createdAt: store.created_at,
-          updatedAt: store.updated_at,
-          submittedBy: store.submitted_by,
-          haulCount: store.haul_count || 0,
-          saveCount: store.save_count || 0,
+          // Fields required by Store type but not used in this carousel
+          address: '', country: '', latitude: 0, longitude: 0,
+          categories: store.categories || [],
+          priceRange: undefined, createdAt: '', updatedAt: '',
+          haulCount: 0, saveCount: store.save_count || 0,
+          verified: true,
         })));
       }
       setLoading(false);

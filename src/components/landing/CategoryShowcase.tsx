@@ -54,10 +54,10 @@ export function CategoryShowcase() {
       {/* Film grain */}
       <div className="absolute inset-0 film-grain opacity-20" />
 
-      {/* Animated background gradient orbs */}
+      {/* Static ambient orbs */}
       <div className="absolute inset-0 opacity-20">
-        <div className="absolute top-1/4 right-1/4 w-96 h-96 bg-blue-400/30 rounded-full blur-3xl animate-pulse" />
-        <div className="absolute bottom-1/4 left-1/4 w-96 h-96 bg-purple-400/30 rounded-full blur-3xl animate-pulse" style={{ animationDelay: '1s' }} />
+        <div className="absolute top-1/4 right-1/4 w-96 h-96 bg-blue-400/30 rounded-full blur-3xl" />
+        <div className="absolute bottom-1/4 left-1/4 w-96 h-96 bg-purple-400/30 rounded-full blur-3xl" />
       </div>
 
       <div className="relative mx-auto max-w-7xl px-6">
