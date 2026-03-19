@@ -866,7 +866,7 @@ export const MapView = forwardRef<MapViewHandle, MapViewProps>(({ stores, onStor
           // Use pre-sorted list (memoized, only recomputes every ~100m of movement)
           const closestStores = storesSortedByDistance.slice(0, maxLabels);
 
-          return closestStores.map(({ store }, index) => (
+          return closestStores.map((store, index) => (
             <StoreLabel
               key={`label-${store.id}`}
               store={store}
