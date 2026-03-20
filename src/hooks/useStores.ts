@@ -127,10 +127,12 @@ export function useStores(filters?: StoreFilters) {
 
   const queryKey = ['stores', serverFilters];
 
-  // Fetch all stores once, cache for 5 minutes
+  // Fetch all stores once, cache for 5 minutes, consider fresh for 2 minutes
   const query = useQuery({
     queryKey: ['stores'],
     queryFn: fetchAllStores,
+    staleTime: 5 * 60 * 1000,  // 5 min — don't refetch if data is recent
+    gcTime: 10 * 60 * 1000,    // 10 min — keep in memory after unmount
   });
 
   // Apply filters to cached data
