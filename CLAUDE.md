@@ -119,8 +119,16 @@ Flow:
 
 - `spatial_ref_sys` — PostGIS system table. RLS not needed. Run `REVOKE SELECT ON spatial_ref_sys FROM anon, authenticated;` to clear security advisor warning.
 - `stores` table has `slug TEXT NOT NULL` with unique index `stores_slug_idx` (added March 2026).
-- `get_stores_with_coordinates` RPC — does not yet include `slug` column. The `useStores` hook falls back to `generateSlug()` for the map view. Update the RPC if slug is needed there.
+- `get_stores_with_coordinates` RPC — does not yet include `slug` column. The `useStores` hook falls back to `generateSlug()` for the map view. SQL to update it is in CLAUDE.md history. Update once confirmed safe.
 - `field_notes` table — community finds. Joined with `profiles` for username display.
+
+## Sitemap
+
+`public/sitemap.xml` is **generated**, not hand-edited. After any bulk store import or schema change run:
+```
+npm run sitemap:generate
+```
+Script: `scripts/generate-sitemap.mjs` — fetches all slugs from live DB, skips any invalid slug, writes the file. Commit the result. Never manually edit `sitemap.xml` — your changes will be overwritten next time the script runs.
 
 ---
 

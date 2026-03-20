@@ -11,7 +11,7 @@
     "prerender": "node scripts/prerender.js",
     "preview": "vite preview",
     "type-check": "tsc --noEmit",
-    "sitemap:generate": "node scripts/generate-sitemap.js",
+    "sitemap:generate": "node scripts/generate-sitemap.mjs",
     "images:generate": "node scripts/generateImages.js",
     "images:fetch": "node scripts/fetchUnsplash.js",
     "images:watch": "node scripts/watchImages.js",
