@@ -1,9 +1,13 @@
-import { MapPin, ExternalLink, Instagram, Clock, Navigation, X } from 'lucide-react';
+import { MapPin, ExternalLink, Instagram, Clock, Navigation, X, Heart, ArrowUpRight, DollarSign, CheckCircle2 } from 'lucide-react';
 import type { Store } from '../../types/store';
 import { getGoogleMapsUrl } from '../../utils/formatters';
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
+import { Link } from 'react-router-dom';
 import { logger } from '../../utils/logger';
+import { saveStore, unsaveStore, isStoreSaved } from '../../utils/savedStores';
+import { ikUrl } from '../../utils/ikUrl';
+import { BlurImage } from '../common/BlurImage';
 
 interface StoreDetailProps {
   store: Store;
@@ -11,8 +15,8 @@ interface StoreDetailProps {
 }
 
 export function StoreDetail({ store, onClose }: StoreDetailProps) {
-  // Debug log
   logger.log('StoreDetail rendered with store:', store?.name);
+  const [isSaved, setIsSaved] = useState(() => isStoreSaved(store.id));
 
   // Close on Escape key
   useEffect(() => {
@@ -22,6 +26,19 @@ export function StoreDetail({ store, onClose }: StoreDetailProps) {
     window.addEventListener('keydown', handleEscape);
     return () => window.removeEventListener('keydown', handleEscape);
   }, [onClose]);
+
+  const handleSaveToggle = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (isSaved) {
+      unsaveStore(store.id);
+      setIsSaved(false);
+    } else {
+      saveStore(store);
+      setIsSaved(true);
+    }
+  };
+
+  const storeUrl = `/store/${store.slug || store.id}`;
 
   return (
     <motion.div
@@ -38,67 +55,93 @@ export function StoreDetail({ store, onClose }: StoreDetailProps) {
 
       {/* Corner decorations */}
       <div className="absolute top-4 left-4 w-4 h-4 border-t-2 border-l-2 border-cyan-400/60 z-10" />
-      <div className="absolute top-4 right-4 w-4 h-4 border-t-2 border-r-2 border-cyan-400/60 z-10" />
-      {/* Close Button - Kirby themed */}
-      <motion.button
-        onClick={onClose}
-        whileHover={{ scale: 1.1, rotate: 90 }}
-        whileTap={{ scale: 0.9 }}
-        className="absolute top-6 right-6 z-20 p-2 bg-gradient-to-r from-cyan-500/20 to-blue-500/20 rounded-full border-2 border-cyan-400/50 backdrop-blur-sm group"
-        style={{ boxShadow: '0 0 20px rgba(34, 217, 238, 0.3)' }}
-        aria-label="Close"
-      >
-        <X className="w-5 h-5 text-cyan-300 group-hover:text-white transition-colors duration-150" />
-      </motion.button>
+      <div className="absolute top-4 right-14 w-4 h-4 border-t-2 border-r-2 border-cyan-400/60 z-10" />
 
-      {/* Hero Image with cyan tint and shimmer effect */}
+      {/* Top-right action buttons: Save + Close */}
+      <div className="absolute top-4 right-4 flex gap-2 z-20">
+        <motion.button
+          onClick={handleSaveToggle}
+          whileHover={{ scale: 1.1 }}
+          whileTap={{ scale: 0.9 }}
+          className="p-2 bg-gradient-to-r from-cyan-500/20 to-blue-500/20 rounded-full border-2 border-cyan-400/50 backdrop-blur-sm"
+          style={{ boxShadow: '0 0 15px rgba(34, 217, 238, 0.2)' }}
+          aria-label={isSaved ? 'Unsave store' : 'Save store'}
+        >
+          <Heart className={`w-4 h-4 transition-colors ${isSaved ? 'fill-cyan-400 text-cyan-400' : 'text-cyan-300'}`} />
+        </motion.button>
+        <motion.button
+          onClick={onClose}
+          whileHover={{ scale: 1.1, rotate: 90 }}
+          whileTap={{ scale: 0.9 }}
+          className="p-2 bg-gradient-to-r from-cyan-500/20 to-blue-500/20 rounded-full border-2 border-cyan-400/50 backdrop-blur-sm group"
+          style={{ boxShadow: '0 0 15px rgba(34, 217, 238, 0.2)' }}
+          aria-label="Close"
+        >
+          <X className="w-4 h-4 text-cyan-300 group-hover:text-white transition-colors duration-150" />
+        </motion.button>
+      </div>
+
+      {/* Hero Image */}
       {store.photos[0] && (
         <motion.div
-          initial={{ opacity: 0, scale: 1.1 }}
+          initial={{ opacity: 0, scale: 1.05 }}
           animate={{ opacity: 1, scale: 1 }}
-          transition={{ duration: 0.5 }}
+          transition={{ duration: 0.4 }}
           className="relative w-full h-[300px] md:h-[400px] bg-gray-800 overflow-hidden group"
         >
-          <img
-            src={store.photos[0]}
+          <BlurImage
+            src={ikUrl(store.photos[0], 'card')}
             alt={store.name}
-            className="w-full h-full object-cover"
+            loading="eager"
+            className="w-full h-full"
+            imgClassName="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
           />
-          {/* Cyan tint overlay */}
           <div className="absolute inset-0 bg-cyan-400/10" />
-          {/* Shimmer effect on hover */}
-          <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500">
-            <motion.div
-              initial={{ x: '-100%' }}
-              animate={{ x: '200%' }}
-              transition={{ duration: 1.5, repeat: Infinity, repeatDelay: 2 }}
-              className="absolute inset-0 bg-gradient-to-r from-transparent via-cyan-400/30 to-transparent -skew-x-12"
-            />
-          </div>
+          {/* Save count badge — social proof */}
+          {store.saveCount > 0 && (
+            <div className="absolute bottom-3 right-3 flex items-center gap-1 px-2.5 py-1 bg-black/70 backdrop-blur-sm rounded-full border border-cyan-400/30">
+              <Heart className="w-3 h-3 text-cyan-400 fill-cyan-400" />
+              <span className="text-xs font-bold text-cyan-300">{store.saveCount}</span>
+            </div>
+          )}
         </motion.div>
       )}
 
       {/* Content */}
-      <div className="px-8 py-8 space-y-8 relative z-10">
-        {/* Header Section */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.2, duration: 0.4 }}
-          className="space-y-3"
-        >
-          <h1 className="text-3xl font-bold text-white tracking-tight italic" style={{ textShadow: '0 0 20px rgba(34, 217, 238, 0.4)' }}>
-            {store.name}
-          </h1>
+      <div className="px-6 py-6 space-y-5 relative z-10">
 
-          {/* Category Tags - Kirby style */}
-          <div className="flex flex-wrap gap-2 text-xs">
+        {/* Header: name, Japanese name, verified, price */}
+        <motion.div
+          initial={{ opacity: 0, y: 16 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.15, duration: 0.35 }}
+          className="space-y-1.5"
+        >
+          <div className="flex items-start justify-between gap-2">
+            <div>
+              <h1 className="text-2xl font-bold text-white tracking-tight italic leading-tight" style={{ textShadow: '0 0 20px rgba(34, 217, 238, 0.4)' }}>
+                {store.name}
+              </h1>
+              {store.nameJapanese && (
+                <p className="text-sm text-gray-400 mt-0.5">{store.nameJapanese}</p>
+              )}
+            </div>
+            {store.priceRange && (
+              <span className="flex-shrink-0 mt-1 flex items-center gap-0.5 px-2 py-1 bg-yellow-500/10 border border-yellow-500/30 rounded-full text-xs font-bold text-yellow-400">
+                <DollarSign className="w-3 h-3" />
+                {store.priceRange}
+              </span>
+            )}
+          </div>
+
+          {/* Category pills + verified */}
+          <div className="flex flex-wrap gap-1.5 text-xs pt-1">
             {store.categories.slice(0, 3).map((cat, idx) => (
               <motion.span
                 key={cat}
                 initial={{ opacity: 0, scale: 0.8 }}
                 animate={{ opacity: 1, scale: 1 }}
-                transition={{ delay: 0.3 + idx * 0.1 }}
+                transition={{ delay: 0.25 + idx * 0.07 }}
                 className="px-2.5 py-1 bg-cyan-500/20 text-cyan-300 uppercase tracking-wider rounded-full border border-cyan-400/30"
               >
                 {cat.replace('-', ' ')}
@@ -108,40 +151,38 @@ export function StoreDetail({ store, onClose }: StoreDetailProps) {
               <motion.span
                 initial={{ opacity: 0, scale: 0.8 }}
                 animate={{ opacity: 1, scale: 1 }}
-                transition={{ delay: 0.6 }}
-                className="px-2.5 py-1 bg-gradient-to-r from-cyan-500/30 to-blue-500/30 text-white font-bold uppercase tracking-wider rounded-full border border-cyan-400/50"
+                transition={{ delay: 0.5 }}
+                className="flex items-center gap-1 px-2.5 py-1 bg-gradient-to-r from-cyan-500/30 to-blue-500/30 text-white font-bold uppercase tracking-wider rounded-full border border-cyan-400/50"
                 style={{ boxShadow: '0 0 10px rgba(34, 217, 238, 0.3)' }}
               >
-                • Verified
+                <CheckCircle2 className="w-3 h-3" />
+                Verified
               </motion.span>
             )}
           </div>
         </motion.div>
 
-        {/* Info Section - Kirby themed */}
+        {/* Info: address + hours */}
         <motion.div
-          initial={{ opacity: 0, y: 20 }}
+          initial={{ opacity: 0, y: 16 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.4, duration: 0.4 }}
-          className="space-y-4 py-4 border-t border-cyan-400/20"
+          transition={{ delay: 0.25, duration: 0.35 }}
+          className="space-y-3 py-4 border-t border-cyan-400/20"
         >
-          {/* Address */}
-          <div className="flex gap-4">
-            <MapPin className="w-5 h-5 text-cyan-400 flex-shrink-0 mt-0.5" />
+          <div className="flex gap-3 items-start">
+            <MapPin className="w-4 h-4 text-cyan-400 flex-shrink-0 mt-0.5" />
             <div className="text-sm">
-              <p className="text-white leading-relaxed">{store.address}</p>
-              <p className="text-gray-400 mt-1">
+              {store.address && <p className="text-white leading-relaxed">{store.address}</p>}
+              <p className="text-gray-400 mt-0.5">
                 {store.neighborhood && `${store.neighborhood}, `}
-                {store.city}, {store.country}
+                {store.city}{store.country && `, ${store.country}`}
               </p>
             </div>
           </div>
-
-          {/* Hours */}
           {store.hours && (
-            <div className="flex gap-4">
-              <Clock className="w-5 h-5 text-cyan-400 flex-shrink-0 mt-0.5" />
-              <p className="text-sm text-white">{store.hours}</p>
+            <div className="flex gap-3 items-start">
+              <Clock className="w-4 h-4 text-cyan-400 flex-shrink-0 mt-0.5" />
+              <p className="text-sm text-white whitespace-pre-line leading-relaxed">{store.hours}</p>
             </div>
           )}
         </motion.div>
@@ -149,9 +190,9 @@ export function StoreDetail({ store, onClose }: StoreDetailProps) {
         {/* Description */}
         {store.description && (
           <motion.div
-            initial={{ opacity: 0, y: 20 }}
+            initial={{ opacity: 0, y: 16 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.5, duration: 0.4 }}
+            transition={{ delay: 0.32, duration: 0.35 }}
             className="py-4 border-t border-cyan-400/20"
           >
             <p className="text-sm text-gray-300 leading-relaxed">{store.description}</p>
@@ -161,80 +202,95 @@ export function StoreDetail({ store, onClose }: StoreDetailProps) {
         {/* Photo Gallery */}
         {store.photos.length > 1 && (
           <motion.div
-            initial={{ opacity: 0, y: 20 }}
+            initial={{ opacity: 0, y: 16 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.6, duration: 0.4 }}
-            className="space-y-3 py-4 border-t border-cyan-400/20"
+            transition={{ delay: 0.38, duration: 0.35 }}
+            className="space-y-2.5 py-4 border-t border-cyan-400/20"
           >
             <h3 className="text-xs font-black uppercase tracking-wider text-cyan-300 italic">Gallery</h3>
             <div className="grid grid-cols-2 gap-2">
-              {store.photos.slice(1).map((photo, idx) => (
+              {store.photos.slice(1, 5).map((photo, idx) => (
                 <motion.div
                   key={idx}
-                  whileHover={{ scale: 1.05 }}
+                  whileHover={{ scale: 1.03 }}
                   transition={{ duration: 0.2 }}
-                  className="relative overflow-hidden rounded-lg border-2 border-cyan-400/30 group"
+                  className="relative aspect-square overflow-hidden rounded-lg border border-cyan-400/30 group"
                 >
-                  <img
-                    src={photo}
+                  <BlurImage
+                    src={ikUrl(photo, 'thumb')}
                     alt={`${store.name} - ${idx + 2}`}
-                    className="w-full h-[200px] object-cover"
+                    className="w-full h-full"
+                    imgClassName="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
                   />
-                  {/* Cyan tint */}
-                  <div className="absolute inset-0 bg-cyan-400/10 group-hover:bg-cyan-400/20 transition-colors" />
+                  <div className="absolute inset-0 bg-cyan-400/5 group-hover:bg-cyan-400/15 transition-colors" />
                 </motion.div>
               ))}
             </div>
           </motion.div>
         )}
 
-        {/* Action Buttons - Kirby themed */}
+        {/* Action Buttons */}
         <motion.div
-          initial={{ opacity: 0, y: 20 }}
+          initial={{ opacity: 0, y: 16 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.7, duration: 0.4 }}
-          className="space-y-3 pt-4 border-t border-cyan-400/20"
+          transition={{ delay: 0.44, duration: 0.35 }}
+          className="space-y-2.5 pt-4 border-t border-cyan-400/20"
         >
-          <motion.button
-            whileHover={{ scale: 1.02 }}
-            whileTap={{ scale: 0.98 }}
-            onClick={() => window.open(getGoogleMapsUrl(store.address), '_blank')}
-            className="relative flex items-center justify-center gap-2 w-full h-12 bg-gradient-to-r from-cyan-400 via-blue-500 to-purple-500 text-white text-sm font-bold tracking-wide border-2 border-cyan-300/50 overflow-hidden"
+          {/* View Full Page — primary CTA */}
+          <Link
+            to={storeUrl}
+            className="relative flex items-center justify-center gap-2 w-full h-11 bg-gradient-to-r from-cyan-400 via-blue-500 to-purple-500 text-white text-sm font-bold tracking-wide border-2 border-cyan-300/50 overflow-hidden hover:brightness-110 transition-all"
             style={{ boxShadow: '0 0 20px rgba(34, 217, 238, 0.4)' }}
           >
             <div className="absolute inset-0 film-grain opacity-10" />
-            <Navigation className="w-4 h-4 relative z-10" />
-            <span className="relative z-10">GET DIRECTIONS</span>
+            <ArrowUpRight className="w-4 h-4 relative z-10" />
+            <span className="relative z-10">VIEW FULL PAGE</span>
+          </Link>
+
+          {/* Directions */}
+          <motion.button
+            whileHover={{ scale: 1.02 }}
+            whileTap={{ scale: 0.98 }}
+            onClick={() => window.open(getGoogleMapsUrl(store.latitude, store.longitude), '_blank')}
+            className="flex items-center justify-center gap-2 w-full h-11 bg-gray-800 text-cyan-300 text-sm font-bold border-2 border-cyan-400/50 tracking-wide hover:bg-cyan-500/20 hover:text-white transition-all duration-150"
+            style={{ boxShadow: '0 0 12px rgba(34, 217, 238, 0.15)' }}
+          >
+            <Navigation className="w-4 h-4" />
+            GET DIRECTIONS
           </motion.button>
 
-          {store.website && (
-            <motion.button
-              whileHover={{ scale: 1.02 }}
-              whileTap={{ scale: 0.98 }}
-              onClick={() => window.open(store.website, '_blank')}
-              className="flex items-center justify-center gap-2 w-full h-12 bg-gray-800 text-cyan-300 text-sm font-bold border-2 border-cyan-400/50 tracking-wide hover:bg-cyan-500/20 hover:text-white transition-all duration-150"
-              style={{ boxShadow: '0 0 15px rgba(34, 217, 238, 0.2)' }}
-            >
-              <ExternalLink className="w-4 h-4" />
-              VISIT WEBSITE
-            </motion.button>
-          )}
-
-          {store.instagram && (
-            <motion.button
-              whileHover={{ scale: 1.02 }}
-              whileTap={{ scale: 0.98 }}
-              onClick={() => window.open(`https://instagram.com/${store.instagram!.replace('@', '')}`, '_blank')}
-              className="flex items-center justify-center gap-2 w-full h-12 bg-gray-800 text-cyan-300 text-sm font-bold border-2 border-cyan-400/50 tracking-wide hover:bg-cyan-500/20 hover:text-white transition-all duration-150"
-              style={{ boxShadow: '0 0 15px rgba(34, 217, 238, 0.2)' }}
-            >
-              <Instagram className="w-4 h-4" />
-              INSTAGRAM
-            </motion.button>
+          {/* Website + Instagram side by side */}
+          {(store.website || store.instagram) && (
+            <div className="grid grid-cols-2 gap-2">
+              {store.website && (
+                <motion.button
+                  whileHover={{ scale: 1.02 }}
+                  whileTap={{ scale: 0.98 }}
+                  onClick={() => window.open(store.website, '_blank')}
+                  className="flex items-center justify-center gap-1.5 h-11 bg-gray-800 text-cyan-300 text-sm font-bold border-2 border-cyan-400/50 hover:bg-cyan-500/20 hover:text-white transition-all duration-150"
+                >
+                  <ExternalLink className="w-4 h-4" />
+                  WEBSITE
+                </motion.button>
+              )}
+              {store.instagram && (
+                <motion.button
+                  whileHover={{ scale: 1.02 }}
+                  whileTap={{ scale: 0.98 }}
+                  onClick={() => window.open(`https://instagram.com/${store.instagram!.replace('@', '')}`, '_blank')}
+                  className="flex items-center justify-center gap-1.5 h-11 bg-pink-500/10 text-pink-300 text-sm font-bold border-2 border-pink-400/40 hover:bg-pink-500/20 hover:text-white transition-all duration-150"
+                >
+                  <Instagram className="w-4 h-4" />
+                  INSTAGRAM
+                </motion.button>
+              )}
+            </div>
           )}
         </motion.div>
+
+        {/* Bottom safe area */}
+        <div className="h-4" />
       </div>
     </motion.div>
   );
 }
-
