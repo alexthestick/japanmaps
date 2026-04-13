@@ -7,7 +7,7 @@
     "dev": "vite",
     "dev:api": "node server/dev-server.js",
     "build": "vite build",
-    "build:seo": "npm run build && npm run sitemap:generate && node scripts/prerender.js",
+    "build:seo": "npm run build && npm run sitemap:generate && npx puppeteer browsers install chrome && node scripts/prerender.js",
     "prerender": "node scripts/prerender.js",
     "preview": "vite preview",
     "type-check": "tsc --noEmit",
