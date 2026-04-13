@@ -35,6 +35,7 @@ const SignupPage = lazy(() => import('./pages/SignupPage').then(m => ({ default:
 const FindsPage = lazy(() => import('./pages/FindsPage').then(m => ({ default: m.FindsPage })));
 const FindDetailPage = lazy(() => import('./pages/FindDetailPage').then(m => ({ default: m.FindDetailPage })));
 const ResetPasswordPage = lazy(() => import('./pages/ResetPasswordPage').then(m => ({ default: m.ResetPasswordPage })));
+const SitemapPage = lazy(() => import('./pages/SitemapPage').then(m => ({ default: m.SitemapPage })));
 
 function AnimatedRoutes() {
   const location = useLocation();
@@ -174,6 +175,11 @@ function AnimatedRoutes() {
           <Route path="about" element={
             <motion.div initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -6 }}>
               <AboutPage />
+            </motion.div>
+          } />
+          <Route path="sitemap" element={
+            <motion.div initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -6 }}>
+              <SitemapPage />
             </motion.div>
           } />
           <Route path="profile" element={

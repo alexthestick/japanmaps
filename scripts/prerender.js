@@ -34,6 +34,7 @@ const IS_VERCEL = process.env.VERCEL === '1';
 
 const PRIORITY_PATTERNS = [
   /^\/$/,                         // homepage
+  /^\/sitemap$/,                  // HTML store directory (critical for Google link discovery)
   /^\/cities$/,                   // all cities index
   /^\/neighborhoods$/,            // all neighborhoods index
   /^\/about$/,                    // about page

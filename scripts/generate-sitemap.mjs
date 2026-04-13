@@ -42,6 +42,7 @@ const STATIC_PAGES = [
   { path: '/blog',          changefreq: 'weekly',  priority: '0.7' },
   { path: '/about',         changefreq: 'monthly', priority: '0.5' },
   { path: '/suggest',       changefreq: 'monthly', priority: '0.5' },
+  { path: '/sitemap',       changefreq: 'weekly',  priority: '0.8' },
 ];
 
 // ─── Category pages ───────────────────────────────────────────────────────────
