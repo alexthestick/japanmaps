@@ -1,16 +1,18 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { MapPin, Navigation, Trash2, Heart, ArrowLeft } from 'lucide-react';
+import { MapPin, Navigation, Trash2, Heart, ArrowLeft, LogIn } from 'lucide-react';
 import Map, { Marker, NavigationControl } from 'react-map-gl';
 import { supabase } from '../lib/supabase';
 import { getSavedStores, clearAllSavedStores, unsaveStore } from '../utils/savedStores';
 import { getGoogleMapsUrl } from '../utils/formatters';
 import { MAPBOX_TOKEN, MAP_STYLE } from '../lib/mapbox';
+import { useAuthContext } from '../contexts/AuthContext';
 import type { Store } from '../types/store';
 import 'mapbox-gl/dist/mapbox-gl.css';
 
 export function SavedStoresPage() {
   const navigate = useNavigate();
+  const { user, loading: authLoading } = useAuthContext();
   const [savedStores, setSavedStores] = useState<Store[]>([]);
   const [loading, setLoading] = useState(true);
   const [hoveredStoreId, setHoveredStoreId] = useState<string | null>(null);
@@ -20,62 +22,80 @@ export function SavedStoresPage() {
     zoom: 12,
   });
 
-  useEffect(() => {
-    fetchSavedStores();
-
-    // Listen for changes to saved stores
-    const handleSavedStoresChanged = () => {
-      fetchSavedStores();
-    };
-
-    window.addEventListener('savedStoresChanged', handleSavedStoresChanged);
-    return () => window.removeEventListener('savedStoresChanged', handleSavedStoresChanged);
-  }, []);
-
-  async function fetchSavedStores() {
+  // ─── Fetch saved stores ─────────────────────────────────────────────────────
+  // For logged-in users: reads from Supabase saved_stores table.
+  // For guests: reads from localStorage.
+  const fetchSavedStores = useCallback(async () => {
     setLoading(true);
-    const savedStoreData = getSavedStores();
-    const storeIds = savedStoreData.map(s => s.id);
-
-    if (storeIds.length === 0) {
-      setSavedStores([]);
-      setLoading(false);
-      return;
-    }
 
     try {
-      // Use the RPC function to get stores with parsed coordinates
-      const { data: allStores, error } = await supabase.rpc('get_stores_with_coordinates');
+      let storeIds: string[] = [];
 
-      if (error) throw error;
+      if (user) {
+        // Logged-in user → get saved store IDs from Supabase
+        const { data: savedRows, error } = await supabase
+          .from('saved_stores')
+          .select('store_id')
+          .eq('user_id', user.id)
+          .order('created_at', { ascending: false });
 
-      // Filter to only saved store IDs
-      const transformedStores: Store[] = (allStores || [])
-        .filter((store: any) => storeIds.includes(store.id))
-        .map((storeData: any) => ({
-          id: storeData.id,
-          name: storeData.name,
-          address: storeData.address,
-          city: storeData.city,
-          neighborhood: storeData.neighborhood || undefined,
-          country: storeData.country,
-          latitude: storeData.latitude,
-          longitude: storeData.longitude,
-          categories: storeData.categories as any,
-          priceRange: storeData.price_range as any,
-          description: storeData.description || undefined,
-          photos: storeData.photos || [],
-          website: storeData.website || undefined,
-          instagram: storeData.instagram || undefined,
-          hours: storeData.hours || undefined,
-          verified: storeData.verified,
-          submittedBy: storeData.submitted_by || undefined,
-          createdAt: storeData.created_at,
-          updatedAt: storeData.updated_at,
-          haulCount: storeData.haul_count || 0,
-          saveCount: storeData.save_count || 0,
-          mainCategory: storeData.main_category || undefined,
-        }));
+        if (error) throw error;
+        storeIds = (savedRows || []).map((r: { store_id: string }) => r.store_id);
+      } else {
+        // Guest → get IDs from localStorage
+        storeIds = getSavedStores().map(s => s.id);
+      }
+
+      if (storeIds.length === 0) {
+        setSavedStores([]);
+        setLoading(false);
+        return;
+      }
+
+      // Fetch full store data via the RPC (includes parsed coordinates)
+      const { data: rpcData, error: rpcError } = await supabase
+        .rpc('get_stores_with_coordinates');
+
+      if (rpcError) throw rpcError;
+
+      // Cast to any[] — get_stores_with_coordinates is not in generated types
+      const allStores: any[] = (rpcData as any[]) || [];
+
+      // Index by id for fast lookup (plain object avoids name clash with react-map-gl's Map import)
+      const storeIndex: Record<string, any> = {};
+      allStores.forEach((s: any) => { storeIndex[s.id] = s; });
+
+      // Filter to saved IDs and preserve the saved order
+      const transformedStores: Store[] = storeIds
+        .filter(id => Boolean(storeIndex[id]))
+        .map(id => {
+          const storeData = storeIndex[id];
+          return {
+            id: storeData.id,
+            name: storeData.name,
+            slug: storeData.slug,
+            address: storeData.address,
+            city: storeData.city,
+            neighborhood: storeData.neighborhood || undefined,
+            country: storeData.country,
+            latitude: storeData.latitude,
+            longitude: storeData.longitude,
+            categories: storeData.categories as any,
+            priceRange: storeData.price_range as any,
+            description: storeData.description || undefined,
+            photos: storeData.photos || [],
+            website: storeData.website || undefined,
+            instagram: storeData.instagram || undefined,
+            hours: storeData.hours || undefined,
+            verified: storeData.verified,
+            submittedBy: storeData.submitted_by || undefined,
+            createdAt: storeData.created_at,
+            updatedAt: storeData.updated_at,
+            haulCount: storeData.haul_count || 0,
+            saveCount: storeData.save_count || 0,
+            mainCategory: storeData.main_category || undefined,
+          };
+        });
 
       setSavedStores(transformedStores);
 
@@ -92,19 +112,63 @@ export function SavedStoresPage() {
     } finally {
       setLoading(false);
     }
-  }
+  }, [user]);
 
-  const handleUnsave = (storeId: string) => {
-    unsaveStore(storeId);
-  };
+  // Run fetchSavedStores once auth is resolved
+  useEffect(() => {
+    if (!authLoading) {
+      fetchSavedStores();
+    }
+  }, [authLoading, fetchSavedStores]);
 
-  const handleClearAll = () => {
-    if (window.confirm('Are you sure you want to clear all saved stores?')) {
-      clearAllSavedStores();
+  // For guests: also listen for localStorage changes from SaveButton
+  useEffect(() => {
+    if (user) return; // Supabase users don't need this event
+
+    const handleSavedStoresChanged = () => fetchSavedStores();
+    window.addEventListener('savedStoresChanged', handleSavedStoresChanged);
+    return () => window.removeEventListener('savedStoresChanged', handleSavedStoresChanged);
+  }, [user, fetchSavedStores]);
+
+  // ─── Unsave a store ─────────────────────────────────────────────────────────
+  const handleUnsave = async (storeId: string) => {
+    if (user) {
+      // Supabase delete for logged-in users
+      await supabase
+        .from('saved_stores')
+        .delete()
+        .eq('user_id', user.id)
+        .eq('store_id', storeId);
+
+      // Update local state immediately (no need to refetch)
+      setSavedStores(prev => prev.filter(s => s.id !== storeId));
+    } else {
+      // localStorage for guests
+      unsaveStore(storeId);
+      setSavedStores(prev => prev.filter(s => s.id !== storeId));
     }
   };
 
-  if (loading) {
+  // ─── Clear all saved stores ─────────────────────────────────────────────────
+  const handleClearAll = async () => {
+    if (!window.confirm('Are you sure you want to clear all saved stores?')) return;
+
+    if (user) {
+      await supabase
+        .from('saved_stores')
+        .delete()
+        .eq('user_id', user.id);
+
+      setSavedStores([]);
+    } else {
+      clearAllSavedStores();
+      setSavedStores([]);
+    }
+  };
+
+  // ─── Loading state ──────────────────────────────────────────────────────────
+  // Wait for both auth and data to resolve before rendering
+  if (authLoading || loading) {
     return (
       <div className="h-screen flex items-center justify-center bg-gray-50">
         <div className="text-lg text-gray-600">Loading your saved stores...</div>
@@ -130,6 +194,9 @@ export function SavedStoresPage() {
                 <h1 className="text-2xl font-bold text-gray-900">Saved Stores</h1>
                 <p className="text-sm text-gray-600 mt-1">
                   {savedStores.length} {savedStores.length === 1 ? 'store' : 'stores'} saved
+                  {user && (
+                    <span className="ml-2 text-green-600 font-medium">· Synced to your account</span>
+                  )}
                 </p>
               </div>
             </div>
@@ -155,12 +222,23 @@ export function SavedStoresPage() {
           <p className="text-gray-600 mb-6 max-w-md">
             Start exploring and save your favorite stores to build your perfect shopping route
           </p>
-          <button
-            onClick={() => navigate('/')}
-            className="px-6 py-3 bg-black text-white font-medium rounded-lg hover:bg-gray-800 transition-colors"
-          >
-            Explore Stores
-          </button>
+          <div className="flex flex-col sm:flex-row gap-3">
+            <button
+              onClick={() => navigate('/')}
+              className="px-6 py-3 bg-black text-white font-medium rounded-lg hover:bg-gray-800 transition-colors"
+            >
+              Explore Stores
+            </button>
+            {!user && (
+              <button
+                onClick={() => navigate('/login')}
+                className="flex items-center gap-2 px-6 py-3 border border-gray-300 text-gray-700 font-medium rounded-lg hover:bg-gray-50 transition-colors"
+              >
+                <LogIn className="w-4 h-4" />
+                Sign in to sync saves
+              </button>
+            )}
+          </div>
         </div>
       ) : (
         /* Split View */
@@ -182,7 +260,7 @@ export function SavedStoresPage() {
                     onMouseLeave={() => setHoveredStoreId(null)}
                   >
                     <div className="flex gap-4 p-4">
-                      {/* Thumbnail - Enhanced with shadow and hover effect */}
+                      {/* Thumbnail */}
                       <div
                         onClick={() => navigate(`/store/${store.slug || store.id}`)}
                         className="relative flex-shrink-0 w-28 h-28 rounded-xl overflow-hidden cursor-pointer shadow-sm hover:shadow-md transition-all"
@@ -194,7 +272,6 @@ export function SavedStoresPage() {
                             isHovered ? 'scale-110 brightness-95' : 'scale-100'
                           }`}
                         />
-                        {/* Gradient overlay on hover */}
                         <div className={`absolute inset-0 bg-gradient-to-t from-black/40 to-transparent transition-opacity ${
                           isHovered ? 'opacity-100' : 'opacity-0'
                         }`} />
@@ -238,7 +315,7 @@ export function SavedStoresPage() {
                           )}
                         </div>
 
-                        {/* Quick Actions - Visible on hover */}
+                        {/* Quick Actions */}
                         <div className={`flex gap-2 transition-opacity ${isHovered ? 'opacity-100' : 'opacity-0'}`}>
                           <button
                             onClick={(e) => {
@@ -308,7 +385,6 @@ export function SavedStoresPage() {
                       }}
                     >
                       <svg width={isHovered ? "56" : "48"} height={isHovered ? "56" : "48"} viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg">
-                        {/* Outer glow for pulsing effect */}
                         <circle
                           cx="24"
                           cy="24"
@@ -316,16 +392,12 @@ export function SavedStoresPage() {
                           fill={isHovered ? 'rgba(239, 68, 68, 0.3)' : 'rgba(220, 38, 38, 0.2)'}
                           opacity={isHovered ? '1' : '0.6'}
                         />
-
-                        {/* Heart shape */}
                         <path
                           d="M24 38 C24 38 10 28 10 18 C10 13 13 10 17 10 C20 10 22 11.5 24 14 C26 11.5 28 10 31 10 C35 10 38 13 38 18 C38 28 24 38 24 38 Z"
                           fill={isHovered ? '#EF4444' : '#DC2626'}
                           stroke="white"
                           strokeWidth="2"
                         />
-
-                        {/* Inner sparkle */}
                         <circle cx="20" cy="18" r="2" fill="white" opacity="0.8"/>
                       </svg>
                     </div>
