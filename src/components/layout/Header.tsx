@@ -187,7 +187,7 @@ export function Header({ onCitiesClick }: HeaderProps) {
   }, [mobileMenuOpen]);
 
   return (
-    <header className="relative bg-gradient-to-r from-gray-900 via-black to-gray-900 border-b-2 border-cyan-400/30 sticky top-0 z-40 overflow-visible">
+    <header className="relative bg-gradient-to-r from-gray-900 via-black to-gray-900 border-b-2 border-cyan-400/30 sticky top-0 z-40 overflow-visible pt-safe">
       {/* Film grain */}
       <div className="absolute inset-0 film-grain opacity-20 pointer-events-none" />
 

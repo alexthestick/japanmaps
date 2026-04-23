@@ -24,7 +24,7 @@ export function FloatingMapLegend({ selectedCategory, onCategoryClick }: Floatin
   };
 
   return (
-    <div className="absolute bottom-6 left-6 z-20">
+    <div className="absolute left-6 z-20" style={{ bottom: 'calc(1.5rem + env(safe-area-inset-bottom, 0px))' }}>
       {/* Kirby-themed Map Legend with enhanced neon glow */}
       <div className="relative">
         {/* Animated glow effect */}

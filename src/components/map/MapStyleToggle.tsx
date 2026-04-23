@@ -9,7 +9,9 @@ interface MapStyleToggleProps {
 
 export function MapStyleToggle({ mode, onChange, placement = 'overlay', compact = true }: MapStyleToggleProps) {
   const wrapperBase = 'pointer-events-auto bg-gray-900/95 backdrop-blur-md border-2 border-cyan-400/40 rounded-full shadow-md overflow-hidden inline-flex relative';
-  const overlayPos = 'absolute right-3 md:right-4 bottom-4 md:bottom-auto md:top-24 z-10';
+  // On mobile, bottom-4 alone would be clipped by the iPhone home indicator.
+  // We keep the class for desktop (md:bottom-auto) and use inline style for mobile.
+  const overlayPos = 'absolute right-3 md:right-4 md:bottom-auto md:top-24 z-10';
   const inlinePos = '';
   const wrapperClass = placement === 'overlay' ? `${wrapperBase} ${overlayPos}` : `${wrapperBase} ${inlinePos}`;
 
@@ -20,7 +22,14 @@ export function MapStyleToggle({ mode, onChange, placement = 'overlay', compact 
   const showLabels = !compact;
 
   return (
-    <div className={wrapperClass} style={{ boxShadow: '0 0 20px rgba(34, 217, 238, 0.3)' }}>
+    <div
+      className={wrapperClass}
+      style={{
+        boxShadow: '0 0 20px rgba(34, 217, 238, 0.3)',
+        // On mobile (overlay mode), keep the toggle above the iOS home indicator
+        ...(placement === 'overlay' && { bottom: 'calc(1rem + env(safe-area-inset-bottom, 0px))' }),
+      }}
+    >
       {/* Film grain */}
       <div className="absolute inset-0 film-grain opacity-10 pointer-events-none rounded-full" />
       <button

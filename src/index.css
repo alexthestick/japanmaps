@@ -2,6 +2,48 @@
 @tailwind components;
 @tailwind utilities;
 
+/* ─── iOS PWA / Safe Area Support ────────────────────────────────────────────
+ * When the app runs as a standalone PWA on iPhone, iOS gives us "env()"
+ * variables that describe the size of the notch/Dynamic Island at the top
+ * and the home indicator bar at the bottom. We use these to push content
+ * away from those areas so nothing is hidden behind hardware.
+ * ---------------------------------------------------------------------- */
+
+:root {
+  --safe-top:    env(safe-area-inset-top,    0px);
+  --safe-bottom: env(safe-area-inset-bottom, 0px);
+  --safe-left:   env(safe-area-inset-left,   0px);
+  --safe-right:  env(safe-area-inset-right,  0px);
+}
+
+/* Prevent the "rubber-band" bounce when scrolling past the top or bottom.
+   In a browser this is expected behaviour, but in a PWA it looks broken. */
+html {
+  overscroll-behavior: none;
+}
+
+/* Stop iOS from auto-enlarging small text when the device rotates.
+   Our layout is intentional — we don't want iOS second-guessing it. */
+body {
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+}
+
+/* Remove the semi-transparent blue flash iOS shows when you tap a button.
+   Our components handle their own press/hover styles. */
+* {
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* Safe area utility classes — apply these to any element that should
+   sit below the notch (pt-safe) or above the home bar (pb-safe). */
+.pt-safe  { padding-top:    env(safe-area-inset-top,    0px); }
+.pb-safe  { padding-bottom: env(safe-area-inset-bottom, 0px); }
+.pl-safe  { padding-left:   env(safe-area-inset-left,   0px); }
+.pr-safe  { padding-right:  env(safe-area-inset-right,  0px); }
+.mt-safe  { margin-top:     env(safe-area-inset-top,    0px); }
+.mb-safe  { margin-bottom:  env(safe-area-inset-bottom, 0px); }
+
 /* Bottom Sheet Custom Styles - PHASE 2.1K: Fixed pointer events */
 [data-rsbs-overlay] {
   z-index: 150 !important;
