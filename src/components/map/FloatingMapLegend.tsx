@@ -28,7 +28,7 @@ export function FloatingMapLegend({ selectedCategory, onCategoryClick }: Floatin
       {/* Kirby-themed Map Legend with enhanced neon glow */}
       <div className="relative">
         {/* Animated glow effect */}
-        <div className="absolute -inset-1 bg-gradient-to-r from-cyan-500 via-blue-500 to-purple-500 rounded-xl opacity-40 blur-md animate-pulse"></div>
+        <div className="absolute -inset-1 bg-gradient-to-r from-cyan-500 via-blue-500 to-purple-500 rounded-xl opacity-40 blur-md"></div>
 
         {/* Main card - Increased opacity for better readability on light maps */}
         <div className="relative bg-gradient-to-b from-gray-950 to-black backdrop-blur-xl rounded-xl shadow-2xl border-2 border-cyan-400/50 p-4 min-w-[220px]">

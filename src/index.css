@@ -14,6 +14,11 @@
   --safe-bottom: env(safe-area-inset-bottom, 0px);
   --safe-left:   env(safe-area-inset-left,   0px);
   --safe-right:  env(safe-area-inset-right,  0px);
+
+  /* Header height = h-16 (4rem / 64px) content + Dynamic Island safe area.
+     On desktop env() resolves to 0px so this equals exactly 4rem.
+     MobileFilterBar and any other fixed elements below the header use this. */
+  --header-height: calc(4rem + env(safe-area-inset-top, 0px));
 }
 
 /* Prevent the "rubber-band" bounce when scrolling past the top or bottom.
@@ -83,6 +88,17 @@ body {
 
 .spotlight-peek-locked [data-rsbs-overlay] {
   touch-action: none !important; /* Disable touch gestures on overlay in peek mode */
+}
+
+/* ─── Compositor-safe animations ─────────────────────────────────────────────
+ * Only animating `opacity` keeps these entirely on the GPU compositor thread —
+ * no layout recalc, no paint, zero main-thread cost. Use these instead of
+ * Tailwind's animate-pulse (which animates opacity but can cause repaints when
+ * applied to elements with blur/gradient backgrounds). */
+
+@keyframes spotlight-breathe {
+  0%, 100% { opacity: 0.6; }
+  50%       { opacity: 1;   }
 }
 
 /* Design Tokens */

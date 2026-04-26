@@ -9,6 +9,7 @@ import { supabase } from '../lib/supabase';
 import { useAuthContext } from '../contexts/AuthContext';
 import { generateFindSlug, getDisplayUsername } from '../utils/slugify';
 import { ikUrl } from '../utils/ikUrl';
+import { uploadStorePhoto } from '../utils/imagekitUpload';
 import { MAJOR_CITIES_JAPAN, LOCATIONS } from '../lib/constants';
 
 // ─── Types ─────────────────────────────────────────────────────────────────────
@@ -305,20 +306,14 @@ export function SubmitModal({ onClose, onSubmitted, prefill }: SubmitModalProps)
     let photo_url: string | null = null;
 
     if (photoFile) {
-      const ext = photoFile.name.split('.').pop();
-      const path = `field-notes/${user.id}/${Date.now()}.${ext}`;
-      const { error: uploadError } = await supabase.storage
-        .from('field-notes')
-        .upload(path, photoFile, { contentType: photoFile.type });
-
-      if (uploadError) {
+      try {
+        const result = await uploadStorePhoto(photoFile);
+        photo_url = result.url;
+      } catch (uploadError) {
         setError('Photo upload failed. Please try again.');
         setSubmitting(false);
         return;
       }
-
-      const { data: urlData } = supabase.storage.from('field-notes').getPublicUrl(path);
-      photo_url = urlData.publicUrl;
     }
 
     const { error: insertError } = await supabase.from('field_notes').insert({

@@ -1,5 +1,6 @@
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, useCallback } from 'react';
 import { Search, MapPin, Tag, ArrowUpDown, X, ChevronDown } from 'lucide-react';
+import { ikUrl } from '../../utils/ikUrl';
 import { BottomSheet } from '../common/BottomSheet';
 import { SearchAutocomplete, type SearchSuggestion } from '../store/SearchAutocomplete';
 import type { Store, MainCategory } from '../../types/store';
@@ -64,6 +65,35 @@ export function MobileListView({
   const [showAutocomplete, setShowAutocomplete] = useState(false);
   const searchContainerRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+
+  // Pagination — render 24 cards initially, load more automatically
+  // as the user scrolls near the bottom. Resets when filters change.
+  const PAGE_SIZE = 24;
+  const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
+  const sentinelRef = useRef<HTMLDivElement>(null);
+
+  // Reset visible count whenever the store list changes (filter applied)
+  useEffect(() => {
+    setVisibleCount(PAGE_SIZE);
+  }, [stores]);
+
+  // Auto-load next page when the sentinel div enters the viewport
+  const loadMore = useCallback(() => {
+    setVisibleCount(prev => Math.min(prev + PAGE_SIZE, stores.length));
+  }, [stores.length]);
+
+  useEffect(() => {
+    const sentinel = sentinelRef.current;
+    if (!sentinel) return;
+    const observer = new IntersectionObserver(
+      (entries) => { if (entries[0].isIntersecting) loadMore(); },
+      { rootMargin: '200px' }, // start loading 200px before the bottom
+    );
+    observer.observe(sentinel);
+    return () => observer.disconnect();
+  }, [loadMore]);
+
+  const visibleStores = stores.slice(0, visibleCount);
 
   // Close autocomplete when clicking outside
   useEffect(() => {
@@ -231,20 +261,21 @@ export function MobileListView({
           </div>
         </div>
 
-        {/* Store Grid - 2 Columns */}
+        {/* Store Grid - 2 Columns, paginated */}
         <div className="px-4 pb-20">
           <div className="grid grid-cols-2 gap-4">
-            {stores.map((store) => (
+            {visibleStores.map((store) => (
               <button
                 key={store.id}
                 onClick={() => onStoreClick(store)}
                 className="bg-gray-800/40 border border-gray-700/50 rounded-xl overflow-hidden hover:border-cyan-400/50 transition-all active:scale-95 text-left"
               >
-                {/* Store Image - Full coverage */}
+                {/* Store Image — use ImageKit thumb preset (400px WebP, q-65).
+                    Previously loaded raw full-res URLs; now ~10× smaller on mobile. */}
                 <div className="aspect-square bg-gray-900 relative overflow-hidden">
                   {store.photos && store.photos.length > 0 ? (
                     <img
-                      src={store.photos[0]}
+                      src={ikUrl(store.photos[0], 'thumb')}
                       alt={store.name}
                       className="w-full h-full object-cover"
                       loading="lazy"
@@ -279,6 +310,15 @@ export function MobileListView({
               </button>
             ))}
           </div>
+
+          {/* Sentinel div — IntersectionObserver watches this to auto-load next page */}
+          {visibleCount < stores.length && (
+            <div ref={sentinelRef} className="h-12 flex items-center justify-center">
+              <span className="text-xs text-gray-600">
+                {stores.length - visibleCount} more stores
+              </span>
+            </div>
+          )}
         </div>
 
         {/* Map View Button - Fixed Bottom */}

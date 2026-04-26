@@ -1,5 +1,6 @@
 import { useState, useEffect, useMemo, memo, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { SEOHead } from '../components/seo';
 import { ArrowLeft, Shuffle, Train } from 'lucide-react';
 import { motion } from 'framer-motion';
 import {
@@ -554,6 +555,12 @@ export function CitiesPage() {
   }
 
   return (
+    <>
+    <SEOHead
+      title="Cities — Lost in Transit JP"
+      description="Explore vintage, archive, and streetwear stores across Tokyo, Osaka, Kyoto, Fukuoka, and 30+ more Japanese cities."
+      url="/cities"
+    />
     <div className="min-h-screen relative overflow-hidden"
          style={{
            background: `
@@ -1358,6 +1365,7 @@ export function CitiesPage() {
         }
       `}</style>
     </div>
+    </>
   );
 }
 

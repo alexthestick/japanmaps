@@ -18,6 +18,7 @@ import { getGoogleMapsUrl } from '../utils/formatters';
 import { parseLocation } from '../utils/helpers';
 import { isUUID, generateSlug } from '../utils/slugify';
 import { ikUrl } from '../utils/ikUrl';
+import { BlurImage } from '../components/common/BlurImage';
 import { MAIN_CATEGORY_COLORS } from '../lib/constants';
 import { logger } from '../utils/logger';
 import { cityToSlug, neighborhoodToSlug } from '../utils/cityData';
@@ -366,7 +367,7 @@ export function StoreDetailPage() {
     return result;
   })();
 
-  const seoImage = photos[0];
+  const seoImage = ikUrl(photos[0], 'og') || photos[0];
   const seoUrl = `/store/${store.slug || store.id}`;
 
   // Generate structured data
@@ -466,7 +467,8 @@ export function StoreDetailPage() {
             navigate(fallback);
           }
         }}
-        className="fixed top-6 left-6 z-50 flex items-center gap-2 px-4 py-2 bg-black/60 backdrop-blur-sm text-cyan-300 rounded-full shadow-lg hover:bg-black/80 transition-all border border-cyan-500/30 hover:border-cyan-500/50"
+        className="fixed left-6 z-50 flex items-center gap-2 px-4 py-2 bg-black/60 backdrop-blur-sm text-cyan-300 rounded-full shadow-lg hover:bg-black/80 transition-all border border-cyan-500/30 hover:border-cyan-500/50"
+        style={{ top: 'calc(1rem + env(safe-area-inset-top, 0px))' }}
       >
         <ArrowLeft className="w-5 h-5" />
         <span className="font-bold">BACK</span>
@@ -511,9 +513,25 @@ export function StoreDetailPage() {
             <p className="text-xl text-gray-400 mb-3 font-medium">{store.nameJapanese}</p>
           )}
 
-          {/* Location */}
+          {/* Location — internal links for SEO crawlability */}
           <p className="text-lg text-gray-400 mb-4">
-            {store.neighborhood ? `${store.neighborhood}, ` : ''}{store.city}
+            {store.neighborhood && (
+              <>
+                <Link
+                  to={`/city/${cityToSlug(store.city)}/${neighborhoodToSlug(store.neighborhood)}`}
+                  className="hover:text-cyan-300 transition-colors"
+                >
+                  {store.neighborhood}
+                </Link>
+                {', '}
+              </>
+            )}
+            <Link
+              to={`/city/${cityToSlug(store.city)}`}
+              className="hover:text-cyan-300 transition-colors"
+            >
+              {store.city}
+            </Link>
           </p>
 
           {/* Category Tags - Moved from separate section */}
@@ -551,11 +569,12 @@ export function StoreDetailPage() {
               setLightboxOpen(true);
             }}
           >
-            <img
+            <BlurImage
               src={ikUrl(photos[0], 'hero')}
               alt={store.name}
-              className="w-full h-full object-cover transition-transform group-hover:scale-105"
-              style={{ objectPosition: 'center' }}
+              loading="eager"
+              imgClassName="w-full h-full object-cover transition-transform group-hover:scale-105"
+              objectPosition="center"
             />
           </div>
         ) : photos.length === 2 ? (
@@ -570,12 +589,12 @@ export function StoreDetailPage() {
                   setLightboxOpen(true);
                 }}
               >
-                <img
+                <BlurImage
                   src={ikUrl(photo, 'card')}
                   alt={`${store.name} - ${index + 1}`}
                   loading={index === 0 ? 'eager' : 'lazy'}
-                  className="w-full h-full object-cover transition-transform group-hover:scale-105"
-                  style={{ objectPosition: 'center' }}
+                  imgClassName="w-full h-full object-cover transition-transform group-hover:scale-105"
+                  objectPosition="center"
                 />
               </div>
             ))}
@@ -592,14 +611,14 @@ export function StoreDetailPage() {
                 setLightboxOpen(true);
               }}
             >
-              <div className="absolute inset-0">
-                <img
-                  src={ikUrl(photos[0], 'hero')}
-                  alt={store.name}
-                  className="w-full h-full object-cover transition-transform group-hover:scale-105"
-                  style={{ objectPosition: 'center' }}
-                />
-              </div>
+              <BlurImage
+                src={ikUrl(photos[0], 'hero')}
+                alt={store.name}
+                loading="eager"
+                className="absolute inset-0"
+                imgClassName="w-full h-full object-cover transition-transform group-hover:scale-105"
+                objectPosition="center"
+              />
             </div>
 
             {/* Four Smaller Square Images */}
@@ -613,21 +632,20 @@ export function StoreDetailPage() {
                   setLightboxOpen(true);
                 }}
               >
-                <div className="absolute inset-0">
-                  <img
-                    src={ikUrl(photo, 'card')}
-                    alt={`${store.name} - ${index + 2}`}
-                    loading="lazy"
-                    className="w-full h-full object-cover transition-transform group-hover:scale-105"
-                    style={{ objectPosition: 'center' }}
-                  />
-                  {/* Show +X more on last image if there are more photos */}
-                  {index === 3 && photos.length > 5 && (
-                    <div className="absolute inset-0 bg-black/70 flex items-center justify-center text-cyan-300 text-xl font-bold italic pointer-events-none">
-                      +{photos.length - 5} MORE
-                    </div>
-                  )}
-                </div>
+                <BlurImage
+                  src={ikUrl(photo, 'card')}
+                  alt={`${store.name} - ${index + 2}`}
+                  loading="lazy"
+                  className="absolute inset-0"
+                  imgClassName="w-full h-full object-cover transition-transform group-hover:scale-105"
+                  objectPosition="center"
+                />
+                {/* Show +X more on last image if there are more photos */}
+                {index === 3 && photos.length > 5 && (
+                  <div className="absolute inset-0 bg-black/70 flex items-center justify-center text-cyan-300 text-xl font-bold italic pointer-events-none z-10">
+                    +{photos.length - 5} MORE
+                  </div>
+                )}
               </div>
             ))}
           </div>
@@ -994,7 +1012,8 @@ export function StoreDetailPage() {
             initial={{ opacity: 0, y: -20 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -20 }}
-            className="fixed top-6 left-1/2 -translate-x-1/2 z-[100] flex items-center gap-3 px-5 py-3 bg-gray-900 border border-purple-500/40 rounded-2xl shadow-2xl text-sm text-white"
+            className="fixed left-1/2 -translate-x-1/2 z-[100] flex items-center gap-3 px-5 py-3 bg-gray-900 border border-purple-500/40 rounded-2xl shadow-2xl text-sm text-white"
+            style={{ top: 'calc(1.5rem + env(safe-area-inset-top, 0px))' }}
           >
             <div className="h-2 w-2 rounded-full bg-purple-400 animate-pulse" />
             Your find has been submitted for review. Thanks!

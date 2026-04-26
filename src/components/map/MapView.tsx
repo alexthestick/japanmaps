@@ -618,7 +618,7 @@ export const MapView = forwardRef<MapViewHandle, MapViewProps>(({ stores, onStor
               <>
                 {/* Main lens glow */}
                 <div
-                  className={`absolute ${isFullMode ? 'animate-in zoom-in-50 duration-500' : ''} ${isFullMode ? 'animate-pulse' : ''}`}
+                  className={`absolute ${isFullMode ? 'animate-in zoom-in-50 duration-500' : ''}`}
                   style={{
                     left: `${centerPoint.x}px`,
                     top: `${centerPoint.y}px`,
@@ -641,11 +641,11 @@ export const MapView = forwardRef<MapViewHandle, MapViewProps>(({ stores, onStor
                   {/* Inner glow ring - only in full mode */}
                   {isFullMode && (
                     <div
-                      className="absolute inset-0 rounded-full animate-pulse"
+                      className="absolute inset-0 rounded-full"
                       style={{
                         border: '1px solid rgba(59, 130, 246, 0.4)',
+                        animation: 'spotlight-breathe 2s ease-in-out infinite',
                         animationDelay: '0.3s',
-                        animationDuration: '2s',
                       }}
                     />
                   )}

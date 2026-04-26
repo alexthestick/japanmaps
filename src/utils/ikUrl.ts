@@ -9,17 +9,19 @@
  *   card   – 800px wide, q-75, WebP  → list-view cards, gallery grid small tiles
  *   hero   – 1400px wide, q-80, WebP → store detail hero, lightbox
  *   og     – 1200×630, q-85          → OG / social share images
+ *   lqip   – 20px wide, q-20, blur-6 → blur-up placeholder while full image loads
  */
 
 const IK_BASE = 'https://ik.imagekit.io/';
 
-type Preset = 'thumb' | 'card' | 'hero' | 'og';
+export type Preset = 'thumb' | 'card' | 'hero' | 'og' | 'lqip';
 
 const PRESETS: Record<Preset, string> = {
   thumb: 'w-400,q-65,f-auto',
   card:  'w-800,q-75,f-auto',
   hero:  'w-1400,q-80,f-auto',
   og:    'w-1200,h-630,c-maintain_ratio,q-85,f-auto',
+  lqip:  'w-20,q-20,bl-6,f-auto',
 };
 
 /**

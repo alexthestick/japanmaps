@@ -98,26 +98,54 @@ export function StatsBar() {
   const [totalNeighborhoods, setTotalNeighborhoods] = useState(0);
 
   useEffect(() => {
-    // Fetch total stores (count only, no row data)
+    // Fetch total stores (count only, no row data transferred)
     supabase
       .from('stores')
       .select('id', { count: 'exact', head: true })
       .then(({ count }) => {
-        if (count) setTotalStores(count);
+        if (typeof count === 'number') setTotalStores(count);
       });
 
-    // Fetch distinct city count via RPC
+    // Fetch distinct city count.
+    // Try the RPC first (fast, single integer). If it doesn't exist or errors,
+    // fall back to pulling just the `city` column and counting distinct values
+    // client-side — still cheap because it's one small column.
     supabase
       .rpc('count_distinct_cities')
-      .then(({ data }) => {
-        if (data) setTotalCities(data);
+      .then(({ data, error }) => {
+        if (!error && typeof data === 'number') {
+          setTotalCities(data);
+        } else {
+          // Fallback: fetch all city values and deduplicate
+          supabase
+            .from('stores')
+            .select('city')
+            .then(({ data: rows }) => {
+              if (rows) {
+                const distinct = new Set(rows.map((r: { city: string }) => r.city).filter(Boolean)).size;
+                setTotalCities(distinct);
+              }
+            });
+        }
       });
 
-    // Fetch distinct neighborhood count via RPC
+    // Same pattern for neighborhoods
     supabase
       .rpc('count_distinct_neighborhoods')
-      .then(({ data }) => {
-        if (data) setTotalNeighborhoods(data);
+      .then(({ data, error }) => {
+        if (!error && typeof data === 'number') {
+          setTotalNeighborhoods(data);
+        } else {
+          supabase
+            .from('stores')
+            .select('neighborhood')
+            .then(({ data: rows }) => {
+              if (rows) {
+                const distinct = new Set(rows.map((r: { neighborhood: string }) => r.neighborhood).filter(Boolean)).size;
+                setTotalNeighborhoods(distinct);
+              }
+            });
+        }
       });
   }, []);
 

@@ -7,6 +7,7 @@ import {
 } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { useAuthContext } from '../contexts/AuthContext';
+import { uploadStorePhoto } from '../utils/imagekitUpload';
 
 // ─── Types ─────────────────────────────────────────────────────────────────────
 
@@ -225,20 +226,14 @@ function SubmitModal({ onClose, onSubmitted }: SubmitModalProps) {
 
     // Upload photo if provided
     if (photoFile) {
-      const ext = photoFile.name.split('.').pop();
-      const path = `field-notes/${user.id}/${Date.now()}.${ext}`;
-      const { error: uploadError } = await supabase.storage
-        .from('field-notes')
-        .upload(path, photoFile, { contentType: photoFile.type });
-
-      if (uploadError) {
+      try {
+        const result = await uploadStorePhoto(photoFile);
+        photo_url = result.url;
+      } catch (uploadError) {
         setError('Photo upload failed. Please try again.');
         setSubmitting(false);
         return;
       }
-
-      const { data: urlData } = supabase.storage.from('field-notes').getPublicUrl(path);
-      photo_url = urlData.publicUrl;
     }
 
     const { error: insertError } = await supabase.from('field_notes').insert({

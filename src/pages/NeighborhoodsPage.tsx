@@ -1,6 +1,7 @@
 import { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { MapPin, Shuffle, ArrowLeft } from 'lucide-react';
+import { SEOHead } from '../components/seo';
 import { LOCATIONS, MAJOR_CITIES_JAPAN } from '../lib/constants';
 import { getNeighborhoodStoreCounts } from '../utils/neighborhoodData';
 import { cityToSlug, neighborhoodToSlug } from '../utils/cityData';
@@ -143,6 +144,12 @@ export function NeighborhoodsPage() {
   }
 
   return (
+    <>
+    <SEOHead
+      title="Neighborhoods — Lost in Transit JP"
+      description="Discover vintage, archive, and streetwear stores by neighborhood across Tokyo, Osaka, Kyoto, and more Japanese cities."
+      url="/neighborhoods"
+    />
     <div className="min-h-screen overflow-y-auto">
       {/* Animated Background Layers */}
       <div className="fixed inset-0 -z-10">
@@ -430,5 +437,6 @@ export function NeighborhoodsPage() {
         </div>
       </div>
     </div>
+    </>
   );
 }

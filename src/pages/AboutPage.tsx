@@ -1,7 +1,14 @@
 import { MapPin, Heart, Users, Sparkles, Zap, Store, Map, Newspaper } from 'lucide-react';
+import { SEOHead } from '../components/seo';
 
 export function AboutPage() {
   return (
+    <>
+    <SEOHead
+      title="About — Lost in Transit JP"
+      description="Lost in Transit is a curated discovery map for vintage, archive, and streetwear stores across Japan. 899+ stores in Tokyo, Osaka, Kyoto, and more."
+      url="/about"
+    />
     <div className="max-w-4xl mx-auto px-4 py-12">
       <h1 className="text-4xl font-bold text-gray-900 mb-6">About Lost in Transit</h1>
 
@@ -166,6 +173,7 @@ export function AboutPage() {
         </div>
       </div>
     </div>
+    </>
   );
 }
 

@@ -25,9 +25,11 @@ export const SpotlightMarker = React.memo(({
 }: SpotlightMarkerProps) => {
   return (
     <div className="relative">
-      {/* Pulsing glow ring - cyan cyberpunk style */}
+      {/* Glow ring — uses a CSS opacity animation (compositor-only, no repaint).
+          animate-pulse was previously causing GPU repaints for all 5 spotlight
+          markers simultaneously. Same visual result, zero main-thread cost. */}
       <div
-        className="absolute inset-0 rounded-full animate-pulse"
+        className="absolute inset-0 rounded-full"
         style={{
           width: '64px',
           height: '64px',
@@ -43,13 +45,13 @@ export const SpotlightMarker = React.memo(({
           border: '2px solid rgba(34, 217, 238, 0.6)',
           pointerEvents: 'none',
           zIndex: -1,
-          animationDuration: '2s',
+          animation: 'spotlight-breathe 2s ease-in-out infinite',
         }}
       />
 
-      {/* Secondary subtle ring for depth */}
+      {/* Secondary ring for depth */}
       <div
-        className="absolute inset-0 rounded-full animate-pulse"
+        className="absolute inset-0 rounded-full"
         style={{
           width: '56px',
           height: '56px',
@@ -59,7 +61,7 @@ export const SpotlightMarker = React.memo(({
           border: '1px solid rgba(59, 130, 246, 0.4)',
           pointerEvents: 'none',
           zIndex: -1,
-          animationDuration: '2s',
+          animation: 'spotlight-breathe 2s ease-in-out infinite',
           animationDelay: '0.5s',
         }}
       />

@@ -41,9 +41,10 @@ export function BlurImage({
           style={objectPosition ? { objectPosition } : undefined}
         />
       )}
-      {/* Skeleton fallback for non-IK images */}
+      {/* Skeleton fallback for non-IK images — static, no animation.
+          animate-pulse on a full-card div would cause GPU repaint × card count. */}
       {!hasLqip && !loaded && (
-        <div className="absolute inset-0 bg-gray-800 animate-pulse" />
+        <div className="absolute inset-0 bg-gray-800" />
       )}
       {/* Full resolution image */}
       <img

@@ -1,12 +1,12 @@
 import { ArrowRight, Shirt, UtensilsCrossed, Coffee, Home, Building2, LucideIcon } from 'lucide-react';
 import { Link } from 'react-router-dom';
-import { motion } from 'framer-motion';
 import { useState, memo } from 'react';
 import type { Store } from '../../types/store';
 import { MAIN_CATEGORY_ICONS, CITY_COLORS } from '../../lib/constants';
 import { SaveButton } from './SaveButton';
 import { WashiTexture } from '../common/WashiTexture';
 import { ikUrl } from '../../utils/ikUrl';
+import { BlurImage } from '../common/BlurImage';
 
 // Map icon names to actual icon components
 const getCategoryIcon = (iconName: string): LucideIcon => {
@@ -52,11 +52,7 @@ function StoreCardComponent({ store, onClick }: StoreCardProps) {
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
     >
-    <motion.div
-      initial={{ opacity: 0, y: 8 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.2, ease: 'easeOut' }}
-    >
+    <div>
       {/* Neon glow effect on hover */}
       <div className="absolute inset-0 bg-gradient-to-br from-cyan-400/30 via-blue-500/30 to-purple-500/30 rounded-2xl blur-xl opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
 
@@ -71,11 +67,11 @@ function StoreCardComponent({ store, onClick }: StoreCardProps) {
 
         {/* Image Container */}
         <div className="relative w-full aspect-[4/5] overflow-hidden bg-gray-800">
-          <img
+          <BlurImage
             src={ikUrl(store.photos[0], 'card') || 'https://images.unsplash.com/photo-1578662996442-48f60103fc96?w=800&h=1000&fit=crop&q=75'}
             alt={store.name}
             loading="lazy"
-            className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+            imgClassName="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
           />
 
           {/* Cyan tint overlay */}
@@ -84,10 +80,8 @@ function StoreCardComponent({ store, onClick }: StoreCardProps) {
           {/* Dark gradient overlay */}
           <div className={`absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent transition-opacity duration-300 ${isHovered ? 'opacity-90' : 'opacity-50'}`} />
 
-          {/* Cyan shimmer on hover */}
-          <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500">
-            <div className="absolute inset-0 bg-gradient-to-r from-transparent via-cyan-400/20 to-transparent -skew-x-12 transform translate-x-[-100%] group-hover:translate-x-[200%] transition-transform duration-1000" />
-          </div>
+          {/* Subtle cyan tint on hover — opacity-only, compositor safe */}
+          <div className="absolute inset-0 bg-cyan-400/10 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
 
           {/* Explore Button - Center on Hover */}
           <div className={`absolute inset-0 flex items-center justify-center transition-opacity duration-300 ${isHovered ? 'opacity-100' : 'opacity-0'} z-10`}>
@@ -148,7 +142,7 @@ function StoreCardComponent({ store, onClick }: StoreCardProps) {
           </div>
         </div>
       </div>
-    </motion.div>
+    </div>
     </Link>
   );
 }

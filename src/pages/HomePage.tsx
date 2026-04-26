@@ -3,6 +3,7 @@ import { useSearchParams, useNavigate, useLocation } from 'react-router-dom';
 import { AnimatePresence } from 'framer-motion';
 import { Dices } from 'lucide-react';
 import { MapView } from '../components/map/MapView';
+import { SEOHead } from '../components/seo';
 import { StoreList } from '../components/store/StoreList';
 import { StoreDetail } from '../components/store/StoreDetail';
 import { BottomSheetStoreDetail } from '../components/store/BottomSheetStoreDetail';
@@ -333,6 +334,11 @@ export function HomePage() {
 
   return (
     <>
+      <SEOHead
+        title="Explore the Map — Lost in Transit JP"
+        description="Interactive map of 899+ vintage, archive, and streetwear stores across Japan. Filter by city, neighborhood, and category."
+        url="/map"
+      />
       {/* Scrolling Banner - Desktop only */}
       {!isMobile && <ScrollingBanner />}
 

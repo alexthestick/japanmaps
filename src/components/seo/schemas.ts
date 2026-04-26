@@ -167,9 +167,8 @@ export function generateOrganizationSchema(): object {
     logo: `${IMAGEKIT_BASE}/logo.png`,
     description: 'Your curated guide to the best stores and hidden gems across Japan.',
     sameAs: [
-      // Add social media links when available
-      // 'https://www.instagram.com/lostintransitjp',
-      // 'https://twitter.com/lostintransitjp',
+      'https://www.instagram.com/lostintransit.japan',
+      // 'https://www.tiktok.com/@lostintransitjp',
     ].filter(Boolean),
   };
 }

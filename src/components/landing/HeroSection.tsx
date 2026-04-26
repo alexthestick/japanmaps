@@ -34,7 +34,7 @@ function MosaicPhoto({ photo, index, rotation, delay }: { photo: HeroFind; index
         <div
           className="absolute inset-0"
           style={{
-            backgroundImage: `url(${ikUrl(photo.photo_url, 'thumb').replace('w-400', 'w-20')})`,
+            backgroundImage: `url(${ikUrl(photo.photo_url, 'lqip')})`,
             backgroundSize: 'cover',
             backgroundPosition: 'center',
             filter: 'blur(10px)',

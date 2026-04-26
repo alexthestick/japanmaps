@@ -1,9 +1,12 @@
 import { useState, useRef } from 'react';
 import { BottomSheet } from 'react-spring-bottom-sheet';
-import { MapPin, ExternalLink, Instagram, Clock, Navigation, X, Heart } from 'lucide-react';
+import { MapPin, ExternalLink, Instagram, Clock, Navigation, X, Heart, ArrowUpRight, CheckCircle2 } from 'lucide-react';
 import type { Store } from '../../types/store';
 import { getGoogleMapsUrl } from '../../utils/formatters';
 import { saveStore, unsaveStore, isStoreSaved } from '../../utils/savedStores';
+import { Link } from 'react-router-dom';
+import { ikUrl } from '../../utils/ikUrl';
+import { BlurImage } from '../common/BlurImage';
 import 'react-spring-bottom-sheet/dist/style.css';
 
 interface BottomSheetStoreDetailProps {
@@ -33,6 +36,8 @@ export function BottomSheetStoreDetail({ store, onClose }: BottomSheetStoreDetai
     onClose();
   };
 
+  const storeUrl = `/store/${store.slug || store.id}`;
+
   return (
     <BottomSheet
       open={!!store}
@@ -46,7 +51,6 @@ export function BottomSheetStoreDetail({ store, onClose }: BottomSheetStoreDetai
       ]}
       expandOnContentDrag={true}
       blocking={false}
-      // FINAL: Prevent accidental dismissal - require strong swipe down
       sibling={
         <div
           className="absolute inset-0 pointer-events-none"
@@ -55,7 +59,6 @@ export function BottomSheetStoreDetail({ store, onClose }: BottomSheetStoreDetai
       }
       skipInitialTransition={false}
       header={
-        // PHASE 2.1L: Minimal header with just drag handle
         <div className="w-full pt-2 pb-3 bg-gray-900">
           <div className="flex justify-center">
             <div className="w-10 h-1 bg-gray-600 rounded-full" />
@@ -64,36 +67,44 @@ export function BottomSheetStoreDetail({ store, onClose }: BottomSheetStoreDetai
       }
       className="bottom-sheet-custom"
     >
-      {/* PHASE 2.1L: Redesigned Layout - No white gaps, clean flow */}
       <div className="bg-gray-900 min-h-full">
+
         {/* Hero Image with Overlay Info */}
         {store.photos[0] && (
           <div className="relative w-full h-[280px] bg-gray-800">
-            <img
-              src={store.photos[0]}
+            <BlurImage
+              src={ikUrl(store.photos[0], 'card')}
               alt={store.name}
-              className="w-full h-full object-cover"
+              loading="eager"
+              imgClassName="w-full h-full object-cover"
             />
 
-            {/* Gradient overlays for text readability */}
+            {/* Gradient overlays */}
             <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/30 to-black/50" />
 
-            {/* FINAL: Store Name - Top Left (visible in peek mode, with proper spacing) */}
+            {/* Store Name + Japanese name — top left */}
             <div className="absolute top-4 left-4 right-32 z-10 pr-2">
-              <h1 className="text-lg font-bold text-white tracking-tight italic leading-tight line-clamp-2"
-                  style={{
-                    textShadow: '0 2px 12px rgba(0, 0, 0, 0.9)',
-                    display: '-webkit-box',
-                    WebkitLineClamp: 2,
-                    WebkitBoxOrient: 'vertical',
-                    overflow: 'hidden',
-                    wordBreak: 'break-word'
-                  }}>
+              <h1
+                className="text-lg font-bold text-white tracking-tight italic leading-tight line-clamp-2"
+                style={{
+                  textShadow: '0 2px 12px rgba(0, 0, 0, 0.9)',
+                  display: '-webkit-box',
+                  WebkitLineClamp: 2,
+                  WebkitBoxOrient: 'vertical',
+                  overflow: 'hidden',
+                  wordBreak: 'break-word',
+                }}
+              >
                 {store.name}
               </h1>
+              {store.nameJapanese && (
+                <p className="text-xs text-gray-300 mt-0.5" style={{ textShadow: '0 1px 6px rgba(0,0,0,0.9)' }}>
+                  {store.nameJapanese}
+                </p>
+              )}
             </div>
 
-            {/* Action Buttons - Top Right on Photo */}
+            {/* Action buttons — top right */}
             <div className="absolute top-4 right-4 flex gap-2 z-10">
               <button
                 onClick={handleSaveToggle}
@@ -111,8 +122,8 @@ export function BottomSheetStoreDetail({ store, onClose }: BottomSheetStoreDetai
               </button>
             </div>
 
-            {/* Category Pills - Bottom of Photo */}
-            <div className="absolute bottom-4 left-4 right-4">
+            {/* Bottom of photo: category pills + social proof */}
+            <div className="absolute bottom-4 left-4 right-4 flex items-end justify-between">
               <div className="flex flex-wrap gap-2">
                 {store.categories.slice(0, 3).map((cat) => (
                   <span
@@ -122,14 +133,27 @@ export function BottomSheetStoreDetail({ store, onClose }: BottomSheetStoreDetai
                     {cat}
                   </span>
                 ))}
+                {store.verified && (
+                  <span className="flex items-center gap-1 px-2.5 py-1.5 rounded-full bg-cyan-500/25 backdrop-blur-sm border border-cyan-400/50 text-white font-bold text-xs">
+                    <CheckCircle2 className="w-3 h-3" />
+                    Verified
+                  </span>
+                )}
               </div>
+              {store.saveCount > 0 && (
+                <div className="flex items-center gap-1 px-2.5 py-1.5 bg-black/60 backdrop-blur-sm rounded-full border border-cyan-400/30">
+                  <Heart className="w-3 h-3 text-cyan-400 fill-cyan-400" />
+                  <span className="text-xs font-bold text-cyan-300">{store.saveCount}</span>
+                </div>
+              )}
             </div>
           </div>
         )}
 
-        {/* Content Section - Seamless dark background */}
+        {/* Content */}
         <div className="px-5 py-5 space-y-4 bg-gray-900">
-          {/* Address */}
+
+          {/* Address + Hours */}
           {(store.address || store.city || store.neighborhood) && (
             <div className="flex gap-3 items-start">
               <MapPin className="w-5 h-5 text-cyan-400 flex-shrink-0 mt-0.5" />
@@ -144,7 +168,6 @@ export function BottomSheetStoreDetail({ store, onClose }: BottomSheetStoreDetai
             </div>
           )}
 
-          {/* Hours */}
           {store.hours && (
             <div className="flex gap-3 items-start">
               <Clock className="w-5 h-5 text-cyan-400 flex-shrink-0 mt-0.5" />
@@ -154,10 +177,8 @@ export function BottomSheetStoreDetail({ store, onClose }: BottomSheetStoreDetai
 
           {/* Description */}
           {store.description && (
-            <div className="pt-2">
-              <p className="text-sm text-gray-300 leading-relaxed">
-                {store.description}
-              </p>
+            <div className="pt-1">
+              <p className="text-sm text-gray-300 leading-relaxed">{store.description}</p>
             </div>
           )}
 
@@ -171,10 +192,10 @@ export function BottomSheetStoreDetail({ store, onClose }: BottomSheetStoreDetai
                     key={idx}
                     className="relative aspect-square rounded-lg overflow-hidden bg-gray-800"
                   >
-                    <img
-                      src={photo}
+                    <BlurImage
+                      src={ikUrl(photo, 'thumb')}
                       alt={`${store.name} photo ${idx + 2}`}
-                      className="w-full h-full object-cover"
+                      imgClassName="w-full h-full object-cover"
                     />
                   </div>
                 ))}
@@ -183,45 +204,57 @@ export function BottomSheetStoreDetail({ store, onClose }: BottomSheetStoreDetai
           )}
 
           {/* Action Buttons */}
-          <div className="flex flex-col gap-3 pt-4">
+          <div className="flex flex-col gap-3 pt-2">
+            {/* View Full Page — primary CTA */}
+            <Link
+              to={storeUrl}
+              className="flex items-center justify-center gap-2 w-full px-6 py-3.5 bg-gradient-to-r from-cyan-500 via-blue-600 to-purple-600 text-white font-bold rounded-xl hover:brightness-110 active:scale-95 transition-all shadow-lg"
+            >
+              <ArrowUpRight className="w-5 h-5" />
+              View Full Page
+            </Link>
+
+            {/* Directions */}
             <a
               href={getGoogleMapsUrl(store.latitude, store.longitude)}
               target="_blank"
               rel="noopener noreferrer"
-              className="flex items-center justify-center gap-2 w-full px-6 py-3.5 bg-gradient-to-r from-cyan-500 via-blue-600 to-purple-600 text-white font-bold rounded-xl hover:scale-[1.02] active:scale-95 transition-transform shadow-lg"
+              className="flex items-center justify-center gap-2 w-full px-6 py-3.5 bg-gray-800 text-cyan-300 font-bold rounded-xl border border-cyan-400/40 hover:bg-cyan-500/20 active:scale-95 transition-all"
             >
               <Navigation className="w-5 h-5" />
               Get Directions
             </a>
 
-            <div className="grid grid-cols-2 gap-3">
-              {store.instagram && (
-                <a
-                  href={`https://instagram.com/${store.instagram.replace('@', '')}`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="flex items-center justify-center gap-2 px-4 py-3 bg-pink-500/20 text-pink-300 font-semibold text-sm rounded-lg border border-pink-400/30 hover:bg-pink-500/30 active:scale-95 transition-all"
-                >
-                  <Instagram className="w-4 h-4" />
-                  Instagram
-                </a>
-              )}
-
-              {store.website && (
-                <a
-                  href={store.website}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="flex items-center justify-center gap-2 px-4 py-3 bg-gray-700/50 text-gray-200 font-semibold text-sm rounded-lg border border-gray-600/50 hover:bg-gray-700 active:scale-95 transition-all"
-                >
-                  <ExternalLink className="w-4 h-4" />
-                  Website
-                </a>
-              )}
-            </div>
+            {/* Instagram + Website */}
+            {(store.instagram || store.website) && (
+              <div className="grid grid-cols-2 gap-3">
+                {store.instagram && (
+                  <a
+                    href={`https://instagram.com/${store.instagram.replace('@', '')}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex items-center justify-center gap-2 px-4 py-3 bg-pink-500/20 text-pink-300 font-semibold text-sm rounded-lg border border-pink-400/30 hover:bg-pink-500/30 active:scale-95 transition-all"
+                  >
+                    <Instagram className="w-4 h-4" />
+                    Instagram
+                  </a>
+                )}
+                {store.website && (
+                  <a
+                    href={store.website}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex items-center justify-center gap-2 px-4 py-3 bg-gray-700/50 text-gray-200 font-semibold text-sm rounded-lg border border-gray-600/50 hover:bg-gray-700 active:scale-95 transition-all"
+                  >
+                    <ExternalLink className="w-4 h-4" />
+                    Website
+                  </a>
+                )}
+              </div>
+            )}
           </div>
 
-          {/* Bottom padding for safe area */}
+          {/* Bottom safe area */}
           <div className="h-6" />
         </div>
       </div>

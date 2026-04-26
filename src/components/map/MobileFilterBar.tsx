@@ -124,8 +124,12 @@ export function MobileFilterBar({
 
   return (
     <div
-      className="fixed top-20 left-0 right-0 z-30 px-4 pointer-events-none transition-all duration-300 ease-in-out"
+      className="fixed left-0 right-0 z-30 px-4 pointer-events-none transition-all duration-300 ease-in-out"
       style={{
+        /* Use --header-height (set in index.css) so this stays below the header
+           whether we're on desktop (safe-area = 0, so top = 5rem = 80px, same
+           as the old top-20) or on an iPhone (top = 64px + ~47px + 16px gap). */
+        top: 'calc(var(--header-height, 4rem) + 1rem)',
         transform: isHidden ? 'translate3d(0, -150px, 0)' : 'translate3d(0, 0, 0)',
         opacity: isHidden ? 0 : 1,
         willChange: 'transform, opacity',
