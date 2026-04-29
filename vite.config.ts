@@ -84,6 +84,9 @@ export default defineConfig({
 
         runtimeCaching: [
           // ImageKit CDN images — cache aggressively for 30 days
+          // NOTE: statuses must be [200] only — never include 0 (opaque responses).
+          // Caching opaque responses breaks canvas-based exports (html-to-image)
+          // because a cached opaque response can't be used for a CORS fetch().
           {
             urlPattern: /^https:\/\/ik\.imagekit\.io\/.*/i,
             handler: 'CacheFirst',
@@ -93,7 +96,8 @@ export default defineConfig({
                 maxEntries: 300,
                 maxAgeSeconds: 60 * 60 * 24 * 30, // 30 days
               },
-              cacheableResponse: { statuses: [0, 200] },
+              cacheableResponse: { statuses: [200] },
+              fetchOptions: { mode: 'cors' },
             },
           },
 
