@@ -75,19 +75,32 @@ export function SocialPostCreator() {
       setStoreName(selectedStore.name);
       setLocation(`${selectedStore.city}${selectedStore.neighborhood ? ' • ' + selectedStore.neighborhood : ''}`);
 
-      // Set first photo if available
+      // Reset to first photo — the photo index effect will handle the base64 conversion
       if (selectedStore.photos && selectedStore.photos.length > 0) {
         setSelectedPhotoIndex(0);
-        setStoreImage(selectedStore.photos[0]);
       }
     }
   }, [selectedStore]);
 
-  // Update image when photo index changes
+  // Update image when photo index changes — convert to base64 to avoid canvas CORS taint
   useEffect(() => {
-    if (selectedStore && selectedStore.photos && selectedStore.photos[selectedPhotoIndex]) {
-      setStoreImage(selectedStore.photos[selectedPhotoIndex]);
-    }
+    const url = selectedStore?.photos?.[selectedPhotoIndex];
+    if (!url) return;
+
+    setImageUrlLoading(true);
+    setStoreImage(''); // clear while loading
+
+    fetchImageAsBase64(url)
+      .then((base64) => {
+        setStoreImage(base64);
+        setImageUrlLoading(false);
+      })
+      .catch(() => {
+        // Proxy failed — fall back to direct URL (export may still fail but preview will show)
+        setStoreImage(url);
+        setImageUrlLoading(false);
+        console.warn('Could not convert image to base64 — export may fail for this photo.');
+      });
   }, [selectedPhotoIndex, selectedStore]);
 
   // Adjust positions when format changes
@@ -733,6 +746,7 @@ export function SocialPostCreator() {
                 <img
                   src={storeImage}
                   alt="Store"
+                  crossOrigin="anonymous"
                   className="absolute inset-0 w-full h-full object-cover"
                   style={{ userSelect: 'none', pointerEvents: 'none' }}
                 />
@@ -973,12 +987,21 @@ export function SocialPostCreator() {
                 </Draggable>
               )}
 
-              {/* Placeholder */}
+              {/* Placeholder / Loading */}
               {!storeImage && (
                 <div className="absolute inset-0 flex items-center justify-center">
                   <div className="text-center text-gray-400">
-                    <p className="text-6xl mb-4">📸</p>
-                    <p className="text-3xl font-semibold">Select a store to begin</p>
+                    {imageUrlLoading ? (
+                      <>
+                        <p className="text-6xl mb-4">⏳</p>
+                        <p className="text-3xl font-semibold">Loading photo...</p>
+                      </>
+                    ) : (
+                      <>
+                        <p className="text-6xl mb-4">📸</p>
+                        <p className="text-3xl font-semibold">Select a store to begin</p>
+                      </>
+                    )}
                   </div>
                 </div>
               )}
