@@ -208,11 +208,34 @@ export function SocialPostCreator() {
   }
 
   async function fetchImageAsBase64(url: string): Promise<string> {
-    // Try multiple CORS proxies in sequence
+    const toBase64 = (blob: Blob): Promise<string> =>
+      new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = (e) => resolve(e.target?.result as string);
+        reader.onerror = reject;
+        reader.readAsDataURL(blob);
+      });
+
+    // 1. Try our own Vercel proxy first — most reliable, no rate limits
+    if (url.startsWith('https://ik.imagekit.io/wscyshoygv/')) {
+      try {
+        const proxyUrl = `/api/proxy-image?url=${encodeURIComponent(url)}`;
+        const response = await fetch(proxyUrl);
+        if (response.ok) {
+          const blob = await response.blob();
+          if (blob.type.startsWith('image/')) {
+            return await toBase64(blob);
+          }
+        }
+      } catch {
+        // fall through to external proxies
+      }
+    }
+
+    // 2. Fall back to external CORS proxies for non-ImageKit URLs
     const proxies = [
       `https://corsproxy.io/?${encodeURIComponent(url)}`,
       `https://api.allorigins.win/raw?url=${encodeURIComponent(url)}`,
-      `https://proxy.cors.sh/${url}`,
     ];
 
     for (const proxyUrl of proxies) {
@@ -221,16 +244,12 @@ export function SocialPostCreator() {
         if (!response.ok) continue;
         const blob = await response.blob();
         if (!blob.type.startsWith('image/')) continue;
-        return await new Promise((resolve, reject) => {
-          const reader = new FileReader();
-          reader.onload = (e) => resolve(e.target?.result as string);
-          reader.onerror = reject;
-          reader.readAsDataURL(blob);
-        });
+        return await toBase64(blob);
       } catch {
         continue;
       }
     }
+
     throw new Error('All proxies failed');
   }
 
