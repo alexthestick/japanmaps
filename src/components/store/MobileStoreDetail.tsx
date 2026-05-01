@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ArrowLeft, Share2, ShoppingBag, MapPin, Clock, Globe, Instagram, ExternalLink, ChevronDown, ChevronUp, Navigation, Map as MapIcon, Camera } from 'lucide-react';
+import { ArrowLeft, Share2, ShoppingBag, MapPin, Clock, Globe, Instagram, ExternalLink, ChevronDown, ChevronUp, Navigation, Map as MapIcon, Camera, Heart } from 'lucide-react';
 import { SwipeablePhotoCarousel } from './SwipeablePhotoCarousel';
 import { SaveButton } from './SaveButton';
 import { InstagramGeneratorModal } from './InstagramGeneratorModal';

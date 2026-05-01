@@ -599,16 +599,13 @@ export function StoreDetailPage() {
               </div>
             ))}
           </div>
-        ) : (
-          /* 3+ Images - Airbnb Style Grid (1 Large + up to 4 Small) */
-          <div className="grid grid-cols-4 grid-rows-2 gap-3 h-[480px]">
-            {/* Large Main Image - spans left 2 cols, full height */}
+        ) : photos.length === 3 ? (
+          /* 3 Images — large left (2/3) + 2 small stacked right (1/3) */
+          <div className="grid grid-cols-3 grid-rows-2 gap-3 h-[480px]">
+            {/* Large — spans 2 cols, both rows */}
             <div
               className="col-span-2 row-span-2 relative cursor-pointer group rounded-xl overflow-hidden border-2 border-cyan-500/30 hover:border-cyan-500/60 transition-all shadow-[0_0_20px_rgba(34,217,238,0.2)] hover:shadow-[0_0_40px_rgba(34,217,238,0.4)]"
-              onClick={() => {
-                setCurrentImageIndex(0);
-                setLightboxOpen(true);
-              }}
+              onClick={() => { setCurrentImageIndex(0); setLightboxOpen(true); }}
             >
               <BlurImage
                 src={ikUrl(photos[0], 'hero')}
@@ -619,16 +616,12 @@ export function StoreDetailPage() {
                 objectPosition="center"
               />
             </div>
-
-            {/* Four Smaller Images - fill the right 2 cols across 2 rows */}
-            {photos.slice(1, 5).map((photo, index) => (
+            {/* 2 small stacked in the right column */}
+            {photos.slice(1, 3).map((photo, index) => (
               <div
                 key={index + 1}
                 className="relative cursor-pointer group rounded-xl overflow-hidden border-2 border-cyan-500/30 hover:border-cyan-500/60 transition-all shadow-[0_0_20px_rgba(34,217,238,0.2)] hover:shadow-[0_0_40px_rgba(34,217,238,0.4)]"
-                onClick={() => {
-                  setCurrentImageIndex(index + 1);
-                  setLightboxOpen(true);
-                }}
+                onClick={() => { setCurrentImageIndex(index + 1); setLightboxOpen(true); }}
               >
                 <BlurImage
                   src={ikUrl(photo, 'card')}
@@ -638,7 +631,91 @@ export function StoreDetailPage() {
                   imgClassName="w-full h-full object-cover transition-transform group-hover:scale-105"
                   objectPosition="center"
                 />
-                {/* Show +X more on last visible image if there are more photos */}
+              </div>
+            ))}
+          </div>
+        ) : photos.length === 4 ? (
+          /* 4 Images — large left + 2 small top-right + 1 wide bottom-right */
+          <div className="grid grid-cols-4 grid-rows-2 gap-3 h-[480px]">
+            {/* Large — spans left 2 cols, both rows */}
+            <div
+              className="col-span-2 row-span-2 relative cursor-pointer group rounded-xl overflow-hidden border-2 border-cyan-500/30 hover:border-cyan-500/60 transition-all shadow-[0_0_20px_rgba(34,217,238,0.2)] hover:shadow-[0_0_40px_rgba(34,217,238,0.4)]"
+              onClick={() => { setCurrentImageIndex(0); setLightboxOpen(true); }}
+            >
+              <BlurImage
+                src={ikUrl(photos[0], 'hero')}
+                alt={store.name}
+                loading="eager"
+                className="absolute inset-0"
+                imgClassName="w-full h-full object-cover transition-transform group-hover:scale-105"
+                objectPosition="center"
+              />
+            </div>
+            {/* Top-right: 2 small side by side */}
+            {photos.slice(1, 3).map((photo, index) => (
+              <div
+                key={index + 1}
+                className="relative cursor-pointer group rounded-xl overflow-hidden border-2 border-cyan-500/30 hover:border-cyan-500/60 transition-all shadow-[0_0_20px_rgba(34,217,238,0.2)] hover:shadow-[0_0_40px_rgba(34,217,238,0.4)]"
+                onClick={() => { setCurrentImageIndex(index + 1); setLightboxOpen(true); }}
+              >
+                <BlurImage
+                  src={ikUrl(photo, 'card')}
+                  alt={`${store.name} - ${index + 2}`}
+                  loading="lazy"
+                  className="absolute inset-0"
+                  imgClassName="w-full h-full object-cover transition-transform group-hover:scale-105"
+                  objectPosition="center"
+                />
+              </div>
+            ))}
+            {/* Bottom-right: 1 wide image spanning both right cols */}
+            <div
+              className="col-span-2 relative cursor-pointer group rounded-xl overflow-hidden border-2 border-cyan-500/30 hover:border-cyan-500/60 transition-all shadow-[0_0_20px_rgba(34,217,238,0.2)] hover:shadow-[0_0_40px_rgba(34,217,238,0.4)]"
+              onClick={() => { setCurrentImageIndex(3); setLightboxOpen(true); }}
+            >
+              <BlurImage
+                src={ikUrl(photos[3], 'card')}
+                alt={`${store.name} - 4`}
+                loading="lazy"
+                className="absolute inset-0"
+                imgClassName="w-full h-full object-cover transition-transform group-hover:scale-105"
+                objectPosition="center"
+              />
+            </div>
+          </div>
+        ) : (
+          /* 5+ Images — large left (2×2) + 4 small filling right 2 cols */
+          <div className="grid grid-cols-4 grid-rows-2 gap-3 h-[480px]">
+            {/* Large Main Image - spans left 2 cols, full height */}
+            <div
+              className="col-span-2 row-span-2 relative cursor-pointer group rounded-xl overflow-hidden border-2 border-cyan-500/30 hover:border-cyan-500/60 transition-all shadow-[0_0_20px_rgba(34,217,238,0.2)] hover:shadow-[0_0_40px_rgba(34,217,238,0.4)]"
+              onClick={() => { setCurrentImageIndex(0); setLightboxOpen(true); }}
+            >
+              <BlurImage
+                src={ikUrl(photos[0], 'hero')}
+                alt={store.name}
+                loading="eager"
+                className="absolute inset-0"
+                imgClassName="w-full h-full object-cover transition-transform group-hover:scale-105"
+                objectPosition="center"
+              />
+            </div>
+            {/* Four Smaller Images - fill the right 2 cols across 2 rows */}
+            {photos.slice(1, 5).map((photo, index) => (
+              <div
+                key={index + 1}
+                className="relative cursor-pointer group rounded-xl overflow-hidden border-2 border-cyan-500/30 hover:border-cyan-500/60 transition-all shadow-[0_0_20px_rgba(34,217,238,0.2)] hover:shadow-[0_0_40px_rgba(34,217,238,0.4)]"
+                onClick={() => { setCurrentImageIndex(index + 1); setLightboxOpen(true); }}
+              >
+                <BlurImage
+                  src={ikUrl(photo, 'card')}
+                  alt={`${store.name} - ${index + 2}`}
+                  loading="lazy"
+                  className="absolute inset-0"
+                  imgClassName="w-full h-full object-cover transition-transform group-hover:scale-105"
+                  objectPosition="center"
+                />
+                {/* +X more overlay on the last visible cell */}
                 {index === 3 && photos.length > 5 && (
                   <div className="absolute inset-0 bg-black/70 flex items-center justify-center text-cyan-300 text-xl font-bold italic pointer-events-none z-10">
                     +{photos.length - 5} MORE
