@@ -79,14 +79,31 @@ export default defineConfig({
       //   StaleWhileRevalidate — Serve from cache instantly, then update in background.
       //                     Best for map tiles where speed matters more than freshness.
       workbox: {
+        // Take control of all clients immediately on activation.
+        // Without this, the new service worker waits until every tab running
+        // the old version is closed before it activates — which can take hours.
+        // With it, the new SW activates on the next page load after deploy,
+        // preventing the chunk-hash mismatch that causes white screens.
+        skipWaiting: true,
+        clientsClaim: true,
+
         // Precache all build output (JS bundles, CSS, HTML, fonts, icons)
         globPatterns: ['**/*.{js,css,html,ico,png,svg,woff,woff2}'],
 
         runtimeCaching: [
-          // ImageKit CDN images — cache aggressively for 30 days
-          // NOTE: statuses must be [200] only — never include 0 (opaque responses).
-          // Caching opaque responses breaks canvas-based exports (html-to-image)
-          // because a cached opaque response can't be used for a CORS fetch().
+          // ImageKit CDN images — cache aggressively for 30 days.
+          //
+          // IMPORTANT — credentials: 'omit' is required here.
+          // The service worker intercepts <img> requests and re-fetches them.
+          // Without explicitly omitting credentials, browsers send cookies
+          // along with the cross-origin request. ImageKit responds with
+          // Access-Control-Allow-Origin: * which browsers reject when
+          // credentials are present — causing every image to fail with a
+          // CORS error. 'omit' tells the SW never to send credentials for
+          // ImageKit requests, which is correct since IK needs no auth.
+          //
+          // statuses: [200] only — never cache opaque (status 0) responses.
+          // Opaque responses break canvas-based exports (html-to-image).
           {
             urlPattern: /^https:\/\/ik\.imagekit\.io\/.*/i,
             handler: 'CacheFirst',
@@ -97,7 +114,7 @@ export default defineConfig({
                 maxAgeSeconds: 60 * 60 * 24 * 30, // 30 days
               },
               cacheableResponse: { statuses: [200] },
-              fetchOptions: { mode: 'cors' },
+              fetchOptions: { mode: 'cors', credentials: 'omit' },
             },
           },
 
