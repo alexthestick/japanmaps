@@ -600,12 +600,11 @@ export function StoreDetailPage() {
             ))}
           </div>
         ) : (
-          /* 3+ Images - Airbnb Style Grid with Square Shapes (1 Large + 4 Small) */
-          <div className="grid grid-cols-4 grid-rows-2 gap-3">
-            {/* Large Main Image - Takes up 2x2 grid (Square) */}
+          /* 3+ Images - Airbnb Style Grid (1 Large + up to 4 Small) */
+          <div className="grid grid-cols-4 grid-rows-2 gap-3 h-[480px]">
+            {/* Large Main Image - spans left 2 cols, full height */}
             <div
-              className="col-span-2 row-span-2 relative w-full cursor-pointer group rounded-xl overflow-hidden border-2 border-cyan-500/30 hover:border-cyan-500/60 transition-all shadow-[0_0_20px_rgba(34,217,238,0.2)] hover:shadow-[0_0_40px_rgba(34,217,238,0.4)]"
-              style={{ paddingBottom: '100%' }}
+              className="col-span-2 row-span-2 relative cursor-pointer group rounded-xl overflow-hidden border-2 border-cyan-500/30 hover:border-cyan-500/60 transition-all shadow-[0_0_20px_rgba(34,217,238,0.2)] hover:shadow-[0_0_40px_rgba(34,217,238,0.4)]"
               onClick={() => {
                 setCurrentImageIndex(0);
                 setLightboxOpen(true);
@@ -621,12 +620,11 @@ export function StoreDetailPage() {
               />
             </div>
 
-            {/* Four Smaller Square Images */}
+            {/* Four Smaller Images - fill the right 2 cols across 2 rows */}
             {photos.slice(1, 5).map((photo, index) => (
               <div
                 key={index + 1}
-                className="relative w-full cursor-pointer group rounded-xl overflow-hidden border-2 border-cyan-500/30 hover:border-cyan-500/60 transition-all shadow-[0_0_20px_rgba(34,217,238,0.2)] hover:shadow-[0_0_40px_rgba(34,217,238,0.4)]"
-                style={{ paddingBottom: '100%' }}
+                className="relative cursor-pointer group rounded-xl overflow-hidden border-2 border-cyan-500/30 hover:border-cyan-500/60 transition-all shadow-[0_0_20px_rgba(34,217,238,0.2)] hover:shadow-[0_0_40px_rgba(34,217,238,0.4)]"
                 onClick={() => {
                   setCurrentImageIndex(index + 1);
                   setLightboxOpen(true);
@@ -640,7 +638,7 @@ export function StoreDetailPage() {
                   imgClassName="w-full h-full object-cover transition-transform group-hover:scale-105"
                   objectPosition="center"
                 />
-                {/* Show +X more on last image if there are more photos */}
+                {/* Show +X more on last visible image if there are more photos */}
                 {index === 3 && photos.length > 5 && (
                   <div className="absolute inset-0 bg-black/70 flex items-center justify-center text-cyan-300 text-xl font-bold italic pointer-events-none z-10">
                     +{photos.length - 5} MORE
