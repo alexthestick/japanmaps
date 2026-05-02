@@ -604,14 +604,13 @@ export function StoreDetailPage() {
           <div className="grid grid-cols-3 grid-rows-2 gap-3 h-[480px]">
             {/* Large — spans 2 cols, both rows */}
             <div
-              className="col-span-2 row-span-2 relative cursor-pointer group rounded-xl overflow-hidden border-2 border-cyan-500/30 hover:border-cyan-500/60 transition-all shadow-[0_0_20px_rgba(34,217,238,0.2)] hover:shadow-[0_0_40px_rgba(34,217,238,0.4)]"
+              className="col-span-2 row-span-2 h-full relative cursor-pointer group rounded-xl overflow-hidden border-2 border-cyan-500/30 hover:border-cyan-500/60 transition-all shadow-[0_0_20px_rgba(34,217,238,0.2)] hover:shadow-[0_0_40px_rgba(34,217,238,0.4)]"
               onClick={() => { setCurrentImageIndex(0); setLightboxOpen(true); }}
             >
               <BlurImage
                 src={ikUrl(photos[0], 'hero')}
                 alt={store.name}
                 loading="eager"
-                className="absolute inset-0"
                 imgClassName="w-full h-full object-cover transition-transform group-hover:scale-105"
                 objectPosition="center"
               />
@@ -620,14 +619,13 @@ export function StoreDetailPage() {
             {photos.slice(1, 3).map((photo, index) => (
               <div
                 key={index + 1}
-                className="relative cursor-pointer group rounded-xl overflow-hidden border-2 border-cyan-500/30 hover:border-cyan-500/60 transition-all shadow-[0_0_20px_rgba(34,217,238,0.2)] hover:shadow-[0_0_40px_rgba(34,217,238,0.4)]"
+                className="h-full relative cursor-pointer group rounded-xl overflow-hidden border-2 border-cyan-500/30 hover:border-cyan-500/60 transition-all shadow-[0_0_20px_rgba(34,217,238,0.2)] hover:shadow-[0_0_40px_rgba(34,217,238,0.4)]"
                 onClick={() => { setCurrentImageIndex(index + 1); setLightboxOpen(true); }}
               >
                 <BlurImage
                   src={ikUrl(photo, 'card')}
                   alt={`${store.name} - ${index + 2}`}
                   loading="lazy"
-                  className="absolute inset-0"
                   imgClassName="w-full h-full object-cover transition-transform group-hover:scale-105"
                   objectPosition="center"
                 />
@@ -639,14 +637,13 @@ export function StoreDetailPage() {
           <div className="grid grid-cols-4 grid-rows-2 gap-3 h-[480px]">
             {/* Large — spans left 2 cols, both rows */}
             <div
-              className="col-span-2 row-span-2 relative cursor-pointer group rounded-xl overflow-hidden border-2 border-cyan-500/30 hover:border-cyan-500/60 transition-all shadow-[0_0_20px_rgba(34,217,238,0.2)] hover:shadow-[0_0_40px_rgba(34,217,238,0.4)]"
+              className="col-span-2 row-span-2 h-full relative cursor-pointer group rounded-xl overflow-hidden border-2 border-cyan-500/30 hover:border-cyan-500/60 transition-all shadow-[0_0_20px_rgba(34,217,238,0.2)] hover:shadow-[0_0_40px_rgba(34,217,238,0.4)]"
               onClick={() => { setCurrentImageIndex(0); setLightboxOpen(true); }}
             >
               <BlurImage
                 src={ikUrl(photos[0], 'hero')}
                 alt={store.name}
                 loading="eager"
-                className="absolute inset-0"
                 imgClassName="w-full h-full object-cover transition-transform group-hover:scale-105"
                 objectPosition="center"
               />
@@ -655,14 +652,13 @@ export function StoreDetailPage() {
             {photos.slice(1, 3).map((photo, index) => (
               <div
                 key={index + 1}
-                className="relative cursor-pointer group rounded-xl overflow-hidden border-2 border-cyan-500/30 hover:border-cyan-500/60 transition-all shadow-[0_0_20px_rgba(34,217,238,0.2)] hover:shadow-[0_0_40px_rgba(34,217,238,0.4)]"
+                className="h-full relative cursor-pointer group rounded-xl overflow-hidden border-2 border-cyan-500/30 hover:border-cyan-500/60 transition-all shadow-[0_0_20px_rgba(34,217,238,0.2)] hover:shadow-[0_0_40px_rgba(34,217,238,0.4)]"
                 onClick={() => { setCurrentImageIndex(index + 1); setLightboxOpen(true); }}
               >
                 <BlurImage
                   src={ikUrl(photo, 'card')}
                   alt={`${store.name} - ${index + 2}`}
                   loading="lazy"
-                  className="absolute inset-0"
                   imgClassName="w-full h-full object-cover transition-transform group-hover:scale-105"
                   objectPosition="center"
                 />
@@ -670,14 +666,13 @@ export function StoreDetailPage() {
             ))}
             {/* Bottom-right: 1 wide image spanning both right cols */}
             <div
-              className="col-span-2 relative cursor-pointer group rounded-xl overflow-hidden border-2 border-cyan-500/30 hover:border-cyan-500/60 transition-all shadow-[0_0_20px_rgba(34,217,238,0.2)] hover:shadow-[0_0_40px_rgba(34,217,238,0.4)]"
+              className="col-span-2 h-full relative cursor-pointer group rounded-xl overflow-hidden border-2 border-cyan-500/30 hover:border-cyan-500/60 transition-all shadow-[0_0_20px_rgba(34,217,238,0.2)] hover:shadow-[0_0_40px_rgba(34,217,238,0.4)]"
               onClick={() => { setCurrentImageIndex(3); setLightboxOpen(true); }}
             >
               <BlurImage
                 src={ikUrl(photos[3], 'card')}
                 alt={`${store.name} - 4`}
                 loading="lazy"
-                className="absolute inset-0"
                 imgClassName="w-full h-full object-cover transition-transform group-hover:scale-105"
                 objectPosition="center"
               />
@@ -688,14 +683,13 @@ export function StoreDetailPage() {
           <div className="grid grid-cols-4 grid-rows-2 gap-3 h-[480px]">
             {/* Large Main Image - spans left 2 cols, full height */}
             <div
-              className="col-span-2 row-span-2 relative cursor-pointer group rounded-xl overflow-hidden border-2 border-cyan-500/30 hover:border-cyan-500/60 transition-all shadow-[0_0_20px_rgba(34,217,238,0.2)] hover:shadow-[0_0_40px_rgba(34,217,238,0.4)]"
+              className="col-span-2 row-span-2 h-full relative cursor-pointer group rounded-xl overflow-hidden border-2 border-cyan-500/30 hover:border-cyan-500/60 transition-all shadow-[0_0_20px_rgba(34,217,238,0.2)] hover:shadow-[0_0_40px_rgba(34,217,238,0.4)]"
               onClick={() => { setCurrentImageIndex(0); setLightboxOpen(true); }}
             >
               <BlurImage
                 src={ikUrl(photos[0], 'hero')}
                 alt={store.name}
                 loading="eager"
-                className="absolute inset-0"
                 imgClassName="w-full h-full object-cover transition-transform group-hover:scale-105"
                 objectPosition="center"
               />
@@ -704,14 +698,13 @@ export function StoreDetailPage() {
             {photos.slice(1, 5).map((photo, index) => (
               <div
                 key={index + 1}
-                className="relative cursor-pointer group rounded-xl overflow-hidden border-2 border-cyan-500/30 hover:border-cyan-500/60 transition-all shadow-[0_0_20px_rgba(34,217,238,0.2)] hover:shadow-[0_0_40px_rgba(34,217,238,0.4)]"
+                className="h-full relative cursor-pointer group rounded-xl overflow-hidden border-2 border-cyan-500/30 hover:border-cyan-500/60 transition-all shadow-[0_0_20px_rgba(34,217,238,0.2)] hover:shadow-[0_0_40px_rgba(34,217,238,0.4)]"
                 onClick={() => { setCurrentImageIndex(index + 1); setLightboxOpen(true); }}
               >
                 <BlurImage
                   src={ikUrl(photo, 'card')}
                   alt={`${store.name} - ${index + 2}`}
                   loading="lazy"
-                  className="absolute inset-0"
                   imgClassName="w-full h-full object-cover transition-transform group-hover:scale-105"
                   objectPosition="center"
                 />
