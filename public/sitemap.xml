@@ -3,51 +3,57 @@
   <!-- Static Pages -->
   <url>
     <loc>https://lostintransitjp.com/</loc>
-    <lastmod>2026-03-20</lastmod>
+    <lastmod>2026-06-04</lastmod>
     <changefreq>daily</changefreq>
     <priority>1.0</priority>
   </url>
   <url>
     <loc>https://lostintransitjp.com/map</loc>
-    <lastmod>2026-03-20</lastmod>
+    <lastmod>2026-06-04</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.9</priority>
   </url>
   <url>
     <loc>https://lostintransitjp.com/cities</loc>
-    <lastmod>2026-03-20</lastmod>
+    <lastmod>2026-06-04</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
     <loc>https://lostintransitjp.com/neighborhoods</loc>
-    <lastmod>2026-03-20</lastmod>
+    <lastmod>2026-06-04</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
     <loc>https://lostintransitjp.com/blog</loc>
-    <lastmod>2026-03-20</lastmod>
+    <lastmod>2026-06-04</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://lostintransitjp.com/about</loc>
-    <lastmod>2026-03-20</lastmod>
+    <lastmod>2026-06-04</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.5</priority>
   </url>
   <url>
     <loc>https://lostintransitjp.com/suggest</loc>
-    <lastmod>2026-03-20</lastmod>
+    <lastmod>2026-06-04</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.5</priority>
+  </url>
+  <url>
+    <loc>https://lostintransitjp.com/sitemap</loc>
+    <lastmod>2026-06-04</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
   </url>
 
   <!-- City Pages -->
   <url>
     <loc>https://lostintransitjp.com/city/tokyo</loc>
-    <lastmod>2026-03-19</lastmod>
+    <lastmod>2026-04-15</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
   </url>
@@ -258,8 +264,14 @@
 
   <!-- Neighborhood Pages -->
   <url>
-    <loc>https://lostintransitjp.com/city/tokyo/shibuya</loc>
-    <lastmod>2026-03-19</lastmod>
+    <loc>https://lostintransitjp.com/city/tokyo/shimokitazawa</loc>
+    <lastmod>2026-04-15</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://lostintransitjp.com/city/tokyo/meguro-city</loc>
+    <lastmod>2026-04-03</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.7</priority>
   </url>
@@ -283,6 +295,12 @@
   </url>
   <url>
     <loc>https://lostintransitjp.com/city/tokyo/aoyama</loc>
+    <lastmod>2026-03-19</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://lostintransitjp.com/city/tokyo/shibuya</loc>
     <lastmod>2026-03-19</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.7</priority>
@@ -319,12 +337,6 @@
   </url>
   <url>
     <loc>https://lostintransitjp.com/city/tokyo/yoyogi</loc>
-    <lastmod>2026-03-19</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.7</priority>
-  </url>
-  <url>
-    <loc>https://lostintransitjp.com/city/tokyo/shimokitazawa</loc>
     <lastmod>2026-03-19</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.7</priority>
@@ -409,12 +421,6 @@
   </url>
   <url>
     <loc>https://lostintransitjp.com/city/tokyo/daikanyama</loc>
-    <lastmod>2026-03-19</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.7</priority>
-  </url>
-  <url>
-    <loc>https://lostintransitjp.com/city/tokyo/meguro-city</loc>
     <lastmod>2026-03-19</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.7</priority>
@@ -930,12 +936,6 @@
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://lostintransitjp.com/city/tokyo/tokyo-153-0042</loc>
-    <lastmod>2026-03-19</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.7</priority>
-  </url>
-  <url>
     <loc>https://lostintransitjp.com/city/osaka/abeno-ward</loc>
     <lastmod>2026-03-19</lastmod>
     <changefreq>weekly</changefreq>
@@ -945,45 +945,51 @@
   <!-- Category Pages -->
   <url>
     <loc>https://lostintransitjp.com/category/fashion</loc>
-    <lastmod>2026-03-20</lastmod>
+    <lastmod>2026-06-04</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://lostintransitjp.com/category/food</loc>
-    <lastmod>2026-03-20</lastmod>
+    <lastmod>2026-06-04</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://lostintransitjp.com/category/coffee</loc>
-    <lastmod>2026-03-20</lastmod>
+    <lastmod>2026-06-04</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://lostintransitjp.com/category/home-goods</loc>
-    <lastmod>2026-03-20</lastmod>
+    <lastmod>2026-06-04</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://lostintransitjp.com/category/museum</loc>
-    <lastmod>2026-03-20</lastmod>
+    <lastmod>2026-06-04</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://lostintransitjp.com/category/spots</loc>
-    <lastmod>2026-03-20</lastmod>
+    <lastmod>2026-06-04</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.7</priority>
   </url>
 
   <!-- Store Pages -->
   <url>
-    <loc>https://lostintransitjp.com/store/rinkan-shibuya-tokyo</loc>
-    <lastmod>2026-03-19</lastmod>
+    <loc>https://lostintransitjp.com/store/rebirth-tokyo</loc>
+    <lastmod>2026-04-15</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://lostintransitjp.com/store/tam-tokyo</loc>
+    <lastmod>2026-04-03</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.6</priority>
   </url>
@@ -4456,12 +4462,6 @@
     <priority>0.6</priority>
   </url>
   <url>
-    <loc>https://lostintransitjp.com/store/rebirth-tokyo</loc>
-    <lastmod>2026-03-19</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.6</priority>
-  </url>
-  <url>
     <loc>https://lostintransitjp.com/store/etoqk-okayama</loc>
     <lastmod>2026-03-19</lastmod>
     <changefreq>monthly</changefreq>
@@ -6346,12 +6346,6 @@
     <priority>0.6</priority>
   </url>
   <url>
-    <loc>https://lostintransitjp.com/store/tam-tokyo</loc>
-    <lastmod>2026-03-19</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.6</priority>
-  </url>
-  <url>
     <loc>https://lostintransitjp.com/store/urusula-used-vintage-clothes-store-kobe</loc>
     <lastmod>2026-03-19</lastmod>
     <changefreq>monthly</changefreq>
@@ -6371,6 +6365,12 @@
   </url>
   <url>
     <loc>https://lostintransitjp.com/store/kiven-専用駐車場あります-osaka</loc>
+    <lastmod>2026-03-19</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://lostintransitjp.com/store/rinkan-shibuya-tokyo</loc>
     <lastmod>2026-03-19</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.6</priority>
