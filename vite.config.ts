@@ -27,7 +27,7 @@ export default defineConfig({
         display: 'standalone',         // Hides the browser chrome — feels like a native app
         orientation: 'portrait-primary',
         scope: '/',
-        start_url: '/?source=pwa',    // The ?source=pwa lets you track PWA traffic in analytics
+        start_url: '/',
         lang: 'en',
         categories: ['travel', 'lifestyle', 'shopping'],
         icons: [

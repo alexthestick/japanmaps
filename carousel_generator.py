@@ -16,9 +16,11 @@ You can specify exact store names OR let the script suggest from the database.
 
 import os
 import io
+import re
 import sys
 import json
 import textwrap
+import unicodedata
 import requests
 from typing import Optional
 from PIL import Image, ImageDraw, ImageFont, ImageFilter
@@ -29,9 +31,26 @@ from supabase import create_client
 SUPABASE_URL = "https://avhtmmmblkjvinhhddzq.supabase.co"
 SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImF2aHRtbW1ibGtqdmluaGhkZHpxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTk0MzQ3MjMsImV4cCI6MjA3NTAxMDcyM30.brC2CbIgMe-XW9yr6xZPRBFGRe5rZxSZ0nLzj-CFipw"
 
-FONT_DIR = os.path.join(os.path.dirname(__file__), "../../..") + "/../../../sessions/nifty-optimistic-ritchie/fonts"
-# Fallback to absolute path
-FONT_DIR = "/Users/alexcoluna/lost_in_transit_fonts"
+# Font search order — first directory that contains Inter-ExtraBold.ttf wins
+_FONT_SEARCH_PATHS = [
+    "/Users/alexcoluna/lost_in_transit_fonts",
+    os.path.join(os.path.dirname(os.path.abspath(__file__)), "fonts"),
+    os.path.expanduser("~/Library/Fonts"),
+    "/Library/Fonts",
+    "/System/Library/Fonts/Supplemental",
+]
+FONT_DIR = next(
+    (p for p in _FONT_SEARCH_PATHS if os.path.isfile(os.path.join(p, "Inter-ExtraBold.ttf"))),
+    None  # None means Inter not found — will use system bold fallback below
+)
+
+# System bold font fallback (guaranteed on macOS) used when Inter isn't installed
+_SYSTEM_BOLD_PATHS = [
+    "/System/Library/Fonts/Supplemental/Arial Bold.ttf",
+    "/Library/Fonts/Arial Bold.ttf",
+    "/System/Library/Fonts/Helvetica.ttc",
+]
+_SYSTEM_BOLD = next((p for p in _SYSTEM_BOLD_PATHS if os.path.isfile(p)), None)
 
 OUTPUT_DIR = os.path.expanduser("~/Desktop/carousel_output")
 
@@ -45,33 +64,136 @@ BLACK    = (0, 0, 0)
 DARK     = (11, 15, 25)         # #0b0f19
 GRAY     = (107, 114, 128)      # muted
 
+# ─── TEXT CLEANING ────────────────────────────────────────────────────────────
+# Inter font only covers Latin characters. Japanese/Chinese/Korean (CJK) glyphs
+# render as empty boxes. We strip them before drawing and fall back to the
+# English portion of any address or hours string.
+
+def strip_cjk(text: str) -> str:
+    """Remove CJK characters that Inter can't render."""
+    if not text:
+        return ""
+    return re.sub(
+        r'[　-〿぀-ゟ゠-ヿ'
+        r'一-鿿＀-￯ㇰ-ㇿ]+',
+        '', text
+    ).strip()
+
+def clean_render_text(text: str) -> str:
+    """
+    Prepare any string for PIL rendering:
+      • Strip CJK characters
+      • Normalize em/en dashes to a simple hyphen
+      • Collapse leftover whitespace and orphan commas
+    """
+    if not text:
+        return ""
+    text = strip_cjk(text)
+    text = text.replace('–', '-').replace('—', '-').replace('−', '-')
+    text = re.sub(r'\s{2,}', ' ', text)
+    text = re.sub(r',\s*,+', ',', text)
+    text = text.strip(', ')
+    return text.strip()
+
+def extract_english_address(address: str) -> str:
+    """
+    From a mixed Japanese/English address, keep only the English-readable parts.
+    Splits on commas, drops chunks that are mostly CJK, rejoins the rest.
+    """
+    if not address:
+        return ""
+    has_cjk = bool(re.search(
+        r'[぀-ゟ゠-ヿ一-鿿]', address
+    ))
+    if not has_cjk:
+        return address
+
+    parts = address.split(",")
+    english_parts = []
+    for part in parts:
+        cleaned = strip_cjk(part).strip()
+        # Keep the part if it has meaningful Latin content (numbers/letters)
+        if re.search(r'[A-Za-z0-9]', cleaned) and len(cleaned) > 1:
+            english_parts.append(cleaned)
+
+    if english_parts:
+        result = ", ".join(english_parts)
+        result = re.sub(r'\s{2,}', ' ', result)
+        return result.strip(', ')
+
+    # Last resort — strip everything that can't render
+    return clean_render_text(address)
+
+def is_address_sentence(text: str) -> bool:
+    """
+    Return True if a sentence reads like a location description rather than
+    editorial copy. Used to skip bad fallback captions.
+    """
+    lower = text.lower()
+    triggers = [
+        'located at', 'located in', 'is at', 'can be found at', 'is located',
+        'address', 'chome', 'chōme', 'japan', '-ku ', ' ward',
+        '丁目', '区', '都', '市',   # 丁目 区 都 市
+    ]
+    return any(t in lower for t in triggers)
+
 # ─── FONTS ────────────────────────────────────────────────────────────────────
 
-def load_fonts():
-    def f(name, size):
-        try:
-            return ImageFont.truetype(os.path.join(FONT_DIR, name), size)
-        except:
-            return ImageFont.load_default()
+def load_fonts(scale: float = 1.0):
+    """
+    Load Inter fonts at the given scale factor (1.0 = default sizes).
+    Searches _FONT_SEARCH_PATHS for Inter. If Inter isn't installed, falls back
+    to a real system bold font so text is still large and readable.
+    scale=0.8 makes everything 20% smaller; scale=1.3 makes it 30% bigger.
+    """
+    def sz(base):
+        return max(10, int(base * scale))
+
+    def inter(variant, base):
+        """Try to load Inter variant. Falls back to system bold, then PIL default."""
+        size = sz(base)
+        # 1. Try Inter from FONT_DIR
+        if FONT_DIR:
+            try:
+                return ImageFont.truetype(os.path.join(FONT_DIR, variant), size)
+            except Exception:
+                pass
+        # 2. Fall back to system bold font (still readable at correct size)
+        if _SYSTEM_BOLD:
+            try:
+                return ImageFont.truetype(_SYSTEM_BOLD, size)
+            except Exception:
+                pass
+        # 3. Last resort — PIL bitmap (will be tiny, but won't crash)
+        return ImageFont.load_default()
 
     return {
-        "title":      f("Inter-ExtraBold.ttf", 90),
-        "title_md":   f("Inter-ExtraBold.ttf", 70),
-        "title_sm":   f("Inter-ExtraBold.ttf", 54),
-        "hook":       f("Inter-ExtraBold.ttf", 68),   # punchy cover hook
-        "caption":    f("Inter-Bold.ttf", 60),         # larger readable captions
-        "caption_sm": f("Inter-Bold.ttf", 44),
-        "body":       f("Inter-Regular.ttf", 36),
-        "body_sm":    f("Inter-Regular.ttf", 30),
-        "label":      f("Inter-Bold.ttf", 36),
-        "label_sm":   f("Inter-Medium.ttf", 28),
-        "brand":      f("Inter-ExtraBold.ttf", 36),
-        "brand_sm":   f("Inter-Bold.ttf", 26),
-        "swipe":      f("Inter-Medium.ttf", 26),
-        "counter":    f("Inter-Bold.ttf", 28),
+        "title":      inter("Inter-ExtraBold.ttf", 108),
+        "title_md":   inter("Inter-ExtraBold.ttf", 86),
+        "title_sm":   inter("Inter-ExtraBold.ttf", 66),
+        "hook":       inter("Inter-ExtraBold.ttf", 112),
+        "caption":    inter("Inter-Bold.ttf",      52),
+        "caption_sm": inter("Inter-Bold.ttf",      42),
+        "body":       inter("Inter-Regular.ttf",   42),
+        "body_sm":    inter("Inter-Regular.ttf",   36),
+        "label":      inter("Inter-Bold.ttf",      46),
+        "label_sm":   inter("Inter-Medium.ttf",    36),
+        "brand":      inter("Inter-ExtraBold.ttf", 44),
+        "brand_sm":   inter("Inter-Bold.ttf",      32),
+        "swipe":      inter("Inter-Medium.ttf",    30),
+        "counter":    inter("Inter-Bold.ttf",      32),
     }
 
 FONTS = load_fonts()
+
+def get_font_status() -> dict:
+    """Returns a dict describing which font source is active. Used in the UI."""
+    if FONT_DIR:
+        return {"status": "inter", "path": FONT_DIR}
+    elif _SYSTEM_BOLD:
+        return {"status": "system", "path": _SYSTEM_BOLD}
+    else:
+        return {"status": "fallback", "path": "PIL default (tiny — install Inter fonts)"}
 
 # ─── SUPABASE ─────────────────────────────────────────────────────────────────
 
@@ -102,6 +224,89 @@ def fetch_stores_by_filter(city=None, neighborhood=None, categories=None, limit=
     return stores[:limit]
 
 # ─── IMAGE HELPERS ────────────────────────────────────────────────────────────
+
+# ─── CATEGORY SYSTEM ─────────────────────────────────────────────────────────
+# Six categories matching the Lost in Transit map legend.
+# Each entry stores the brand RGB color, hex string, display label, and the
+# short abbreviation drawn inside the badge circle on slides.
+
+CATEGORY_CONFIG = {
+    "fashion":    {"rgb": (0, 180, 216),   "hex": "#00B4D8", "label": "Fashion",    "abbr": "F"},
+    "food":       {"rgb": (244, 84, 27),   "hex": "#F4541B", "label": "Food",       "abbr": "FD"},
+    "coffee":     {"rgb": (139, 90, 43),   "hex": "#8B5A2B", "label": "Coffee",     "abbr": "C"},
+    "home goods": {"rgb": (245, 184, 0),   "hex": "#F5B800", "label": "Home Goods", "abbr": "HG"},
+    "museum":     {"rgb": (123, 97, 255),  "hex": "#7B61FF", "label": "Museum",     "abbr": "M"},
+    "spots":      {"rgb": (0, 176, 155),   "hex": "#00B09B", "label": "Spots",      "abbr": "S"},
+}
+
+
+def get_category_key(categories: list) -> Optional[str]:
+    """
+    Return the CATEGORY_CONFIG key that best matches the store's category list.
+    Matching is case-insensitive and checks for substring overlap.
+    Returns None if no match is found.
+    """
+    if not categories:
+        return None
+    for cat in categories:
+        cat_lower = cat.lower().strip()
+        for key in CATEGORY_CONFIG:
+            # Exact or prefix match (e.g. "fashion" matches "fashion wear")
+            if key == cat_lower or cat_lower.startswith(key[:3]) or key.startswith(cat_lower[:3]):
+                return key
+    return None
+
+
+def draw_category_badge(
+    draw: ImageDraw.Draw,
+    category_key: str,
+    x: int,
+    y: int,
+    size: int = 88,
+):
+    """
+    Draw a circular category badge at position (x, y) with a diameter of `size`.
+    The circle is filled with the category brand color and shows a short
+    abbreviation in white text at the center.
+
+    Positioned at the bottom-right of the slide content area (inside the
+    corner bracket) so it doesn't interfere with the store name / location
+    text block on the left.
+
+    Parameters
+    ----------
+    draw         : PIL ImageDraw.Draw instance
+    category_key : key from CATEGORY_CONFIG (e.g. 'fashion', 'coffee')
+    x, y         : top-left of the bounding square for the circle
+    size         : badge diameter in pixels (PIL canvas space)
+    """
+    cfg = CATEGORY_CONFIG.get(category_key)
+    if not cfg:
+        return
+
+    r  = size // 2
+    cx = x + r
+    cy = y + r
+
+    # Filled circle with category color
+    draw.ellipse([(cx - r, cy - r), (cx + r, cy + r)], fill=cfg["rgb"])
+
+    # Abbreviation text centred inside the circle
+    abbr      = cfg["abbr"]
+    font_size = max(16, int(size * 0.40))
+    font      = None
+    if _SYSTEM_BOLD:
+        try:
+            font = ImageFont.truetype(_SYSTEM_BOLD, font_size)
+        except Exception:
+            pass
+    font = font or ImageFont.load_default()
+
+    bbox = draw.textbbox((0, 0), abbr, font=font)
+    tw   = bbox[2] - bbox[0]
+    th   = bbox[3] - bbox[1]
+    draw.text((cx - tw // 2, cy - th // 2 - 1), abbr, font=font, fill=WHITE)
+
 
 def download_image(url: str) -> Optional[Image.Image]:
     if not url:
@@ -145,14 +350,27 @@ def add_gradient(img: Image.Image, strength="normal") -> Image.Image:
     overlay = Image.new("RGBA", (W, H), (0, 0, 0, 0))
     draw = ImageDraw.Draw(overlay)
 
-    if strength == "heavy":
-        # Strong gradient — bottom 60%
+    if strength == "cover":
+        # Cover slide: base tint across full image so hook text is always readable
+        # even in the bright mid-zone of the photo, plus a strong bottom gradient.
+        draw.rectangle([(0, 0), (W, H)], fill=(0, 0, 0, 90))   # 35% tint overall
+        for i in range(H):
+            progress = i / H
+            if progress > 0.45:
+                alpha = int(((progress - 0.45) / 0.55) ** 1.2 * 180)
+                draw.line([(0, i), (W, i)], fill=(0, 0, 0, min(alpha, 180)))
+        # Top vignette
+        for i in range(int(H * 0.18)):
+            alpha = int((1 - i / (H * 0.18)) * 80)
+            draw.line([(0, i), (W, i)], fill=(0, 0, 0, alpha))
+
+    elif strength == "heavy":
+        # Info/detail slides: strong bottom gradient
         for i in range(H):
             progress = i / H
             if progress > 0.25:
                 alpha = int(((progress - 0.25) / 0.75) ** 1.3 * 210)
                 draw.line([(0, i), (W, i)], fill=(0, 0, 0, min(alpha, 210)))
-        # Top 20% subtle dark
         for i in range(int(H * 0.20)):
             alpha = int((1 - i / (H * 0.20)) * 90)
             draw.line([(0, i), (W, i)], fill=(0, 0, 0, alpha))
@@ -163,7 +381,6 @@ def add_gradient(img: Image.Image, strength="normal") -> Image.Image:
             if progress > 0.35:
                 alpha = int(((progress - 0.35) / 0.65) ** 1.4 * 190)
                 draw.line([(0, i), (W, i)], fill=(0, 0, 0, min(alpha, 190)))
-        # Top subtle
         for i in range(int(H * 0.15)):
             alpha = int((1 - i / (H * 0.15)) * 70)
             draw.line([(0, i), (W, i)], fill=(0, 0, 0, alpha))
@@ -205,8 +422,11 @@ def draw_lot_logo(draw: ImageDraw.Draw, x=None, y=None, size=42, color=CYAN):
     """Intentionally blank — only cover slide gets the wordmark."""
     pass
 
-def draw_text_wrapped(draw, text, x, y, max_width, font, fill, line_spacing=1.2):
-    """Draw wrapped text and return the bottom Y position."""
+def draw_text_wrapped(draw, text, x, y, max_width, font, fill, line_spacing=1.2, max_lines=None):
+    """
+    Draw wrapped text starting at (x, y) going downward. Returns the bottom Y position.
+    max_lines: if set, truncates to that many lines and adds '…' to the last one.
+    """
     words = text.split()
     lines = []
     current = ""
@@ -222,6 +442,19 @@ def draw_text_wrapped(draw, text, x, y, max_width, font, fill, line_spacing=1.2)
     if current:
         lines.append(current)
 
+    # Enforce line limit — truncate and add ellipsis if needed
+    if max_lines and len(lines) > max_lines:
+        lines = lines[:max_lines]
+        # Trim last line and append ellipsis, making sure it still fits
+        last = lines[-1]
+        while last:
+            test = last.rstrip() + "…"
+            bbox = draw.textbbox((0, 0), test, font=font)
+            if bbox[2] - bbox[0] <= max_width:
+                lines[-1] = test
+                break
+            last = last.rsplit(" ", 1)[0]
+
     line_height = int((draw.textbbox((0, 0), "A", font=font)[3]) * line_spacing)
     cy = y
     for line in lines:
@@ -230,24 +463,30 @@ def draw_text_wrapped(draw, text, x, y, max_width, font, fill, line_spacing=1.2)
     return cy
 
 def draw_store_bottom(draw, store_name, location_text, y_name=None, y_loc=None):
-    """Draw store name + location at bottom left."""
-    if y_name is None:
-        y_name = H - 220
+    """Draw store name + location at bottom left — text is always cleaned before drawing."""
+    loc_y_base = H - 100
     if y_loc is None:
-        y_loc = y_name + 95
-
-    # Pick font size based on name length
-    if len(store_name) > 18:
-        name_font = FONTS["title_sm"]
-        y_loc = y_name + 70
-    elif len(store_name) > 12:
-        name_font = FONTS["title_md"]
-        y_loc = y_name + 82
+        y_loc = loc_y_base
+    if y_name is None:
+        if len(store_name) > 22:
+            name_font = FONTS["title_sm"]   # 66px
+            y_name = y_loc - 86
+        elif len(store_name) > 14:
+            name_font = FONTS["title_md"]   # 86px
+            y_name = y_loc - 108
+        else:
+            name_font = FONTS["title"]      # 108px
+            y_name = y_loc - 132
     else:
-        name_font = FONTS["title"]
+        if len(store_name) > 22:
+            name_font = FONTS["title_sm"]
+        elif len(store_name) > 14:
+            name_font = FONTS["title_md"]
+        else:
+            name_font = FONTS["title"]
 
     draw.text((62, y_name), store_name, font=name_font, fill=WHITE)
-    draw.text((62, y_loc), location_text, font=FONTS["label"], fill=CYAN)
+    draw.text((62, y_loc), clean_render_text(location_text).upper(), font=FONTS["label"], fill=CYAN)
 
 def draw_swipe_hint(draw, current, total):
     """Intentionally blank — no slide counter on posts."""
@@ -262,152 +501,316 @@ def build_photo_base(photo: Optional[Image.Image], gradient="normal") -> Image.I
         base = make_fallback_bg()
     return add_gradient(base, gradient)
 
-def slide_single_cover(store: dict, photo: Image.Image, hook_line: str, total: int) -> Image.Image:
-    """Slide 1: Cover — hook line + store name + location."""
-    base = build_photo_base(photo, gradient="heavy")
+def get_slide_background(
+    photo: Optional[Image.Image],
+    gradient: str = "normal",
+    with_brackets: bool = True,
+    resize_to: Optional[tuple] = None,
+) -> Image.Image:
+    """
+    Return a slide background (photo + gradient + optional corner brackets)
+    with NO text rendered on it.  Used by the canvas editor to provide the
+    base layer that Fabric.js text objects sit on top of.
+
+    Parameters
+    ----------
+    photo        : store photo (PIL Image) or None for solid fallback
+    gradient     : 'cover' | 'heavy' | 'normal'
+    with_brackets: draw the signature cyan corner brackets
+    resize_to    : (width, height) tuple — downsample before returning.
+                   Pass (540, 675) for the canvas display size to keep the
+                   base64 payload small without affecting the canvas output.
+    """
+    base = build_photo_base(photo, gradient=gradient)
+    if with_brackets:
+        draw = ImageDraw.Draw(base)
+        draw_corner_brackets(draw)
+    if resize_to:
+        base = base.resize(resize_to, Image.LANCZOS)
+    return base
+
+def slide_single_cover(
+    store: dict,
+    photo: Image.Image,
+    hook_line: str,
+    total: int,
+    category_key: Optional[str] = None,
+    with_brackets: bool = True,
+) -> Image.Image:
+    """
+    Slide 1: Cover
+    Layout (bottom → up):
+      • CITY · NEIGHBORHOOD  (label, cyan, very bottom)
+      • Store name           (title, white, above location)
+      • [breathing room — photo shows through]
+      • Hook line            (hook, white, upper-middle — the dominant element)
+      • Brand mark           (brand, cyan, top-left)
+      • Category badge       (colored circle, bottom-right inside bracket, optional)
+    """
+    base = build_photo_base(photo, gradient="cover")
     draw = ImageDraw.Draw(base)
 
-    draw_corner_brackets(draw)
+    if with_brackets:
+        draw_corner_brackets(draw)
     draw_brand(draw, color=CYAN, pos="top-left")
-    draw_swipe_hint(draw, 1, total)
 
-    # Layout from bottom up:
-    # Location (cyan) at H-100, store name at H-210, hook above that
-    loc = f"{store.get('city', '')} • {store.get('neighborhood', '')}" if store.get('neighborhood') else store.get('city', '')
+    # ── BOTTOM: Location (city · neighborhood) ─────────────────────────────
+    loc = (
+        f"{store.get('city', '')} · {store.get('neighborhood', '')}"
+        if store.get('neighborhood')
+        else store.get('city', '')
+    )
+    loc_y = H - 100
+    draw.text((62, loc_y), loc.upper(), font=FONTS["label"], fill=CYAN)
 
-    # Store name — pick font based on length
-    if len(store['name']) > 18:
-        name_font = FONTS["title_sm"]
-        name_y    = H - 200
-    elif len(store['name']) > 12:
-        name_font = FONTS["title_md"]
-        name_y    = H - 215
+    # ── BOTTOM: Store name — sits above location ────────────────────────────
+    name = store.get('name', '')
+    if len(name) > 22:
+        name_font = FONTS["title_sm"]    # 66px
+        name_gap  = 86
+    elif len(name) > 14:
+        name_font = FONTS["title_md"]    # 86px
+        name_gap  = 108
     else:
-        name_font = FONTS["title"]
-        name_y    = H - 230
+        name_font = FONTS["title"]       # 108px
+        name_gap  = 132
+    name_y = loc_y - name_gap
+    draw.text((62, name_y), name, font=name_font, fill=WHITE)
 
-    loc_y = name_y + name_font.size + 24
-    draw.text((62, name_y), store['name'], font=name_font, fill=WHITE)
-    draw.text((62, loc_y),  loc,           font=FONTS["label"], fill=CYAN)
+    # ── UPPER-MIDDLE: Hook — the dominant visual element ────────────────────
+    clean_hook = clean_render_text(hook_line)
+    hook_y = int(H * 0.33)
+    draw_text_wrapped(
+        draw, clean_hook.lower(), 62, hook_y,
+        W - 124, FONTS["hook"], WHITE, line_spacing=1.22, max_lines=3
+    )
 
-    # Hook line — sits above the store name block with breathing room
-    hook_y = name_y - 180
-    draw_text_wrapped(draw, hook_line.lower(), 62, hook_y, W - 124, FONTS["hook"], WHITE)
+    # ── BOTTOM-RIGHT: Category badge (inside bracket corner) ────────────────
+    if category_key:
+        badge_size = 88
+        badge_x = W - 62 - badge_size      # right-aligned with bracket margin
+        badge_y = H - 62 - badge_size      # sits just above bottom bracket
+        draw_category_badge(draw, category_key, badge_x, badge_y, badge_size)
 
     return base
 
-def slide_single_info(store: dict, photo: Image.Image, caption: str, slide_num: int, total: int) -> Image.Image:
-    """Interior info slide with caption overlay."""
+def slide_single_info(
+    store: dict,
+    photo: Image.Image,
+    caption: str,
+    slide_num: int,
+    total: int,
+    category_key: Optional[str] = None,
+    with_brackets: bool = True,
+) -> Image.Image:
+    """Interior info slide — caption overlaid on photo with strong bottom gradient."""
     base = build_photo_base(photo, gradient="heavy")
     draw = ImageDraw.Draw(base)
 
-    draw_corner_brackets(draw)
-    # No wordmark on interior slides
+    if with_brackets:
+        draw_corner_brackets(draw)
     draw_swipe_hint(draw, slide_num, total)
 
-    # Store name + location pinned to bottom
-    loc = f"{store.get('city', '')} • {store.get('neighborhood', '')}" if store.get('neighborhood') else store.get('city', '')
-    name_y = H - 140
-    loc_y  = name_y + FONTS["title_sm"].size + 14
-    draw.text((62, name_y), store['name'], font=FONTS["title_sm"], fill=WHITE)
-    draw.text((62, loc_y),  loc,           font=FONTS["label_sm"], fill=CYAN)
+    # ── Store identity — pinned to bottom with breathing room ──────────────
+    loc = (
+        f"{store.get('city', '')} · {store.get('neighborhood', '')}"
+        if store.get('neighborhood')
+        else store.get('city', '')
+    )
+    # Location label — 90px from bottom
+    loc_y = H - 90
+    draw.text((62, loc_y), loc.upper(), font=FONTS["label_sm"], fill=CYAN)
 
-    # Caption sits above the store name block with breathing room
-    caption_y = name_y - 220
-    draw_text_wrapped(draw, caption.lower(), 62, caption_y, W - 124, FONTS["caption"], WHITE)
+    # Store name — sits above location
+    name = store.get('name', '')
+    if len(name) > 22:
+        name_font = FONTS["title_sm"]   # 66px
+        name_y = loc_y - 86
+    elif len(name) > 14:
+        name_font = FONTS["title_md"]   # 86px
+        name_y = loc_y - 108
+    else:
+        name_font = FONTS["title"]      # 108px
+        name_y = loc_y - 132
+    draw.text((62, name_y), name, font=name_font, fill=WHITE)
+
+    # ── Caption — fixed anchor in upper-middle, capped so it never crowds the name ──
+    clean_caption = clean_render_text(caption)
+    caption_y = 560
+    draw_text_wrapped(
+        draw, clean_caption.lower(), 62, caption_y,
+        W - 124, FONTS["caption"], WHITE, line_spacing=1.45, max_lines=4
+    )
+
+    # ── BOTTOM-RIGHT: Category badge (inside bracket corner) ────────────────
+    if category_key:
+        badge_size = 88
+        badge_x = W - 62 - badge_size
+        badge_y = H - 62 - badge_size
+        draw_category_badge(draw, category_key, badge_x, badge_y, badge_size)
 
     return base
 
-def slide_address(store: dict, photo: Image.Image, slide_num: int, total: int) -> Image.Image:
-    """Address + hours slide — photo shows through, panel at bottom."""
-    base = build_photo_base(photo, gradient="normal")  # lighter gradient so photo shows
+def slide_address(
+    store: dict,
+    photo: Image.Image,
+    slide_num: int,
+    total: int,
+    with_brackets: bool = True,
+) -> Image.Image:
+    """
+    Address slide — minimal float style matching the info/detail aesthetic.
+
+    Layout (top → bottom within the gradient zone):
+      Y ≈ 660  "find us here"  [CYAN label]
+      Y ≈ 712  address text    [WHITE, caption_sm, max 2 lines]
+      Y ≈ 870  "hours"         [CYAN label]
+      Y ≈ 922  hours text      [WHITE body, max 2 lines]
+
+    Bottom anchors (same as info/detail slides):
+      store name              [WHITE title variant]
+      instagram / location    [CYAN label — very bottom]
+    """
+    base = build_photo_base(photo, gradient="heavy")
     draw = ImageDraw.Draw(base)
 
-    draw_corner_brackets(draw)
-    # No wordmark on interior slides
+    if with_brackets:
+        draw_corner_brackets(draw)
 
-    # Smaller panel — just enough for the text content
-    panel_y = H - 380
-    panel = Image.new("RGBA", (W, H - panel_y), (11, 15, 25, 210))
-    base.paste(panel, (0, panel_y), panel)
+    # ── ADDRESS block ─────────────────────────────────────────────────────────
+    draw.text((62, 660), "find us here", font=FONTS["label_sm"], fill=CYAN)
 
-    draw = ImageDraw.Draw(base)
+    raw_address = store.get("address", "")
+    address = extract_english_address(raw_address)
+    if not address:
+        address = "Address on map"
+    addr_parts = [p.strip() for p in address.split(",") if p.strip()]
+    if addr_parts and addr_parts[-1].lower() == "japan" and len(addr_parts) > 2:
+        addr_parts = addr_parts[:-1]
+    short_addr = ", ".join(addr_parts[:3])
 
-    # "find us here" label
-    draw.text((62, panel_y + 28), "find us here", font=FONTS["label"], fill=CYAN)
+    addr_end_y = draw_text_wrapped(
+        draw, clean_render_text(short_addr),
+        62, 712, W - 124, FONTS["caption_sm"], WHITE,
+        line_spacing=1.35, max_lines=2,
+    )
 
-    # Shorten address — strip the long suffix after the JP postal code
-    address = store.get("address", "")
-    if "," in address:
-        parts = [p.strip() for p in address.split(",")]
-        # Keep: street + ward/city only (first 3 parts)
-        short_addr = ", ".join(p for p in parts[:3] if p)
-    else:
-        short_addr = _trim_to_words(address, 80)
+    # ── HOURS block ───────────────────────────────────────────────────────────
+    hours_raw = store.get("hours", "")
+    if hours_raw:
+        hours_label_y = max(addr_end_y + 44, 870)
+        draw.text((62, hours_label_y), "hours", font=FONTS["label_sm"], fill=CYAN)
 
-    y = draw_text_wrapped(draw, short_addr, 62, panel_y + 76, W - 124, FONTS["body"], WHITE)
+        raw_lines  = hours_raw.strip().split("\n")
+        hour_lines = [clean_render_text(l) for l in raw_lines if clean_render_text(l)]
+        if hour_lines:
+            # Join up to two lines with a centre-dot separator for a clean single block
+            hours_str = "  ·  ".join(hour_lines[:2])
+            draw_text_wrapped(
+                draw, hours_str,
+                62, hours_label_y + 52, W - 124, FONTS["body"], WHITE,
+                line_spacing=1.35, max_lines=2,
+            )
 
-    # Hours
-    hours = store.get("hours")
-    if hours and y < H - 130:
-        lines = [l for l in hours.strip().split("\n") if l.strip()][:3]
-        draw.text((62, y + 20), "hours", font=FONTS["label_sm"], fill=CYAN)
-        yy = y + 56
-        for line in lines:
-            if yy < H - 80:
-                draw.text((62, yy), line, font=FONTS["body_sm"], fill=WHITE)
-                yy += 38
+    # ── BOTTOM: Store identity ────────────────────────────────────────────────
+    # Instagram handle takes the "location" anchor slot at the very bottom.
+    # Store name sits directly above it, same gap as the info/detail slides.
+    ig    = store.get("instagram", "")
+    loc_y = H - 90
 
-    # Instagram handle at very bottom if it fits
-    ig = store.get("instagram")
     if ig:
-        draw.text((62, H - 68), ig, font=FONTS["label_sm"], fill=CYAN)
+        draw.text((62, loc_y), clean_render_text(ig), font=FONTS["label"], fill=CYAN)
+    else:
+        loc = (
+            f"{store.get('city', '')} · {store.get('neighborhood', '')}"
+            if store.get('neighborhood')
+            else store.get('city', '')
+        )
+        draw.text((62, loc_y), loc.upper(), font=FONTS["label_sm"], fill=CYAN)
 
-    draw_swipe_hint(draw, slide_num, total)
+    name = store.get('name', '')
+    if len(name) > 22:
+        name_font = FONTS["title_sm"]   # 66px
+        name_y    = loc_y - 86
+    elif len(name) > 14:
+        name_font = FONTS["title_md"]   # 86px
+        name_y    = loc_y - 108
+    else:
+        name_font = FONTS["title"]      # 108px
+        name_y    = loc_y - 132
+    draw.text((62, name_y), name, font=name_font, fill=WHITE)
 
     return base
 
 def slide_cta() -> Image.Image:
-    """Final CTA slide — dark with branding, vertically balanced."""
+    """
+    Final CTA slide — premium branded end card.
+
+    Layout spans the full 1350px height:
+      y=200  → "LOST IN TRANSIT"  (title, white, centered) — brand hero
+      y=355  → "your japan sourcing guide"  (label, gray, centered)
+      y=465  → cyan rule
+      y=530  → "@lostintransit.japan"  (large, CYAN, centered) — follow CTA
+      y=680  → "daily finds from japan's best shops"  (caption_sm, muted)
+      y=800  → cyan rule
+      y=875  → "lostintransitjp.com"  (title_sm, white, centered)
+      y=1010 → "save this post · share with someone planning a japan trip"  (label_sm, gray)
+      y=1180 → three cyan dots  (visual rhythm / signature)
+    """
     base = Image.new("RGB", (W, H), DARK)
     draw = ImageDraw.Draw(base)
+    cx = W // 2
 
     draw_corner_brackets(draw, color=CYAN)
 
-    cx = W // 2
+    # ── Brand hero ─────────────────────────────────────────────────────────
+    brand = "LOST IN TRANSIT"
+    b_bbox = draw.textbbox((0, 0), brand, font=FONTS["title"])
+    draw.text((cx - (b_bbox[2] - b_bbox[0]) // 2, 200), brand, font=FONTS["title"], fill=WHITE)
 
-    # Content block centered at 55% down (slightly below center = feels grounded)
-    cy = int(H * 0.52)
+    # ── Tagline ────────────────────────────────────────────────────────────
+    tag = "your japan sourcing guide"
+    t_bbox = draw.textbbox((0, 0), tag, font=FONTS["label"])
+    draw.text((cx - (t_bbox[2] - t_bbox[0]) // 2, 358), tag, font=FONTS["label"], fill=GRAY)
 
-    # Top cyan rule
-    draw.rectangle([62, cy - 220, W - 62, cy - 217], fill=CYAN)
+    # ── Cyan rule ──────────────────────────────────────────────────────────
+    draw.rectangle([62, 468, W - 62, 471], fill=CYAN)
 
-    # "LOST IN TRANSIT" label — small, spaced above
-    brand_text = "LOST IN TRANSIT"
-    bbox = draw.textbbox((0, 0), brand_text, font=FONTS["brand"])
-    bw = bbox[2] - bbox[0]
-    draw.text((cx - bw // 2, cy - 190), brand_text, font=FONTS["brand"], fill=CYAN)
-
-    # Big handle — the main focal element
+    # ── Handle — biggest cyan element, centered ────────────────────────────
     handle = "@lostintransit.japan"
-    bbox2 = draw.textbbox((0, 0), handle, font=FONTS["title_sm"])
-    hw = bbox2[2] - bbox2[0]
-    draw.text((cx - hw // 2, cy - 110), handle, font=FONTS["title_sm"], fill=WHITE)
+    # Try title_md first; fall back to title_sm if it overflows the margins
+    for h_font_key in ("title_md", "title_sm", "caption"):
+        h_font = FONTS[h_font_key]
+        h_bbox = draw.textbbox((0, 0), handle, font=h_font)
+        hw = h_bbox[2] - h_bbox[0]
+        if hw <= W - 124:
+            break
+    draw.text((cx - hw // 2, 532), handle, font=h_font, fill=CYAN)
 
-    # Website
+    # ── Sub-line ───────────────────────────────────────────────────────────
+    sub = "daily finds from japan's best shops"
+    s_bbox = draw.textbbox((0, 0), sub, font=FONTS["caption_sm"])
+    sw = s_bbox[2] - s_bbox[0]
+    draw.text((cx - sw // 2, 688), sub, font=FONTS["caption_sm"], fill=(165, 165, 175))
+
+    # ── Cyan rule ──────────────────────────────────────────────────────────
+    draw.rectangle([62, 810, W - 62, 813], fill=CYAN)
+
+    # ── Website ────────────────────────────────────────────────────────────
     site = "lostintransitjp.com"
-    bbox3 = draw.textbbox((0, 0), site, font=FONTS["label"])
-    sw = bbox3[2] - bbox3[0]
-    draw.text((cx - sw // 2, cy + 20), site, font=FONTS["label"], fill=CYAN)
+    si_bbox = draw.textbbox((0, 0), site, font=FONTS["title_sm"])
+    siw = si_bbox[2] - si_bbox[0]
+    draw.text((cx - siw // 2, 878), site, font=FONTS["title_sm"], fill=WHITE)
 
-    # CTA line
-    cta = "save this post · follow for more Japan finds"
-    bbox4 = draw.textbbox((0, 0), cta, font=FONTS["body_sm"])
-    cw = bbox4[2] - bbox4[0]
-    draw.text((cx - cw // 2, cy + 96), cta, font=FONTS["body_sm"], fill=(160, 160, 170))
+    # ── Save CTA ──────────────────────────────────────────────────────────
+    cta = "save this post · share with someone planning a japan trip"
+    draw_text_wrapped(draw, cta, 62, 1015, W - 124, FONTS["label_sm"],
+                      (145, 145, 155), line_spacing=1.4, max_lines=2)
 
-    # Bottom cyan rule
-    draw.rectangle([62, cy + 152, W - 62, cy + 155], fill=CYAN)
+    # ── Three cyan dots — brand signature ─────────────────────────────────
+    for dx in (-36, 0, 36):
+        dot_x = cx + dx
+        draw.ellipse([(dot_x - 6, 1188), (dot_x + 6, 1200)], fill=CYAN)
 
     return base
 
@@ -436,16 +839,23 @@ def slide_multi_store(store: dict, photo: Image.Image, slide_num: int, total: in
     draw = ImageDraw.Draw(base)
 
     draw_corner_brackets(draw)
-    # No wordmark on interior slides
     draw_swipe_hint(draw, slide_num, total)
 
-    # One-liner caption
-    if one_liner:
-        draw_text_wrapped(draw, one_liner.lower(), 62, H - 390, W - 124, FONTS["caption_sm"], WHITE)
-
-    # Store name + location
-    loc = f"{store.get('city', '')} • {store.get('neighborhood', '')}" if store.get('neighborhood') else store.get('city', '')
+    # ── Store name + location ───────────────────────────────────────────────
+    loc = (
+        f"{store.get('city', '')} · {store.get('neighborhood', '')}"
+        if store.get('neighborhood')
+        else store.get('city', '')
+    )
     draw_store_bottom(draw, store['name'], loc)
+
+    # ── One-liner caption — sits above the name block ──────────────────────
+    if one_liner:
+        clean_liner = clean_render_text(one_liner)
+        draw_text_wrapped(
+            draw, clean_liner.lower(), 62, H - 430,
+            W - 124, FONTS["caption_sm"], WHITE, line_spacing=1.3
+        )
 
     return base
 
@@ -462,45 +872,60 @@ def _trim_to_words(text: str, max_chars: int) -> str:
     return trimmed.rstrip(",.;:—-") + "..."
 
 def make_one_liner(store: dict) -> str:
-    """Generate a short punchy one-liner from store description."""
-    desc = store.get("description", "")
-    cats = store.get("categories", []) or []
-
-    if not desc:
-        cat_str = cats[0] if cats else "store"
-        return f"{cat_str} in {store.get('neighborhood', store.get('city', ''))}"
-
-    # Pull first clean sentence
-    first = desc.split(".")[0].strip()
-    return _trim_to_words(first, 72).lower()
-
-def make_hook_line(store: dict) -> str:
-    """Generate a SHORT punchy hook for the cover slide (aim for 5-8 words)."""
+    """
+    Generate a short punchy one-liner from store description.
+    Skips any sentences that read like an address.
+    """
     desc = store.get("description", "")
     cats = store.get("categories", []) or []
     neighborhood = store.get("neighborhood", "")
-    name = store.get("name", "")
+    city = store.get("city", "")
 
-    sentences = [s.strip() for s in desc.split(".") if len(s.strip()) > 20]
+    if not desc:
+        cat_str = cats[0] if cats else "store"
+        return f"{cat_str} in {neighborhood or city}"
 
-    # Try to find a short, punchy sentence — prefer sentences under 50 chars
-    hook = None
-    for s in sentences:
-        if 15 < len(s) <= 55:
-            hook = s
-            break
+    sents = [s.strip() for s in desc.split(".") if len(s.strip()) > 15]
 
-    # Fall back to trimming the best sentence we have
-    if not hook:
-        if len(sentences) >= 2:
-            hook = sentences[1]
-        elif sentences:
-            hook = sentences[0]
-        else:
-            hook = f"a {cats[0].lower() if cats else 'fashion'} destination in {neighborhood}"
+    # Find the first sentence that isn't an address
+    for s in sents:
+        if not is_address_sentence(s):
+            cleaned = clean_render_text(s)
+            if cleaned and len(cleaned) > 10:
+                return _trim_to_words(cleaned, 72).lower()
 
-    # Keep it short — max 52 chars for a punchy hook
-    return _trim_to_words(hook, 52).lower()
+    # Fallback: category + location — never an address
+    cat_str = cats[0] if cats else "shop"
+    return f"{cat_str} in {neighborhood or city}".lower()
+
+def make_hook_line(store: dict) -> str:
+    """
+    Generate a SHORT punchy hook for the cover slide (aim for 5-8 words).
+    Skips sentences that read like an address.
+    """
+    desc = store.get("description", "")
+    cats = store.get("categories", []) or []
+    neighborhood = store.get("neighborhood", "")
+
+    sents = [s.strip() for s in desc.split(".") if len(s.strip()) > 15]
+
+    # Prefer a short, punchy non-address sentence (15-55 chars)
+    for s in sents:
+        if not is_address_sentence(s) and 15 < len(s) <= 55:
+            cleaned = clean_render_text(s)
+            if cleaned:
+                return _trim_to_words(cleaned, 52).lower()
+
+    # Try any non-address sentence
+    for s in sents:
+        if not is_address_sentence(s):
+            cleaned = clean_render_text(s)
+            if cleaned:
+                return _trim_to_words(cleaned, 52).lower()
+
+    # Fallback — never expose an address as a hook
+    cat_str = cats[0].lower() if cats else "fashion"
+    return f"a {cat_str} destination in {neighborhood or 'japan'}"
 
 # ─── CAROUSEL BUILDERS ────────────────────────────────────────────────────────
 

@@ -2,6 +2,10 @@ import { useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ArrowLeft, Share2, ShoppingBag, MapPin, Clock, Globe, Instagram, ExternalLink, ChevronDown, ChevronUp, Navigation, Map as MapIcon, Camera, Heart } from 'lucide-react';
+import Map, { Marker } from 'react-map-gl';
+import { MAPBOX_TOKEN, MAP_STYLE_NIGHT } from '../../lib/mapbox';
+import { MAIN_CATEGORY_COLORS } from '../../lib/constants';
+import 'mapbox-gl/dist/mapbox-gl.css';
 import { SwipeablePhotoCarousel } from './SwipeablePhotoCarousel';
 import { SaveButton } from './SaveButton';
 import { InstagramGeneratorModal } from './InstagramGeneratorModal';
@@ -9,7 +13,6 @@ import { StoreFindsSection } from './StoreFindsSection';
 import { SubmitModal } from '../../pages/FindsPage';
 import type { Store } from '../../types/store';
 import { getGoogleMapsUrl } from '../../utils/formatters';
-import { MAIN_CATEGORY_COLORS } from '../../lib/constants';
 import { ikUrl } from '../../utils/ikUrl';
 
 interface MobileStoreDetailProps {
@@ -246,12 +249,51 @@ export function MobileStoreDetail({ store, similarStores, onPhotoClick }: Mobile
             LOCATION
           </h2>
 
-          {/* Map Placeholder - will show minimap when fixed */}
-          <div className="aspect-video bg-gray-900/50 rounded-lg overflow-hidden border border-cyan-400/20 mb-4 flex items-center justify-center">
-            <div className="text-center">
-              <MapPin className="w-12 h-12 text-cyan-400 mx-auto mb-2" />
-              <p className="text-xs text-gray-400">Map preview coming soon</p>
-            </div>
+          {/* Minimap */}
+          <div className="aspect-video rounded-lg overflow-hidden border border-cyan-400/20 mb-4">
+            {MAPBOX_TOKEN && store.latitude && store.longitude ? (
+              <Map
+                initialViewState={{
+                  longitude: store.longitude,
+                  latitude: store.latitude,
+                  zoom: 15,
+                }}
+                style={{ width: '100%', height: '100%' }}
+                mapStyle={MAP_STYLE_NIGHT}
+                mapboxAccessToken={MAPBOX_TOKEN}
+                scrollZoom={false}
+                dragPan={false}
+                dragRotate={false}
+                doubleClickZoom={false}
+                touchZoomRotate={false}
+                attributionControl={false}
+              >
+                <Marker
+                  longitude={store.longitude}
+                  latitude={store.latitude}
+                  anchor="bottom"
+                >
+                  <div
+                    className="w-8 h-8 rounded-full flex items-center justify-center shadow-lg"
+                    style={{
+                      backgroundColor: store.mainCategory
+                        ? MAIN_CATEGORY_COLORS[store.mainCategory as keyof typeof MAIN_CATEGORY_COLORS]
+                        : '#22D9EE',
+                      boxShadow: `0 0 15px ${store.mainCategory ? MAIN_CATEGORY_COLORS[store.mainCategory as keyof typeof MAIN_CATEGORY_COLORS] : '#22D9EE'}80`,
+                    }}
+                  >
+                    <MapPin className="w-4 h-4 text-white" />
+                  </div>
+                </Marker>
+              </Map>
+            ) : (
+              <div className="w-full h-full bg-gray-900/50 flex items-center justify-center">
+                <div className="text-center">
+                  <MapPin className="w-8 h-8 text-cyan-400 mx-auto mb-1" />
+                  <p className="text-xs text-gray-500">Map unavailable</p>
+                </div>
+              </div>
+            )}
           </div>
 
           {/* Address */}
