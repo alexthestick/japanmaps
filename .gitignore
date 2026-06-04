@@ -34,3 +34,5 @@ supabase/006_import_stores.sql
 
 
 .vercel
+__pycache__/
+*.py
