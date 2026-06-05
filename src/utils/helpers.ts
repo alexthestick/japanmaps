@@ -1,13 +1,60 @@
 import type { Store } from '../types/store';
 
 /**
- * Helper to parse PostGIS geography data from Supabase
- * Converts the geography object to latitude/longitude coordinates
+ * Parse PostGIS geography data returned by Supabase into lat/lng.
+ *
+ * Supabase returns PostGIS geography columns in EWKB hex format when you do
+ * a plain SELECT * (e.g. "0101000020E6100000..."). This is different from
+ * the WKT text format ("POINT(lng lat)") that the old parser expected.
+ *
+ * The get_stores_with_coordinates RPC avoids this by using ST_Y/ST_X, which
+ * is why the main map works fine. The store detail page does a direct SELECT *
+ * which hits this function — previously it always fell through to {0, 0}.
+ *
+ * This function now handles three formats:
+ *   1. EWKB hex  — what Supabase actually returns for geography columns
+ *   2. WKT text  — "POINT(longitude latitude)"
+ *   3. GeoJSON   — { coordinates: [longitude, latitude] }
  */
 export function parseLocation(location: any): { latitude: number; longitude: number } {
+  if (!location) return { latitude: 0, longitude: 0 };
+
   if (typeof location === 'string') {
-    // Format: "POINT(longitude latitude)"
-    const matches = location.match(/POINT\(([^ ]+) ([^ ]+)\)/);
+    // ── Format 1: EWKB hex ────────────────────────────────────────────────
+    // Supabase returns geography columns as Extended Well-Known Binary (EWKB)
+    // encoded as a hex string. Structure (little-endian example):
+    //   01          — byte order (01 = little-endian)
+    //   01000020    — geometry type (Point) with SRID flag (0x20000000)
+    //   E6100000    — SRID value (4326 for WGS84 = 0x10E6 little-endian)
+    //   <8 bytes>   — longitude (float64)
+    //   <8 bytes>   — latitude  (float64)
+    //
+    // Minimum length: 1+4+8+8 = 21 bytes = 42 hex chars (no SRID)
+    //                 1+4+4+8+8 = 25 bytes = 50 hex chars (with SRID)
+    if (/^[0-9a-fA-F]+$/.test(location) && location.length >= 42) {
+      try {
+        const bytes = new Uint8Array(
+          location.match(/.{2}/g)!.map((b: string) => parseInt(b, 16))
+        );
+        const view = new DataView(bytes.buffer);
+        const littleEndian = bytes[0] === 1;
+        const typeInt = view.getUint32(1, littleEndian);
+        // Bit 29 (0x20000000) signals that a 4-byte SRID follows the type
+        const hasSRID = (typeInt & 0x20000000) !== 0;
+        const coordOffset = hasSRID ? 9 : 5;
+        const lng = view.getFloat64(coordOffset, littleEndian);
+        const lat = view.getFloat64(coordOffset + 8, littleEndian);
+        if (isFinite(lat) && isFinite(lng)) {
+          return { longitude: lng, latitude: lat };
+        }
+      } catch {
+        // Malformed hex — fall through to other formats
+      }
+    }
+
+    // ── Format 2: WKT text ────────────────────────────────────────────────
+    // "POINT(longitude latitude)"
+    const matches = location.match(/POINT\(([^ ]+) ([^ ]+)\)/i);
     if (matches) {
       return {
         longitude: parseFloat(matches[1]),
@@ -15,8 +62,9 @@ export function parseLocation(location: any): { latitude: number; longitude: num
       };
     }
   }
-  
-  // Handle GeoJSON format
+
+  // ── Format 3: GeoJSON object ──────────────────────────────────────────
+  // { type: "Point", coordinates: [longitude, latitude] }
   if (location?.coordinates) {
     return {
       longitude: location.coordinates[0],
@@ -24,7 +72,6 @@ export function parseLocation(location: any): { latitude: number; longitude: num
     };
   }
 
-  // Fallback
   return { latitude: 0, longitude: 0 };
 }
 

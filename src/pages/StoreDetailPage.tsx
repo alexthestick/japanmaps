@@ -755,7 +755,7 @@ export function StoreDetailPage() {
                 LOCATION
               </h2>
               <div className="aspect-video bg-gray-900 rounded-lg overflow-hidden border-2 border-cyan-500/30 shadow-[0_0_30px_rgba(34,217,238,0.2)]">
-                {MAPBOX_TOKEN ? (
+                {MAPBOX_TOKEN && store.latitude !== 0 && store.longitude !== 0 ? (
                   <Map
                     {...viewState}
                     onMove={evt => setViewState(evt.viewState)}
@@ -785,7 +785,10 @@ export function StoreDetailPage() {
                   </Map>
                 ) : (
                   <div className="w-full h-full flex items-center justify-center text-gray-500">
-                    Map unavailable
+                    <div className="text-center">
+                      <MapPin className="w-8 h-8 text-gray-600 mx-auto mb-2" />
+                      <p className="text-sm text-gray-600">Map unavailable</p>
+                    </div>
                   </div>
                 )}
               </div>
