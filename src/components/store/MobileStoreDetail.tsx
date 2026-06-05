@@ -249,9 +249,11 @@ export function MobileStoreDetail({ store, similarStores, onPhotoClick }: Mobile
             LOCATION
           </h2>
 
-          {/* Minimap */}
+          {/* Minimap — check !== 0 explicitly because latitude/longitude of 0
+              is falsy in JS. Stores with no DB coordinates return {lat:0, lng:0}
+              from parseLocation(), which was silently hitting the fallback. */}
           <div className="aspect-video rounded-lg overflow-hidden border border-cyan-400/20 mb-4">
-            {MAPBOX_TOKEN && store.latitude && store.longitude ? (
+            {MAPBOX_TOKEN && store.latitude !== 0 && store.longitude !== 0 ? (
               <Map
                 initialViewState={{
                   longitude: store.longitude,
