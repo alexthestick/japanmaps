@@ -60,6 +60,7 @@ export function MobileListView({
   onBackToMap,
 }: MobileListViewProps) {
   const [showCitySheet, setShowCitySheet] = useState(false);
+  const [showNeighborhoodSheet, setShowNeighborhoodSheet] = useState(false);
   const [showCategorySheet, setShowCategorySheet] = useState(false);
   const [showSortSheet, setShowSortSheet] = useState(false);
   const [showAutocomplete, setShowAutocomplete] = useState(false);
@@ -95,16 +96,17 @@ export function MobileListView({
 
   const visibleStores = stores.slice(0, visibleCount);
 
-  // Close autocomplete when clicking outside
+  // Close autocomplete when tapping outside — pointerdown fires on both
+  // mouse and touch. mousedown doesn't fire on iOS Safari tap events.
   useEffect(() => {
-    const handleClickOutside = (e: MouseEvent) => {
+    const handleClickOutside = (e: PointerEvent) => {
       if (searchContainerRef.current && !searchContainerRef.current.contains(e.target as Node)) {
         setShowAutocomplete(false);
       }
     };
 
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
+    document.addEventListener('pointerdown', handleClickOutside);
+    return () => document.removeEventListener('pointerdown', handleClickOutside);
   }, []);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -205,10 +207,10 @@ export function MobileListView({
 
           {/* Filter Pills Row */}
           <div className="flex gap-2 mt-3">
-            {/* Cities Filter */}
+            {/* Cities Filter — always closes on selection, clear feedback */}
             <button
               onClick={() => setShowCitySheet(true)}
-              className={`flex-1 flex items-center justify-center gap-1.5 px-3 py-2.5 rounded-xl text-sm font-semibold transition-all min-w-0 ${
+              className={`flex-1 flex items-center justify-center gap-1.5 px-3 py-2.5 rounded-xl text-sm font-semibold transition-all min-w-0 active:scale-[0.97] ${
                 selectedCity
                   ? 'bg-cyan-500/30 text-white border-2 border-cyan-400/50'
                   : 'bg-gray-800/60 text-gray-300 border border-gray-600/40'
@@ -220,14 +222,34 @@ export function MobileListView({
               }}
             >
               <MapPin className="w-4 h-4 flex-shrink-0" />
-              <span className="truncate">{cityLabel}</span>
+              <span className="truncate">{selectedCity || 'Cities'}</span>
               <ChevronDown className="w-3.5 h-3.5 flex-shrink-0" />
             </button>
+
+            {/* Neighborhood pill — only shown when a city with neighborhoods is selected */}
+            {selectedCity && LOCATIONS[selectedCity]?.length > 0 && (
+              <button
+                onClick={() => setShowNeighborhoodSheet(true)}
+                className={`flex-1 flex items-center justify-center gap-1.5 px-3 py-2.5 rounded-xl text-sm font-semibold transition-all min-w-0 active:scale-[0.97] ${
+                  selectedNeighborhood
+                    ? 'bg-purple-500/30 text-white border-2 border-purple-400/50'
+                    : 'bg-gray-800/60 text-gray-300 border border-gray-600/40'
+                }`}
+                style={{
+                  boxShadow: selectedNeighborhood
+                    ? '0 0 20px rgba(168, 85, 247, 0.5)'
+                    : '0 2px 8px rgba(0, 0, 0, 0.3)',
+                }}
+              >
+                <span className="truncate">{selectedNeighborhood || 'Area'}</span>
+                <ChevronDown className="w-3.5 h-3.5 flex-shrink-0" />
+              </button>
+            )}
 
             {/* Categories Filter */}
             <button
               onClick={() => setShowCategorySheet(true)}
-              className={`flex-1 flex items-center justify-center gap-1.5 px-3 py-2.5 rounded-xl text-sm font-semibold transition-all min-w-0 ${
+              className={`flex-1 flex items-center justify-center gap-1.5 px-3 py-2.5 rounded-xl text-sm font-semibold transition-all min-w-0 active:scale-[0.97] ${
                 selectedMainCategory
                   ? 'bg-cyan-500/30 text-white border-2 border-cyan-400/50'
                   : 'bg-gray-800/60 text-gray-300 border border-gray-600/40'
@@ -246,7 +268,7 @@ export function MobileListView({
             {/* Sort Filter - Icon Only */}
             <button
               onClick={() => setShowSortSheet(true)}
-              className="flex items-center justify-center px-3 py-2.5 rounded-xl text-sm font-semibold transition-all bg-gray-800/60 text-gray-300 border border-gray-600/40"
+              className="flex items-center justify-center px-3 py-2.5 rounded-xl text-sm font-semibold transition-all bg-gray-800/60 text-gray-300 border border-gray-600/40 active:scale-[0.97]"
               style={{ boxShadow: '0 2px 8px rgba(0, 0, 0, 0.3)' }}
               aria-label="Sort"
             >
@@ -321,109 +343,113 @@ export function MobileListView({
           )}
         </div>
 
-        {/* Map View Button - Fixed Bottom */}
+        {/* Map View Button — env(safe-area-inset-bottom) clears the iPhone home indicator */}
         <button
           onClick={onBackToMap}
-          className="fixed bottom-6 right-6 z-30 bg-gradient-to-r from-cyan-400 via-blue-500 to-purple-500 text-white px-6 py-3 rounded-full shadow-lg flex items-center gap-2 font-bold text-sm border-2 border-cyan-300/50"
-          style={{ boxShadow: '0 0 30px rgba(34, 217, 238, 0.4), 0 10px 40px rgba(0, 0, 0, 0.3)' }}
+          className="fixed right-6 z-30 bg-gradient-to-r from-cyan-400 via-blue-500 to-purple-500 text-white px-6 py-3 rounded-full shadow-lg flex items-center gap-2 font-bold text-sm border-2 border-cyan-300/50"
+          style={{
+            bottom: 'calc(1.5rem + env(safe-area-inset-bottom, 0px))',
+            boxShadow: '0 0 30px rgba(34, 217, 238, 0.4), 0 10px 40px rgba(0, 0, 0, 0.3)',
+          }}
         >
           <MapPin className="w-5 h-5" />
           Map View
         </button>
       </div>
 
-      {/* City/Neighborhood Bottom Sheet - Reuse from map view */}
+      {/* City Bottom Sheet — always closes immediately on selection.
+          Neighborhood drill-down opens as a separate sheet so users always
+          get clear feedback that their city tap worked. */}
       <BottomSheet
         isOpen={showCitySheet}
         onClose={() => setShowCitySheet(false)}
-        title="Select Location"
+        title="Select City"
       >
-        <div className="space-y-6">
-          {/* City Selection */}
-          <div>
-            <h3 className="text-xs font-black uppercase tracking-wider text-cyan-300 mb-3 italic" style={{ textShadow: '0 0 10px rgba(34, 217, 238, 0.3)' }}>
-              City
-            </h3>
-            <div className="space-y-2">
-              <button
-                onClick={() => {
-                  onCityChange(null);
-                  setShowCitySheet(false);
-                }}
-                className={`w-full px-4 py-3 rounded-lg text-left transition-all ${
-                  !selectedCity
-                    ? 'bg-gradient-to-r from-cyan-500/20 to-blue-500/20 border-2 border-cyan-400/50 text-cyan-300'
-                    : 'bg-gray-800 border border-gray-700 text-gray-300 hover:bg-gray-700'
-                }`}
-                style={!selectedCity ? { boxShadow: '0 0 15px rgba(34, 217, 238, 0.2)' } : {}}
-              >
-                All Cities
-              </button>
+        <div className="space-y-2">
+          <button
+            onClick={() => {
+              onCityChange(null);
+              onNeighborhoodChange(null);
+              setShowCitySheet(false);
+            }}
+            className={`w-full px-4 py-3 rounded-lg text-left transition-all active:scale-[0.98] ${
+              !selectedCity
+                ? 'bg-gradient-to-r from-cyan-500/20 to-blue-500/20 border-2 border-cyan-400/50 text-cyan-300'
+                : 'bg-gray-800 border border-gray-700 text-gray-300 hover:bg-gray-700'
+            }`}
+            style={!selectedCity ? { boxShadow: '0 0 15px rgba(34, 217, 238, 0.2)' } : {}}
+          >
+            All Cities
+          </button>
 
-              {MAJOR_CITIES_JAPAN.map((city) => (
-                <button
-                  key={city}
-                  onClick={() => {
-                    onCityChange(city);
-                    if (!LOCATIONS[city] || LOCATIONS[city].length === 0) {
-                      setShowCitySheet(false);
-                    }
-                  }}
-                  className={`w-full px-4 py-3 rounded-lg text-left transition-all ${
-                    selectedCity === city
-                      ? 'bg-gradient-to-r from-cyan-500/20 to-blue-500/20 border-2 border-cyan-400/50 text-cyan-300'
-                      : 'bg-gray-800 border border-gray-700 text-gray-300 hover:bg-gray-700'
-                  }`}
-                  style={selectedCity === city ? { boxShadow: '0 0 15px rgba(34, 217, 238, 0.2)' } : {}}
-                >
-                  {city}
-                </button>
-              ))}
-            </div>
-          </div>
+          {MAJOR_CITIES_JAPAN.map((city) => (
+            <button
+              key={city}
+              onClick={() => {
+                onCityChange(city);
+                onNeighborhoodChange(null); // Clear neighborhood when city changes
+                setShowCitySheet(false);    // Always close — no more hanging open
+              }}
+              className={`w-full px-4 py-3 rounded-lg text-left transition-all active:scale-[0.98] ${
+                selectedCity === city
+                  ? 'bg-gradient-to-r from-cyan-500/20 to-blue-500/20 border-2 border-cyan-400/50 text-cyan-300'
+                  : 'bg-gray-800 border border-gray-700 text-gray-300 hover:bg-gray-700'
+              }`}
+              style={selectedCity === city ? { boxShadow: '0 0 15px rgba(34, 217, 238, 0.2)' } : {}}
+            >
+              <span className="flex items-center justify-between">
+                {city}
+                {LOCATIONS[city]?.length > 0 && (
+                  <span className="text-xs text-gray-500">
+                    {LOCATIONS[city].length} areas
+                  </span>
+                )}
+              </span>
+            </button>
+          ))}
+        </div>
+      </BottomSheet>
 
-          {/* Neighborhood Selection */}
-          {selectedCity && LOCATIONS[selectedCity] && LOCATIONS[selectedCity].length > 0 && (
-            <div>
-              <h3 className="text-xs font-black uppercase tracking-wider text-cyan-300 mb-3 italic" style={{ textShadow: '0 0 10px rgba(34, 217, 238, 0.3)' }}>
-                Neighborhoods in {selectedCity}
-              </h3>
-              <div className="space-y-2">
-                <button
-                  onClick={() => {
-                    onNeighborhoodChange(null);
-                    setShowCitySheet(false);
-                  }}
-                  className={`w-full px-4 py-3 rounded-lg text-left transition-all ${
-                    !selectedNeighborhood
-                      ? 'bg-gradient-to-r from-cyan-500/20 to-blue-500/20 border-2 border-cyan-400/50 text-cyan-300'
-                      : 'bg-gray-800 border border-gray-700 text-gray-300 hover:bg-gray-700'
-                  }`}
-                  style={!selectedNeighborhood ? { boxShadow: '0 0 15px rgba(34, 217, 238, 0.2)' } : {}}
-                >
-                  All Neighborhoods
-                </button>
+      {/* Neighborhood Bottom Sheet — opens only after a city is selected.
+          Shown as a separate sheet so users clearly see two distinct steps. */}
+      <BottomSheet
+        isOpen={showNeighborhoodSheet}
+        onClose={() => setShowNeighborhoodSheet(false)}
+        title={`Areas in ${selectedCity || ''}`}
+      >
+        <div className="space-y-2">
+          <button
+            onClick={() => {
+              onNeighborhoodChange(null);
+              setShowNeighborhoodSheet(false);
+            }}
+            className={`w-full px-4 py-3 rounded-lg text-left transition-all active:scale-[0.98] ${
+              !selectedNeighborhood
+                ? 'bg-gradient-to-r from-cyan-500/20 to-blue-500/20 border-2 border-cyan-400/50 text-cyan-300'
+                : 'bg-gray-800 border border-gray-700 text-gray-300 hover:bg-gray-700'
+            }`}
+            style={!selectedNeighborhood ? { boxShadow: '0 0 15px rgba(34, 217, 238, 0.2)' } : {}}
+          >
+            All Areas
+          </button>
 
-                {LOCATIONS[selectedCity].map((neighborhood) => (
-                  <button
-                    key={neighborhood}
-                    onClick={() => {
-                      onNeighborhoodChange(neighborhood);
-                      setShowCitySheet(false);
-                    }}
-                    className={`w-full px-4 py-3 rounded-lg text-left transition-all ${
-                      selectedNeighborhood === neighborhood
-                        ? 'bg-gradient-to-r from-cyan-500/20 to-blue-500/20 border-2 border-cyan-400/50 text-cyan-300'
-                        : 'bg-gray-800 border border-gray-700 text-gray-300 hover:bg-gray-700'
-                    }`}
-                    style={selectedNeighborhood === neighborhood ? { boxShadow: '0 0 15px rgba(34, 217, 238, 0.2)' } : {}}
-                  >
-                    {neighborhood}
-                  </button>
-                ))}
-              </div>
-            </div>
-          )}
+          {selectedCity && LOCATIONS[selectedCity]?.map((neighborhood) => (
+            <button
+              key={neighborhood}
+              onClick={() => {
+                onNeighborhoodChange(neighborhood);
+                setShowNeighborhoodSheet(false);
+              }}
+              className={`w-full px-4 py-3 rounded-lg text-left transition-all active:scale-[0.98] ${
+                selectedNeighborhood === neighborhood
+                  ? 'bg-gradient-to-r from-cyan-500/20 to-blue-500/20 border-2 border-cyan-400/50 text-cyan-300'
+                  : 'bg-gray-800 border border-gray-700 text-gray-300 hover:bg-gray-700'
+              }`}
+              style={selectedNeighborhood === neighborhood ? { boxShadow: '0 0 15px rgba(34, 217, 238, 0.2)' } : {}}
+            >
+              {neighborhood}
+            </button>
+          ))}
         </div>
       </BottomSheet>
 
@@ -460,9 +486,9 @@ export function MobileListView({
                   key={cat.id}
                   onClick={() => {
                     onMainCategoryChange(cat.id);
-                    if (cat.subcategories.length === 0) {
-                      setShowCategorySheet(false);
-                    }
+                    // Always close — subcategories remain visible in the sheet
+                    // as checkboxes the user can toggle after selecting main category
+                    if (cat.subcategories.length === 0) setShowCategorySheet(false);
                   }}
                   className={`w-full px-4 py-3 rounded-lg text-left transition-all ${
                     selectedMainCategory === cat.id

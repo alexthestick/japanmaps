@@ -19,8 +19,14 @@ export function NewLandingPage() {
   const [showFloatingCTA, setShowFloatingCTA] = useState(false);
   const ctaTriggerRef = useRef<HTMLDivElement>(null);
 
-  // Initialize Lenis smooth scroll
+  // Initialize Lenis smooth scroll — desktop only.
+  // On touch devices iOS has its own momentum scroll physics that users
+  // expect. Overriding it with a JS library feels wrong and causes
+  // double-scroll artifacts. pointer:coarse = touch screen.
   useEffect(() => {
+    const isTouchDevice = window.matchMedia('(pointer: coarse)').matches;
+    if (isTouchDevice) return;
+
     const lenis = new Lenis({
       duration: 1.2,
       easing: (t) => Math.min(1, 1.001 - Math.pow(2, -10 * t)),
@@ -28,7 +34,6 @@ export function NewLandingPage() {
       gestureOrientation: 'vertical',
       smoothWheel: true,
       wheelMultiplier: 1,
-      touchMultiplier: 2,
     });
 
     function raf(time: number) {
@@ -61,7 +66,7 @@ export function NewLandingPage() {
   const organizationSchema = generateOrganizationSchema();
 
   return (
-    <div className="relative min-h-screen bg-black overflow-x-hidden">
+    <div className="relative min-h-dvh bg-black overflow-x-hidden">
 
       {/* ── Page-wide background: gradient orbs + map lines + film grain ── */}
       <div className="fixed inset-0 pointer-events-none z-0">
@@ -122,8 +127,11 @@ export function NewLandingPage() {
             exit={{ opacity: 0, y: 16, scale: 0.95 }}
             transition={{ duration: 0.3, ease: [0.22, 1, 0.36, 1] }}
             onClick={() => navigate('/map')}
-            className="fixed bottom-6 right-6 z-50 flex items-center gap-2.5 px-5 py-3 bg-gradient-to-r from-cyan-400 via-blue-500 to-purple-500 text-white font-black text-xs uppercase tracking-wider rounded-full border border-cyan-300/30 hover:scale-105 transition-transform duration-200"
-            style={{ boxShadow: '0 0 24px rgba(34, 217, 238, 0.4), 0 8px 32px rgba(0,0,0,0.5)' }}
+            className="fixed right-6 z-50 flex items-center gap-2.5 px-5 py-3 bg-gradient-to-r from-cyan-400 via-blue-500 to-purple-500 text-white font-black text-xs uppercase tracking-wider rounded-full border border-cyan-300/30 hover:scale-105 active:scale-95 transition-transform duration-200"
+            style={{
+              bottom: 'calc(1.5rem + env(safe-area-inset-bottom, 0px))',
+              boxShadow: '0 0 24px rgba(34, 217, 238, 0.4), 0 8px 32px rgba(0,0,0,0.5)',
+            }}
           >
             <Map className="w-3.5 h-3.5" />
             Explore the Map

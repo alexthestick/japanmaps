@@ -48,7 +48,7 @@ function StoreCardComponent({ store, onClick }: StoreCardProps) {
         // Allow the Link to handle navigation, but also call onClick for any tracking
         onClick();
       }}
-      className="group cursor-pointer relative block"
+      className="group cursor-pointer relative block active:scale-[0.97] transition-transform duration-150"
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
     >

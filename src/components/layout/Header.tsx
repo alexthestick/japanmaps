@@ -1,6 +1,6 @@
 import { Link, useNavigate } from 'react-router-dom';
 import { MapPin, Menu, X, Heart, User, ShoppingBag, LogOut, Info, Store, ChevronDown } from 'lucide-react';
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { getSavedStoreCount } from '../../utils/savedStores';
 import { MapStyleToggle } from '../map/MapStyleToggle';
 import { useAuthContext } from '../../contexts/AuthContext';
@@ -181,9 +181,29 @@ export function Header({ onCitiesClick }: HeaderProps) {
     window.dispatchEvent(new Event('mapStyleModeChanged'));
   }, [styleMode]);
 
+  // iOS-compatible scroll lock — overflow:hidden alone doesn't stop
+  // touch-momentum scrolling on Safari. position:fixed + saved scrollY does.
+  const scrollYRef = useRef(0);
   useEffect(() => {
-    document.body.style.overflow = mobileMenuOpen ? 'hidden' : '';
-    return () => { document.body.style.overflow = ''; };
+    if (mobileMenuOpen) {
+      scrollYRef.current = window.scrollY;
+      document.body.style.position = 'fixed';
+      document.body.style.top = `-${scrollYRef.current}px`;
+      document.body.style.width = '100%';
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.position = '';
+      document.body.style.top = '';
+      document.body.style.width = '';
+      document.body.style.overflow = '';
+      window.scrollTo(0, scrollYRef.current);
+    }
+    return () => {
+      document.body.style.position = '';
+      document.body.style.top = '';
+      document.body.style.width = '';
+      document.body.style.overflow = '';
+    };
   }, [mobileMenuOpen]);
 
   return (
@@ -274,10 +294,11 @@ export function Header({ onCitiesClick }: HeaderProps) {
             </div>
           </nav>
 
-          {/* Mobile menu button */}
+          {/* Mobile menu button — p-3 gives 44px+ tap target (Apple HIG minimum) */}
           <button
             onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-            className="md:hidden text-cyan-400 hover:text-cyan-300 transition-colors"
+            className="md:hidden p-3 -mr-3 text-cyan-400 hover:text-cyan-300 transition-colors active:scale-95"
+            aria-label={mobileMenuOpen ? 'Close menu' : 'Open menu'}
           >
             {mobileMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
           </button>
