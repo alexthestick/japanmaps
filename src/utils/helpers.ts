@@ -21,8 +21,12 @@ export function parseLocation(location: any): { latitude: number; longitude: num
 
   if (typeof location === 'string') {
     // ── Format 1: EWKB hex ────────────────────────────────────────────────
-    // Supabase returns geography columns as Extended Well-Known Binary (EWKB)
-    // encoded as a hex string. Structure (little-endian example):
+    // Supabase JS (PostgREST REST API) returns geography columns as EWKB hex
+    // with a leading \x prefix: "\x0101000020E6100000..."
+    // Direct SQL (via MCP/psql) returns without prefix: "0101000020E6..."
+    // Strip the prefix if present so the parser handles both.
+    //
+    // Structure (little-endian example):
     //   01          — byte order (01 = little-endian)
     //   01000020    — geometry type (Point) with SRID flag (0x20000000)
     //   E6100000    — SRID value (4326 for WGS84 = 0x10E6 little-endian)
@@ -31,10 +35,11 @@ export function parseLocation(location: any): { latitude: number; longitude: num
     //
     // Minimum length: 1+4+8+8 = 21 bytes = 42 hex chars (no SRID)
     //                 1+4+4+8+8 = 25 bytes = 50 hex chars (with SRID)
-    if (/^[0-9a-fA-F]+$/.test(location) && location.length >= 42) {
+    const ewkb = location.startsWith('\\x') ? location.slice(2) : location;
+    if (/^[0-9a-fA-F]+$/.test(ewkb) && ewkb.length >= 42) {
       try {
         const bytes = new Uint8Array(
-          location.match(/.{2}/g)!.map((b: string) => parseInt(b, 16))
+          ewkb.match(/.{2}/g)!.map((b: string) => parseInt(b, 16))
         );
         const view = new DataView(bytes.buffer);
         const littleEndian = bytes[0] === 1;
