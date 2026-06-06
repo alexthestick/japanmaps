@@ -4,7 +4,7 @@ import { MapPin, ExternalLink, Instagram, Clock, Navigation, X, Heart, ArrowUpRi
 import type { Store } from '../../types/store';
 import { getGoogleMapsUrl } from '../../utils/formatters';
 import { saveStore, unsaveStore, isStoreSaved } from '../../utils/savedStores';
-import { Link } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { ikUrl } from '../../utils/ikUrl';
 import { BlurImage } from '../common/BlurImage';
 import 'react-spring-bottom-sheet/dist/style.css';
@@ -17,6 +17,7 @@ interface BottomSheetStoreDetailProps {
 export function BottomSheetStoreDetail({ store, onClose }: BottomSheetStoreDetailProps) {
   const [isSaved, setIsSaved] = useState(store ? isStoreSaved(store.id) : false);
   const sheetRef = useRef<any>();
+  const navigate = useNavigate();
 
   if (!store) return null;
 
@@ -205,14 +206,14 @@ export function BottomSheetStoreDetail({ store, onClose }: BottomSheetStoreDetai
 
           {/* Action Buttons */}
           <div className="flex flex-col gap-3 pt-2">
-            {/* View Full Page — primary CTA */}
-            <Link
-              to={storeUrl}
+            {/* Open Store — navigates with { from: 'map' } so back always returns to map */}
+            <button
+              onClick={() => navigate(storeUrl, { state: { from: 'map' } })}
               className="flex items-center justify-center gap-2 w-full px-6 py-3.5 bg-gradient-to-r from-cyan-500 via-blue-600 to-purple-600 text-white font-bold rounded-xl hover:brightness-110 active:scale-95 transition-all shadow-lg"
             >
               <ArrowUpRight className="w-5 h-5" />
-              View Full Page
-            </Link>
+              Open Store
+            </button>
 
             {/* Directions */}
             <a

@@ -35,13 +35,15 @@ export function MobileStoreDetail({ store, similarStores, onPhotoClick }: Mobile
     : ['https://images.unsplash.com/photo-1441986300917-64674bd600d8?w=1200&h=800&fit=crop'];
 
   const handleBack = () => {
-    if (location.key !== 'default') {
+    const from = (location.state as any)?.from;
+    if (from === 'list') {
+      // Came from list view — go back normally so scroll position restores
       navigate(-1);
     } else {
-      const state = location.state as any;
-      const params = new URLSearchParams(state?.params || {});
-      const fallback = `/map${params.toString() ? `?${params.toString()}` : ''}`;
-      navigate(fallback);
+      // Came from map, a related store, direct link, or unknown — always
+      // jump straight to the map. This breaks the deep store-chain history
+      // stack so users never have to drill back through every store they visited.
+      navigate('/map');
     }
   };
 
@@ -69,9 +71,13 @@ export function MobileStoreDetail({ store, similarStores, onPhotoClick }: Mobile
         }}
       />
 
-      {/* Sticky Header */}
-      <div className="sticky top-0 z-50 bg-gradient-to-b from-black/90 via-black/80 to-transparent backdrop-blur-sm border-b border-cyan-400/10">
-        <div className="flex items-center justify-between px-4 py-3">
+      {/* Sticky Header — background extends behind the status bar (iOS convention),
+          inner content is padded below the Dynamic Island using safe-area-inset-top */}
+      <div className="sticky top-0 z-50 bg-gradient-to-b from-black/95 via-black/80 to-transparent backdrop-blur-sm border-b border-cyan-400/10">
+        <div
+          className="flex items-center justify-between px-4 py-3"
+          style={{ paddingTop: 'calc(0.75rem + env(safe-area-inset-top, 0px))' }}
+        >
           <button
             onClick={handleBack}
             className="flex items-center gap-2 px-3 py-2 bg-black/60 backdrop-blur-sm text-cyan-300 rounded-full border border-cyan-500/30 hover:border-cyan-500/50 transition-all active:scale-95"
@@ -461,10 +467,13 @@ export function MobileStoreDetail({ store, similarStores, onPhotoClick }: Mobile
                 const storeUrl = `/store/${similarStore.slug || similarStore.id}`;
 
                 return (
-                  <a
+                  <button
                     key={similarStore.id}
-                    href={storeUrl}
-                    className="group bg-gradient-to-br from-gray-800/50 to-gray-900/50 rounded-xl overflow-hidden border border-cyan-500/20 hover:border-cyan-500/50 transition-all block active:scale-95"
+                    onClick={() => navigate(storeUrl, {
+                      replace: true, // Don't stack — browsing sideways not deeper
+                      state: { from: (location.state as any)?.from || 'map' },
+                    })}
+                    className="group bg-gradient-to-br from-gray-800/50 to-gray-900/50 rounded-xl overflow-hidden border border-cyan-500/20 hover:border-cyan-500/50 transition-all block active:scale-95 text-left w-full"
                   >
                     {/* Image */}
                     <div className="relative aspect-[4/3] overflow-hidden">
@@ -493,13 +502,25 @@ export function MobileStoreDetail({ store, similarStores, onPhotoClick }: Mobile
                         {similarStore.neighborhood ? `${similarStore.neighborhood}, ` : ''}{similarStore.city}
                       </p>
                     </div>
-                  </a>
+                  </button>
                 );
               })}
             </div>
           </div>
         )}
       </div>
+
+      {/* Floating map button — always visible escape hatch.
+          Small circular icon, bottom-left, above the home indicator.
+          Navigates straight to the map regardless of navigation depth. */}
+      <button
+        onClick={() => navigate('/map')}
+        className="fixed left-5 z-50 flex items-center justify-center w-11 h-11 rounded-full bg-black/70 backdrop-blur-md border border-cyan-400/40 text-cyan-300 shadow-lg active:scale-90 transition-transform"
+        style={{ bottom: 'calc(1.5rem + env(safe-area-inset-bottom, 0px))' }}
+        aria-label="Back to map"
+      >
+        <MapIcon className="w-5 h-5" />
+      </button>
 
       {/* Instagram Generator Modal */}
       <InstagramGeneratorModal

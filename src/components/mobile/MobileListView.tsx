@@ -78,6 +78,19 @@ export function MobileListView({
     setVisibleCount(PAGE_SIZE);
   }, [stores]);
 
+  // Restore scroll position when returning from a store page.
+  // requestAnimationFrame waits for the list to paint before scrolling
+  // so the user doesn't see a flash at the top.
+  useEffect(() => {
+    const savedY = sessionStorage.getItem('listScrollY');
+    if (savedY) {
+      requestAnimationFrame(() => {
+        window.scrollTo({ top: parseInt(savedY, 10), behavior: 'instant' });
+      });
+      sessionStorage.removeItem('listScrollY');
+    }
+  }, []);
+
   // Auto-load next page when the sentinel div enters the viewport
   const loadMore = useCallback(() => {
     setVisibleCount(prev => Math.min(prev + PAGE_SIZE, stores.length));

@@ -985,6 +985,8 @@ export function StoreDetailPage() {
                 <Link
                   key={similarStore.id}
                   to={storeUrl}
+                  state={{ from: (location.state as any)?.from || 'map' }}
+                  replace // Replace history so related stores don't stack
                   className="group bg-gradient-to-br from-gray-800/50 to-gray-900/50 rounded-xl overflow-hidden border border-cyan-500/20 hover:border-cyan-500/50 transition-all block"
                 >
                   {/* Image */}

@@ -640,8 +640,9 @@ export function HomePage() {
           onNeighborhoodChange={setSelectedNeighborhood}
           onSortChange={setSortBy}
           onStoreClick={(store) => {
-            const params = Object.fromEntries(searchParams.entries());
-            navigate(`/store/${store.slug || store.id}`, { state: { from: '/map', params } });
+            // Save scroll so MobileListView can restore position on return
+            sessionStorage.setItem('listScrollY', String(window.scrollY));
+            navigate(`/store/${store.slug || store.id}`, { state: { from: 'list' } });
           }}
           onSelectSuggestion={handleSearchSuggestionSelect}
           onBackToMap={() => setView('map')}

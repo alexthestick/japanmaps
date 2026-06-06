@@ -1,13 +1,13 @@
-import { BrowserRouter, Routes, Route, useLocation } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, useLocation, useNavigationType } from 'react-router-dom';
 import { lazy, Suspense } from 'react';
 import { logger } from './utils/logger';
 
 // VERSION INDICATOR - Check browser console to verify deployment
 // If you see this message, the new code is deployed
-logger.log('[Lost in Transit] Build Version: 2026-02-23-PHASE4 - Finds, Admin Approval & Community Feed');
+logger.log('[Lost in Transit] Build Version: 2026-06-06-iOS-NAV - iOS navigation fixes');
 import { AuthProvider } from './contexts/AuthContext';
 import { Layout } from './components/layout/Layout';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import { ScrollToTop } from './components/common/ScrollToTop';
 import { Loader } from './components/common/Loader';
 
@@ -39,6 +39,13 @@ const SitemapPage = lazy(() => import('./pages/SitemapPage').then(m => ({ defaul
 
 function AnimatedRoutes() {
   const location = useLocation();
+  // Detect navigation direction so store pages slide the right way:
+  // PUSH (tap forward) → slide in from the right
+  // POP  (swipe/tap back) → slide in from the left
+  const navType = useNavigationType();
+  const isBack = navType === 'POP';
+  const slideX = isBack ? -24 : 24;
+
   return (
     <>
       {/* Scroll to top on navigation, but preserve scroll on back button */}
@@ -49,21 +56,27 @@ function AnimatedRoutes() {
       <Routes location={location} key={location.pathname}>
         {/* New Premium Landing Page (no layout) */}
         <Route path="/" element={
-          <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} transition={{ duration: 0.18 }}>
+          <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.18 }}>
             <NewLandingPage />
           </motion.div>
         } />
 
         {/* Saved stores page without layout (full screen) */}
         <Route path="/saved" element={
-          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
+          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.18 }}>
             <SavedStoresPage />
           </motion.div>
         } />
 
-        {/* Store detail page without layout (full screen) */}
+        {/* Store detail page — slides in from right (forward) or left (back).
+            The slide animation covers any white flash during the page transition
+            so the user sees smooth motion instead of a blank frame. */}
         <Route path="/store/:id" element={
-          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
+          <motion.div
+            initial={{ opacity: 0, x: slideX }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ duration: 0.22, ease: [0.25, 0.46, 0.45, 0.94] }}
+          >
             <StoreDetailPage />
           </motion.div>
         } />
