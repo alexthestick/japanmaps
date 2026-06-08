@@ -1,11 +1,10 @@
 import { useParams, useNavigate, useLocation, Link } from 'react-router-dom';
-import { useEffect, useState, useRef } from 'react';
-import Map, { Marker, NavigationControl } from 'react-map-gl';
+import { useEffect, useState, lazy, Suspense } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { supabase } from '../lib/supabase';
 import { Loader } from '../components/common/Loader';
 import { PhotoLightbox } from '../components/common/PhotoLightbox';
-import { MapPin, ExternalLink, Instagram, Clock, Navigation, ArrowLeft, ShoppingBag, Globe, Heart, Share2, Camera } from 'lucide-react';
+import { MapPin, ExternalLink, Instagram, Clock, ArrowLeft, ShoppingBag, Globe, Heart, Share2, Camera } from 'lucide-react';
 import { Button } from '../components/common/Button';
 import { SaveButton } from '../components/store/SaveButton';
 import { VisitButton } from '../components/store/VisitButton';
@@ -22,11 +21,16 @@ import { BlurImage } from '../components/common/BlurImage';
 import { MAIN_CATEGORY_COLORS } from '../lib/constants';
 import { logger } from '../utils/logger';
 import { cityToSlug, neighborhoodToSlug } from '../utils/cityData';
-import { MAPBOX_TOKEN, MAP_STYLE_DAY } from '../lib/mapbox';
 import { useIsMobile } from '../hooks/useMediaQuery';
 import { SubmitModal } from './FindsPage';
 import { StoreFindsSection } from '../components/store/StoreFindsSection';
-import 'mapbox-gl/dist/mapbox-gl.css';
+
+// Lazy-load the map widget so Mapbox GL JS (~1.6 MB) is never part of the
+// initial JS downloaded for a store page. It loads only after the store's
+// hero content has already painted (i.e. after LCP is recorded).
+// DO NOT convert this back to a static import — that would block LCP on
+// all 1,000+ store pages and collapse CWV scores back to "Poor".
+const StoreMiniMap = lazy(() => import('../components/store/StoreMiniMap'));
 
 export function StoreDetailPage() {
   const { id } = useParams<{ id: string }>();
@@ -44,27 +48,6 @@ export function StoreDetailPage() {
   const [liveHaulCount, setLiveHaulCount] = useState<number | null>(null);
   const [showSubmitModal, setShowSubmitModal] = useState(false);
   const [showSubmitBanner, setShowSubmitBanner] = useState(false);
-  const [viewState, setViewState] = useState({
-    longitude: 139.6917,
-    latitude: 35.6895,
-    zoom: 15,
-  });
-
-  // Update map view when store loads
-  useEffect(() => {
-    if (store) {
-      logger.log('StoreDetailPage: Setting viewState with store coords:', {
-        lng: store.longitude,
-        lat: store.latitude,
-      });
-      setViewState({
-        longitude: store.longitude,
-        latitude: store.latitude,
-        zoom: 15,
-      });
-    }
-  }, [store]);
-
   useEffect(() => {
     if (id) {
       fetchStore(id);
@@ -755,42 +738,20 @@ export function StoreDetailPage() {
                 LOCATION
               </h2>
               <div className="aspect-video bg-gray-900 rounded-lg overflow-hidden border-2 border-cyan-500/30 shadow-[0_0_30px_rgba(34,217,238,0.2)]">
-                {MAPBOX_TOKEN && store.latitude !== 0 && store.longitude !== 0 ? (
-                  <Map
-                    {...viewState}
-                    onMove={evt => setViewState(evt.viewState)}
-                    style={{ width: '100%', height: '100%' }}
-                    mapStyle={MAP_STYLE_DAY}
-                    mapboxAccessToken={MAPBOX_TOKEN}
-                    scrollZoom={false}
-                  >
-                    <NavigationControl position="top-right" />
-                    <Marker
-                      longitude={store.longitude}
-                      latitude={store.latitude}
-                      anchor="bottom"
-                    >
-                      <div
-                        className="w-8 h-8 rounded-full flex items-center justify-center shadow-lg"
-                        style={{
-                          backgroundColor: store.mainCategory
-                            ? MAIN_CATEGORY_COLORS[store.mainCategory as keyof typeof MAIN_CATEGORY_COLORS]
-                            : '#22D9EE',
-                          boxShadow: `0 0 15px ${store.mainCategory ? MAIN_CATEGORY_COLORS[store.mainCategory as keyof typeof MAIN_CATEGORY_COLORS] : '#22D9EE'}80`
-                        }}
-                      >
-                        <MapPin className="w-5 h-5 text-white" />
-                      </div>
-                    </Marker>
-                  </Map>
-                ) : (
-                  <div className="w-full h-full flex items-center justify-center text-gray-500">
+                <Suspense fallback={
+                  <div className="w-full h-full flex items-center justify-center bg-gray-900">
                     <div className="text-center">
-                      <MapPin className="w-8 h-8 text-gray-600 mx-auto mb-2" />
-                      <p className="text-sm text-gray-600">Map unavailable</p>
+                      <MapPin className="w-8 h-8 text-cyan-500/40 mx-auto mb-2 animate-pulse" />
+                      <p className="text-xs text-gray-600">Loading map…</p>
                     </div>
                   </div>
-                )}
+                }>
+                  <StoreMiniMap
+                    latitude={store.latitude}
+                    longitude={store.longitude}
+                    mainCategory={store.mainCategory}
+                  />
+                </Suspense>
               </div>
             </div>
           </div>
