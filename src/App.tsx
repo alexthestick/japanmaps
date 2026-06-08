@@ -42,7 +42,10 @@ const SitemapPage = lazy(() => import('./pages/SitemapPage').then(m => ({ defaul
 // on every AnimatedRoutes re-render, causing ScrollToTop's useEffect to fire
 // and scroll to top on every filter change (because useLocation re-renders
 // AnimatedRoutes whenever search params update).
-const SCROLL_EXCLUDE_PATHS = ['/store/'];
+// '/map' is excluded because the list/map view manages its own scroll position —
+// filter changes live at /map and should never trigger a scroll-to-top.
+// '/store/' is excluded to preserve list scroll position on back navigation.
+const SCROLL_EXCLUDE_PATHS = ['/store/', '/map'];
 
 function AnimatedRoutes() {
   const location = useLocation();
