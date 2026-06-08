@@ -1,5 +1,5 @@
-import { useState, useRef, useEffect } from 'react';
-import { ChevronLeft, ChevronRight, Maximize2 } from 'lucide-react';
+import { useState, useRef } from 'react';
+import { ChevronLeft, ChevronRight } from 'lucide-react';
 
 interface SwipeablePhotoCarouselProps {
   photos: string[];
@@ -53,7 +53,7 @@ export function SwipeablePhotoCarousel({ photos, storeName, onPhotoClick }: Swip
   };
 
   return (
-    <div className="relative w-full aspect-[3/4] sm:aspect-[4/3] bg-black overflow-hidden group">
+    <div className="relative w-full aspect-[3/4] sm:aspect-[4/3] bg-black overflow-hidden">
       {/* Photo Container */}
       <div
         ref={carouselRef}
@@ -78,13 +78,6 @@ export function SwipeablePhotoCarousel({ photos, storeName, onPhotoClick }: Swip
               loading={index === 0 ? 'eager' : 'lazy'}
               style={{ objectPosition: 'center' }}
             />
-
-            {/* Expand icon overlay */}
-            <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors flex items-center justify-center">
-              <div className="opacity-0 group-hover:opacity-100 transition-opacity bg-black/60 backdrop-blur-sm p-3 rounded-full">
-                <Maximize2 className="w-6 h-6 text-white" />
-              </div>
-            </div>
           </div>
         ))}
       </div>

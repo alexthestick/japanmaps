@@ -23,6 +23,7 @@ interface MobileListViewProps {
   onStoreClick: (store: Store) => void;
   onSelectSuggestion: (suggestion: SearchSuggestion) => void;
   onBackToMap: () => void;
+  onClearAll: () => void;
 }
 
 const CATEGORIES = [
@@ -58,6 +59,7 @@ export function MobileListView({
   onStoreClick,
   onSelectSuggestion,
   onBackToMap,
+  onClearAll,
 }: MobileListViewProps) {
   const [showCitySheet, setShowCitySheet] = useState(false);
   const [showNeighborhoodSheet, setShowNeighborhoodSheet] = useState(false);
@@ -297,13 +299,7 @@ export function MobileListView({
             </span>
             {(selectedCity || selectedMainCategory || selectedSubCategories.length > 0) && (
               <button
-                onClick={() => {
-                  onCityChange(null);
-                  onNeighborhoodChange(null);
-                  onMainCategoryChange(null);
-                  // Clear subcategories by toggling each off
-                  selectedSubCategories.forEach(s => onSubCategoryToggle(s));
-                }}
+                onClick={onClearAll}
                 className="text-xs text-red-400/80 hover:text-red-400 border border-red-400/30 hover:border-red-400/60 px-2 py-0.5 rounded-full transition-all"
               >
                 Clear all
@@ -370,12 +366,7 @@ export function MobileListView({
               <p className="text-gray-300 font-bold">No stores found</p>
               <p className="text-gray-500 text-sm">Try a different city, category, or search term</p>
               <button
-                onClick={() => {
-                  onCityChange(null);
-                  onNeighborhoodChange(null);
-                  onMainCategoryChange(null);
-                  selectedSubCategories.forEach(s => onSubCategoryToggle(s));
-                }}
+                onClick={onClearAll}
                 className="mt-2 px-4 py-2 rounded-xl border border-cyan-400/50 text-cyan-300 text-sm font-bold hover:bg-cyan-500/20 transition-all"
               >
                 Clear filters

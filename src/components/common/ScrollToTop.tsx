@@ -67,7 +67,10 @@ export function ScrollToTop({
     return () => {
       timeouts.forEach(clearTimeout);
     };
-  }, [location.pathname, location.search, excludePaths]);
+  // Only pathname changes should scroll to top — search param changes
+  // (e.g. filter selections on the map/list page) must NOT trigger this
+  // or every filter click scrolls the user back to the top of the page.
+  }, [location.pathname, excludePaths]);
 
   return null;
 }

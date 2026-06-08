@@ -634,6 +634,7 @@ export function HomePage() {
           }}
           onSelectSuggestion={handleSearchSuggestionSelect}
           onBackToMap={() => setView('map')}
+          onClearAll={handleClearAll}
         />
       ) : (
         // ========== DESKTOP LIST VIEW - Sidebar + Grid Layout ==========

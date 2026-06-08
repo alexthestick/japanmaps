@@ -30,18 +30,29 @@ export function PhotoLightbox({
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [onClose, onNext, onPrevious]);
 
-  // Prevent body scroll when lightbox is open
+  // Prevent body scroll when lightbox is open.
+  // document.body.style.overflow = 'hidden' doesn't work on iOS Safari —
+  // users can still scroll the background. The position:fixed pattern does.
   useEffect(() => {
-    document.body.style.overflow = 'hidden';
+    const scrollY = window.scrollY;
+    document.body.style.position = 'fixed';
+    document.body.style.top = `-${scrollY}px`;
+    document.body.style.width = '100%';
     return () => {
-      document.body.style.overflow = 'unset';
+      document.body.style.position = '';
+      document.body.style.top = '';
+      document.body.style.width = '';
+      window.scrollTo(0, scrollY);
     };
   }, []);
 
   return (
     <div className="fixed inset-0 z-[100] bg-black/95 flex flex-col">
-      {/* Header */}
-      <div className="flex items-center justify-between p-4 md:p-6">
+      {/* Header — paddingTop accounts for Dynamic Island / notch on iPhone */}
+      <div
+        className="flex items-center justify-between px-4 pb-4 md:px-6 md:pb-6"
+        style={{ paddingTop: 'calc(1rem + env(safe-area-inset-top, 0px))' }}
+      >
         <div className="text-white">
           <h2 className="text-lg md:text-xl font-bold">{storeName}</h2>
           <p className="text-sm text-gray-400">
@@ -93,9 +104,9 @@ export function PhotoLightbox({
         )}
       </div>
 
-      {/* Thumbnail Strip */}
+      {/* Thumbnail Strip — paddingBottom clears iPhone home indicator */}
       {photos.length > 1 && (
-        <div className="p-4 md:p-6">
+        <div className="px-4 pt-4 md:px-6 md:pt-6" style={{ paddingBottom: 'calc(1rem + env(safe-area-inset-bottom, 0px))' }}>
           <div className="flex gap-2 overflow-x-auto justify-center scrollbar-hide">
             {photos.map((photo, index) => (
               <button
