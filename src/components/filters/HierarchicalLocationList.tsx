@@ -1,6 +1,4 @@
-import { useNavigate } from 'react-router-dom';
 import { MAJOR_CITIES_JAPAN, LOCATIONS } from '../../lib/constants';
-import { cityToSlug, neighborhoodToSlug } from '../../utils/cityData';
 
 interface HierarchicalLocationListProps {
   selectedCity: string | null;
@@ -15,19 +13,25 @@ export function HierarchicalLocationList({
   onCityChange,
   onNeighborhoodChange,
 }: HierarchicalLocationListProps) {
-  const navigate = useNavigate();
-
-  const handleNeighborhoodClick = (city: string, neighborhood: string) => {
-    // Navigate to neighborhood page
-    const citySlug = cityToSlug(city);
-    const neighborhoodSlug = neighborhoodToSlug(neighborhood);
-    navigate(`/city/${citySlug}/${neighborhoodSlug}`);
+  const handleCityClick = (city: string) => {
+    if (selectedCity === city) {
+      // Clicking the active city deselects it (and clears neighborhood)
+      onCityChange(null);
+      onNeighborhoodChange('', null);
+    } else {
+      onCityChange(city);
+      onNeighborhoodChange(city, null); // clear neighborhood when switching city
+    }
   };
 
-  const handleCityClick = (city: string) => {
-    // Navigate to city page
-    const citySlug = cityToSlug(city);
-    navigate(`/city/${citySlug}`);
+  const handleNeighborhoodClick = (city: string, neighborhood: string) => {
+    if (selectedCity !== city) onCityChange(city); // ensure city is set
+    if (selectedNeighborhood === neighborhood) {
+      // Clicking active neighborhood deselects it (keeps city)
+      onNeighborhoodChange(city, null);
+    } else {
+      onNeighborhoodChange(city, neighborhood);
+    }
   };
 
   return (
@@ -75,8 +79,8 @@ export function HierarchicalLocationList({
               {cityStr}
             </button>
 
-            {/* Neighborhoods (indented, smaller) */}
-            {neighborhoods.length > 0 && (
+            {/* Neighborhoods expand only under the selected city */}
+            {isCitySelected && neighborhoods.length > 0 && (
               <div className="ml-3 mt-0.5 space-y-0.5">
                 {neighborhoods.map((neighborhood) => {
                   const isNeighborhoodSelected =

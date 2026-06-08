@@ -180,52 +180,40 @@ export function HomePage() {
     };
   }, [view, searchQuery, selectedMainCategory, selectedSubCategories, selectedCity, selectedNeighborhood, setSearchParams]);
 
-  // Memoize filters object to prevent unnecessary re-fetches
+  // Single consolidated filter object — all active filters in one place.
+  // useStores applies these client-side against the full cached store list,
+  // so there is no separate filteredStores pass needed.
   const storeFilters = useMemo(() => ({
     countries: [],
     cities: selectedCity ? [selectedCity] : [],
+    mainCategories: selectedMainCategory ? [selectedMainCategory] : [],
     categories: selectedSubCategories.length > 0 ? selectedSubCategories as any : [],
     priceRanges: [],
     searchQuery,
     selectedCity,
     selectedNeighborhood,
     selectedCategory: selectedSubCategories[0] || null,
-  }), [selectedCity, selectedSubCategories, searchQuery, selectedNeighborhood]);
+  }), [selectedCity, selectedMainCategory, selectedSubCategories, searchQuery, selectedNeighborhood]);
 
-  // Fetch stores with filters
-  const { stores, loading, error } = useStores(storeFilters);
+  // Fetch all stores once (React Query caches for 5 min), apply filters client-side
+  const { stores: filteredStores, loading, error } = useStores(storeFilters);
 
   // Handle incoming store selection from navigation (e.g., from StoreDetailPage "View on Map")
   useEffect(() => {
     const state = location.state as any;
-    if (state?.selectedStoreId && stores.length > 0) {
-      const storeToSelect = stores.find(s => s.id === state.selectedStoreId);
+    if (state?.selectedStoreId && filteredStores.length > 0) {
+      const storeToSelect = filteredStores.find(s => s.id === state.selectedStoreId);
       if (storeToSelect) {
         setSelectedStore(storeToSelect);
-        // Zoom to the store
         if (mapViewRef.current?.flyToStore) {
           mapViewRef.current.flyToStore(storeToSelect.latitude, storeToSelect.longitude);
         }
-        // Clear the state so it doesn't re-trigger
         navigate(location.pathname + location.search, { replace: true, state: {} });
       }
     }
-  }, [stores, location.state, navigate, location.pathname, location.search]);
+  }, [filteredStores, location.state, navigate, location.pathname, location.search]);
 
-  // Filter stores by main category and city (client-side)
-  const filteredStores = stores.filter(store => {
-    // Filter by main category if selected
-    if (selectedMainCategory && store.mainCategory !== selectedMainCategory) {
-      return false;
-    }
-    // Filter by city if selected (double-check from backend)
-    if (selectedCity && store.city !== selectedCity) {
-      return false;
-    }
-    return true;
-  });
-
-  // Sort stores
+  // Sort the already-filtered stores — sort is always the last step
   const sortedStores = useMemo(() => {
     return sortStores(filteredStores, sortBy);
   }, [filteredStores, sortBy]);
@@ -727,7 +715,7 @@ export function HomePage() {
                   )}
                 </div>
                 <div className="flex items-center gap-3">
-                  <SortDropdown value={sortBy} onChange={setSortBy} />
+                  <SortDropdown sortBy={sortBy} onSortChange={setSortBy} selectedCity={selectedCity} />
                   <button
                     onClick={() => setView('map')}
                     className="relative px-4 py-2 bg-gradient-to-r from-cyan-400 via-blue-500 to-purple-500 text-white rounded-lg text-sm font-bold hover:scale-105 transition-all flex items-center gap-2 border-2 border-cyan-300/50 overflow-hidden"

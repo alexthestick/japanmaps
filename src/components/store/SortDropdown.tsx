@@ -3,16 +3,22 @@ import { ChevronDown } from 'lucide-react';
 interface SortDropdownProps {
   sortBy: string;
   onSortChange: (value: string) => void;
+  selectedCity?: string | null;
 }
 
 const SORT_OPTIONS = [
   { value: 'random', label: 'Random' },
   { value: 'recent', label: 'Recently Added' },
   { value: 'alphabetical', label: 'Alphabetical' },
-  { value: 'city', label: 'City' },
+  // 'City' is only useful when showing stores from multiple cities
+  { value: 'city', label: 'City', hiddenWhenCitySelected: true },
 ];
 
-export function SortDropdown({ sortBy, onSortChange }: SortDropdownProps) {
+export function SortDropdown({ sortBy, onSortChange, selectedCity }: SortDropdownProps) {
+  const visibleOptions = SORT_OPTIONS.filter(opt =>
+    !(opt.hiddenWhenCitySelected && selectedCity)
+  );
+
   return (
     <div className="relative">
       <select
@@ -20,7 +26,7 @@ export function SortDropdown({ sortBy, onSortChange }: SortDropdownProps) {
         onChange={(e) => onSortChange(e.target.value)}
         className="appearance-none bg-white border border-gray-200 rounded-lg px-4 py-2 pr-10 text-sm font-medium text-gray-900 hover:border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 cursor-pointer"
       >
-        {SORT_OPTIONS.map((opt) => (
+        {visibleOptions.map((opt) => (
           <option key={opt.value} value={opt.value}>
             {opt.label}
           </option>
