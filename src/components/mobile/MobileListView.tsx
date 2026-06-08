@@ -289,15 +289,32 @@ export function MobileListView({
             </button>
           </div>
 
-          {/* Store Count */}
-          <div className="mt-3 text-sm text-center">
-            <span className="font-bold text-white">{stores.length}</span>{' '}
-            <span className="text-gray-400">stores</span>
+          {/* Store Count + Clear All */}
+          <div className="mt-3 text-sm flex items-center justify-center gap-3">
+            <span>
+              <span className="font-bold text-white">{stores.length}</span>{' '}
+              <span className="text-gray-400">{stores.length === 1 ? 'store' : 'stores'}</span>
+            </span>
+            {(selectedCity || selectedMainCategory || selectedSubCategories.length > 0) && (
+              <button
+                onClick={() => {
+                  onCityChange(null);
+                  onNeighborhoodChange(null);
+                  onMainCategoryChange(null);
+                  // Clear subcategories by toggling each off
+                  selectedSubCategories.forEach(s => onSubCategoryToggle(s));
+                }}
+                className="text-xs text-red-400/80 hover:text-red-400 border border-red-400/30 hover:border-red-400/60 px-2 py-0.5 rounded-full transition-all"
+              >
+                Clear all
+              </button>
+            )}
           </div>
         </div>
 
-        {/* Store Grid - 2 Columns, paginated */}
-        <div className="px-4 pb-20">
+        {/* Store Grid - 2 Columns, paginated.
+            pb-28 + safe area ensures the last card row clears the floating Map View button */}
+        <div className="px-4" style={{ paddingBottom: 'calc(7rem + env(safe-area-inset-bottom, 0px))' }}>
           <div className="grid grid-cols-2 gap-4">
             {visibleStores.map((store) => (
               <button
@@ -345,6 +362,26 @@ export function MobileListView({
               </button>
             ))}
           </div>
+
+          {/* Empty state — shown when active filters return no results */}
+          {stores.length === 0 && (
+            <div className="col-span-2 py-16 flex flex-col items-center gap-4 text-center">
+              <span className="text-5xl">🗺️</span>
+              <p className="text-gray-300 font-bold">No stores found</p>
+              <p className="text-gray-500 text-sm">Try a different city, category, or search term</p>
+              <button
+                onClick={() => {
+                  onCityChange(null);
+                  onNeighborhoodChange(null);
+                  onMainCategoryChange(null);
+                  selectedSubCategories.forEach(s => onSubCategoryToggle(s));
+                }}
+                className="mt-2 px-4 py-2 rounded-xl border border-cyan-400/50 text-cyan-300 text-sm font-bold hover:bg-cyan-500/20 transition-all"
+              >
+                Clear filters
+              </button>
+            </div>
+          )}
 
           {/* Sentinel div — IntersectionObserver watches this to auto-load next page */}
           {visibleCount < stores.length && (

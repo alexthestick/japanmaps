@@ -1,4 +1,7 @@
+import { useState } from 'react';
 import { MAJOR_CITIES_JAPAN, LOCATIONS } from '../../lib/constants';
+
+const NEIGHBORHOOD_PREVIEW = 8; // show this many before "Show more"
 
 interface HierarchicalLocationListProps {
   selectedCity: string | null;
@@ -13,7 +16,12 @@ export function HierarchicalLocationList({
   onCityChange,
   onNeighborhoodChange,
 }: HierarchicalLocationListProps) {
+  // Tracks which city's neighborhood list is expanded beyond the preview
+  const [showAllNeighborhoods, setShowAllNeighborhoods] = useState(false);
+
+  // Reset expansion when city changes
   const handleCityClick = (city: string) => {
+    setShowAllNeighborhoods(false);
     if (selectedCity === city) {
       // Clicking the active city deselects it (and clears neighborhood)
       onCityChange(null);
@@ -82,7 +90,7 @@ export function HierarchicalLocationList({
             {/* Neighborhoods expand only under the selected city */}
             {isCitySelected && neighborhoods.length > 0 && (
               <div className="ml-3 mt-0.5 space-y-0.5">
-                {neighborhoods.map((neighborhood) => {
+                {(showAllNeighborhoods ? neighborhoods : neighborhoods.slice(0, NEIGHBORHOOD_PREVIEW)).map((neighborhood) => {
                   const isNeighborhoodSelected =
                     selectedCity === cityStr && selectedNeighborhood === neighborhood;
 
@@ -102,6 +110,18 @@ export function HierarchicalLocationList({
                     </button>
                   );
                 })}
+
+                {/* Show more / Show less toggle */}
+                {neighborhoods.length > NEIGHBORHOOD_PREVIEW && (
+                  <button
+                    onClick={() => setShowAllNeighborhoods(prev => !prev)}
+                    className="w-full text-left px-2 py-1 text-xs text-cyan-400/70 hover:text-cyan-300 transition-colors"
+                  >
+                    {showAllNeighborhoods
+                      ? '↑ Show less'
+                      : `+ ${neighborhoods.length - NEIGHBORHOOD_PREVIEW} more areas`}
+                  </button>
+                )}
               </div>
             )}
           </div>

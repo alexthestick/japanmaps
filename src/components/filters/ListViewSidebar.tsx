@@ -1,4 +1,7 @@
 import { HierarchicalLocationList } from './HierarchicalLocationList';
+
+const toTitleCase = (str: string) =>
+  str.replace(/\b\w/g, c => c.toUpperCase());
 import { Shirt, UtensilsCrossed, Coffee, Home, Building2, MapPin } from 'lucide-react';
 import type { MainCategory } from '../../types/store';
 import { FASHION_SUB_CATEGORIES, FOOD_SUB_CATEGORIES, HOME_GOODS_SUB_CATEGORIES } from '../../lib/constants';
@@ -56,7 +59,12 @@ export function ListViewSidebar({
   const subCategories = getSubCategories();
 
   return (
-    <aside className="relative w-60 bg-gradient-to-b from-gray-900 via-black to-gray-900 border-r-2 border-cyan-400/20 p-6 min-h-screen">
+    <aside className="relative w-60 flex-shrink-0 bg-gradient-to-b from-gray-900 via-black to-gray-900 border-r-2 border-cyan-400/20 p-6 sticky overflow-y-auto"
+      style={{
+        top: 'var(--header-height)',
+        height: 'calc(100dvh - var(--header-height))',
+      }}
+    >
       {/* Film grain */}
       <div className="absolute inset-0 film-grain opacity-20 pointer-events-none" />
 
@@ -126,7 +134,7 @@ export function ListViewSidebar({
                               }
                             `}
                           >
-                            {subCat}
+                            {toTitleCase(subCat)}
                           </button>
                         );
                       })}

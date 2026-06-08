@@ -5,6 +5,7 @@ import type { Store } from '../../types/store';
 interface StoreListProps {
   stores: Store[];
   onStoreClick: (store: Store) => void;
+  onClearFilters?: () => void;
 }
 
 /**
@@ -12,7 +13,7 @@ interface StoreListProps {
  * Initially renders 24 stores, user can load more
  * Prevents rendering 80+ cards at once for better performance
  */
-export function StoreList({ stores, onStoreClick }: StoreListProps) {
+export function StoreList({ stores, onStoreClick, onClearFilters }: StoreListProps) {
   const INITIAL_LOAD = 24; // Load 24 stores initially (fits 3 rows on desktop)
   const LOAD_MORE_INCREMENT = 24; // Load 24 more each time
 
@@ -20,8 +21,19 @@ export function StoreList({ stores, onStoreClick }: StoreListProps) {
 
   if (stores.length === 0) {
     return (
-      <div className="text-center py-12">
-        <p className="text-gray-400 text-lg">No stores found matching your filters.</p>
+      <div className="flex flex-col items-center gap-4 py-20 text-center">
+        <span className="text-6xl">🗺️</span>
+        <p className="text-white font-bold text-xl">No stores found</p>
+        <p className="text-gray-400">Try a different city, category, or search term</p>
+        {onClearFilters && (
+          <button
+            onClick={onClearFilters}
+            className="mt-2 px-5 py-2 rounded-xl border-2 border-cyan-400/50 text-cyan-300 font-bold hover:bg-cyan-500/20 transition-all"
+            style={{ boxShadow: '0 0 15px rgba(34, 217, 238, 0.2)' }}
+          >
+            Clear filters
+          </button>
+        )}
       </div>
     );
   }

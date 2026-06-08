@@ -655,9 +655,13 @@ export function HomePage() {
           />
 
           {/* Main Content Area */}
-          <div className="relative flex-1 p-8">
-            {/* Header Bar */}
-            <div className="space-y-4 mb-6">
+          <div className="relative flex-1 min-w-0 flex flex-col">
+            {/* Sticky Header — stays visible while 899 cards scroll underneath.
+                backdrop-blur gives a frosted glass effect over the card grid. */}
+            <div
+              className="sticky z-40 px-8 pt-6 pb-4 bg-gray-900/95 backdrop-blur-sm border-b border-cyan-400/10 space-y-4"
+              style={{ top: 'var(--header-height)' }}
+            >
               {/* Search Bar */}
               <div className="relative">
                 <input
@@ -697,7 +701,8 @@ export function HomePage() {
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-3 text-sm">
                   <span>
-                    <span className="font-bold text-white">{sortedStores.length}</span> <span className="text-gray-400">stores</span>
+                    <span className="font-bold text-white">{sortedStores.length}</span>{' '}
+                    <span className="text-gray-400">{sortedStores.length === 1 ? 'store' : 'stores'}</span>
                   </span>
                   {/* Random Store Button */}
                   {sortedStores.length > 0 && (
@@ -729,15 +734,65 @@ export function HomePage() {
                   </button>
                 </div>
               </div>
-            </div>
+            </div>{/* end sticky header */}
 
-            {/* Store List */}
+            {/* Active filter chips — only rendered when at least one filter is on.
+                Each chip removes its own filter on click. */}
+            {(selectedMainCategory || selectedSubCategories.length > 0 || selectedCity || selectedNeighborhood) && (
+              <div className="px-8 pt-4 pb-2 flex flex-wrap gap-2">
+                {selectedMainCategory && (
+                  <button
+                    onClick={() => handleMainCategoryChange(null)}
+                    className="flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-cyan-500/20 text-cyan-300 border border-cyan-400/50 hover:bg-cyan-500/30 transition-all"
+                    style={{ boxShadow: '0 0 10px rgba(34, 217, 238, 0.2)' }}
+                  >
+                    {selectedMainCategory} <span className="opacity-60">×</span>
+                  </button>
+                )}
+                {selectedSubCategories.map(sub => (
+                  <button
+                    key={sub}
+                    onClick={() => handleSubCategoryToggle(sub)}
+                    className="flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-purple-500/20 text-purple-300 border border-purple-400/50 hover:bg-purple-500/30 transition-all"
+                  >
+                    {sub} <span className="opacity-60">×</span>
+                  </button>
+                ))}
+                {selectedCity && (
+                  <button
+                    onClick={() => { handleCityChange(null); }}
+                    className="flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-cyan-500/20 text-cyan-300 border border-cyan-400/50 hover:bg-cyan-500/30 transition-all"
+                    style={{ boxShadow: '0 0 10px rgba(34, 217, 238, 0.2)' }}
+                  >
+                    {selectedCity} <span className="opacity-60">×</span>
+                  </button>
+                )}
+                {selectedNeighborhood && (
+                  <button
+                    onClick={() => setSelectedNeighborhood(null)}
+                    className="flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-purple-500/20 text-purple-300 border border-purple-400/50 hover:bg-purple-500/30 transition-all"
+                  >
+                    {selectedNeighborhood} <span className="opacity-60">×</span>
+                  </button>
+                )}
+                <button
+                  onClick={handleClearAll}
+                  className="flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold text-gray-400 border border-gray-600/50 hover:text-red-400 hover:border-red-400/50 transition-all"
+                >
+                  Clear all
+                </button>
+              </div>
+            )}
+
+            {/* Store List — scrolls independently under the sticky header */}
+            <div className="px-8 py-6">
             <StoreList
               stores={sortedStores}
               onStoreClick={(store) => {
                 const params = Object.fromEntries(searchParams.entries());
                 navigate(`/store/${store.slug || store.id}`, { state: { from: '/map', params } });
               }}
+              onClearFilters={handleClearAll}
             />
 
             {/* Random Store Modal */}
@@ -755,6 +810,7 @@ export function HomePage() {
                 }}
               />
             )}
+            </div>{/* end store list wrapper */}
           </div>
         </div>
       )}
