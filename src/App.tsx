@@ -37,6 +37,13 @@ const FindDetailPage = lazy(() => import('./pages/FindDetailPage').then(m => ({ 
 const ResetPasswordPage = lazy(() => import('./pages/ResetPasswordPage').then(m => ({ default: m.ResetPasswordPage })));
 const SitemapPage = lazy(() => import('./pages/SitemapPage').then(m => ({ default: m.SitemapPage })));
 
+// Defined outside the component so the reference is stable across renders.
+// If it were inline (excludePaths={['/store/']}), a new array would be created
+// on every AnimatedRoutes re-render, causing ScrollToTop's useEffect to fire
+// and scroll to top on every filter change (because useLocation re-renders
+// AnimatedRoutes whenever search params update).
+const SCROLL_EXCLUDE_PATHS = ['/store/'];
+
 function AnimatedRoutes() {
   const location = useLocation();
   // Detect navigation direction so store pages slide the right way:
@@ -50,7 +57,7 @@ function AnimatedRoutes() {
     <>
       {/* Scroll to top on navigation, but preserve scroll on back button */}
       {/* Exclude store detail pages to maintain list scroll position when user goes back */}
-      <ScrollToTop excludePaths={['/store/']} />
+      <ScrollToTop excludePaths={SCROLL_EXCLUDE_PATHS} />
 
       <Suspense fallback={<Loader />}>
       <Routes location={location} key={location.pathname}>

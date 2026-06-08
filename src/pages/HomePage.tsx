@@ -737,53 +737,64 @@ export function HomePage() {
               </div>
             </div>{/* end sticky header */}
 
-            {/* Active filter chips — only rendered when at least one filter is on.
-                Each chip removes its own filter on click. */}
-            {(selectedMainCategory || selectedSubCategories.length > 0 || selectedCity || selectedNeighborhood) && (
-              <div className="px-8 pt-4 pb-2 flex flex-wrap gap-2">
-                {selectedMainCategory && (
-                  <button
-                    onClick={() => handleMainCategoryChange(null)}
-                    className="flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-cyan-500/20 text-cyan-300 border border-cyan-400/50 hover:bg-cyan-500/30 transition-all"
-                    style={{ boxShadow: '0 0 10px rgba(34, 217, 238, 0.2)' }}
-                  >
-                    {selectedMainCategory} <span className="opacity-60">×</span>
-                  </button>
-                )}
-                {selectedSubCategories.map(sub => (
-                  <button
-                    key={sub}
-                    onClick={() => handleSubCategoryToggle(sub)}
-                    className="flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-purple-500/20 text-purple-300 border border-purple-400/50 hover:bg-purple-500/30 transition-all"
-                  >
-                    {sub} <span className="opacity-60">×</span>
-                  </button>
-                ))}
-                {selectedCity && (
-                  <button
-                    onClick={() => { handleCityChange(null); }}
-                    className="flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-cyan-500/20 text-cyan-300 border border-cyan-400/50 hover:bg-cyan-500/30 transition-all"
-                    style={{ boxShadow: '0 0 10px rgba(34, 217, 238, 0.2)' }}
-                  >
-                    {selectedCity} <span className="opacity-60">×</span>
-                  </button>
-                )}
-                {selectedNeighborhood && (
-                  <button
-                    onClick={() => setSelectedNeighborhood(null)}
-                    className="flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-purple-500/20 text-purple-300 border border-purple-400/50 hover:bg-purple-500/30 transition-all"
-                  >
-                    {selectedNeighborhood} <span className="opacity-60">×</span>
-                  </button>
-                )}
-                <button
-                  onClick={handleClearAll}
-                  className="flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold text-gray-400 border border-gray-600/50 hover:text-red-400 hover:border-red-400/50 transition-all"
+            {/* Active filter chips — always in the DOM so the layout never shifts.
+                maxHeight animates from 0→auto so chips slide in/out smoothly
+                instead of popping in and causing a scroll-anchor jump. */}
+            {(() => {
+              const hasChips = !!(selectedMainCategory || selectedSubCategories.length > 0 || selectedCity || selectedNeighborhood);
+              return (
+                <div
+                  className="px-8 flex flex-wrap gap-2 overflow-hidden transition-all duration-150"
+                  style={{
+                    maxHeight: hasChips ? '120px' : '0px',
+                    paddingTop: hasChips ? '0.75rem' : '0',
+                    paddingBottom: hasChips ? '0.5rem' : '0',
+                  }}
                 >
-                  Clear all
-                </button>
-              </div>
-            )}
+                  {selectedMainCategory && (
+                    <button
+                      onClick={() => handleMainCategoryChange(null)}
+                      className="flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-cyan-500/20 text-cyan-300 border border-cyan-400/50 hover:bg-cyan-500/30 transition-all"
+                      style={{ boxShadow: '0 0 10px rgba(34, 217, 238, 0.2)' }}
+                    >
+                      {selectedMainCategory} <span className="opacity-60">×</span>
+                    </button>
+                  )}
+                  {selectedSubCategories.map(sub => (
+                    <button
+                      key={sub}
+                      onClick={() => handleSubCategoryToggle(sub)}
+                      className="flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-purple-500/20 text-purple-300 border border-purple-400/50 hover:bg-purple-500/30 transition-all"
+                    >
+                      {sub} <span className="opacity-60">×</span>
+                    </button>
+                  ))}
+                  {selectedCity && (
+                    <button
+                      onClick={() => handleCityChange(null)}
+                      className="flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-cyan-500/20 text-cyan-300 border border-cyan-400/50 hover:bg-cyan-500/30 transition-all"
+                      style={{ boxShadow: '0 0 10px rgba(34, 217, 238, 0.2)' }}
+                    >
+                      {selectedCity} <span className="opacity-60">×</span>
+                    </button>
+                  )}
+                  {selectedNeighborhood && (
+                    <button
+                      onClick={() => setSelectedNeighborhood(null)}
+                      className="flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-purple-500/20 text-purple-300 border border-purple-400/50 hover:bg-purple-500/30 transition-all"
+                    >
+                      {selectedNeighborhood} <span className="opacity-60">×</span>
+                    </button>
+                  )}
+                  <button
+                    onClick={handleClearAll}
+                    className="flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold text-gray-400 border border-gray-600/50 hover:text-red-400 hover:border-red-400/50 transition-all"
+                  >
+                    Clear all
+                  </button>
+                </div>
+              );
+            })()}
 
             {/* Store List — scrolls independently under the sticky header */}
             <div className="px-8 py-6">
