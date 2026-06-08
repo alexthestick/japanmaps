@@ -277,7 +277,7 @@ export function HomePage() {
   const handleSearchSuggestionSelect = useCallback((suggestion: SearchSuggestion) => {
     if (suggestion.type === 'store') {
       // Find the store in our list
-      const store = stores.find(s => s.id === suggestion.storeId);
+      const store = filteredStores.find(s => s.id === suggestion.storeId);
       if (store) {
         // Open the store detail panel
         setSelectedStore(store);
@@ -297,7 +297,7 @@ export function HomePage() {
       }
       // The MapView will auto-zoom based on the filter change
     }
-  }, [stores]);
+  }, [filteredStores]);
 
   // const hasActiveFilters = selectedMainCategory || selectedSubCategories.length > 0 || selectedCity || searchQuery;
 
@@ -408,7 +408,7 @@ export function HomePage() {
                 value={searchQuery}
                 onChange={setSearchQuery}
                 placeholder="Search stores, neighborhoods..."
-                stores={stores}
+                stores={filteredStores}
                 onSelectSuggestion={handleSearchSuggestionSelect}
               />
 
