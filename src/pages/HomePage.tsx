@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef, useMemo, useCallback } from 'react';
 import { useSearchParams, useNavigate, useLocation } from 'react-router-dom';
 import { AnimatePresence } from 'framer-motion';
-import { Dices } from 'lucide-react';
+import { Dices, List } from 'lucide-react';
 import { MapView } from '../components/map/MapView';
 import { SEOHead } from '../components/seo';
 import { StoreList } from '../components/store/StoreList';
@@ -84,7 +84,22 @@ export function HomePage() {
   const [exploreUserPosition, setExploreUserPosition] = useState<{
     latitude: number;
     longitude: number;
+    accuracy?: number;
   } | null>(null);
+
+  // One-time tooltip: shown when user first sees the map, auto-dismisses after 4s.
+  // Stored in localStorage so it never shows again after the first dismissal.
+  const [showRadarTooltip, setShowRadarTooltip] = useState<boolean>(() => {
+    try { return !localStorage.getItem('radar-tooltip-shown'); } catch { return false; }
+  });
+  useEffect(() => {
+    if (!showRadarTooltip) return;
+    const t = setTimeout(() => {
+      setShowRadarTooltip(false);
+      try { localStorage.setItem('radar-tooltip-shown', '1'); } catch {}
+    }, 4000);
+    return () => clearTimeout(t);
+  }, [showRadarTooltip]);
 
   // Map style mode state
   const getInitialStyleMode = (): 'day' | 'night' => {
@@ -318,6 +333,16 @@ export function HomePage() {
     }
   }, [isSpotlightMode, curatedSpotlightStores]);
 
+  // Radar mode toggle — closes any open bottom sheet before switching modes
+  // so Browse and Radar UI never overlap.
+  const handleRadarToggle = useCallback(() => {
+    if (isExploreMode) {
+      setSelectedStore(null);
+      setExploreUserPosition(null);
+    }
+    setIsExploreMode(prev => !prev);
+  }, [isExploreMode]);
+
   // Handle autocomplete suggestion selection (CRITICAL: prevent refresh)
   const handleSearchSuggestionSelect = useCallback((suggestion: SearchSuggestion) => {
     if (suggestion.type === 'store') {
@@ -439,12 +464,6 @@ export function HomePage() {
                 isHidden={isScrollingDown || isSpotlightMode}
               />
 
-              {/* View Toggle Button - Bottom Right */}
-              <ViewToggleButton
-                currentView="map"
-                onToggle={(newView) => setView(newView)}
-              />
-
             </>
           )}
 
@@ -495,71 +514,135 @@ export function HomePage() {
             </>
           )}
 
-          {/* EXPLORE MODE: Floating pill toggle + status bar (mobile only) */}
+          {/* UNIFIED BOTTOM BAR (mobile map only) ─────────────────────────────
+              Radar pill (left) + List View icon (right) in one horizontal zone.
+              Hides entirely when a store sheet or spotlight panel is open.
+              Anticipates the iOS tab bar layout: when Capacitor ships, List View
+              moves to the tab bar and this zone becomes Radar-only.
+          ─────────────────────────────────────────────────────────────────── */}
           {isMobile && view === 'map' && (
             <>
-              {/* Status bar — visible only when in explore mode and position is known */}
-              {isExploreMode && exploreUserPosition && (
+              {/* Status bar — shows when Radar is active */}
+              {isExploreMode && (
                 <div
-                  className="absolute left-1/2 z-[30] flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium text-cyan-300 bg-gray-900/90 border border-cyan-500/40 backdrop-blur-md"
+                  className="absolute left-1/2 z-[30] flex items-center gap-2 px-4 py-2 rounded-full text-xs font-medium backdrop-blur-md"
                   style={{
                     transform: 'translateX(-50%)',
                     bottom: 'calc(5.5rem + env(safe-area-inset-bottom, 0px))',
                     whiteSpace: 'nowrap',
+                    backgroundColor: 'rgba(10, 10, 15, 0.88)',
+                    border: '1px solid rgba(34, 217, 238, 0.35)',
+                    color: '#22D9EE',
                   }}
                 >
-                  <span
-                    style={{
-                      width: '8px',
-                      height: '8px',
-                      borderRadius: '50%',
-                      backgroundColor: '#22D9EE',
-                      display: 'inline-block',
-                      flexShrink: 0,
-                    }}
-                  />
-                  {exploreNeighborhood
-                    ? `Exploring ${exploreNeighborhood}`
-                    : 'Exploring nearby'}{' '}
-                  · {storesForMap.length} store{storesForMap.length !== 1 ? 's' : ''} nearby
+                  {!exploreUserPosition ? (
+                    // Locating…
+                    <>
+                      <span style={{ width: 7, height: 7, borderRadius: '50%', backgroundColor: 'rgba(34,217,238,0.4)', display: 'inline-block', flexShrink: 0 }} />
+                      Locating…
+                    </>
+                  ) : storesForMap.length === 0 ? (
+                    // No stores in range
+                    <>
+                      <span style={{ width: 7, height: 7, borderRadius: '50%', backgroundColor: 'rgba(34,217,238,0.3)', display: 'inline-block', flexShrink: 0 }} />
+                      No stores within 300m
+                      {exploreUserPosition.accuracy && exploreUserPosition.accuracy > 25 && (
+                        <span style={{ color: 'rgba(251,191,36,0.9)', marginLeft: 4 }}>· GPS weak</span>
+                      )}
+                    </>
+                  ) : (
+                    // Stores in range
+                    <>
+                      <span style={{ width: 7, height: 7, borderRadius: '50%', backgroundColor: '#22D9EE', display: 'inline-block', flexShrink: 0 }} />
+                      {exploreNeighborhood ? exploreNeighborhood : 'Nearby'}{' '}
+                      · {storesForMap.length} store{storesForMap.length !== 1 ? 's' : ''}
+                      {exploreUserPosition.accuracy && exploreUserPosition.accuracy > 25 && (
+                        <span style={{ color: 'rgba(251,191,36,0.9)', marginLeft: 4 }}>· GPS weak</span>
+                      )}
+                    </>
+                  )}
                 </div>
               )}
 
-              {/* Floating pill toggle — hidden when store detail or spotlight is open */}
+              {/* Radar + List View unified bar */}
               {!selectedStore && !isSpotlightMode && (
-                <button
-                  onClick={() => setIsExploreMode(prev => !prev)}
-                  className="absolute left-1/2 z-[30] flex items-center gap-2 px-5 py-3 rounded-full font-semibold text-sm transition-all duration-300 backdrop-blur-md"
-                  style={{
-                    transform: 'translateX(-50%)',
-                    bottom: 'calc(1.5rem + env(safe-area-inset-bottom, 0px))',
-                    ...(isExploreMode
-                      ? {
-                          backgroundColor: '#22D9EE',
-                          color: '#0a0a0f',
-                          boxShadow: '0 0 20px rgba(34, 217, 238, 0.5), 0 4px 16px rgba(0,0,0,0.4)',
-                          border: '2px solid rgba(34, 217, 238, 0.8)',
-                        }
-                      : {
-                          backgroundColor: 'rgba(10, 10, 15, 0.85)',
-                          color: '#22D9EE',
-                          boxShadow: '0 4px 16px rgba(0,0,0,0.4)',
-                          border: '2px solid rgba(34, 217, 238, 0.4)',
-                        }),
-                  }}
+                <div
+                  className="absolute left-0 right-0 z-[30] flex items-center justify-between px-5"
+                  style={{ bottom: 'calc(1.5rem + env(safe-area-inset-bottom, 0px))' }}
                 >
-                  {isExploreMode ? (
-                    <>
-                      <span style={{ fontSize: '16px' }}>←</span>
-                      Browse
-                    </>
-                  ) : (
-                    <>
-                      <span style={{ fontSize: '16px' }}>◎</span>
-                      Explore
-                    </>
+                  {/* Onboarding tooltip — first time only, auto-dismisses after 4s */}
+                  {showRadarTooltip && !isExploreMode && (
+                    <div
+                      className="absolute left-0 bottom-full mb-3 px-4 py-2.5 rounded-xl text-xs font-medium text-white backdrop-blur-md pointer-events-none"
+                      style={{
+                        backgroundColor: 'rgba(10,10,15,0.92)',
+                        border: '1px solid rgba(34,217,238,0.4)',
+                        boxShadow: '0 0 20px rgba(34,217,238,0.2)',
+                        maxWidth: '200px',
+                      }}
+                    >
+                      <span style={{ color: '#22D9EE' }}>◎</span>{' '}
+                      Tap to discover stores as you walk nearby
+                      {/* Pointer triangle */}
+                      <div style={{
+                        position: 'absolute',
+                        bottom: -6,
+                        left: 24,
+                        width: 12,
+                        height: 12,
+                        backgroundColor: 'rgba(10,10,15,0.92)',
+                        borderRight: '1px solid rgba(34,217,238,0.4)',
+                        borderBottom: '1px solid rgba(34,217,238,0.4)',
+                        transform: 'rotate(45deg)',
+                      }} />
+                    </div>
                   )}
-                </button>
+
+                  {/* Radar pill */}
+                  <button
+                    onClick={handleRadarToggle}
+                    className="flex items-center gap-2.5 px-5 py-3 rounded-full font-semibold text-sm transition-all duration-300 backdrop-blur-md"
+                    style={isExploreMode ? {
+                      backgroundColor: '#22D9EE',
+                      color: '#0a0a0f',
+                      border: '2px solid rgba(34,217,238,0.9)',
+                      boxShadow: '0 0 24px rgba(34,217,238,0.5), 0 4px 16px rgba(0,0,0,0.4)',
+                    } : {
+                      backgroundColor: 'rgba(10,10,15,0.85)',
+                      color: '#22D9EE',
+                      border: '2px solid rgba(34,217,238,0.4)',
+                      boxShadow: '0 4px 16px rgba(0,0,0,0.4)',
+                    }}
+                  >
+                    {/* Radar SVG icon with sweep animation in Browse mode */}
+                    <svg width="18" height="18" viewBox="0 0 18 18" fill="none" style={{ flexShrink: 0 }}>
+                      <circle cx="9" cy="9" r="7.5" stroke="currentColor" strokeWidth="1.3" opacity="0.45" />
+                      <circle cx="9" cy="9" r="4.2" stroke="currentColor" strokeWidth="1.3" opacity="0.65" />
+                      <circle cx="9" cy="9" r="1.4" fill="currentColor" />
+                      {!isExploreMode && (
+                        <g style={{ transformOrigin: '9px 9px', animation: 'radar-sweep 4s linear infinite' }}>
+                          <line x1="9" y1="9" x2="9" y2="1.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+                        </g>
+                      )}
+                    </svg>
+                    {isExploreMode ? '← Browse' : 'Radar'}
+                  </button>
+
+                  {/* List View icon button */}
+                  <button
+                    onClick={() => setView('list')}
+                    className="flex items-center justify-center w-12 h-12 rounded-full backdrop-blur-md transition-all duration-200"
+                    style={{
+                      backgroundColor: 'rgba(10,10,15,0.85)',
+                      border: '2px solid rgba(255,255,255,0.15)',
+                      boxShadow: '0 4px 16px rgba(0,0,0,0.4)',
+                      color: 'rgba(255,255,255,0.8)',
+                    }}
+                    title="List View"
+                  >
+                    <List className="w-5 h-5" />
+                  </button>
+                </div>
               )}
             </>
           )}

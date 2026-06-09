@@ -520,3 +520,21 @@ body {
   display: none;  /* Chrome, Safari, Opera */
 }
 
+/* ─── Radar Mode Animations ──────────────────────────────────────────────────
+ * radar-sweep: rotates the sweep arm on the Radar button icon while in Browse
+ *   mode — passive visual hint that draws attention without explanation.
+ * ring-pulse: slow opacity fade on the 50m proximity ring around nearby stores.
+ *   Intentionally slow (2.5s) — fast pulse looks like a performance bug.
+ *   Applied only to a small border-only element, not a filled/blur element,
+ *   so GPU impact is minimal. Complies with CLAUDE.md performance rules.
+ * ----------------------------------------------------------------------- */
+@keyframes radar-sweep {
+  from { transform: rotate(0deg); }
+  to   { transform: rotate(360deg); }
+}
+
+@keyframes ring-pulse {
+  0%, 100% { opacity: 0.85; }
+  50%       { opacity: 0.25; }
+}
+

@@ -98,7 +98,7 @@ interface MapViewProps {
   isSpotlightMode?: boolean; // PHASE 3: Whether spotlight mode is active
   // EXPLORE MODE: Activates GeolocateControl for continuous GPS tracking
   isExploreMode?: boolean;
-  onUserPositionUpdate?: (coords: { latitude: number; longitude: number }) => void;
+  onUserPositionUpdate?: (coords: { latitude: number; longitude: number; accuracy?: number }) => void;
   // Current GPS position in explore mode — used to render avatar + proximity rings
   exploreUserPosition?: { latitude: number; longitude: number } | null;
 }
@@ -575,6 +575,7 @@ export const MapView = forwardRef<MapViewHandle, MapViewProps>(({ stores, onStor
               onUserPositionUpdate?.({
                 latitude: evt.coords.latitude,
                 longitude: evt.coords.longitude,
+                accuracy: evt.coords.accuracy,
               });
             }
           }}
@@ -584,7 +585,7 @@ export const MapView = forwardRef<MapViewHandle, MapViewProps>(({ stores, onStor
           onError={(err) => {
             console.warn('[ExploreMode] GeolocateControl error:', err);
           }}
-          style={{ display: isExploreMode ? 'block' : 'none' }}
+          style={{ display: 'none' }}
         />
 
         {/* 🎯 PHASE 1: Optimized Store Markers with Viewport Culling + Tiered Rendering */}
@@ -700,6 +701,7 @@ export const MapView = forwardRef<MapViewHandle, MapViewProps>(({ stores, onStor
                   border: '2px solid rgba(34, 217, 238, 0.8)',
                   boxShadow: '0 0 12px rgba(34, 217, 238, 0.4)',
                   pointerEvents: 'none',
+                  animation: 'ring-pulse 2.5s ease-in-out infinite',
                 }}
               />
             </Marker>
@@ -710,8 +712,8 @@ export const MapView = forwardRef<MapViewHandle, MapViewProps>(({ stores, onStor
       {/* Map style toggle - Removed: Now only controlled by header */}
       {/* Map Legend - Removed: Now using FloatingMapLegend in HomePage */}
 
-      {/* 🎮 DISCOVERY LENS: Progressive glow with dramatic entrance */}
-      {lensIntensity > 0 && activeZoneCenter && mapRef.current && (
+      {/* 🎮 DISCOVERY LENS: Progressive glow — suppressed in Radar mode to avoid competing visual effects */}
+      {!isExploreMode && lensIntensity > 0 && activeZoneCenter && mapRef.current && (
         <div className="absolute inset-0 pointer-events-none overflow-hidden">
           {(() => {
             const centerPoint = mapRef.current!.project([activeZoneCenter.lng, activeZoneCenter.lat]);
@@ -1021,7 +1023,7 @@ export const MapView = forwardRef<MapViewHandle, MapViewProps>(({ stores, onStor
       {/* Search This Area Button — visible at zoom >= 14.
           On desktop: hide when spotlight panel is open (panel X handles dismiss).
           On mobile: always show so user can clear from the map. */}
-      {viewState.zoom >= 14 && (isMobile || !isSpotlightMode) && (
+      {!isExploreMode && viewState.zoom >= 14 && (isMobile || !isSpotlightMode) && (
         <SearchAreaButton
           onClick={handleSearchArea}
           isActive={isSpotlightMode}
