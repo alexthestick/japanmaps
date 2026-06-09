@@ -13,6 +13,7 @@ import { Loader } from '../components/common/Loader';
 import { sortStores } from '../utils/helpers';
 import { CITY_NAMES_JAPANESE, CITY_COLORS, MAJOR_CITIES_JAPAN } from '../lib/constants';
 import { slugToCity, slugToNeighborhood, cityToSlug, neighborhoodToSlug } from '../utils/cityData';
+import { NEIGHBORHOOD_DESCRIPTIONS } from '../data/locationContent';
 import type { MainCategory } from '../types/store';
 
 export function NeighborhoodPage() {
@@ -123,8 +124,10 @@ export function NeighborhoodPage() {
   // Neighborhood hero image
   const heroImage = `/images/neighborhoods/preview/${neighborhoodImageSlug}-preview.jpg`;
 
-  // Neighborhood description with thrifting focus
-  const neighborhoodDescription = `Your complete guide to thrifting in ${neighborhoodName}, ${cityName}. Discover curated vintage stores, affordable secondhand shops, and hidden gem boutiques that make this neighborhood a must-visit for preloved fashion hunters.`;
+  // Neighborhood description — use editorial content if available, fall back to generic
+  const neighborhoodDescription =
+    NEIGHBORHOOD_DESCRIPTIONS[cityName]?.[neighborhoodName] ??
+    `${neighborhoodName} is a neighborhood in ${cityName} with a selection of vintage and independent fashion stores.`;
 
   // Get all neighborhoods for the current city (for mobile filter)
   const allNeighborhoodsInCity = useMemo(() => {

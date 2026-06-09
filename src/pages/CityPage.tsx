@@ -14,6 +14,7 @@ import { Loader } from '../components/common/Loader';
 import { sortStores } from '../utils/helpers';
 import { CITY_NAMES_JAPANESE, CITY_COLORS, MAJOR_CITIES_JAPAN } from '../lib/constants';
 import { slugToCity, cityToSlug, neighborhoodToSlug } from '../utils/cityData';
+import { CITY_DESCRIPTIONS } from '../data/locationContent';
 import type { MainCategory } from '../types/store';
 
 export function CityPage() {
@@ -141,8 +142,10 @@ export function CityPage() {
 
   const heroImage = getCityHeroImage(cityImageSlug);
 
-  // City description with thrifting focus
-  const cityDescription = `Your 2025 guide to thrift shopping in ${cityName}. Explore the best vintage stores, secondhand boutiques, and hidden gem thrift shops from traditional neighborhoods to modern shopping districts.`;
+  // City description — use editorial content if available, fall back to generic
+  const cityDescription =
+    CITY_DESCRIPTIONS[cityName] ??
+    `${cityName} has a growing selection of vintage and independent fashion stores across its neighborhoods.`;
 
   // Get unique neighborhoods from stores
   const neighborhoods = useMemo(() => {
