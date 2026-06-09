@@ -25,9 +25,9 @@ export const ClusterMarker = React.memo(({ pointCount, onClick }: ClusterMarkerP
       }}
       aria-label={`Cluster of ${pointCount} stores. Click to expand.`}
     >
-      {/* Outer glow ring */}
+      {/* Outer glow ring — static, no animation (animate-pulse caused GPU repaints per cluster) */}
       <div
-        className="absolute inset-0 rounded-full bg-blue-400 opacity-20 animate-pulse"
+        className="absolute inset-0 rounded-full bg-blue-400 opacity-20"
         style={{
           width: `${size + 10}px`,
           height: `${size + 10}px`,

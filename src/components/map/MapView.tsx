@@ -1,5 +1,5 @@
 import { useState, useCallback, useEffect, useRef, useImperativeHandle, forwardRef, useMemo, memo } from 'react';
-import Map, { Marker, NavigationControl } from 'react-map-gl';
+import Map, { Marker, NavigationControl, GeolocateControl } from 'react-map-gl';
 import { MAPBOX_TOKEN, MAP_STYLE_DAY, MAP_STYLE_NIGHT, DEFAULT_CENTER, DEFAULT_ZOOM } from '../../lib/mapbox';
 import { CITY_COORDINATES, NEIGHBORHOOD_COORDINATES, MAIN_CATEGORY_COLORS } from '../../lib/constants';
 import { IconStoreMarker } from './IconStoreMarker';
@@ -96,13 +96,16 @@ interface MapViewProps {
   onViewportChange?: (bounds: { north: number; south: number; east: number; west: number }) => void; // PHASE 3: Track viewport
   spotlightedStoreIds?: string[]; // PHASE 3: IDs of stores to spotlight
   isSpotlightMode?: boolean; // PHASE 3: Whether spotlight mode is active
+  // EXPLORE MODE: Activates GeolocateControl for continuous GPS tracking
+  isExploreMode?: boolean;
+  onUserPositionUpdate?: (coords: { latitude: number; longitude: number }) => void;
 }
 
 export interface MapViewHandle {
   flyToStore: (latitude: number, longitude: number, options?: { offset?: [number, number]; zoom?: number }) => void;
 }
 
-export const MapView = forwardRef<MapViewHandle, MapViewProps>(({ stores, onStoreClick, selectedCity, selectedNeighborhood, isSearchActive = false, activeMainCategory, activeSubCategory, styleMode: controlledStyleMode, onStyleModeChange, tappedStoreId, onLabelClick, onSearchArea, selectedStore, onViewportChange, spotlightedStoreIds = [], isSpotlightMode = false }, ref) => {
+export const MapView = forwardRef<MapViewHandle, MapViewProps>(({ stores, onStoreClick, selectedCity, selectedNeighborhood, isSearchActive = false, activeMainCategory, activeSubCategory, styleMode: controlledStyleMode, onStyleModeChange, tappedStoreId, onLabelClick, onSearchArea, selectedStore, onViewportChange, spotlightedStoreIds = [], isSpotlightMode = false, isExploreMode = false, onUserPositionUpdate }, ref) => {
   const [viewState, setViewState] = useState({
     longitude: DEFAULT_CENTER.longitude,
     latitude: DEFAULT_CENTER.latitude,
@@ -112,6 +115,20 @@ export const MapView = forwardRef<MapViewHandle, MapViewProps>(({ stores, onStor
   const [hoveredStoreId, setHoveredStoreId] = useState<string | null>(null);
   const mapRef = useRef<MapboxMap | null>(null);
   const isMobile = useIsMobile();
+
+  // EXPLORE MODE: Ref to GeolocateControl for programmatic triggering.
+  // Typed minimally to avoid mapbox-gl vs react-map-gl type conflicts —
+  // we only need trigger(), so we only type trigger().
+  const geolocateRef = useRef<{ trigger: () => void } | null>(null);
+
+  // EXPLORE MODE: Activate continuous GPS tracking when Explore mode turns on.
+  // No setTimeout — by the time the user taps the Explore toggle, the map and
+  // all its controls are already mounted, so the ref is always available.
+  useEffect(() => {
+    if (isExploreMode && geolocateRef.current) {
+      geolocateRef.current.trigger();
+    }
+  }, [isExploreMode]);
 
   // PHASE 1.5G: Track map movement to hide city labels during pan/zoom
   const [isMapMoving, setIsMapMoving] = useState(false);
@@ -528,6 +545,39 @@ export const MapView = forwardRef<MapViewHandle, MapViewProps>(({ stores, onStor
         }}
       >
         <NavigationControl position="top-right" />
+
+        {/*
+          EXPLORE MODE: GeolocateControl — dormant in Browse mode, active in Explore mode.
+          Props are set at mount only (non-reactive in react-map-gl) so all values are
+          configured for Explore mode upfront. The control stays invisible and untriggered
+          in Browse mode (style display:none + never calling .trigger()), so no dot appears.
+          onError is wired even now so the Explore UI can handle permission denial gracefully.
+        */}
+        <GeolocateControl
+          ref={geolocateRef as any}
+          position="bottom-right"
+          trackUserLocation={true}
+          showUserHeading={true}
+          showUserLocation={true}
+          showAccuracyCircle={false}
+          positionOptions={{ enableHighAccuracy: true, maximumAge: 0 }}
+          fitBoundsOptions={{ maxZoom: 16 }}
+          onGeolocate={(evt) => {
+            if (isExploreMode) {
+              onUserPositionUpdate?.({
+                latitude: evt.coords.latitude,
+                longitude: evt.coords.longitude,
+              });
+            }
+          }}
+          onTrackUserLocationStart={() => {
+            logger.log('[ExploreMode] GPS tracking started');
+          }}
+          onError={(err) => {
+            console.warn('[ExploreMode] GeolocateControl error:', err);
+          }}
+          style={{ display: isExploreMode ? 'block' : 'none' }}
+        />
 
         {/* 🎯 PHASE 1: Optimized Store Markers with Viewport Culling + Tiered Rendering */}
         {(() => {

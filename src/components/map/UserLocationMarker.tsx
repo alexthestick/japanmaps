@@ -5,23 +5,10 @@ interface UserLocationMarkerProps {
 export function UserLocationMarker({ accuracy }: UserLocationMarkerProps) {
   return (
     <div className="relative flex items-center justify-center">
-      {/* Pulsing outer circle */}
-      <div
-        className="absolute rounded-full bg-blue-400 opacity-30 animate-ping"
-        style={{
-          width: '40px',
-          height: '40px',
-          animationDuration: '2s',
-        }}
-      />
-
-      {/* Static outer ring */}
+      {/* Static outer ring — no animation (animate-ping caused GPU repaints) */}
       <div
         className="absolute rounded-full bg-blue-400 opacity-20"
-        style={{
-          width: '32px',
-          height: '32px',
-        }}
+        style={{ width: '32px', height: '32px' }}
       />
 
       {/* Main blue dot */}

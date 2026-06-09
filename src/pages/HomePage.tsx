@@ -76,6 +76,15 @@ export function HomePage() {
   const [spotlightedStores, setSpotlightedStores] = useState<Store[]>([]);
   const [viewportBounds, setViewportBounds] = useState<{ north: number; south: number; east: number; west: number } | null>(null);
 
+  // EXPLORE MODE: GPS position updated continuously by GeolocateControl.
+  // Nothing reads this yet — it's wired up here so the Explore mode UI
+  // can use it for radius filtering without any further plumbing changes.
+  const [isExploreMode, setIsExploreMode] = useState(false);
+  const [exploreUserPosition, setExploreUserPosition] = useState<{
+    latitude: number;
+    longitude: number;
+  } | null>(null);
+
   // Map style mode state
   const getInitialStyleMode = (): 'day' | 'night' => {
     try {
@@ -361,6 +370,8 @@ export function HomePage() {
             onViewportChange={setViewportBounds}
             spotlightedStoreIds={spotlightedStores.map(s => s.id)}
             isSpotlightMode={isSpotlightMode}
+            isExploreMode={isExploreMode}
+            onUserPositionUpdate={setExploreUserPosition}
           />
 
           {/* MOBILE: Floating Filter Bar (overlays map) */}
