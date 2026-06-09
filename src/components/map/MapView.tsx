@@ -99,13 +99,15 @@ interface MapViewProps {
   // EXPLORE MODE: Activates GeolocateControl for continuous GPS tracking
   isExploreMode?: boolean;
   onUserPositionUpdate?: (coords: { latitude: number; longitude: number }) => void;
+  // Current GPS position in explore mode — used to render avatar + proximity rings
+  exploreUserPosition?: { latitude: number; longitude: number } | null;
 }
 
 export interface MapViewHandle {
   flyToStore: (latitude: number, longitude: number, options?: { offset?: [number, number]; zoom?: number }) => void;
 }
 
-export const MapView = forwardRef<MapViewHandle, MapViewProps>(({ stores, onStoreClick, selectedCity, selectedNeighborhood, isSearchActive = false, activeMainCategory, activeSubCategory, styleMode: controlledStyleMode, onStyleModeChange, tappedStoreId, onLabelClick, onSearchArea, selectedStore, onViewportChange, spotlightedStoreIds = [], isSpotlightMode = false, isExploreMode = false, onUserPositionUpdate }, ref) => {
+export const MapView = forwardRef<MapViewHandle, MapViewProps>(({ stores, onStoreClick, selectedCity, selectedNeighborhood, isSearchActive = false, activeMainCategory, activeSubCategory, styleMode: controlledStyleMode, onStyleModeChange, tappedStoreId, onLabelClick, onSearchArea, selectedStore, onViewportChange, spotlightedStoreIds = [], isSpotlightMode = false, isExploreMode = false, onUserPositionUpdate, exploreUserPosition = null }, ref) => {
   const [viewState, setViewState] = useState({
     longitude: DEFAULT_CENTER.longitude,
     latitude: DEFAULT_CENTER.latitude,
@@ -543,6 +545,12 @@ export const MapView = forwardRef<MapViewHandle, MapViewProps>(({ stores, onStor
             mapRef.current = ref.getMap();
           }
         }}
+        // EXPLORE MODE: lock the map — GeolocateControl moves it, user cannot
+        dragPan={!isExploreMode}
+        scrollZoom={!isExploreMode}
+        touchZoomRotate={!isExploreMode}
+        doubleClickZoom={!isExploreMode}
+        dragRotate={!isExploreMode}
       >
         <NavigationControl position="top-right" />
 
@@ -558,7 +566,7 @@ export const MapView = forwardRef<MapViewHandle, MapViewProps>(({ stores, onStor
           position="bottom-right"
           trackUserLocation={true}
           showUserHeading={true}
-          showUserLocation={true}
+          showUserLocation={false}
           showAccuracyCircle={false}
           positionOptions={{ enableHighAccuracy: true, maximumAge: 0 }}
           fitBoundsOptions={{ maxZoom: 16 }}
@@ -636,8 +644,8 @@ export const MapView = forwardRef<MapViewHandle, MapViewProps>(({ stores, onStor
           });
         })()}
 
-        {/* User Location Marker */}
-        {userPosition && (
+        {/* Browse mode: user location dot (one-shot locate button) */}
+        {!isExploreMode && userPosition && (
           <Marker
             longitude={userPosition.longitude}
             latitude={userPosition.latitude}
@@ -646,6 +654,57 @@ export const MapView = forwardRef<MapViewHandle, MapViewProps>(({ stores, onStor
             <UserLocationMarker accuracy={userPosition.accuracy} />
           </Marker>
         )}
+
+        {/* EXPLORE MODE: Avatar placeholder — replaces the GeolocateControl dot.
+            The built-in dot is suppressed via showUserLocation={false} on the control.
+            Swap the inner div for a custom SVG character when the design is ready. */}
+        {isExploreMode && exploreUserPosition && (
+          <Marker
+            longitude={exploreUserPosition.longitude}
+            latitude={exploreUserPosition.latitude}
+            anchor="center"
+          >
+            <div
+              style={{
+                width: '32px',
+                height: '32px',
+                borderRadius: '50%',
+                backgroundColor: '#22D9EE',
+                border: '3px solid white',
+                boxShadow: '0 0 16px rgba(34, 217, 238, 0.7), 0 2px 8px rgba(0,0,0,0.4)',
+                zIndex: 10,
+              }}
+            />
+          </Marker>
+        )}
+
+        {/* EXPLORE MODE: 50m proximity ring — appears around stores in check-in range.
+            Uses a border-only ring so there's no filled element causing GPU repaints. */}
+        {isExploreMode && exploreUserPosition && stores.map(store => {
+          const dx = (store.latitude - exploreUserPosition.latitude) * 111000;
+          const dy = (store.longitude - exploreUserPosition.longitude) * 111000 * Math.cos(exploreUserPosition.latitude * Math.PI / 180);
+          const dist = Math.sqrt(dx * dx + dy * dy);
+          if (dist > 50) return null;
+          return (
+            <Marker
+              key={`proximity-ring-${store.id}`}
+              longitude={store.longitude}
+              latitude={store.latitude}
+              anchor="center"
+            >
+              <div
+                style={{
+                  width: '56px',
+                  height: '56px',
+                  borderRadius: '50%',
+                  border: '2px solid rgba(34, 217, 238, 0.8)',
+                  boxShadow: '0 0 12px rgba(34, 217, 238, 0.4)',
+                  pointerEvents: 'none',
+                }}
+              />
+            </Marker>
+          );
+        })}
       </Map>
 
       {/* Map style toggle - Removed: Now only controlled by header */}
@@ -956,6 +1015,7 @@ export const MapView = forwardRef<MapViewHandle, MapViewProps>(({ stores, onStor
         onClick={handleLocateClick}
         loading={locationLoading}
         hasLocation={!!userPosition}
+        explorePillVisible={isMobile}
       />
 
       {/* Search This Area Button — visible at zoom >= 14.

@@ -30,7 +30,8 @@ import type { Store, MainCategory } from '../types/store';
 import { sortStores } from '../utils/helpers';
 import { getCityDataWithCounts, type CityData } from '../utils/cityData';
 import type { SearchSuggestion } from '../components/store/SearchAutocomplete';
-import { MAJOR_CITIES_JAPAN, LOCATIONS } from '../lib/constants';
+import { MAJOR_CITIES_JAPAN, LOCATIONS, NEIGHBORHOOD_COORDINATES } from '../lib/constants';
+import { distanceMeters } from '../utils/distance';
 
 export function HomePage() {
   const [searchParams, setSearchParams] = useSearchParams();
@@ -84,6 +85,40 @@ export function HomePage() {
     latitude: number;
     longitude: number;
   } | null>(null);
+
+  // EXPLORE MODE: Filter stores to 300m radius around user position.
+  // In browse mode this returns the full unfiltered store list.
+  const storesForMap = useMemo(() => {
+    if (!isExploreMode || !exploreUserPosition) return stores;
+    return stores.filter(store =>
+      distanceMeters(
+        exploreUserPosition.latitude,
+        exploreUserPosition.longitude,
+        store.latitude,
+        store.longitude
+      ) <= 300
+    );
+  }, [stores, isExploreMode, exploreUserPosition]);
+
+  // EXPLORE MODE: Detect closest neighborhood to show in the status bar.
+  const exploreNeighborhood = useMemo(() => {
+    if (!exploreUserPosition) return null;
+    let closestName: string | null = null;
+    let closestDist = Infinity;
+    for (const [name, coords] of Object.entries(NEIGHBORHOOD_COORDINATES)) {
+      const dist = distanceMeters(
+        exploreUserPosition.latitude,
+        exploreUserPosition.longitude,
+        coords.latitude,
+        coords.longitude
+      );
+      if (dist < closestDist) {
+        closestDist = dist;
+        closestName = name;
+      }
+    }
+    return closestDist < 1500 ? closestName : null;
+  }, [exploreUserPosition]);
 
   // Map style mode state
   const getInitialStyleMode = (): 'day' | 'night' => {
@@ -355,7 +390,7 @@ export function HomePage() {
           {/* Full-screen Map */}
           <MapView
             ref={mapViewRef}
-            stores={filteredStores}
+            stores={storesForMap}
             onStoreClick={handleStoreClick}
             selectedCity={selectedCity}
             selectedNeighborhood={selectedNeighborhood}
@@ -372,6 +407,7 @@ export function HomePage() {
             isSpotlightMode={isSpotlightMode}
             isExploreMode={isExploreMode}
             onUserPositionUpdate={setExploreUserPosition}
+            exploreUserPosition={exploreUserPosition}
           />
 
           {/* MOBILE: Floating Filter Bar (overlays map) */}
@@ -455,6 +491,75 @@ export function HomePage() {
                 currentView="map"
                 onToggle={(newView) => setView(newView)}
               />
+            </>
+          )}
+
+          {/* EXPLORE MODE: Floating pill toggle + status bar (mobile only) */}
+          {isMobile && view === 'map' && (
+            <>
+              {/* Status bar — visible only when in explore mode and position is known */}
+              {isExploreMode && exploreUserPosition && (
+                <div
+                  className="absolute left-1/2 z-[30] flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium text-cyan-300 bg-gray-900/90 border border-cyan-500/40 backdrop-blur-md"
+                  style={{
+                    transform: 'translateX(-50%)',
+                    bottom: 'calc(5.5rem + env(safe-area-inset-bottom, 0px))',
+                    whiteSpace: 'nowrap',
+                  }}
+                >
+                  <span
+                    style={{
+                      width: '8px',
+                      height: '8px',
+                      borderRadius: '50%',
+                      backgroundColor: '#22D9EE',
+                      display: 'inline-block',
+                      flexShrink: 0,
+                    }}
+                  />
+                  {exploreNeighborhood
+                    ? `Exploring ${exploreNeighborhood}`
+                    : 'Exploring nearby'}{' '}
+                  · {storesForMap.length} store{storesForMap.length !== 1 ? 's' : ''} nearby
+                </div>
+              )}
+
+              {/* Floating pill toggle — hidden when store detail or spotlight is open */}
+              {!selectedStore && !isSpotlightMode && (
+                <button
+                  onClick={() => setIsExploreMode(prev => !prev)}
+                  className="absolute left-1/2 z-[30] flex items-center gap-2 px-5 py-3 rounded-full font-semibold text-sm transition-all duration-300 backdrop-blur-md"
+                  style={{
+                    transform: 'translateX(-50%)',
+                    bottom: 'calc(1.5rem + env(safe-area-inset-bottom, 0px))',
+                    ...(isExploreMode
+                      ? {
+                          backgroundColor: '#22D9EE',
+                          color: '#0a0a0f',
+                          boxShadow: '0 0 20px rgba(34, 217, 238, 0.5), 0 4px 16px rgba(0,0,0,0.4)',
+                          border: '2px solid rgba(34, 217, 238, 0.8)',
+                        }
+                      : {
+                          backgroundColor: 'rgba(10, 10, 15, 0.85)',
+                          color: '#22D9EE',
+                          boxShadow: '0 4px 16px rgba(0,0,0,0.4)',
+                          border: '2px solid rgba(34, 217, 238, 0.4)',
+                        }),
+                  }}
+                >
+                  {isExploreMode ? (
+                    <>
+                      <span style={{ fontSize: '16px' }}>←</span>
+                      Browse
+                    </>
+                  ) : (
+                    <>
+                      <span style={{ fontSize: '16px' }}>◎</span>
+                      Explore
+                    </>
+                  )}
+                </button>
+              )}
             </>
           )}
 

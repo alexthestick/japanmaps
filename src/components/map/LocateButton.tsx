@@ -4,15 +4,19 @@ interface LocateButtonProps {
   onClick: () => void;
   loading?: boolean;
   hasLocation?: boolean;
+  // Shifts the button up to clear the Explore pill at the bottom of the map
+  explorePillVisible?: boolean;
 }
 
-export function LocateButton({ onClick, loading = false, hasLocation = false }: LocateButtonProps) {
+export function LocateButton({ onClick, loading = false, hasLocation = false, explorePillVisible = false }: LocateButtonProps) {
   return (
     <div
       className="absolute right-6 z-20 md:bottom-6 md:right-24"
       style={{
-        // Mobile: Use safe-area-inset-bottom for iOS
-        bottom: 'calc(6rem + env(safe-area-inset-bottom, 0px))',
+        // Shift up when the Explore pill is present to avoid overlap
+        bottom: explorePillVisible
+          ? 'calc(10rem + env(safe-area-inset-bottom, 0px))'
+          : 'calc(6rem + env(safe-area-inset-bottom, 0px))',
       }}
     >
       <button
