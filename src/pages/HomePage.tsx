@@ -86,40 +86,6 @@ export function HomePage() {
     longitude: number;
   } | null>(null);
 
-  // EXPLORE MODE: Filter stores to 300m radius around user position.
-  // In browse mode this returns the full unfiltered store list.
-  const storesForMap = useMemo(() => {
-    if (!isExploreMode || !exploreUserPosition) return stores;
-    return stores.filter(store =>
-      distanceMeters(
-        exploreUserPosition.latitude,
-        exploreUserPosition.longitude,
-        store.latitude,
-        store.longitude
-      ) <= 300
-    );
-  }, [stores, isExploreMode, exploreUserPosition]);
-
-  // EXPLORE MODE: Detect closest neighborhood to show in the status bar.
-  const exploreNeighborhood = useMemo(() => {
-    if (!exploreUserPosition) return null;
-    let closestName: string | null = null;
-    let closestDist = Infinity;
-    for (const [name, coords] of Object.entries(NEIGHBORHOOD_COORDINATES)) {
-      const dist = distanceMeters(
-        exploreUserPosition.latitude,
-        exploreUserPosition.longitude,
-        coords.latitude,
-        coords.longitude
-      );
-      if (dist < closestDist) {
-        closestDist = dist;
-        closestName = name;
-      }
-    }
-    return closestDist < 1500 ? closestName : null;
-  }, [exploreUserPosition]);
-
   // Map style mode state
   const getInitialStyleMode = (): 'day' | 'night' => {
     try {
@@ -241,6 +207,41 @@ export function HomePage() {
 
   // Fetch all stores once (React Query caches for 5 min), apply filters client-side
   const { stores: filteredStores, loading, error } = useStores(storeFilters);
+
+  // EXPLORE MODE: Filter stores to 300m radius around user position.
+  // Must be defined after filteredStores — references it directly.
+  // In browse mode returns filteredStores unchanged.
+  const storesForMap = useMemo(() => {
+    if (!isExploreMode || !exploreUserPosition) return filteredStores;
+    return filteredStores.filter(store =>
+      distanceMeters(
+        exploreUserPosition.latitude,
+        exploreUserPosition.longitude,
+        store.latitude,
+        store.longitude
+      ) <= 300
+    );
+  }, [filteredStores, isExploreMode, exploreUserPosition]);
+
+  // EXPLORE MODE: Detect closest neighborhood for the status bar.
+  const exploreNeighborhood = useMemo(() => {
+    if (!exploreUserPosition) return null;
+    let closestName: string | null = null;
+    let closestDist = Infinity;
+    for (const [name, coords] of Object.entries(NEIGHBORHOOD_COORDINATES)) {
+      const dist = distanceMeters(
+        exploreUserPosition.latitude,
+        exploreUserPosition.longitude,
+        coords.latitude,
+        coords.longitude
+      );
+      if (dist < closestDist) {
+        closestDist = dist;
+        closestName = name;
+      }
+    }
+    return closestDist < 1500 ? closestName : null;
+  }, [exploreUserPosition]);
 
   // Handle incoming store selection from navigation (e.g., from StoreDetailPage "View on Map")
   useEffect(() => {
