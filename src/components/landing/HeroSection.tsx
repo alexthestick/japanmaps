@@ -221,7 +221,7 @@ export function HeroSection() {
             transition={{ duration: 1, delay: 0.45, ease: [0.22, 1, 0.36, 1] }}
             className="text-lg text-gray-400 leading-relaxed mb-10 max-w-md"
           >
-            1,040+ curated vintage, archive, and streetwear stores across Japan. Discovered and shared by the community.
+            899+ vintage, archive, and streetwear stores across Japan. Discovered and shared by the community.
           </motion.p>
 
           {/* CTAs */}

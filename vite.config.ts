@@ -90,6 +90,14 @@ export default defineConfig({
         // Precache all build output (JS bundles, CSS, HTML, fonts, icons)
         globPatterns: ['**/*.{js,css,html,ico,png,svg,woff,woff2}'],
 
+        // Exclude the Mapbox GL JS chunk from precaching.
+        // At 1,625 kB it is the largest single asset in the build, and it is
+        // only needed on the /map route. Precaching it forces every first-time
+        // visitor to download it in the background even on pages that never
+        // show a map. It will still be fetched and cached at runtime the first
+        // time the user visits /map, via the StaleWhileRevalidate rule below.
+        globIgnores: ['**/mapbox-gl*.js'],
+
         runtimeCaching: [
           // ImageKit CDN images — cache aggressively for 30 days.
           //

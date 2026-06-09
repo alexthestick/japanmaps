@@ -136,7 +136,7 @@ export function NeighborhoodsPage() {
     return (
       <div className="fixed inset-0 flex items-center justify-center overflow-hidden">
         <div className="fixed inset-0 -z-10 bg-gradient-to-br from-indigo-950 via-blue-900 to-purple-900" />
-        <div className="text-4xl font-bold text-cyan-300 italic animate-pulse">
+        <div className="text-4xl font-bold text-cyan-300 italic">
           Loading neighborhoods...
         </div>
       </div>
@@ -256,7 +256,7 @@ export function NeighborhoodsPage() {
                       {/* Random badge */}
                       {hoveredNeighborhood.isRandom && (
                         <div className="absolute inset-0 flex items-center justify-center bg-gradient-to-br from-purple-600/40 to-cyan-600/40">
-                          <Shuffle className="w-32 h-32 text-white/60 animate-pulse" />
+                          <Shuffle className="w-32 h-32 text-white/60" />
                         </div>
                       )}
                     </div>
@@ -294,7 +294,7 @@ export function NeighborhoodsPage() {
                          }}
                     />
                     <div className="relative z-10">
-                      <MapPin className="w-24 h-24 text-cyan-400/40 mx-auto mb-6 animate-pulse" />
+                      <MapPin className="w-24 h-24 text-cyan-400/40 mx-auto mb-6" />
                       <p className="text-2xl text-cyan-200/60 italic font-light">
                         Hover over a neighborhood<br />to preview
                       </p>
@@ -370,7 +370,7 @@ export function NeighborhoodsPage() {
 
                     {/* Hover glow effect */}
                     {hoveredNeighborhood?.id === neighborhood.id && (
-                      <div className="absolute inset-0 bg-gradient-to-br from-cyan-400/30 via-blue-400/30 to-purple-400/30 animate-pulse" />
+                      <div className="absolute inset-0 bg-gradient-to-br from-cyan-400/30 via-blue-400/30 to-purple-400/30 transition-opacity duration-200" />
                     )}
 
                     {/* Border highlight on hover */}
