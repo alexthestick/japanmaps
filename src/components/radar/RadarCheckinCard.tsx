@@ -17,7 +17,9 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
+import { Instagram } from 'lucide-react';
 import { useAuthContext } from '../../contexts/AuthContext';
+import { MAIN_CATEGORY_COLORS } from '../../lib/constants';
 import { supabase } from '../../lib/supabase';
 import { ikUrl } from '../../utils/ikUrl';
 import type { Store } from '../../types/store';
@@ -260,12 +262,40 @@ export function RadarCheckinCard({
           )}
         </div>
 
-        {/* Store name + neighborhood */}
+        {/* Store name + sub-category + price + finds */}
         <div className="flex-1 min-w-0">
           <p className="text-white font-semibold text-sm leading-tight truncate">{store.name}</p>
-          <p className="text-gray-400 text-xs truncate mt-0.5">
-            {store.neighborhood || store.city}
-          </p>
+          <div className="flex items-center gap-1.5 mt-0.5 flex-wrap">
+
+            {/* Sub-category pill — more specific than mainCategory */}
+            {(store.categories?.[0] || store.mainCategory) && (
+              <span
+                className="flex-shrink-0 font-bold px-1.5 py-0.5 rounded-full"
+                style={{
+                  backgroundColor: `${MAIN_CATEGORY_COLORS[store.mainCategory ?? 'Fashion'] ?? accentColor}20`,
+                  color: MAIN_CATEGORY_COLORS[store.mainCategory ?? 'Fashion'] ?? accentColor,
+                  fontSize: '0.63rem',
+                }}
+              >
+                {store.categories?.[0] || store.mainCategory}
+              </span>
+            )}
+
+            {/* Price range */}
+            {store.priceRange && (
+              <span className="text-gray-400 flex-shrink-0" style={{ fontSize: '0.63rem', letterSpacing: '0.05em' }}>
+                {store.priceRange}
+              </span>
+            )}
+
+            {/* Find count — social proof */}
+            {store.haulCount > 0 && (
+              <span className="text-gray-500 flex-shrink-0 flex items-center gap-0.5" style={{ fontSize: '0.63rem' }}>
+                <span style={{ color: accentColor, opacity: 0.7 }}>◎</span>
+                {store.haulCount}
+              </span>
+            )}
+          </div>
         </div>
 
         {/* Right side: distance counter OR in-range indicator */}
@@ -320,7 +350,29 @@ export function RadarCheckinCard({
               style={{ height: 1, backgroundColor: `${accentRgba}0.15)` }}
             />
 
-            <div className="px-4 pb-4 pt-3">
+            <div className="px-4 pb-4 pt-3 space-y-2.5">
+              {/* Description snippet — the key "should I walk in?" signal */}
+              {store.description && uiState === 'idle' && (
+                <p className="text-gray-400 text-xs leading-relaxed line-clamp-2">
+                  {store.description.slice(0, 100)}{store.description.length > 100 ? '…' : ''}
+                </p>
+              )}
+
+              {/* Instagram — decision helper when standing 30m away */}
+              {store.instagram && uiState === 'idle' && (
+                <a
+                  href={`https://instagram.com/${store.instagram.replace('@', '')}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center gap-1.5 text-xs font-medium transition-opacity active:opacity-70"
+                  style={{ color: 'rgba(168,85,247,0.9)' }}
+                  onClick={e => e.stopPropagation()}
+                >
+                  <Instagram className="w-3 h-3 flex-shrink-0" />
+                  @{store.instagram.replace('@', '')}
+                </a>
+              )}
+
               {/* GPS weak disclaimer when accuracy is poor */}
               {(userPosition.accuracy ?? 0) > 25 && uiState === 'idle' && (
                 <p className="text-xs mb-2.5 text-center" style={{ color: 'rgba(251,191,36,0.8)' }}>

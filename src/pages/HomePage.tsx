@@ -33,6 +33,7 @@ import type { SearchSuggestion } from '../components/store/SearchAutocomplete';
 import { MAJOR_CITIES_JAPAN, LOCATIONS, NEIGHBORHOOD_COORDINATES } from '../lib/constants';
 import { distanceMeters } from '../utils/distance';
 import { RadarCheckinCard } from '../components/radar/RadarCheckinCard';
+import { useCheckinCache } from '../hooks/useCheckinCache';
 
 export function HomePage() {
   const [searchParams, setSearchParams] = useSearchParams();
@@ -257,6 +258,12 @@ export function HomePage() {
       .sort((a, b) => a.dist - b.dist);
   }, [isExploreMode, exploreUserPosition, storesForMap]);
 
+  // Invalidation timestamp: bumped after every successful stamp so useCheckinCache refetches.
+  const [lastStampedAt, setLastStampedAt] = useState(0);
+
+  // Stamped store IDs — fetched once on Radar enter, auto-refetched after each stamp.
+  const stampedStoreIds = useCheckinCache(isExploreMode, lastStampedAt);
+
   // Index into nearbyStores — lets the user cycle to the next nearby store via the "+X" chip.
   const [nearbyStoreIndex, setNearbyStoreIndex] = useState(0);
 
@@ -386,10 +393,9 @@ export function HomePage() {
   }, [isExploreMode]);
 
   // Called by RadarCheckinCard after a successful stamp or re-verification.
-  // Could surface a toast here in future — for now the card handles its own
-  // success animation so this is a no-op placeholder.
+  // Bumps lastStampedAt → invalidates useCheckinCache → marker turns green immediately.
   const handleCheckinSuccess = useCallback((_storeName: string, _isVerification: boolean) => {
-    // Future: show a brief toast or update a passport count badge
+    setLastStampedAt(Date.now());
   }, []);
 
   // Handle autocomplete suggestion selection (CRITICAL: prevent refresh)
@@ -483,6 +489,8 @@ export function HomePage() {
             isExploreMode={isExploreMode}
             onUserPositionUpdate={setExploreUserPosition}
             exploreUserPosition={exploreUserPosition}
+            stampedStoreIds={stampedStoreIds}
+            checkinRadius={checkinRadius}
           />
 
           {/* MOBILE: Floating Filter Bar (overlays map) */}

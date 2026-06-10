@@ -9,6 +9,8 @@ import { StoreLabel } from './StoreLabel';
 import { MapStyleToggle } from './MapStyleToggle';
 import { UserLocationMarker } from './UserLocationMarker';
 import { LocateButton } from './LocateButton';
+import { RadarStoreMarker } from '../radar/RadarStoreMarker';
+import { distanceMeters } from '../../utils/distance';
 import { SearchAreaButton } from './SearchAreaButton';
 import { Toast } from '../common/Toast';
 import { useGeolocation } from '../../hooks/useGeolocation';
@@ -101,13 +103,16 @@ interface MapViewProps {
   onUserPositionUpdate?: (coords: { latitude: number; longitude: number; accuracy?: number }) => void;
   // Current GPS position in explore mode — used to render avatar + proximity rings
   exploreUserPosition?: { latitude: number; longitude: number } | null;
+  // Radar mode: stamped store IDs (from useCheckinCache) + dynamic check-in radius
+  stampedStoreIds?: Set<string>;
+  checkinRadius?: number;
 }
 
 export interface MapViewHandle {
   flyToStore: (latitude: number, longitude: number, options?: { offset?: [number, number]; zoom?: number }) => void;
 }
 
-export const MapView = forwardRef<MapViewHandle, MapViewProps>(({ stores, onStoreClick, selectedCity, selectedNeighborhood, isSearchActive = false, activeMainCategory, activeSubCategory, styleMode: controlledStyleMode, onStyleModeChange, tappedStoreId, onLabelClick, onSearchArea, selectedStore, onViewportChange, spotlightedStoreIds = [], isSpotlightMode = false, isExploreMode = false, onUserPositionUpdate, exploreUserPosition = null }, ref) => {
+export const MapView = forwardRef<MapViewHandle, MapViewProps>(({ stores, onStoreClick, selectedCity, selectedNeighborhood, isSearchActive = false, activeMainCategory, activeSubCategory, styleMode: controlledStyleMode, onStyleModeChange, tappedStoreId, onLabelClick, onSearchArea, selectedStore, onViewportChange, spotlightedStoreIds = [], isSpotlightMode = false, isExploreMode = false, onUserPositionUpdate, exploreUserPosition = null, stampedStoreIds, checkinRadius = 50 }, ref) => {
   const [viewState, setViewState] = useState({
     longitude: DEFAULT_CENTER.longitude,
     latitude: DEFAULT_CENTER.latitude,
@@ -164,6 +169,24 @@ export const MapView = forwardRef<MapViewHandle, MapViewProps>(({ stores, onStor
       navigator.geolocation.clearWatch(watchId);
     };
   }, [isExploreMode, onUserPositionUpdate]);
+
+  // RADAR: Pre-compute distance from user to every store in the 300m bubble.
+  // Memoised on exploreUserPosition so Haversine only runs when GPS ticks,
+  // not on every unrelated re-render. O(n) where n ≤ ~20 stores — negligible.
+  // NOTE: Cannot use `new Map<K,V>()` here — react-map-gl's default export is
+  // also named `Map`, shadowing the built-in. Build the record as a plain object
+  // and type it explicitly instead.
+  const radarDistances = useMemo((): Record<string, number> => {
+    if (!isExploreMode || !exploreUserPosition) return {};
+    const result: Record<string, number> = {};
+    for (const s of stores) {
+      result[s.id] = distanceMeters(
+        exploreUserPosition.latitude, exploreUserPosition.longitude,
+        s.latitude, s.longitude,
+      );
+    }
+    return result;
+  }, [isExploreMode, exploreUserPosition, stores]);
 
   // PHASE 1.5G: Track map movement to hide city labels during pan/zoom
   const [isMapMoving, setIsMapMoving] = useState(false);
@@ -643,6 +666,28 @@ export const MapView = forwardRef<MapViewHandle, MapViewProps>(({ stores, onStor
           const markersToRender = visibleStores.slice(0, maxMarkers);
 
           return markersToRender.map(store => {
+            // RADAR MODE: replace normal pins with Pokéstop-style disc markers
+            if (isExploreMode) {
+              const dist = radarDistances[store.id] ?? 999;
+              return (
+                <Marker
+                  key={store.id}
+                  longitude={store.longitude}
+                  latitude={store.latitude}
+                  anchor="center"
+                  onClick={e => handleMarkerClick(e, store)}
+                >
+                  <RadarStoreMarker
+                    store={store}
+                    distance={dist}
+                    checkinRadius={checkinRadius}
+                    isStamped={stampedStoreIds?.has(store.id) ?? false}
+                    onClick={() => onStoreClick(store)}
+                  />
+                </Marker>
+              );
+            }
+
             // PHASE 3: Check if this store is spotlighted
             const spotlightIndex = spotlightedStoreIds.indexOf(store.id);
             const isSpotlighted = isSpotlightMode && spotlightIndex !== -1;

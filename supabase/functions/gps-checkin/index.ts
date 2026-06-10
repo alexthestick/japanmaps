@@ -128,14 +128,38 @@ Deno.serve(async (req: Request) => {
     return err(404, 'store_not_found', 'Store not found.');
   }
 
-  // PostGIS geography comes back as GeoJSON from Supabase JS client
-  // Shape: { type: 'Point', coordinates: [lng, lat] }
-  const coords = store.location as { type: string; coordinates: [number, number] } | null;
-  if (!coords || coords.type !== 'Point') {
+  // PostGIS geography columns come back from Supabase REST as a WKB hex
+  // string (e.g. "0101000020E6100000..."), NOT as GeoJSON. Parse it directly.
+  //
+  // EWKB POINT layout (little-endian, with SRID):
+  //   byte 0      : byte order (01 = little-endian)
+  //   bytes 1–4   : WKB type | SRID flag  (0x20000001 for Point + SRID)
+  //   bytes 5–8   : SRID (4 bytes, skipped)
+  //   bytes 9–16  : X = longitude (IEEE 754 double, 8 bytes)
+  //   bytes 17–24 : Y = latitude  (IEEE 754 double, 8 bytes)
+  //
+  // If the SRID flag is absent (plain WKB, no SRID):
+  //   bytes 5–12  : X, bytes 13–20 : Y
+  function parseWKBPoint(hex: string): { lat: number; lng: number } | null {
+    try {
+      const bytes = new Uint8Array(hex.match(/.{2}/g)!.map(b => parseInt(b, 16)));
+      const view = new DataView(bytes.buffer);
+      const le = bytes[0] === 1; // little-endian?
+      const wkbType = view.getUint32(1, le);
+      const hasSRID = (wkbType & 0x20000000) !== 0;
+      const offset = hasSRID ? 9 : 5;
+      return { lng: view.getFloat64(offset, le), lat: view.getFloat64(offset + 8, le) };
+    } catch {
+      return null;
+    }
+  }
+
+  const point = parseWKBPoint(store.location as string);
+  if (!point) {
     return err(500, 'store_no_coords', 'This store does not have GPS coordinates on file.');
   }
 
-  const [storeLng, storeLat] = coords.coordinates;
+  const { lat: storeLat, lng: storeLng } = point;
 
   // ── 4. Distance check ─────────────────────────────────────
   const distanceM = Math.round(distanceMeters(latitude, longitude, storeLat, storeLng));

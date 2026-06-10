@@ -36,6 +36,7 @@ export interface Store {
   updatedAt: string;
   haulCount: number;
   saveCount: number;
+  checkin_count?: number; // GPS-verified Radar check-ins — populated once RPC returns this column
   google_place_id?: string; // Optional - for photo fetching
 }
 
