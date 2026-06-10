@@ -3,11 +3,12 @@ import { useNavigate, Link } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   MapPin, Bookmark, Camera, LogOut, Edit3, Check, X,
-  ShoppingBag, ChevronRight, Trash2,
+  ShoppingBag, ChevronRight, Trash2, Stamp,
 } from 'lucide-react';
 import { useAuthContext } from '../contexts/AuthContext';
 import { RequireAuth } from '../components/common/RequireAuth';
 import { supabase } from '../lib/supabase';
+import { ikUrl } from '../utils/ikUrl';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -37,6 +38,26 @@ interface UserFind {
   created_at: string;
 }
 
+interface Checkin {
+  checkin_id: string;
+  store_id: string;
+  store_name: string;
+  store_slug: string | null;
+  neighborhood: string | null;
+  city: string | null;
+  photo_url: string | null;
+  visited_at: string;
+  verified: boolean;
+  accuracy_meters: number | null;
+}
+
+interface BadgeProgress {
+  neighborhood: string;
+  city: string;
+  visited_count: number;
+  total_store_count: number;
+}
+
 // ─── Avatar ────────────────────────────────────────────────────────────────────
 
 const AVATAR_COLORS = [
@@ -47,6 +68,233 @@ function getAvatarColor(username: string): string {
   let hash = 0;
   for (let i = 0; i < username.length; i++) hash = username.charCodeAt(i) + ((hash << 5) - hash);
   return AVATAR_COLORS[Math.abs(hash) % AVATAR_COLORS.length];
+}
+
+// ─── Passport — badge helpers ─────────────────────────────────────────────────
+
+type BadgeTier = 'none' | 'bronze' | 'silver' | 'gold';
+
+function getBadgeTier(count: number): BadgeTier {
+  if (count >= 15) return 'gold';
+  if (count >= 7) return 'silver';
+  if (count >= 3) return 'bronze';
+  return 'none';
+}
+
+const TIER_COLORS: Record<BadgeTier, { ring: string; text: string; glow: string }> = {
+  none:   { ring: 'border-gray-700',  text: 'text-gray-600',   glow: '' },
+  bronze: { ring: 'border-amber-600', text: 'text-amber-500',  glow: '' },
+  silver: { ring: 'border-gray-300',  text: 'text-gray-300',   glow: '' },
+  gold:   { ring: 'border-yellow-400', text: 'text-yellow-400', glow: 'shadow-[0_0_10px_2px_rgba(250,204,21,0.35)]' },
+};
+
+// ─── Passport — neighborhood badge ────────────────────────────────────────────
+
+function NeighborhoodBadge({ badge }: { badge: BadgeProgress }) {
+  const tier = getBadgeTier(Number(badge.visited_count));
+  const c = TIER_COLORS[tier];
+  const label = badge.neighborhood.length > 12
+    ? badge.neighborhood.slice(0, 11) + '…'
+    : badge.neighborhood;
+
+  return (
+    <div className="flex flex-col items-center gap-1.5 flex-shrink-0 w-16">
+      {/* Concentric rings — 1 for bronze, 2 for silver, 3 for gold */}
+      <div className={`relative flex items-center justify-center ${tier === 'gold' ? 'h-16 w-16' : tier === 'silver' ? 'h-14 w-14' : 'h-12 w-12'}`}>
+        {/* Outermost ring (gold only) */}
+        {tier === 'gold' && (
+          <div className={`absolute inset-0 rounded-full border ${c.ring} opacity-25 ${c.glow}`} />
+        )}
+        {/* Middle ring (silver + gold) */}
+        {(tier === 'silver' || tier === 'gold') && (
+          <div className={`absolute rounded-full border ${c.ring} opacity-55 ${tier === 'gold' ? 'inset-[4px]' : 'inset-0'}`} />
+        )}
+        {/* Inner ring / core (all tiers) */}
+        <div className={`absolute rounded-full border-2 ${c.ring} ${
+          tier === 'gold' ? 'inset-[8px]' : tier === 'silver' ? 'inset-[4px]' : 'inset-0'
+        } ${c.glow} flex items-center justify-center`}>
+          <span className={`text-[11px] font-black select-none ${c.text}`}>
+            {badge.neighborhood.slice(0, 2).toUpperCase()}
+          </span>
+        </div>
+      </div>
+      <span className={`text-[10px] font-medium text-center leading-tight ${c.text}`}>{label}</span>
+      <span className="text-[9px] text-gray-600 tabular-nums">
+        {badge.visited_count}/{Number(badge.total_store_count) > 99 ? '99+' : badge.total_store_count}
+      </span>
+    </div>
+  );
+}
+
+// ─── Passport — stamp card ────────────────────────────────────────────────────
+
+function PassportStamp({ checkin }: { checkin: Checkin }) {
+  const photo = ikUrl(checkin.photo_url, 'thumb');
+  const date = new Date(checkin.visited_at).toLocaleDateString('en-US', {
+    month: 'short', day: 'numeric', year: '2-digit',
+  });
+
+  return (
+    <Link
+      to={`/store/${checkin.store_slug || checkin.store_id}`}
+      className={`block rounded-sm overflow-hidden bg-gray-900 transition-transform duration-200 hover:scale-[1.03] ${
+        checkin.verified ? 'stamp-perf' : 'stamp-perf-amber'
+      }`}
+    >
+      {/* Photo */}
+      <div className="aspect-square w-full overflow-hidden relative bg-gray-800">
+        {photo ? (
+          <img
+            src={photo}
+            alt={checkin.store_name}
+            className={`w-full h-full object-cover ${!checkin.verified ? 'grayscale' : ''}`}
+            loading="lazy"
+          />
+        ) : (
+          <div className="w-full h-full flex items-center justify-center">
+            <Stamp className="h-8 w-8 text-gray-700" />
+          </div>
+        )}
+        {/* Unverified amber dot */}
+        {!checkin.verified && (
+          <div className="absolute top-1.5 right-1.5 h-2.5 w-2.5 rounded-full bg-amber-400 ring-1 ring-black/50" />
+        )}
+      </div>
+      {/* Info strip */}
+      <div className="px-1.5 py-1.5">
+        <p className="text-white text-[11px] font-semibold truncate leading-tight">{checkin.store_name}</p>
+        <p className="text-gray-600 text-[10px] mt-0.5 tabular-nums">{date}</p>
+        {!checkin.verified && (
+          <p className="text-amber-500/80 text-[9px] font-medium mt-0.5 uppercase tracking-wide">Verify GPS</p>
+        )}
+      </div>
+    </Link>
+  );
+}
+
+// ─── Passport — ghost stamp (empty state placeholder) ─────────────────────────
+
+function GhostStamp() {
+  return (
+    <div className="rounded-sm overflow-hidden stamp-perf-ghost bg-gray-900/40">
+      <div className="aspect-square w-full flex items-center justify-center bg-gray-900/60">
+        <Stamp className="h-7 w-7 text-gray-800" />
+      </div>
+      <div className="px-1.5 py-1.5">
+        <div className="h-2 rounded bg-gray-800/60 w-3/4 mb-1" />
+        <div className="h-1.5 rounded bg-gray-800/40 w-1/2" />
+      </div>
+    </div>
+  );
+}
+
+// ─── Passport tab content ─────────────────────────────────────────────────────
+
+function PassportTabContent({
+  checkins,
+  badgeProgress,
+  loading,
+}: {
+  checkins: Checkin[];
+  badgeProgress: BadgeProgress[];
+  loading: boolean;
+}) {
+  if (loading) {
+    return (
+      <div className="grid grid-cols-3 gap-2">
+        {[...Array(6)].map((_, i) => (
+          <div key={i} className="rounded-sm overflow-hidden bg-gray-900">
+            <div className="aspect-square bg-gray-800 animate-pulse" />
+            <div className="p-1.5 space-y-1">
+              <div className="h-2 bg-gray-800 rounded animate-pulse w-3/4" />
+              <div className="h-1.5 bg-gray-800 rounded animate-pulse w-1/2" />
+            </div>
+          </div>
+        ))}
+      </div>
+    );
+  }
+
+  if (checkins.length === 0) {
+    return (
+      <div>
+        {/* Phantom stamp grid */}
+        <div className="grid grid-cols-3 gap-2 mb-8">
+          {[...Array(6)].map((_, i) => <GhostStamp key={i} />)}
+        </div>
+        <div className="text-center py-4">
+          <Stamp className="h-10 w-10 text-gray-700 mx-auto mb-3" />
+          <p className="text-gray-400 font-medium">No stamps yet</p>
+          <p className="text-gray-600 text-sm mt-1">Walk up to a store in Radar mode to stamp it</p>
+          <Link
+            to="/map"
+            className="inline-flex items-center gap-2 mt-5 px-5 py-2.5 bg-cyan-500/10 hover:bg-cyan-500/20 border border-cyan-500/30 text-cyan-400 rounded-xl text-sm font-medium transition-colors"
+          >
+            <MapPin className="h-4 w-4" />
+            Open Radar mode
+          </Link>
+        </div>
+      </div>
+    );
+  }
+
+  const verifiedCount = checkins.filter(c => c.verified).length;
+  const unverifiedCount = checkins.length - verifiedCount;
+  const neighborhoodCount = new Set(checkins.map(c => c.neighborhood).filter(Boolean)).size;
+  const cityCount = new Set(checkins.map(c => c.city).filter(Boolean)).size;
+
+  return (
+    <div className="space-y-6">
+      {/* Stats row */}
+      <div className="flex items-center gap-0 rounded-xl bg-gray-900/60 border border-gray-800 overflow-hidden">
+        {[
+          { value: checkins.length, label: 'Stamps' },
+          { value: neighborhoodCount, label: 'Neighborhoods' },
+          { value: cityCount, label: 'Cities' },
+        ].map((stat, i, arr) => (
+          <div key={stat.label} className={`flex-1 text-center py-4 ${i < arr.length - 1 ? 'border-r border-gray-800' : ''}`}>
+            <p className="text-white font-bold text-xl tabular-nums">{stat.value}</p>
+            <p className="text-gray-500 text-xs mt-0.5">{stat.label}</p>
+          </div>
+        ))}
+      </div>
+
+      {/* Unverified notice */}
+      {unverifiedCount > 0 && (
+        <div className="flex items-center gap-3 px-4 py-3 rounded-xl bg-amber-500/10 border border-amber-500/20">
+          <div className="h-2 w-2 rounded-full bg-amber-400 flex-shrink-0" />
+          <p className="text-amber-300/80 text-sm">
+            <span className="font-semibold text-amber-300">{unverifiedCount} unverified stamp{unverifiedCount > 1 ? 's' : ''}</span>
+            {' '}— walk back with better GPS signal to verify.
+          </p>
+        </div>
+      )}
+
+      {/* Neighborhood badges */}
+      {badgeProgress.length > 0 && (
+        <div>
+          <h3 className="text-xs font-bold uppercase tracking-widest text-gray-600 mb-3">Neighborhood Badges</h3>
+          <div className="flex gap-4 overflow-x-auto pb-2 scrollbar-hide">
+            {badgeProgress.map(badge => (
+              <NeighborhoodBadge key={`${badge.neighborhood}-${badge.city}`} badge={badge} />
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Stamp grid */}
+      <div>
+        <h3 className="text-xs font-bold uppercase tracking-widest text-gray-600 mb-3">
+          Your Stamps · {checkins.length}
+        </h3>
+        <div className="grid grid-cols-3 gap-2">
+          {checkins.map(checkin => (
+            <PassportStamp key={checkin.checkin_id} checkin={checkin} />
+          ))}
+        </div>
+      </div>
+    </div>
+  );
 }
 
 // ─── Saved store card ──────────────────────────────────────────────────────────
@@ -382,7 +630,7 @@ function UsernameEditor({ username, onSave }: { username: string; onSave: (val: 
 
 // ─── Main profile content ──────────────────────────────────────────────────────
 
-type Tab = 'saved' | 'finds';
+type Tab = 'saved' | 'finds' | 'passport';
 
 function ProfileContent() {
   const { user, profile, signOut, refreshProfile } = useAuthContext();
@@ -395,6 +643,12 @@ function ProfileContent() {
   const [photoUploading, setPhotoUploading] = useState(false);
   const photoFileRef = useRef<HTMLInputElement>(null);
   const [approvalBanners, setApprovalBanners] = useState<{ id: string; store_name: string }[]>([]);
+
+  // Passport state — fetched lazily on first passport tab open
+  const [checkins, setCheckins] = useState<Checkin[]>([]);
+  const [badgeProgress, setBadgeProgress] = useState<BadgeProgress[]>([]);
+  const [loadingPassport, setLoadingPassport] = useState(false);
+  const passportFetchedRef = useRef(false);
 
   const username = profile?.username || profile?.display_name || user?.email?.split('@')[0] || 'User';
   const avatarColor = getAvatarColor(username);
@@ -437,6 +691,22 @@ function ProfileContent() {
         }
       });
   }, [user]);
+
+  // Fetch passport data once when the tab is first opened
+  useEffect(() => {
+    if (activeTab !== 'passport' || passportFetchedRef.current || !user) return;
+    passportFetchedRef.current = true;
+    setLoadingPassport(true);
+
+    Promise.all([
+      supabase.rpc('get_my_checkins'),
+      supabase.rpc('get_my_badge_progress'),
+    ]).then(([checkinsResult, badgesResult]) => {
+      setCheckins((checkinsResult.data as Checkin[]) || []);
+      setBadgeProgress((badgesResult.data as BadgeProgress[]) || []);
+      setLoadingPassport(false);
+    });
+  }, [activeTab, user]);
 
   async function handleFindDelete(id: string) {
     await supabase.from('field_notes').delete().eq('id', id).eq('user_id', user!.id);
@@ -510,6 +780,12 @@ function ProfileContent() {
     await signOut();
     navigate('/');
   }
+
+  const tabs = [
+    { id: 'saved' as const,    label: 'Saved',    icon: Bookmark },
+    { id: 'finds' as const,    label: 'Finds',    icon: Camera   },
+    { id: 'passport' as const, label: 'Passport', icon: Stamp    },
+  ];
 
   return (
     <div className="min-h-screen bg-black">
@@ -633,6 +909,15 @@ function ProfileContent() {
                   <p className="text-white font-bold text-xl">{finds.filter(n => n.type === 'haul').length}</p>
                   <p className="text-gray-500 text-xs">Finds</p>
                 </div>
+                {checkins.length > 0 && (
+                  <>
+                    <div className="h-8 w-px bg-gray-800" />
+                    <div className="text-center">
+                      <p className="text-white font-bold text-xl">{checkins.length}</p>
+                      <p className="text-gray-500 text-xs">Stamps</p>
+                    </div>
+                  </>
+                )}
               </div>
             </div>
           </div>
@@ -640,10 +925,7 @@ function ProfileContent() {
 
         {/* Tabs */}
         <div className="flex gap-1 p-1 bg-gray-900 rounded-xl mb-6 border border-gray-800">
-          {([
-            { id: 'saved' as const, label: 'Saved Stores', icon: Bookmark },
-            { id: 'finds' as const, label: 'My Finds', icon: Camera },
-          ]).map(tab => (
+          {tabs.map(tab => (
             <button
               key={tab.id}
               onClick={() => setActiveTab(tab.id)}
@@ -661,7 +943,7 @@ function ProfileContent() {
 
         {/* Tab content */}
         <AnimatePresence mode="wait">
-          {activeTab === 'saved' ? (
+          {activeTab === 'saved' && (
             <motion.div
               key="saved"
               initial={{ opacity: 0, y: 10 }}
@@ -696,7 +978,9 @@ function ProfileContent() {
                 </div>
               )}
             </motion.div>
-          ) : (
+          )}
+
+          {activeTab === 'finds' && (
             <motion.div
               key="finds"
               initial={{ opacity: 0, y: 10 }}
@@ -730,6 +1014,22 @@ function ProfileContent() {
                   ))}
                 </div>
               )}
+            </motion.div>
+          )}
+
+          {activeTab === 'passport' && (
+            <motion.div
+              key="passport"
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -10 }}
+              transition={{ duration: 0.2 }}
+            >
+              <PassportTabContent
+                checkins={checkins}
+                badgeProgress={badgeProgress}
+                loading={loadingPassport}
+              />
             </motion.div>
           )}
         </AnimatePresence>
