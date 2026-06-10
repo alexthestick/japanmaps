@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef, useMemo, useCallback } from 'react';
 import { useSearchParams, useNavigate, useLocation } from 'react-router-dom';
-import { AnimatePresence } from 'framer-motion';
+import { AnimatePresence, motion } from 'framer-motion';
 import { Dices, List } from 'lucide-react';
 import { MapView } from '../components/map/MapView';
 import { SEOHead } from '../components/seo';
@@ -32,6 +32,7 @@ import { getCityDataWithCounts, type CityData } from '../utils/cityData';
 import type { SearchSuggestion } from '../components/store/SearchAutocomplete';
 import { MAJOR_CITIES_JAPAN, LOCATIONS, NEIGHBORHOOD_COORDINATES } from '../lib/constants';
 import { distanceMeters } from '../utils/distance';
+import { RadarCheckinCard } from '../components/radar/RadarCheckinCard';
 
 export function HomePage() {
   const [searchParams, setSearchParams] = useSearchParams();
@@ -238,6 +239,46 @@ export function HomePage() {
     );
   }, [filteredStores, isExploreMode, exploreUserPosition]);
 
+  // RADAR CHECKIN: All stores within 150m, sorted closest-first.
+  // Defined after storesForMap — references it directly.
+  const nearbyStores = useMemo(() => {
+    if (!isExploreMode || !exploreUserPosition) return [];
+    return storesForMap
+      .map(store => ({
+        store,
+        dist: distanceMeters(
+          exploreUserPosition.latitude,
+          exploreUserPosition.longitude,
+          store.latitude,
+          store.longitude,
+        ),
+      }))
+      .filter(({ dist }) => dist <= 150)
+      .sort((a, b) => a.dist - b.dist);
+  }, [isExploreMode, exploreUserPosition, storesForMap]);
+
+  // Index into nearbyStores — lets the user cycle to the next nearby store via the "+X" chip.
+  const [nearbyStoreIndex, setNearbyStoreIndex] = useState(0);
+
+  // Reset index to 0 when the closest store changes (user walks away from one cluster
+  // and towards another). Uses the store ID at position 0 as the anchor — if that
+  // changes, the whole list has shifted and the saved index is meaningless.
+  const closestStoreId = nearbyStores[0]?.store.id ?? null;
+  useEffect(() => {
+    setNearbyStoreIndex(0);
+  }, [closestStoreId]);
+
+  // Clamp index so it's never out-of-bounds when the list shrinks (user walks away from stores).
+  const safeNearbyIndex = Math.min(nearbyStoreIndex, Math.max(0, nearbyStores.length - 1));
+  const nearbyStoreEntry = nearbyStores[safeNearbyIndex] ?? null;
+
+  // Dynamic check-in radius: widen when GPS is poor (Tokyo urban canyons), cap at 150m.
+  const checkinRadius = useMemo(() => {
+    const accuracy = exploreUserPosition?.accuracy;
+    if (!accuracy) return 50;
+    return Math.min(150, Math.max(50, accuracy * 1.5));
+  }, [exploreUserPosition?.accuracy]);
+
   // EXPLORE MODE: Detect closest neighborhood for the status bar.
   const exploreNeighborhood = useMemo(() => {
     if (!exploreUserPosition) return null;
@@ -339,9 +380,17 @@ export function HomePage() {
     if (isExploreMode) {
       setSelectedStore(null);
       setExploreUserPosition(null);
+      setNearbyStoreIndex(0);
     }
     setIsExploreMode(prev => !prev);
   }, [isExploreMode]);
+
+  // Called by RadarCheckinCard after a successful stamp or re-verification.
+  // Could surface a toast here in future — for now the card handles its own
+  // success animation so this is a no-op placeholder.
+  const handleCheckinSuccess = useCallback((_storeName: string, _isVerification: boolean) => {
+    // Future: show a brief toast or update a passport count badge
+  }, []);
 
   // Handle autocomplete suggestion selection (CRITICAL: prevent refresh)
   const handleSearchSuggestionSelect = useCallback((suggestion: SearchSuggestion) => {
@@ -563,6 +612,38 @@ export function HomePage() {
                   )}
                 </div>
               )}
+
+              {/* RADAR CHECK-IN CARD ─────────────────────────────────────────
+                  Slides up when user enters 150m of a store in Radar mode.
+                  Keyed by store.id so AnimatePresence re-mounts the card
+                  (and resets its internal state) whenever the closest store changes.
+              ──────────────────────────────────────────────────────────────── */}
+              <AnimatePresence>
+                {isExploreMode && nearbyStoreEntry && !selectedStore && (
+                  <motion.div
+                    key={nearbyStoreEntry.store.id}
+                    initial={{ y: 60, opacity: 0 }}
+                    animate={{ y: 0, opacity: 1 }}
+                    exit={{ y: 60, opacity: 0 }}
+                    transition={{ duration: 0.25, ease: 'easeOut' }}
+                    className="absolute left-4 right-4 z-[35]"
+                    style={{ bottom: 'calc(9.5rem + env(safe-area-inset-bottom, 0px))' }}
+                  >
+                    <RadarCheckinCard
+                      store={nearbyStoreEntry.store}
+                      distance={nearbyStoreEntry.dist}
+                      checkinRadius={checkinRadius}
+                      isInRange={nearbyStoreEntry.dist <= checkinRadius}
+                      nearbyCount={nearbyStores.length}
+                      onNextStore={() =>
+                        setNearbyStoreIndex(i => (i + 1) % nearbyStores.length)
+                      }
+                      userPosition={exploreUserPosition!}
+                      onCheckinSuccess={handleCheckinSuccess}
+                    />
+                  </motion.div>
+                )}
+              </AnimatePresence>
 
               {/* Radar + List View unified bar */}
               {!selectedStore && !isSpotlightMode && (

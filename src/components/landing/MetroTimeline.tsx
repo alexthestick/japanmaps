@@ -292,19 +292,13 @@ function StationRow({ post, index, isFeatured }: StationRowProps) {
 
 // ─── Main Component ───────────────────────────────────────────────────────────
 
+// ── Outer shell: fetches data, renders nothing until ready ───────────────────
+// Keeping the hooks that need a mounted ref (useScroll) in a separate inner
+// component prevents the "Target ref defined but not hydrated" Framer Motion
+// error that fires when useScroll is called before the early-return guard.
 export function MetroTimeline() {
   const [posts, setPosts] = useState<BlogPost[]>([]);
   const [loading, setLoading] = useState(true);
-  const navigate = useNavigate();
-
-  const sectionRef = useRef<HTMLDivElement>(null);
-
-  // Scroll-linked traveling dot
-  const { scrollYProgress } = useScroll({
-    target: sectionRef,
-    offset: ['start 80%', 'end 20%'],
-  });
-  const dotY = useTransform(scrollYProgress, [0, 1], ['0%', '100%']);
 
   useEffect(() => {
     supabase
@@ -318,8 +312,22 @@ export function MetroTimeline() {
       });
   }, []);
 
-  if (loading) return null;
-  if (posts.length === 0) return null;
+  if (loading || posts.length === 0) return null;
+  return <MetroTimelineInner posts={posts} />;
+}
+
+// ── Inner: always renders the section, so sectionRef is always attached ───────
+function MetroTimelineInner({ posts }: { posts: BlogPost[] }) {
+  const navigate = useNavigate();
+  const sectionRef = useRef<HTMLDivElement>(null);
+
+  // Scroll-linked traveling dot — safe here because this component only
+  // mounts when posts exist, guaranteeing sectionRef attaches to the DOM.
+  const { scrollYProgress } = useScroll({
+    target: sectionRef,
+    offset: ['start 80%', 'end 20%'],
+  });
+  const dotY = useTransform(scrollYProgress, [0, 1], ['0%', '100%']);
 
   return (
     <section

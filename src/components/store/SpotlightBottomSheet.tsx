@@ -1,9 +1,20 @@
-import { useState, useRef, useEffect } from 'react';
-import { BottomSheet } from 'react-spring-bottom-sheet';
+/**
+ * SpotlightBottomSheet — Framer Motion rewrite
+ *
+ * Replaces the react-spring-bottom-sheet version which crashed on React 18.
+ *
+ * Two modes (same logic as original):
+ *  1. Peek mode  — spotlight active, no store selected → fixed-height sheet at ~42dvh
+ *  2. Detail mode — store selected → delegates to BottomSheetStoreDetail
+ *
+ * Swipe down the peek sheet to dismiss spotlight.
+ */
+
+import { useState, useEffect } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { BottomSheetStoreDetail } from './BottomSheetStoreDetail';
 import { SpotlightPeekContent } from '../map/SpotlightPeekContent';
 import type { Store } from '../../types/store';
-import 'react-spring-bottom-sheet/dist/style.css';
 
 interface SpotlightBottomSheetProps {
   isSpotlightMode: boolean;
@@ -14,19 +25,6 @@ interface SpotlightBottomSheetProps {
   onClose: () => void;
 }
 
-/**
- * PHASE 3 REDESIGN: Unified Bottom Sheet
- *
- * Two modes:
- * 1. Spotlight Peek Mode - Shows 5 recommended stores as horizontal cards
- * 2. Store Detail Mode - Shows individual store details
- *
- * User flow:
- * - Tap "Search This Area" → Peek with 5 cards
- * - Tap a card → Expand to show store details
- * - Swipe down from details → Back to peek
- * - Swipe down from peek → Dismiss spotlight
- */
 export function SpotlightBottomSheet({
   isSpotlightMode,
   spotlightedStores,
@@ -35,15 +33,11 @@ export function SpotlightBottomSheet({
   onDismiss,
   onClose,
 }: SpotlightBottomSheetProps) {
-  const sheetRef = useRef<any>();
   const [showPeek, setShowPeek] = useState(false);
 
-  // Determine what to show
   const shouldShowPeek = isSpotlightMode && !selectedStore && spotlightedStores.length > 0;
   const shouldShowStoreDetail = selectedStore !== null;
-  const shouldShowSheet = shouldShowPeek || shouldShowStoreDetail;
 
-  // Auto-open peek when spotlight activates
   useEffect(() => {
     if (isSpotlightMode && !selectedStore && spotlightedStores.length > 0) {
       setShowPeek(true);
@@ -54,54 +48,55 @@ export function SpotlightBottomSheet({
 
   const handleDismiss = () => {
     if (selectedStore) {
-      // If showing store detail, go back to peek
       onClose();
     } else {
-      // If showing peek, dismiss spotlight entirely
       setShowPeek(false);
       onDismiss();
     }
   };
 
-  if (!shouldShowSheet) return null;
-
-  // If showing store detail, use the existing BottomSheetStoreDetail
+  // Store detail mode — delegate entirely
   if (shouldShowStoreDetail) {
-    return (
-      <BottomSheetStoreDetail
-        store={selectedStore}
-        onClose={onClose}
-      />
-    );
+    return <BottomSheetStoreDetail store={selectedStore} onClose={onClose} />;
   }
 
-  // Otherwise, show spotlight peek
+  // Peek mode — fixed height Framer Motion sheet, swipe down to dismiss
   return (
-    <BottomSheet
-      open={showPeek}
-      onDismiss={handleDismiss}
-      ref={sheetRef}
-      defaultSnap={({ maxHeight }) => maxHeight * 0.42} // Raised to 42% to clear Safari toolbar
-      snapPoints={({ maxHeight }) => [
-        maxHeight * 0.42, // LOCKED: Peek only - raised to show category pills above Safari UI
-      ]}
-      expandOnContentDrag={false} // CRITICAL: Prevent vertical drag expansion
-      blocking={false}
-      skipInitialTransition={false}
-      header={
-        <div className="w-full pt-2 pb-2 bg-gray-900">
-          <div className="flex justify-center">
+    <AnimatePresence>
+      {shouldShowPeek && showPeek && (
+        <motion.div
+          key="spotlight-peek"
+          initial={{ y: '100%' }}
+          animate={{ y: 0 }}
+          exit={{ y: '100%' }}
+          transition={{ type: 'spring', damping: 32, stiffness: 320 }}
+          drag="y"
+          dragConstraints={{ top: 0 }}   // can't drag upward
+          dragElastic={{ top: 0, bottom: 0.25 }}
+          onDragEnd={(_, info) => {
+            // Dismiss on fast downward flick or drag past 80px threshold
+            if (info.velocity.y > 400 || info.offset.y > 80) {
+              handleDismiss();
+            }
+          }}
+          className="fixed bottom-0 left-0 right-0 z-[201] bg-gray-900 rounded-t-3xl"
+          style={{ height: '42dvh', touchAction: 'none' }}
+        >
+          {/* Drag handle */}
+          <div className="flex justify-center pt-3 pb-2">
             <div className="w-10 h-1 bg-gray-600 rounded-full" />
           </div>
-        </div>
-      }
-      className="bottom-sheet-custom spotlight-peek-locked"
-    >
-      <SpotlightPeekContent
-        stores={spotlightedStores}
-        onStoreSelect={onStoreSelect}
-        onDismiss={handleDismiss}
-      />
-    </BottomSheet>
+
+          {/* Content — fills remaining height */}
+          <div className="h-[calc(42dvh-28px)] overflow-hidden">
+            <SpotlightPeekContent
+              stores={spotlightedStores}
+              onStoreSelect={onStoreSelect}
+              onDismiss={handleDismiss}
+            />
+          </div>
+        </motion.div>
+      )}
+    </AnimatePresence>
   );
 }

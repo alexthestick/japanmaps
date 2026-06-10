@@ -400,7 +400,7 @@ export const MapView = forwardRef<MapViewHandle, MapViewProps>(({ stores, onStor
   }, [stores, isSearchActive, selectedCity, selectedNeighborhood]);
 
   const handleMarkerClick = useCallback((e: any, store: Store) => {
-    e.originalEvent.stopPropagation();
+    e?.originalEvent?.stopPropagation();
     logger.log('Marker clicked:', store.name);
     onStoreClick(store);
   }, [onStoreClick]);
@@ -571,7 +571,9 @@ export const MapView = forwardRef<MapViewHandle, MapViewProps>(({ stores, onStor
           positionOptions={{ enableHighAccuracy: true, maximumAge: 0 }}
           fitBoundsOptions={{ maxZoom: 16 }}
           onGeolocate={(evt) => {
-            if (isExploreMode) {
+            // Guard: coords can be undefined on the first tick in DevTools
+            // simulation, or briefly when GPS signal is reacquiring.
+            if (isExploreMode && evt?.coords?.latitude != null) {
               onUserPositionUpdate?.({
                 latitude: evt.coords.latitude,
                 longitude: evt.coords.longitude,
