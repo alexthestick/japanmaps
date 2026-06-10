@@ -33,10 +33,19 @@ export function useMediaQuery(query: string): boolean {
 }
 
 /**
- * Convenience hook for mobile devices (< 768px)
+ * Convenience hook for mobile devices.
+ * Returns true for portrait phones (< 768px wide) AND landscape phones
+ * (touch device with viewport height ≤ 500px).
+ *
+ * Without the second clause, iPhones in landscape (932px wide, 430px tall)
+ * pass the 768px breakpoint and render as desktop — showing the map legend,
+ * search bar, and category panel on a phone held sideways.
+ *
+ * `pointer: coarse` distinguishes touch devices from a laptop with a small
+ * browser window, which should still get the desktop layout.
  */
 export function useIsMobile(): boolean {
-  return useMediaQuery('(max-width: 767px)');
+  return useMediaQuery('(max-width: 767px), (max-height: 500px) and (pointer: coarse)');
 }
 
 /**

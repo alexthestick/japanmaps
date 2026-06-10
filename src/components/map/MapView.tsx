@@ -123,14 +123,47 @@ export const MapView = forwardRef<MapViewHandle, MapViewProps>(({ stores, onStor
   // we only need trigger(), so we only type trigger().
   const geolocateRef = useRef<{ trigger: () => void } | null>(null);
 
-  // EXPLORE MODE: Activate continuous GPS tracking when Explore mode turns on.
-  // No setTimeout — by the time the user taps the Explore toggle, the map and
-  // all its controls are already mounted, so the ref is always available.
+  // EXPLORE MODE: Activate map locking + heading via GeolocateControl.
   useEffect(() => {
     if (isExploreMode && geolocateRef.current) {
       geolocateRef.current.trigger();
     }
   }, [isExploreMode]);
+
+  // EXPLORE MODE: Direct GPS tracking for position data.
+  //
+  // Why not use GeolocateControl's onGeolocate?
+  // GeolocationPosition.coords is a non-enumerable native getter. Mapbox's
+  // event system copies event data with `for...in`, which skips non-enumerable
+  // properties — so coords is silently dropped and evt.coords is always
+  // undefined. Using navigator.geolocation.watchPosition directly bypasses
+  // this and gives us the raw GeolocationPosition with coords intact.
+  //
+  // The GeolocateControl still handles map pan-lock and heading rotation —
+  // we just stop relying on it for position data.
+  useEffect(() => {
+    if (!isExploreMode) return;
+    if (!navigator.geolocation) return;
+
+    const watchId = navigator.geolocation.watchPosition(
+      (position) => {
+        logger.log('[ExploreMode] Direct GPS fix', position.coords.latitude, position.coords.longitude);
+        onUserPositionUpdate?.({
+          latitude:  position.coords.latitude,
+          longitude: position.coords.longitude,
+          accuracy:  position.coords.accuracy,
+        });
+      },
+      (error) => {
+        console.warn('[ExploreMode] Direct GPS error:', error.code, error.message);
+      },
+      { enableHighAccuracy: true, maximumAge: 0, timeout: 10000 },
+    );
+
+    return () => {
+      navigator.geolocation.clearWatch(watchId);
+    };
+  }, [isExploreMode, onUserPositionUpdate]);
 
   // PHASE 1.5G: Track map movement to hide city labels during pan/zoom
   const [isMapMoving, setIsMapMoving] = useState(false);
@@ -571,14 +604,20 @@ export const MapView = forwardRef<MapViewHandle, MapViewProps>(({ stores, onStor
           positionOptions={{ enableHighAccuracy: true, maximumAge: 0 }}
           fitBoundsOptions={{ maxZoom: 16 }}
           onGeolocate={(evt) => {
-            // Guard: coords can be undefined on the first tick in DevTools
-            // simulation, or briefly when GPS signal is reacquiring.
-            if (isExploreMode && evt?.coords?.latitude != null) {
+            // IMPORTANT: Do NOT gate this on `isExploreMode`.
+            // GeolocateControl props are non-reactive in react-map-gl — the
+            // callback is set once at mount with isExploreMode frozen at its
+            // initial value (false), creating a stale closure that permanently
+            // blocks position updates.
+            logger.log('[ExploreMode] onGeolocate fired', evt?.coords?.latitude, evt?.coords?.longitude);
+            if (evt?.coords?.latitude != null) {
               onUserPositionUpdate?.({
                 latitude: evt.coords.latitude,
                 longitude: evt.coords.longitude,
                 accuracy: evt.coords.accuracy,
               });
+            } else {
+              logger.log('[ExploreMode] onGeolocate — coords missing', evt);
             }
           }}
           onTrackUserLocationStart={() => {
@@ -658,26 +697,43 @@ export const MapView = forwardRef<MapViewHandle, MapViewProps>(({ stores, onStor
           </Marker>
         )}
 
-        {/* EXPLORE MODE: Avatar placeholder — replaces the GeolocateControl dot.
-            The built-in dot is suppressed via showUserLocation={false} on the control.
-            Swap the inner div for a custom SVG character when the design is ready. */}
+        {/* EXPLORE MODE: User position avatar.
+            showUserLocation={false} on the GeolocateControl suppresses the
+            default dot so we can render a custom, more visible marker here.
+            Two-layer design: outer pulsing ring (accuracy hint) + inner dot. */}
         {isExploreMode && exploreUserPosition && (
           <Marker
             longitude={exploreUserPosition.longitude}
             latitude={exploreUserPosition.latitude}
             anchor="center"
           >
-            <div
-              style={{
-                width: '32px',
-                height: '32px',
-                borderRadius: '50%',
-                backgroundColor: '#22D9EE',
-                border: '3px solid white',
-                boxShadow: '0 0 16px rgba(34, 217, 238, 0.7), 0 2px 8px rgba(0,0,0,0.4)',
-                zIndex: 10,
-              }}
-            />
+            <div style={{ position: 'relative', width: 48, height: 48, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              {/* Pulsing accuracy ring — small dot-safe animation, not a blur element */}
+              <div
+                style={{
+                  position: 'absolute',
+                  width: 48,
+                  height: 48,
+                  borderRadius: '50%',
+                  backgroundColor: 'rgba(34, 217, 238, 0.2)',
+                  border: '2px solid rgba(34, 217, 238, 0.5)',
+                  animation: 'radar-ping 2s ease-out infinite',
+                }}
+              />
+              {/* Inner position dot */}
+              <div
+                style={{
+                  width: 20,
+                  height: 20,
+                  borderRadius: '50%',
+                  backgroundColor: '#22D9EE',
+                  border: '3px solid white',
+                  boxShadow: '0 0 12px rgba(34, 217, 238, 0.9), 0 2px 8px rgba(0,0,0,0.5)',
+                  zIndex: 10,
+                  flexShrink: 0,
+                }}
+              />
+            </div>
           </Marker>
         )}
 
@@ -1014,13 +1070,16 @@ export const MapView = forwardRef<MapViewHandle, MapViewProps>(({ stores, onStor
         })()}
       </div>
 
-      {/* Locate Me Button */}
-      <LocateButton
-        onClick={handleLocateClick}
-        loading={locationLoading}
-        hasLocation={!!userPosition}
-        explorePillVisible={isMobile}
-      />
+      {/* Locate Me Button — desktop only. On mobile the Radar pill handles
+          GPS entirely, so showing a second GPS control is redundant. */}
+      {!isMobile && (
+        <LocateButton
+          onClick={handleLocateClick}
+          loading={locationLoading}
+          hasLocation={!!userPosition}
+          explorePillVisible={false}
+        />
+      )}
 
       {/* Search This Area Button — visible at zoom >= 14.
           On desktop: hide when spotlight panel is open (panel X handles dismiss).

@@ -533,6 +533,14 @@ body {
   to   { transform: rotate(360deg); }
 }
 
+/* radar-ping: expands + fades the accuracy ring around the user avatar
+   in Radar mode. Small border-only element — GPU impact negligible. */
+@keyframes radar-ping {
+  0%   { transform: scale(0.6); opacity: 0.8; }
+  70%  { transform: scale(1.4); opacity: 0.15; }
+  100% { transform: scale(1.4); opacity: 0; }
+}
+
 @keyframes ring-pulse {
   0%, 100% { opacity: 0.85; }
   50%       { opacity: 0.25; }
