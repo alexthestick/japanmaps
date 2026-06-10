@@ -22,6 +22,7 @@ import { useAuthContext } from '../../contexts/AuthContext';
 import { MAIN_CATEGORY_COLORS } from '../../lib/constants';
 import { supabase } from '../../lib/supabase';
 import { ikUrl } from '../../utils/ikUrl';
+import { getHoursStatus } from '../../utils/hoursParser';
 import type { Store } from '../../types/store';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -230,6 +231,9 @@ export function RadarCheckinCard({
   const photo = store.photos?.[0];
   const photoUrl = photo ? ikUrl(photo, 'thumb') : null;
 
+  // Compute hours status once per render — cheap string parse, no network call.
+  const hoursStatus = getHoursStatus(store.hours);
+
   // ── Render ────────────────────────────────────────────────────────────────
   return (
     <motion.div
@@ -310,6 +314,38 @@ export function RadarCheckinCard({
               <span className="text-gray-500 flex-shrink-0 flex items-center gap-0.5" style={{ fontSize: '0.63rem' }}>
                 <span style={{ color: accentColor, opacity: 0.7 }}>◎</span>
                 {store.haulCount}
+              </span>
+            )}
+
+            {/* Hours status */}
+            {hoursStatus.status === 'open' && (
+              <span className="flex-shrink-0 flex items-center gap-0.5" style={{ fontSize: '0.63rem', color: '#10b981' }}>
+                <span>●</span>
+                <span>Closes {hoursStatus.closesAt}</span>
+              </span>
+            )}
+            {hoursStatus.status === 'opens_soon' && (
+              <span className="flex-shrink-0 flex items-center gap-0.5" style={{ fontSize: '0.63rem', color: '#fbbf24' }}>
+                <span>●</span>
+                <span>Opens {hoursStatus.opensAt}</span>
+              </span>
+            )}
+            {hoursStatus.status === 'closed' && (
+              <span className="flex-shrink-0 flex items-center gap-0.5" style={{ fontSize: '0.63rem', color: '#f87171' }}>
+                <span>●</span>
+                <span>{hoursStatus.opensAt ? `Opens ${hoursStatus.opensAt}` : 'Closed'}</span>
+              </span>
+            )}
+            {hoursStatus.status === 'closed_today' && (
+              <span className="flex-shrink-0 flex items-center gap-0.5" style={{ fontSize: '0.63rem', color: '#f87171' }}>
+                <span>●</span>
+                <span>Closed today</span>
+              </span>
+            )}
+            {hoursStatus.status === 'open_24h' && (
+              <span className="flex-shrink-0 flex items-center gap-0.5" style={{ fontSize: '0.63rem', color: '#10b981' }}>
+                <span>●</span>
+                <span>Open 24hrs</span>
               </span>
             )}
           </div>
