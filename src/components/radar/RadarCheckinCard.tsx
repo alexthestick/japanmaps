@@ -17,7 +17,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
-import { Instagram } from 'lucide-react';
+import { Instagram, X } from 'lucide-react';
 import { useAuthContext } from '../../contexts/AuthContext';
 import { MAIN_CATEGORY_COLORS } from '../../lib/constants';
 import { supabase } from '../../lib/supabase';
@@ -47,6 +47,7 @@ export interface RadarCheckinCardProps {
   onNextStore: () => void;  // cycle to next nearby store
   userPosition: { latitude: number; longitude: number; accuracy?: number };
   onCheckinSuccess: (storeName: string, isVerification: boolean) => void;
+  onDismiss: () => void;    // called when user taps X or auto-dismiss timer fires
 }
 
 // ─── Component ────────────────────────────────────────────────────────────────
@@ -60,6 +61,7 @@ export function RadarCheckinCard({
   onNextStore,
   userPosition,
   onCheckinSuccess,
+  onDismiss,
 }: RadarCheckinCardProps) {
   const { user } = useAuthContext();
   const navigate = useNavigate();
@@ -169,9 +171,13 @@ export function RadarCheckinCard({
     setExistingCheckin(newStatus);
     setUiState('success');
 
+    // Notify parent immediately so markers + passport cache refresh
+    onCheckinSuccess(store.name, wasReVerification);
+
+    // Auto-dismiss after 3s — X button lets user close early
     setTimeout(() => {
-      onCheckinSuccess(store.name, wasReVerification);
-    }, 2000);
+      onDismiss();
+    }, 3000);
   }, [user, store.id, store.name, userPosition, existingCheckin, navigate, onCheckinSuccess]);
 
   // ── Derived display logic ─────────────────────────────────────────────────
@@ -230,7 +236,7 @@ export function RadarCheckinCard({
       // Shake animation fires when uiState === 'too_far'
       animate={shake ? { x: [0, -10, 10, -8, 8, -5, 5, -3, 3, 0] } : { x: 0 }}
       transition={shake ? { duration: 0.5, ease: 'easeOut' } : {}}
-      className="w-full overflow-hidden rounded-2xl backdrop-blur-md"
+      className="relative w-full overflow-hidden rounded-2xl backdrop-blur-md"
       style={{
         backgroundColor: 'rgba(10, 10, 15, 0.93)',
         border: isInRange
@@ -241,6 +247,24 @@ export function RadarCheckinCard({
           : '0 4px 20px rgba(0,0,0,0.4)',
       }}
     >
+      {/* ── Dismiss button — only visible on success state ──────────────── */}
+      <AnimatePresence>
+        {uiState === 'success' && (
+          <motion.button
+            initial={{ opacity: 0, scale: 0.7 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0, scale: 0.7 }}
+            transition={{ duration: 0.15 }}
+            onClick={onDismiss}
+            className="absolute top-2.5 right-2.5 z-10 p-1 rounded-full"
+            style={{ backgroundColor: 'rgba(16,185,129,0.15)', border: '1px solid rgba(16,185,129,0.3)' }}
+            aria-label="Dismiss"
+          >
+            <X className="w-3.5 h-3.5" style={{ color: '#10b981' }} />
+          </motion.button>
+        )}
+      </AnimatePresence>
+
       {/* ── Top row: photo + store info + distance/chip ─────────────────── */}
       <div className="flex items-center gap-3 px-4 py-3">
 

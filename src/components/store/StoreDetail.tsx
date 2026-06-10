@@ -12,9 +12,10 @@ import { BlurImage } from '../common/BlurImage';
 interface StoreDetailProps {
   store: Store;
   onClose: () => void;
+  isStamped?: boolean;
 }
 
-export function StoreDetail({ store, onClose }: StoreDetailProps) {
+export function StoreDetail({ store, onClose, isStamped }: StoreDetailProps) {
   logger.log('StoreDetail rendered with store:', store?.name);
   const [isSaved, setIsSaved] = useState(() => isStoreSaved(store.id));
 
@@ -102,6 +103,14 @@ export function StoreDetail({ store, onClose }: StoreDetailProps) {
             <div className="absolute bottom-3 right-3 flex items-center gap-1 px-2.5 py-1 bg-black/70 backdrop-blur-sm rounded-full border border-cyan-400/30">
               <Heart className="w-3 h-3 text-cyan-400 fill-cyan-400" />
               <span className="text-xs font-bold text-cyan-300">{store.saveCount}</span>
+            </div>
+          )}
+          {/* Stamped badge */}
+          {isStamped && (
+            <div className="absolute bottom-3 left-3 flex items-center gap-1.5 px-2.5 py-1 rounded-full backdrop-blur-md"
+              style={{ backgroundColor: 'rgba(16,185,129,0.2)', border: '1px solid rgba(16,185,129,0.45)' }}>
+              <CheckCircle2 className="w-3 h-3" style={{ color: '#10b981' }} />
+              <span className="text-xs font-bold" style={{ color: '#10b981' }}>Stamped</span>
             </div>
           )}
         </motion.div>

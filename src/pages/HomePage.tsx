@@ -261,8 +261,13 @@ export function HomePage() {
   // Invalidation timestamp: bumped after every successful stamp so useCheckinCache refetches.
   const [lastStampedAt, setLastStampedAt] = useState(0);
 
-  // Stamped store IDs — fetched once on Radar enter, auto-refetched after each stamp.
-  const stampedStoreIds = useCheckinCache(isExploreMode, lastStampedAt);
+  // Stamped store IDs — always fetched for logged-in users so the stamp badge shows
+  // on store detail panels in both Radar and Browse mode.
+  const stampedStoreIds = useCheckinCache(true, lastStampedAt);
+
+  // Dismiss state for the check-in card after a successful stamp.
+  // Reset whenever the active nearby store changes so the card re-appears for a new store.
+  const [cardDismissed, setCardDismissed] = useState(false);
 
   // Index into nearbyStores — lets the user cycle to the next nearby store via the "+X" chip.
   const [nearbyStoreIndex, setNearbyStoreIndex] = useState(0);
@@ -273,6 +278,7 @@ export function HomePage() {
   const closestStoreId = nearbyStores[0]?.store.id ?? null;
   useEffect(() => {
     setNearbyStoreIndex(0);
+    setCardDismissed(false); // new store in range — show the card fresh
   }, [closestStoreId]);
 
   // Clamp index so it's never out-of-bounds when the list shrinks (user walks away from stores).
@@ -627,7 +633,7 @@ export function HomePage() {
                   (and resets its internal state) whenever the closest store changes.
               ──────────────────────────────────────────────────────────────── */}
               <AnimatePresence>
-                {isExploreMode && nearbyStoreEntry && !selectedStore && (
+                {isExploreMode && nearbyStoreEntry && !selectedStore && !cardDismissed && (
                   <motion.div
                     key={nearbyStoreEntry.store.id}
                     initial={{ y: 60, opacity: 0 }}
@@ -648,6 +654,7 @@ export function HomePage() {
                       }
                       userPosition={exploreUserPosition!}
                       onCheckinSuccess={handleCheckinSuccess}
+                      onDismiss={() => setCardDismissed(true)}
                     />
                   </motion.div>
                 )}
@@ -743,6 +750,7 @@ export function HomePage() {
               isSpotlightMode={isSpotlightMode}
               spotlightedStores={spotlightedStores}
               selectedStore={selectedStore}
+              isStamped={selectedStore ? stampedStoreIds.has(selectedStore.id) : false}
               onStoreSelect={(store) => {
                 setSelectedStore(store);
                 // Pan map to store
@@ -787,6 +795,7 @@ export function HomePage() {
                   <StoreDetail
                     key={selectedStore.id}
                     store={selectedStore}
+                    isStamped={stampedStoreIds.has(selectedStore.id)}
                     onClose={() => {
                       setSelectedStore(null);
                       // If we came from spotlight, keep spotlight active so panel re-appears
