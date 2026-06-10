@@ -247,26 +247,19 @@ export function RadarCheckinCard({
           : '0 4px 20px rgba(0,0,0,0.4)',
       }}
     >
-      {/* ── Dismiss button — only visible on success state ──────────────── */}
-      <AnimatePresence>
-        {uiState === 'success' && (
-          <motion.button
-            initial={{ opacity: 0, scale: 0.7 }}
-            animate={{ opacity: 1, scale: 1 }}
-            exit={{ opacity: 0, scale: 0.7 }}
-            transition={{ duration: 0.15 }}
-            onClick={onDismiss}
-            className="absolute top-2.5 right-2.5 z-10 p-1 rounded-full"
-            style={{ backgroundColor: 'rgba(16,185,129,0.15)', border: '1px solid rgba(16,185,129,0.3)' }}
-            aria-label="Dismiss"
-          >
-            <X className="w-3.5 h-3.5" style={{ color: '#10b981' }} />
-          </motion.button>
-        )}
-      </AnimatePresence>
+      {/* ── Dismiss button — always visible ──────────────────────────────── */}
+      <button
+        onClick={onDismiss}
+        className="absolute top-2.5 right-2.5 z-10 p-1.5 rounded-full transition-all active:scale-90"
+        style={{ backgroundColor: 'rgba(255,255,255,0.07)', border: '1px solid rgba(255,255,255,0.12)' }}
+        aria-label="Dismiss"
+      >
+        <X className="w-3 h-3 text-gray-400" />
+      </button>
 
       {/* ── Top row: photo + store info + distance/chip ─────────────────── */}
-      <div className="flex items-center gap-3 px-4 py-3">
+      {/* pr-8 reserves space for the absolute dismiss button */}
+      <div className="flex items-center gap-3 pl-4 pr-8 py-3">
 
         {/* Store photo */}
         <div
