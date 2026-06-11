@@ -3,12 +3,13 @@ import { useNavigate, Link } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   MapPin, Bookmark, Camera, LogOut, Edit3, Check, X,
-  ShoppingBag, ChevronRight, Trash2, Stamp,
+  ShoppingBag, ChevronRight, Trash2, Stamp, Share2, Loader2,
 } from 'lucide-react';
 import { useAuthContext } from '../contexts/AuthContext';
 import { RequireAuth } from '../components/common/RequireAuth';
 import { supabase } from '../lib/supabase';
 import { ikUrl } from '../utils/ikUrl';
+import { generatePassportShareCard } from '../utils/passportCanvas';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -194,11 +195,44 @@ function PassportTabContent({
   checkins,
   badgeProgress,
   loading,
+  username,
 }: {
   checkins: Checkin[];
   badgeProgress: BadgeProgress[];
   loading: boolean;
+  username: string;
 }) {
+  const [sharing, setSharing] = useState(false);
+
+  const handleShare = async () => {
+    if (sharing || checkins.length < 5) return;
+    setSharing(true);
+    try {
+      const blob = await generatePassportShareCard({ checkins, username });
+      const file = new File([blob], 'lost-in-transit-passport.png', { type: 'image/png' });
+
+      // Web Share API (level 2) — supported on iOS Safari 15+ and Chrome Android
+      if (navigator.canShare?.({ files: [file] })) {
+        await navigator.share({
+          files: [file],
+          title: 'My Lost in Transit Passport',
+          text: `${checkins.length} stores stamped across Japan 🗾`,
+        });
+      } else {
+        // Desktop fallback — trigger download
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = 'lost-in-transit-passport.png';
+        a.click();
+        URL.revokeObjectURL(url);
+      }
+    } catch (err) {
+      // User cancelled share — not an error
+    } finally {
+      setSharing(false);
+    }
+  };
   if (loading) {
     return (
       <div className="grid grid-cols-3 gap-2">
@@ -284,9 +318,34 @@ function PassportTabContent({
 
       {/* Stamp grid */}
       <div>
-        <h3 className="text-xs font-bold uppercase tracking-widest text-gray-600 mb-3">
-          Your Stamps · {checkins.length}
-        </h3>
+        <div className="flex items-center justify-between mb-3">
+          <h3 className="text-xs font-bold uppercase tracking-widest text-gray-600">
+            Your Stamps · {checkins.length}
+          </h3>
+          {/* Share button — unlocks at 5 stamps */}
+          {checkins.length >= 5 ? (
+            <button
+              onClick={handleShare}
+              disabled={sharing}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all active:scale-95 disabled:opacity-60"
+              style={{
+                backgroundColor: 'rgba(34,217,238,0.1)',
+                border: '1px solid rgba(34,217,238,0.3)',
+                color: '#22D9EE',
+              }}
+            >
+              {sharing
+                ? <Loader2 className="h-3 w-3 animate-spin" />
+                : <Share2 className="h-3 w-3" />
+              }
+              {sharing ? 'Generating…' : 'Share'}
+            </button>
+          ) : (
+            <span className="text-[10px] text-gray-700">
+              {5 - checkins.length} more to unlock share
+            </span>
+          )}
+        </div>
         <div className="grid grid-cols-3 gap-2">
           {checkins.map(checkin => (
             <PassportStamp key={checkin.checkin_id} checkin={checkin} />
@@ -1029,6 +1088,7 @@ function ProfileContent() {
                 checkins={checkins}
                 badgeProgress={badgeProgress}
                 loading={loadingPassport}
+                username={username}
               />
             </motion.div>
           )}

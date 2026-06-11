@@ -33,6 +33,8 @@ import type { SearchSuggestion } from '../components/store/SearchAutocomplete';
 import { MAJOR_CITIES_JAPAN, LOCATIONS, NEIGHBORHOOD_COORDINATES } from '../lib/constants';
 import { distanceMeters } from '../utils/distance';
 import { RadarCheckinCard } from '../components/radar/RadarCheckinCard';
+import { RadarSessionSummary } from '../components/radar/RadarSessionSummary';
+import { PostStampHaulPrompt } from '../components/radar/PostStampHaulPrompt';
 import { useCheckinCache } from '../hooks/useCheckinCache';
 
 export function HomePage() {
@@ -269,6 +271,24 @@ export function HomePage() {
   // Reset whenever the active nearby store changes so the card re-appears for a new store.
   const [cardDismissed, setCardDismissed] = useState(false);
 
+  // ── Radar session tracking (refs = no re-renders on every GPS tick) ────────
+  // sessionPositions: ring-buffer of GPS fixes during this Radar session.
+  //   Used to compute total walking distance via summed Haversine segments.
+  // sessionStampCount: incremented each time handleCheckinSuccess fires.
+  // sessionNeighborhood: last known neighborhood at the moment Radar exits.
+  const sessionPositionsRef  = useRef<Array<{ lat: number; lng: number }>>([]);
+  const sessionStampCountRef = useRef(0);
+
+  // Session summary overlay — shown briefly after Radar exits with ≥1 stamp.
+  const [sessionSummary, setSessionSummary] = useState<{
+    stamps: number;
+    distanceKm: number;
+    neighborhood: string | null;
+  } | null>(null);
+
+  // Post-stamp haul prompt — store that was just stamped (null = hidden).
+  const [haulPromptStore, setHaulPromptStore] = useState<Store | null>(null);
+
   // Index into nearbyStores — lets the user cycle to the next nearby store via the "+X" chip.
   const [nearbyStoreIndex, setNearbyStoreIndex] = useState(0);
 
@@ -391,18 +411,58 @@ export function HomePage() {
   // so Browse and Radar UI never overlap.
   const handleRadarToggle = useCallback(() => {
     if (isExploreMode) {
+      // ── Compute and show session summary if ≥1 stamp was made ──────────
+      const stampCount = sessionStampCountRef.current;
+      if (stampCount > 0) {
+        // Sum consecutive Haversine segments for total walking distance
+        const positions = sessionPositionsRef.current;
+        let totalMeters = 0;
+        for (let i = 1; i < positions.length; i++) {
+          totalMeters += distanceMeters(
+            positions[i - 1].lat, positions[i - 1].lng,
+            positions[i].lat,     positions[i].lng,
+          );
+        }
+        setSessionSummary({
+          stamps: stampCount,
+          distanceKm: totalMeters / 1000,
+          neighborhood: exploreNeighborhood,
+        });
+      }
+
+      // Reset session refs for next Radar session
+      sessionPositionsRef.current  = [];
+      sessionStampCountRef.current = 0;
+
       setSelectedStore(null);
       setExploreUserPosition(null);
       setNearbyStoreIndex(0);
     }
     setIsExploreMode(prev => !prev);
-  }, [isExploreMode]);
+  }, [isExploreMode, exploreNeighborhood]);
+
+  // Accumulate GPS positions into the session ring-buffer while Radar is active.
+  // Throttled naturally by the GPS watchPosition interval (~1s on device).
+  useEffect(() => {
+    if (!isExploreMode || !exploreUserPosition) return;
+    sessionPositionsRef.current.push({
+      lat: exploreUserPosition.latitude,
+      lng: exploreUserPosition.longitude,
+    });
+  }, [isExploreMode, exploreUserPosition]);
 
   // Called by RadarCheckinCard after a successful stamp or re-verification.
   // Bumps lastStampedAt → invalidates useCheckinCache → marker turns green immediately.
   const handleCheckinSuccess = useCallback((_storeName: string, _isVerification: boolean) => {
     setLastStampedAt(Date.now());
-  }, []);
+    sessionStampCountRef.current += 1;
+    // Show haul prompt for this store after the check-in card auto-dismisses (3s)
+    if (nearbyStoreEntry?.store) {
+      setTimeout(() => {
+        setHaulPromptStore(nearbyStoreEntry.store);
+      }, 3200); // 200ms after the card's 3s auto-dismiss fires
+    }
+  }, [nearbyStoreEntry?.store]);
 
   // Handle autocomplete suggestion selection (CRITICAL: prevent refresh)
   const handleSearchSuggestionSelect = useCallback((suggestion: SearchSuggestion) => {
@@ -657,6 +717,34 @@ export function HomePage() {
                       onDismiss={() => setCardDismissed(true)}
                     />
                   </motion.div>
+                )}
+              </AnimatePresence>
+
+              {/* POST-STAMP HAUL PROMPT ──────────────────────────────────────
+                  Slides up after check-in card auto-dismisses. Invitation to
+                  log a find. Disappears on close or after submit.
+              ──────────────────────────────────────────────────────────────── */}
+              <AnimatePresence>
+                {isExploreMode && haulPromptStore && !selectedStore && (
+                  <PostStampHaulPrompt
+                    store={haulPromptStore}
+                    onClose={() => setHaulPromptStore(null)}
+                  />
+                )}
+              </AnimatePresence>
+
+              {/* SESSION SUMMARY ─────────────────────────────────────────────
+                  Slides up after Radar exit when ≥1 stamp was made.
+                  Auto-dismisses after 4s or on tap.
+              ──────────────────────────────────────────────────────────────── */}
+              <AnimatePresence>
+                {sessionSummary && !isExploreMode && (
+                  <RadarSessionSummary
+                    stamps={sessionSummary.stamps}
+                    distanceKm={sessionSummary.distanceKm}
+                    neighborhood={sessionSummary.neighborhood}
+                    onDismiss={() => setSessionSummary(null)}
+                  />
                 )}
               </AnimatePresence>
 

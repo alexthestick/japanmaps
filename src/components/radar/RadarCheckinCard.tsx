@@ -4,14 +4,18 @@
  * The approach + check-in card that slides up from the bottom of the map
  * when the user is within 150m of a store in Radar mode.
  *
+ * Three emotional states drive the entire visual language:
+ *
+ *   DISCOVERY  — never stamped this store. Cyan energy, forward-leaning CTA.
+ *   REUNION    — already stamped + verified. Green warmth, "you've been here"
+ *                feel, last visit date shown, no urgent CTA.
+ *   VERIFY     — stamped but GPS was weak. Amber, re-verify prompt.
+ *
  * Four internal UI states:
  *   idle        → approaching (slim) or in_range (expanded with CTA)
  *   checking_in → spinner, waiting for Edge Function response
- *   success     → green flash "Stamped ✓", 2s then callback
+ *   success     → green flash "Stamped ✓", auto-dismisses after 3s
  *   too_far     → card shakes, shows exact distance, resets after 2.5s
- *
- * Positioning and slide-up animation are handled by the parent (HomePage).
- * This component only handles its own internal state + shake animation.
  */
 
 import { useState, useEffect, useRef, useCallback } from 'react';
@@ -37,18 +41,52 @@ interface TooFarInfo {
 interface CachedStatus {
   hasCheckin: boolean;
   verified: boolean;
+  visitedAt: string | null;   // ISO timestamp of the stamp — for "Last visited" display
 }
 
 export interface RadarCheckinCardProps {
   store: Store;
-  distance: number;         // live distance in metres (updates every GPS tick)
-  checkinRadius: number;    // dynamic radius: max(50, accuracy×1.5), capped at 150
-  isInRange: boolean;       // distance <= checkinRadius → show stamp CTA
-  nearbyCount: number;      // total stores within 150m (including this one)
-  onNextStore: () => void;  // cycle to next nearby store
+  distance: number;
+  checkinRadius: number;
+  isInRange: boolean;
+  nearbyCount: number;
+  onNextStore: () => void;
   userPosition: { latitude: number; longitude: number; accuracy?: number };
   onCheckinSuccess: (storeName: string, isVerification: boolean) => void;
-  onDismiss: () => void;    // called when user taps X or auto-dismiss timer fires
+  onDismiss: () => void;
+}
+
+// ─── Accent theme per emotional state ────────────────────────────────────────
+
+type StoreState = 'discovery' | 'reunion' | 'verify';
+
+const THEME = {
+  discovery: {
+    color:    '#22D9EE',
+    rgba:     'rgba(34,217,238,',
+    dimColor: 'rgba(34,217,238,0.7)',
+  },
+  reunion: {
+    color:    '#10b981',
+    rgba:     'rgba(16,185,129,',
+    dimColor: 'rgba(16,185,129,0.7)',
+  },
+  verify: {
+    color:    '#fbbf24',
+    rgba:     'rgba(251,191,36,',
+    dimColor: 'rgba(251,191,36,0.7)',
+  },
+} as const;
+
+// ─── Helper: compact date like "Dec 3" ───────────────────────────────────────
+
+function formatVisitDate(iso: string | null): string | null {
+  if (!iso) return null;
+  try {
+    return new Date(iso).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+  } catch {
+    return null;
+  }
 }
 
 // ─── Component ────────────────────────────────────────────────────────────────
@@ -72,27 +110,18 @@ export function RadarCheckinCard({
   const [existingCheckin, setExistingCheckin] = useState<CachedStatus | null>(null);
   const [shake, setShake] = useState(false);
 
-  // Cache: prevents redundant DB calls when GPS boundary fluctuation
-  // causes nearbyStore to briefly flip between stores.
   const statusCache = useRef<Map<string, CachedStatus>>(new Map());
   const lastFetchedStore = useRef<string | null>(null);
 
   // ── Fetch checkin status when store changes ──────────────────────────────
   useEffect(() => {
     if (!user) return;
-    if (lastFetchedStore.current === store.id) return; // already fetched this store
-
+    if (lastFetchedStore.current === store.id) return;
     lastFetchedStore.current = store.id;
 
-    // Serve from cache if available — zero DB round trip
     const cached = statusCache.current.get(store.id);
-    if (cached) {
-      setExistingCheckin(cached);
-      return;
-    }
+    if (cached) { setExistingCheckin(cached); return; }
 
-    // Direct table query — type-safe via Database['gps_checkins'] and
-    // covered by the gps_checkins_select_own RLS policy (auth.uid() = user_id).
     supabase
       .from('gps_checkins')
       .select('verified, visited_at')
@@ -100,20 +129,16 @@ export function RadarCheckinCard({
       .eq('store_id', store.id)
       .maybeSingle()
       .then(({ data }) => {
-        // Narrow cast: supabase-js generic inference requires the full Database
-        // schema (Views/Enums/CompositeTypes) to resolve correctly — cast the
-        // row here until we run a full `supabase gen types` regeneration.
-        const row = data as { verified: boolean } | null;
+        const row = data as { verified: boolean; visited_at: string | null } | null;
         const status: CachedStatus = row
-          ? { hasCheckin: true, verified: row.verified }
-          : { hasCheckin: false, verified: false };
-
+          ? { hasCheckin: true, verified: row.verified, visitedAt: row.visited_at }
+          : { hasCheckin: false, verified: false, visitedAt: null };
         statusCache.current.set(store.id, status);
         setExistingCheckin(status);
       });
   }, [store.id, user]);
 
-  // Reset local ui state when the store changes
+  // Reset ui state when store changes
   useEffect(() => {
     setUiState('idle');
     setTooFarInfo(null);
@@ -122,11 +147,7 @@ export function RadarCheckinCard({
 
   // ── Check-in handler ──────────────────────────────────────────────────────
   const handleStampPress = useCallback(async () => {
-    if (!user) {
-      navigate('/login');
-      return;
-    }
-
+    if (!user) { navigate('/login'); return; }
     setUiState('checking_in');
 
     const { data, error } = await supabase.functions.invoke('gps-checkin', {
@@ -138,57 +159,56 @@ export function RadarCheckinCard({
       },
     });
 
-    // ── Error handling ──────────────────────────────────────────────────
     const edgeErrorCode = data?.error;
-    // Network/function errors (not a distance rejection) get a distinct message
     const isNetworkError = !!error && !edgeErrorCode;
 
     if (error || edgeErrorCode) {
       if (edgeErrorCode === 'too_far' && data) {
-        setTooFarInfo({
-          distanceMeters: data.distance_meters,
-          requiredMeters: data.required_meters,
-        });
+        setTooFarInfo({ distanceMeters: data.distance_meters, requiredMeters: data.required_meters });
       } else if (isNetworkError) {
-        // Pass a sentinel so the button shows a connection message instead of
-        // a distance message — the two failures need different copy.
         setTooFarInfo({ distanceMeters: -1, requiredMeters: -1 });
       }
       setUiState('too_far');
       setShake(true);
-
-      setTimeout(() => {
-        setShake(false);
-        setUiState('idle');
-        setTooFarInfo(null);
-      }, 2500);
+      setTimeout(() => { setShake(false); setUiState('idle'); setTooFarInfo(null); }, 2500);
       return;
     }
 
-    // ── Success ─────────────────────────────────────────────────────────
+    // Success
     const wasReVerification = existingCheckin?.hasCheckin === true && !existingCheckin?.verified;
-    const newStatus: CachedStatus = { hasCheckin: true, verified: data.checkin.verified };
+    const now = new Date().toISOString();
+    const newStatus: CachedStatus = {
+      hasCheckin: true,
+      verified: data.checkin.verified,
+      visitedAt: now,
+    };
     statusCache.current.set(store.id, newStatus);
     setExistingCheckin(newStatus);
     setUiState('success');
 
-    // Notify parent immediately so markers + passport cache refresh
     onCheckinSuccess(store.name, wasReVerification);
+    setTimeout(() => { onDismiss(); }, 3000);
+  }, [user, store.id, store.name, userPosition, existingCheckin, navigate, onCheckinSuccess, onDismiss]);
 
-    // Auto-dismiss after 3s — X button lets user close early
-    setTimeout(() => {
-      onDismiss();
-    }, 3000);
-  }, [user, store.id, store.name, userPosition, existingCheckin, navigate, onCheckinSuccess]);
-
-  // ── Derived display logic ─────────────────────────────────────────────────
-  const alreadyVerified = existingCheckin?.hasCheckin && existingCheckin?.verified;
+  // ── Derived state ─────────────────────────────────────────────────────────
+  const alreadyVerified  = existingCheckin?.hasCheckin && existingCheckin?.verified;
   const isReVerification = existingCheckin?.hasCheckin && !existingCheckin?.verified;
 
-  // Accent color: amber for re-verification, cyan otherwise
-  const accentColor = isReVerification ? '#fbbf24' : '#22D9EE';
-  const accentRgba = isReVerification ? 'rgba(251,191,36,' : 'rgba(34,217,238,';
+  const storeState: StoreState = alreadyVerified
+    ? 'reunion'
+    : isReVerification
+      ? 'verify'
+      : 'discovery';
 
+  const theme = THEME[storeState];
+  const lastVisited = formatVisitDate(existingCheckin?.visitedAt ?? null);
+
+  // ── Computed values ───────────────────────────────────────────────────────
+  const photo    = store.photos?.[0];
+  const photoUrl = photo ? ikUrl(photo, 'thumb') : null;
+  const hoursStatus = getHoursStatus(store.hours);
+
+  // ── Button content ────────────────────────────────────────────────────────
   const buttonContent = () => {
     if (uiState === 'checking_in') {
       return (
@@ -198,15 +218,12 @@ export function RadarCheckinCard({
         </span>
       );
     }
-    if (uiState === 'success') {
-      return alreadyVerified ? 'Verified ✓' : 'Stamped ✓';
-    }
+    if (uiState === 'success')   return isReVerification ? 'Verified ✓' : 'Stamped ✓';
     if (uiState === 'too_far') {
       if (!tooFarInfo) return 'Not close enough';
       if (tooFarInfo.distanceMeters === -1) return 'Connection error — try again';
       return `${tooFarInfo.distanceMeters}m away — need ${tooFarInfo.requiredMeters}m`;
     }
-    if (alreadyVerified) return 'Stamped ✓';
     if (isReVerification) return '↑ Verify Stamp';
     return 'Stamp Passport';
   };
@@ -218,40 +235,32 @@ export function RadarCheckinCard({
     if (uiState === 'too_far') {
       return { backgroundColor: 'rgba(239,68,68,0.12)', color: '#f87171', border: '2px solid rgba(239,68,68,0.4)', fontSize: '0.72rem' };
     }
-    if (alreadyVerified) {
-      return { backgroundColor: `${accentRgba}0.08)`, color: accentColor, border: `2px solid ${accentRgba}0.3)`, opacity: 0.7 };
-    }
     if (isReVerification) {
       return { backgroundColor: 'rgba(251,191,36,0.12)', color: '#fbbf24', border: '2px solid rgba(251,191,36,0.5)', boxShadow: '0 0 16px rgba(251,191,36,0.2)' };
     }
-    // Primary stamp CTA — full cyan fill
+    // Discovery — full cyan fill
     return { backgroundColor: '#22D9EE', color: '#0a0a0f', border: '2px solid rgba(34,217,238,0.9)', boxShadow: '0 0 20px rgba(34,217,238,0.3)', fontWeight: 700 };
   };
-
-  const photo = store.photos?.[0];
-  const photoUrl = photo ? ikUrl(photo, 'thumb') : null;
-
-  // Compute hours status once per render — cheap string parse, no network call.
-  const hoursStatus = getHoursStatus(store.hours);
 
   // ── Render ────────────────────────────────────────────────────────────────
   return (
     <motion.div
-      // Shake animation fires when uiState === 'too_far'
       animate={shake ? { x: [0, -10, 10, -8, 8, -5, 5, -3, 3, 0] } : { x: 0 }}
       transition={shake ? { duration: 0.5, ease: 'easeOut' } : {}}
       className="relative w-full overflow-hidden rounded-2xl backdrop-blur-md"
       style={{
-        backgroundColor: 'rgba(10, 10, 15, 0.93)',
+        backgroundColor: storeState === 'reunion'
+          ? 'rgba(10, 14, 12, 0.95)'   // slightly green-tinted bg for reunion
+          : 'rgba(10, 10, 15, 0.93)',
         border: isInRange
-          ? `2px solid ${accentRgba}0.65)`
-          : '1px solid rgba(34,217,238,0.25)',
+          ? `2px solid ${theme.rgba}0.65)`
+          : `1px solid ${theme.rgba}${storeState === 'reunion' ? '0.2)' : '0.25)'}`,
         boxShadow: isInRange
-          ? `0 0 28px ${accentRgba}0.18), 0 4px 20px rgba(0,0,0,0.5)`
+          ? `0 0 28px ${theme.rgba}${storeState === 'reunion' ? '0.12)' : '0.18)'}), 0 4px 20px rgba(0,0,0,0.5)`
           : '0 4px 20px rgba(0,0,0,0.4)',
       }}
     >
-      {/* ── Dismiss button — always visible ──────────────────────────────── */}
+      {/* ── Dismiss button ────────────────────────────────────────────────── */}
       <button
         onClick={onDismiss}
         className="absolute top-2.5 right-2.5 z-10 p-1.5 rounded-full transition-all active:scale-90"
@@ -261,40 +270,47 @@ export function RadarCheckinCard({
         <X className="w-3 h-3 text-gray-400" />
       </button>
 
-      {/* ── Top row: photo + store info + distance/chip ─────────────────── */}
-      {/* pr-8 reserves space for the absolute dismiss button */}
+      {/* ── Top row ───────────────────────────────────────────────────────── */}
       <div className="flex items-center gap-3 pl-4 pr-8 py-3">
 
-        {/* Store photo */}
+        {/* Store photo — reunion gets a soft green ring */}
         <div
-          className="w-11 h-11 rounded-xl overflow-hidden flex-shrink-0"
-          style={{ backgroundColor: `${accentRgba}0.08)`, border: `1px solid ${accentRgba}0.2)` }}
+          className="w-11 h-11 rounded-xl overflow-hidden flex-shrink-0 relative"
+          style={{
+            backgroundColor: `${theme.rgba}0.08)`,
+            border: `1px solid ${theme.rgba}0.25)`,
+          }}
         >
           {photoUrl ? (
-            <img
-              src={photoUrl}
-              alt={store.name}
-              className="w-full h-full object-cover"
-            />
+            <img src={photoUrl} alt={store.name} className="w-full h-full object-cover" />
           ) : (
             <div className="w-full h-full flex items-center justify-center">
-              <span style={{ color: accentColor, opacity: 0.5, fontSize: 20, lineHeight: 1 }}>◎</span>
+              <span style={{ color: theme.color, opacity: 0.5, fontSize: 20, lineHeight: 1 }}>◎</span>
+            </div>
+          )}
+          {/* Small stamp indicator on photo for reunion mode */}
+          {storeState === 'reunion' && (
+            <div
+              className="absolute bottom-0 right-0 w-4 h-4 rounded-tl-lg flex items-center justify-center"
+              style={{ backgroundColor: 'rgba(16,185,129,0.9)' }}
+            >
+              <span style={{ fontSize: '0.55rem', color: '#fff', fontWeight: 900 }}>✓</span>
             </div>
           )}
         </div>
 
-        {/* Store name + sub-category + price + finds */}
+        {/* Store name + metadata row */}
         <div className="flex-1 min-w-0">
           <p className="text-white font-semibold text-sm leading-tight truncate">{store.name}</p>
           <div className="flex items-center gap-1.5 mt-0.5 flex-wrap">
 
-            {/* Sub-category pill — more specific than mainCategory */}
+            {/* Category pill */}
             {(store.categories?.[0] || store.mainCategory) && (
               <span
                 className="flex-shrink-0 font-bold px-1.5 py-0.5 rounded-full"
                 style={{
-                  backgroundColor: `${MAIN_CATEGORY_COLORS[store.mainCategory ?? 'Fashion'] ?? accentColor}20`,
-                  color: MAIN_CATEGORY_COLORS[store.mainCategory ?? 'Fashion'] ?? accentColor,
+                  backgroundColor: `${MAIN_CATEGORY_COLORS[store.mainCategory ?? 'Fashion'] ?? theme.color}20`,
+                  color: MAIN_CATEGORY_COLORS[store.mainCategory ?? 'Fashion'] ?? theme.color,
                   fontSize: '0.63rem',
                 }}
               >
@@ -302,17 +318,17 @@ export function RadarCheckinCard({
               </span>
             )}
 
-            {/* Price range */}
+            {/* Price */}
             {store.priceRange && (
               <span className="text-gray-400 flex-shrink-0" style={{ fontSize: '0.63rem', letterSpacing: '0.05em' }}>
                 {store.priceRange}
               </span>
             )}
 
-            {/* Find count — social proof */}
+            {/* Find count */}
             {store.haulCount > 0 && (
               <span className="text-gray-500 flex-shrink-0 flex items-center gap-0.5" style={{ fontSize: '0.63rem' }}>
-                <span style={{ color: accentColor, opacity: 0.7 }}>◎</span>
+                <span style={{ color: theme.color, opacity: 0.7 }}>◎</span>
                 {store.haulCount}
               </span>
             )}
@@ -320,44 +336,36 @@ export function RadarCheckinCard({
             {/* Hours status */}
             {hoursStatus.status === 'open' && (
               <span className="flex-shrink-0 flex items-center gap-0.5" style={{ fontSize: '0.63rem', color: '#10b981' }}>
-                <span>●</span>
-                <span>Closes {hoursStatus.closesAt}</span>
+                <span>●</span><span>Closes {hoursStatus.closesAt}</span>
               </span>
             )}
             {hoursStatus.status === 'opens_soon' && (
               <span className="flex-shrink-0 flex items-center gap-0.5" style={{ fontSize: '0.63rem', color: '#fbbf24' }}>
-                <span>●</span>
-                <span>Opens {hoursStatus.opensAt}</span>
+                <span>●</span><span>Opens {hoursStatus.opensAt}</span>
               </span>
             )}
-            {hoursStatus.status === 'closed' && (
+            {(hoursStatus.status === 'closed' || hoursStatus.status === 'closed_today') && (
               <span className="flex-shrink-0 flex items-center gap-0.5" style={{ fontSize: '0.63rem', color: '#f87171' }}>
                 <span>●</span>
-                <span>{hoursStatus.opensAt ? `Opens ${hoursStatus.opensAt}` : 'Closed'}</span>
-              </span>
-            )}
-            {hoursStatus.status === 'closed_today' && (
-              <span className="flex-shrink-0 flex items-center gap-0.5" style={{ fontSize: '0.63rem', color: '#f87171' }}>
-                <span>●</span>
-                <span>Closed today</span>
+                <span>
+                  {hoursStatus.status === 'closed' && hoursStatus.opensAt
+                    ? `Opens ${hoursStatus.opensAt}`
+                    : 'Closed today'}
+                </span>
               </span>
             )}
             {hoursStatus.status === 'open_24h' && (
               <span className="flex-shrink-0 flex items-center gap-0.5" style={{ fontSize: '0.63rem', color: '#10b981' }}>
-                <span>●</span>
-                <span>Open 24hrs</span>
+                <span>●</span><span>Open 24hrs</span>
               </span>
             )}
           </div>
         </div>
 
-        {/* Right side: distance counter OR in-range indicator */}
+        {/* Right: distance / in-range dot */}
         {!isInRange ? (
           <div className="flex-shrink-0 text-right">
-            <p
-              className="text-sm font-bold tabular-nums leading-tight"
-              style={{ color: accentColor }}
-            >
+            <p className="text-sm font-bold tabular-nums leading-tight" style={{ color: theme.color }}>
               {Math.round(distance)}m
             </p>
             <p className="text-gray-500 text-xs">away</p>
@@ -366,20 +374,20 @@ export function RadarCheckinCard({
           <div className="flex-shrink-0">
             <div
               className="w-2.5 h-2.5 rounded-full"
-              style={{ backgroundColor: accentColor, boxShadow: `0 0 8px ${accentColor}` }}
+              style={{ backgroundColor: theme.color, boxShadow: `0 0 8px ${theme.color}` }}
             />
           </div>
         )}
 
-        {/* "X more nearby" chip — shown when multiple stores are within 150m */}
+        {/* Cycle chip */}
         {nearbyCount > 1 && (
           <button
             onClick={(e) => { e.stopPropagation(); onNextStore(); }}
             className="flex-shrink-0 px-2.5 py-1.5 rounded-full text-xs font-bold transition-all active:scale-95"
             style={{
-              backgroundColor: `${accentRgba}0.1)`,
-              border: `1px solid ${accentRgba}0.35)`,
-              color: accentColor,
+              backgroundColor: `${theme.rgba}0.1)`,
+              border: `1px solid ${theme.rgba}0.35)`,
+              color: theme.color,
             }}
           >
             +{nearbyCount - 1}
@@ -387,7 +395,7 @@ export function RadarCheckinCard({
         )}
       </div>
 
-      {/* ── Expanded CTA area: only visible when in_range ───────────────── */}
+      {/* ── Expanded CTA area ─────────────────────────────────────────────── */}
       <AnimatePresence>
         {isInRange && (
           <motion.div
@@ -397,57 +405,110 @@ export function RadarCheckinCard({
             transition={{ duration: 0.2, ease: 'easeOut' }}
             className="overflow-hidden"
           >
-            {/* Separator */}
-            <div
-              className="mx-4"
-              style={{ height: 1, backgroundColor: `${accentRgba}0.15)` }}
-            />
+            <div className="mx-4" style={{ height: 1, backgroundColor: `${theme.rgba}0.15)` }} />
 
             <div className="px-4 pb-4 pt-3 space-y-2.5">
-              {/* Description snippet — the key "should I walk in?" signal */}
-              {store.description && uiState === 'idle' && (
-                <p className="text-gray-400 text-xs leading-relaxed line-clamp-2">
-                  {store.description.slice(0, 100)}{store.description.length > 100 ? '…' : ''}
-                </p>
+
+              {/* ── REUNION mode — warm, settled, no urgent CTA ──── */}
+              {storeState === 'reunion' && uiState === 'idle' && (
+                <>
+                  {/* "Welcome back" line */}
+                  <div className="flex items-center gap-2">
+                    <span style={{ color: '#10b981', fontSize: '0.75rem' }}>◎</span>
+                    <p className="text-sm font-medium" style={{ color: '#10b981' }}>
+                      You've been here
+                      {lastVisited ? (
+                        <span className="font-normal text-xs ml-1.5" style={{ color: 'rgba(16,185,129,0.65)' }}>
+                          · {lastVisited}
+                        </span>
+                      ) : null}
+                    </p>
+                  </div>
+                  {/* Description — still useful context */}
+                  {store.description && (
+                    <p className="text-gray-500 text-xs leading-relaxed line-clamp-2">
+                      {store.description.slice(0, 100)}{store.description.length > 100 ? '…' : ''}
+                    </p>
+                  )}
+                  {store.instagram && (
+                    <a
+                      href={`https://instagram.com/${store.instagram.replace('@', '')}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex items-center gap-1.5 text-xs font-medium transition-opacity active:opacity-70"
+                      style={{ color: 'rgba(168,85,247,0.9)' }}
+                      onClick={e => e.stopPropagation()}
+                    >
+                      <Instagram className="w-3 h-3 flex-shrink-0" />
+                      @{store.instagram.replace('@', '')}
+                    </a>
+                  )}
+                  {/* Soft "already stamped" indicator — no button, no urgency */}
+                  <div
+                    className="w-full py-2.5 rounded-xl text-sm text-center"
+                    style={{
+                      backgroundColor: 'rgba(16,185,129,0.07)',
+                      border: '1px solid rgba(16,185,129,0.2)',
+                      color: 'rgba(16,185,129,0.6)',
+                    }}
+                  >
+                    Stamped ✓
+                  </div>
+                </>
               )}
 
-              {/* Instagram — decision helper when standing 30m away */}
-              {store.instagram && uiState === 'idle' && (
-                <a
-                  href={`https://instagram.com/${store.instagram.replace('@', '')}`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="flex items-center gap-1.5 text-xs font-medium transition-opacity active:opacity-70"
-                  style={{ color: 'rgba(168,85,247,0.9)' }}
-                  onClick={e => e.stopPropagation()}
+              {/* ── DISCOVERY / VERIFY mode — standard CTA flow ──── */}
+              {storeState !== 'reunion' && (
+                <>
+                  {store.description && uiState === 'idle' && (
+                    <p className="text-gray-400 text-xs leading-relaxed line-clamp-2">
+                      {store.description.slice(0, 100)}{store.description.length > 100 ? '…' : ''}
+                    </p>
+                  )}
+                  {store.instagram && uiState === 'idle' && (
+                    <a
+                      href={`https://instagram.com/${store.instagram.replace('@', '')}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex items-center gap-1.5 text-xs font-medium transition-opacity active:opacity-70"
+                      style={{ color: 'rgba(168,85,247,0.9)' }}
+                      onClick={e => e.stopPropagation()}
+                    >
+                      <Instagram className="w-3 h-3 flex-shrink-0" />
+                      @{store.instagram.replace('@', '')}
+                    </a>
+                  )}
+                  {(userPosition.accuracy ?? 0) > 25 && uiState === 'idle' && (
+                    <p className="text-xs text-center" style={{ color: 'rgba(251,191,36,0.8)' }}>
+                      GPS weak · check-in radius widened to {Math.round(checkinRadius)}m
+                    </p>
+                  )}
+                  {isReVerification && uiState === 'idle' && (
+                    <p className="text-xs text-center" style={{ color: 'rgba(251,191,36,0.7)' }}>
+                      Previous stamp was unverified — re-check in with good GPS to verify it
+                    </p>
+                  )}
+                  <button
+                    onClick={handleStampPress}
+                    disabled={uiState === 'checking_in'}
+                    className="w-full py-3 rounded-xl text-sm transition-all active:scale-[0.98] disabled:cursor-default"
+                    style={buttonStyle()}
+                  >
+                    {buttonContent()}
+                  </button>
+                </>
+              )}
+
+              {/* Success state (shown over both modes briefly before dismiss) */}
+              {uiState === 'success' && storeState === 'reunion' && (
+                <button
+                  disabled
+                  className="w-full py-3 rounded-xl text-sm"
+                  style={{ backgroundColor: 'rgba(16,185,129,0.2)', color: '#10b981', border: '2px solid rgba(16,185,129,0.5)' }}
                 >
-                  <Instagram className="w-3 h-3 flex-shrink-0" />
-                  @{store.instagram.replace('@', '')}
-                </a>
+                  Verified ✓
+                </button>
               )}
-
-              {/* GPS weak disclaimer when accuracy is poor */}
-              {(userPosition.accuracy ?? 0) > 25 && uiState === 'idle' && (
-                <p className="text-xs mb-2.5 text-center" style={{ color: 'rgba(251,191,36,0.8)' }}>
-                  GPS weak · check-in radius widened to {Math.round(checkinRadius)}m
-                </p>
-              )}
-
-              {/* Re-verify hint */}
-              {isReVerification && uiState === 'idle' && (
-                <p className="text-xs mb-2.5 text-center" style={{ color: 'rgba(251,191,36,0.7)' }}>
-                  Previous stamp was unverified — re-check in with good GPS to verify it
-                </p>
-              )}
-
-              <button
-                onClick={handleStampPress}
-                disabled={uiState === 'checking_in' || alreadyVerified === true}
-                className="w-full py-3 rounded-xl text-sm transition-all active:scale-[0.98] disabled:cursor-default"
-                style={buttonStyle()}
-              >
-                {buttonContent()}
-              </button>
             </div>
           </motion.div>
         )}
