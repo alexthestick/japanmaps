@@ -153,24 +153,47 @@ export function BulkImportQueue({
   };
 
   /**
-   * Check if store already exists in database
+   * Check if store already exists in database.
+   * Strategy 1: exact google_place_id match (most reliable).
+   * Strategy 2: case-insensitive name match (catches stores imported without a place ID).
    */
   const checkDuplicate = async (item: BulkImportQueueItem): Promise<string | null> => {
-    if (!item.placeId) return null;
-
     try {
-      const { data, error } = await supabase
-        .from('stores')
-        .select('id')
-        .eq('google_place_id', item.placeId)
-        .single();
+      // Strategy 1: match by google_place_id (only if we have one)
+      if (item.placeId) {
+        const { data, error } = await supabase
+          .from('stores')
+          .select('id')
+          .eq('google_place_id', item.placeId)
+          .maybeSingle();
 
-      if (error && error.code !== 'PGRST116') {
-        // PGRST116 = not found (which is good)
-        console.error('Duplicate check error:', error);
+        if (error) {
+          console.error('Duplicate check (place_id) error:', error);
+        } else if (data?.id) {
+          logger.log(`🔁 Duplicate found by place_id: ${item.placeId}`);
+          return data.id;
+        }
       }
 
-      return data?.id || null;
+      // Strategy 2: case-insensitive name match as fallback
+      // Normalise the title: trim and lowercase for comparison
+      const titleToCheck = (item.csvData.title || '').trim();
+      if (titleToCheck) {
+        const { data, error } = await supabase
+          .from('stores')
+          .select('id, name')
+          .ilike('name', titleToCheck)
+          .limit(1);
+
+        if (error) {
+          console.error('Duplicate check (name) error:', error);
+        } else if (data && data.length > 0) {
+          logger.log(`🔁 Duplicate found by name: "${titleToCheck}" matches "${data[0].name}"`);
+          return data[0].id;
+        }
+      }
+
+      return null;
     } catch (error) {
       console.error('Duplicate check failed:', error);
       return null;

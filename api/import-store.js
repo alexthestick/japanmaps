@@ -213,13 +213,13 @@ async function fetchPlaceDetails(placeId) {
 }
 
 /**
- * Enhance place details with Gemini AI
+ * Enhance place details with Claude AI
  */
 async function enhanceWithAI(placeDetails) {
-  const apiKey = process.env.VITE_GOOGLE_GEMINI_API_KEY;
+  const apiKey = process.env.ANTHROPIC_API_KEY;
 
   if (!apiKey) {
-    console.warn('Gemini API key not configured, skipping AI enhancement');
+    console.warn('Anthropic API key not configured, skipping AI enhancement');
     return {
       description: placeDetails.editorialSummary || `${placeDetails.name} is located at ${placeDetails.address}.`,
       suggestedCategories: [],
@@ -241,67 +241,90 @@ async function enhanceWithAI(placeDetails) {
       mainCategory = 'Museum';
     }
 
-    // Prepare reviews
+    // Prepare reviews (used as hidden signals only — not quoted)
     const reviewTexts = (placeDetails.reviews || [])
       .filter(r => r.text?.text)
       .slice(0, 5)
       .map((r, idx) => `Review ${idx + 1}: "${r.text.text}"`)
       .join('\n\n');
 
-    const prompt = `You are writing a description for a Japan map/directory website.
+    const categoryPromptMap = {
+      Fashion: {
+        focus: 'what the store stocks (specific clothing styles, eras, brands, or types), what kind of shopper it suits, and what makes the curation or shopping experience special',
+        subcategories: 'vintage, archive, streetwear, designer, accessories, denim, sneakers, second-hand',
+      },
+      Food: {
+        focus: 'what the restaurant or food spot serves (dishes, cuisine type, signature items), the atmosphere and setting, and what makes it worth visiting',
+        subcategories: 'ramen, sushi, izakaya, kaiseki, yakitori, tempura, udon, soba, curry, tonkatsu',
+      },
+      Coffee: {
+        focus: 'what kind of coffee or drinks they serve, the cafe atmosphere and design, any food or pastries, and what makes it a destination',
+        subcategories: 'specialty coffee, cafe, tea, bakery',
+      },
+      'Home Goods': {
+        focus: 'what you can find (furniture, ceramics, antiques, textiles, tools), the curation style, and any unique origin story or speciality',
+        subcategories: 'antiques, furniture, ceramics, textiles, vintage, design',
+      },
+      Museum: {
+        focus: 'what collections or exhibitions it holds, the architecture or space, and what makes the experience distinctive',
+        subcategories: 'art, history, design, contemporary',
+      },
+    };
+
+    const { focus, subcategories } = categoryPromptMap[mainCategory] || categoryPromptMap['Fashion'];
+
+    const prompt = `You are writing store descriptions for Lost in Transit, a curated discovery map of vintage, streetwear, archive, and specialty stores across Japan. The audience is fashion-aware travelers looking for hidden gems.
 
 Store Information:
 - Name: ${placeDetails.name}
-- Location: ${placeDetails.address}
-- Type: ${types.join(', ')}
+- Address: ${placeDetails.address}
 - Category: ${mainCategory}
-${placeDetails.editorialSummary ? `- Summary: ${placeDetails.editorialSummary}` : ''}
+- Google types: ${types.join(', ')}
+${placeDetails.editorialSummary ? `- Google summary: ${placeDetails.editorialSummary}` : ''}
 
-Reviews:
+Customer reviews (use as hidden context only — do NOT quote or reference them):
 ${reviewTexts || 'No reviews available'}
 
-Task: Write a single-paragraph description (4-6 sentences) for this place.
+Task: Write a single flowing paragraph (4-6 sentences) that covers:
+1. What the place is and where it sits
+2. Specifically: ${focus}
+3. Any unique backstory, signature specialty, or reason it stands out from similar places
 
-RULES:
-- Do NOT mention ratings, reviews, or customer quotes
-- Focus on: what it is, what you can find, what makes it special
-- Use concrete, specific details
-- Professional and informative tone
+STRICT RULES:
+- Do NOT mention ratings, review counts, or customer quotes
+- Do NOT use phrases like "customers love" or "visitors say"
+- Be specific and concrete — name actual item types, styles, eras, or techniques when possible
+- Write like a knowledgeable travel writer, not a marketing brochure
+- One paragraph only, no line breaks
 
-Also suggest 2-3 subcategories from this list based on the place type:
-Fashion: vintage, archive, streetwear, designer, accessories, denim, sneakers, second-hand
-Food: ramen, sushi, izakaya, kaiseki, yakitori, tempura, udon, soba, curry, tonkatsu
-Coffee: specialty coffee, cafe, tea, bakery
-Home Goods: antiques, furniture, ceramics, textiles, vintage, design
-Museum: art, history, design, contemporary
+Also suggest 2-3 subcategories that best describe this place from:
+${subcategories}
 
-Return JSON:
+Return ONLY valid JSON, nothing else:
 {
-  "description": "your description",
+  "description": "your paragraph here",
   "suggestedCategories": ["category1", "category2"],
   "instagram": "@handle or not_found"
 }`;
 
-    const response = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-exp:generateContent?key=${apiKey}`,
-      {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          contents: [{ parts: [{ text: prompt }] }],
-          generationConfig: {
-            temperature: 0.7,
-            maxOutputTokens: 1024,
-          },
-        }),
-      }
-    );
+    console.log(`🤖 Calling Claude AI for: ${placeDetails.name}`);
+
+    const response = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-api-key': apiKey,
+        'anthropic-version': '2023-06-01',
+      },
+      body: JSON.stringify({
+        model: 'claude-haiku-4-5-20251001',
+        max_tokens: 1024,
+        messages: [{ role: 'user', content: prompt }],
+      }),
+    });
 
     if (!response.ok) {
-      const status = response.status;
-      console.warn(`Gemini API error: ${status} - falling back to basic description`);
-
-      // Return fallback instead of throwing
+      console.warn(`Claude API error: ${response.status} - falling back to basic description`);
       return {
         description: placeDetails.editorialSummary || `${placeDetails.name} is located at ${placeDetails.address}.`,
         suggestedCategories: [],
@@ -309,7 +332,9 @@ Return JSON:
     }
 
     const data = await response.json();
-    const text = data.candidates?.[0]?.content?.parts?.[0]?.text || '';
+    const text = data.content?.[0]?.text || '';
+
+    console.log(`🤖 Claude raw response for ${placeDetails.name}:`, text.substring(0, 100));
 
     // Parse JSON from response
     const jsonMatch = text.match(/\{[\s\S]*\}/);
@@ -322,7 +347,7 @@ Return JSON:
       };
     }
 
-    // Fallback if parsing fails
+    // Fallback if JSON parsing fails
     return {
       description: placeDetails.editorialSummary || `${placeDetails.name} is located at ${placeDetails.address}.`,
       suggestedCategories: [],
