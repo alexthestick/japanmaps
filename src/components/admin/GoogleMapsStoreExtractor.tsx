@@ -305,7 +305,7 @@ export function GoogleMapsStoreExtractor({ onApplyData }: GoogleMapsStoreExtract
               <label className="block text-xs font-medium text-gray-700 mb-1">
                 <Sparkles className="w-3 h-3 inline mr-1 text-purple-600" />
                 AI-Generated Description
-                <span className="ml-2 text-xs text-purple-600 font-normal">✨ Powered by Gemini AI</span>
+                <span className="ml-2 text-xs text-purple-600 font-normal">✨ Powered by Claude AI</span>
               </label>
               <textarea
                 value={extractedData.description}
