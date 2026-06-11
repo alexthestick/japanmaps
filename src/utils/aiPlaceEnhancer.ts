@@ -1,12 +1,12 @@
-import type { PlaceDetails } from ‘../components/admin/FetchPlaceIdButton’;
-import { logger } from ‘./logger’;
+import type { PlaceDetails } from '../components/admin/FetchPlaceIdButton';
+import { logger } from './logger';
 
 export interface EnhancedPlaceData {
   description: string;
   instagram?: string;
 }
 
-// Rate limiting: ensure we don’t spam the endpoint
+// Rate limiting: ensure we don't spam the endpoint
 let lastApiCallTime = 0;
 const MIN_DELAY_BETWEEN_CALLS = 1500; // 1.5 seconds between calls
 
@@ -27,7 +27,7 @@ async function waitForRateLimit(): Promise<void> {
  */
 export async function enhancePlaceDetailsWithAI(
   placeDetails: PlaceDetails,
-  category: ‘Fashion’ | ‘Food’ | ‘Coffee’ | ‘Home Goods’ | ‘Museum’ | ‘Spots’ = ‘Fashion’,
+  category: 'Fashion' | 'Food' | 'Coffee' | 'Home Goods' | 'Museum' | 'Spots' = 'Fashion',
   subCategories?: string[]
 ): Promise<EnhancedPlaceData> {
   const fallback: EnhancedPlaceData = {
@@ -42,15 +42,15 @@ export async function enhancePlaceDetailsWithAI(
 
     await waitForRateLimit();
 
-    const response = await fetch(‘/api/enhance-description’, {
-      method: ‘POST’,
-      headers: { ‘Content-Type’: ‘application/json’ },
+    const response = await fetch('/api/enhance-description', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         name: placeDetails.name,
         address: placeDetails.address,
         types: placeDetails.types || [],
         reviews: placeDetails.reviews || [],
-        editorialSummary: placeDetails.editorialSummary || ‘’,
+        editorialSummary: placeDetails.editorialSummary || '',
         category,
       }),
     });
@@ -63,7 +63,7 @@ export async function enhancePlaceDetailsWithAI(
     const data = await response.json();
 
     if (!data.success) {
-      logger.warn(‘enhance-description returned failure — using fallback’);
+      logger.warn('enhance-description returned failure — using fallback');
       return fallback;
     }
 
@@ -75,7 +75,7 @@ export async function enhancePlaceDetailsWithAI(
     logger.log(`✅ Enhanced: "${placeDetails.name}"`, enhanced);
     return enhanced;
   } catch (error) {
-    console.error(‘❌ AI enhancement error (returning fallback):’, error);
+    console.error('❌ AI enhancement error (returning fallback):', error);
     return fallback;
   }
 }
