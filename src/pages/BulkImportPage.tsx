@@ -7,6 +7,14 @@ import { Button } from '../components/common/Button';
 import type { BulkImportQueueItem } from '../types/bulkImport';
 import { logger } from '../utils/logger';
 
+const KNOWN_CITIES = ['Tokyo', 'Osaka', 'Kyoto', 'Fukuoka', 'Nagoya', 'Sapporo', 'Yokohama', 'Kobe', 'Hiroshima', 'Sendai', 'Nara'];
+
+function extractCityFromFilename(filename?: string): string | undefined {
+  if (!filename) return undefined;
+  const lower = filename.toLowerCase();
+  return KNOWN_CITIES.find(city => lower.includes(city.toLowerCase()));
+}
+
 export default function BulkImportPage() {
   const [uploadError, setUploadError] = useState<string | null>(null);
   const [uploadSuccess, setUploadSuccess] = useState<string | null>(null);
@@ -265,6 +273,7 @@ export default function BulkImportPage() {
               items={state.items}
               currentIndex={state.currentIndex}
               isProcessing={state.isProcessing}
+              cityHint={extractCityFromFilename(state.uploadedFileName)}
               onUpdateItem={actions.updateItem}
               onApprove={actions.approveItem}
               onSkip={actions.skipItem}

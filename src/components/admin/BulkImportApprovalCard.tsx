@@ -7,6 +7,8 @@ import { Button } from '../common/Button';
 
 interface BulkImportApprovalCardProps {
   item: BulkImportQueueItem;
+  initialCity?: string;
+  initialNeighborhood?: string;
   onApprove: (mainCategory: MainCategory, subCategories: SubCategory[], customDescription?: string, city?: string, neighborhood?: string) => void;
   onSkip: () => void;
   onMarkForReview: () => void;
@@ -16,6 +18,8 @@ interface BulkImportApprovalCardProps {
 
 export function BulkImportApprovalCard({
   item,
+  initialCity = '',
+  initialNeighborhood = '',
   onApprove,
   onSkip,
   onMarkForReview,
@@ -29,9 +33,9 @@ export function BulkImportApprovalCard({
   const [showManualPlaceId, setShowManualPlaceId] = useState(false);
   const [manualPlaceId, setManualPlaceId] = useState('');
 
-  // City and Neighborhood inputs
-  const [city, setCity] = useState('');
-  const [neighborhood, setNeighborhood] = useState('');
+  // City and Neighborhood — pre-filled from resolved address
+  const [city, setCity] = useState(initialCity);
+  const [neighborhood, setNeighborhood] = useState(initialNeighborhood || '');
 
   // Get sub-categories based on main category
   const getSubCategories = (): readonly string[] => {

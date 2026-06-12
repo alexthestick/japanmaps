@@ -15,6 +15,7 @@ interface BulkImportQueueProps {
   items: BulkImportQueueItem[];
   currentIndex: number;
   isProcessing: boolean;
+  cityHint?: string; // e.g. "Kyoto" derived from CSV filename
   onUpdateItem: (index: number, updates: Partial<BulkImportQueueItem>) => void;
   onSkip: (index: number) => void;
   onMarkFailed: (index: number, error: string) => void;
@@ -25,6 +26,7 @@ export function BulkImportQueue({
   items,
   currentIndex,
   isProcessing,
+  cityHint,
   onUpdateItem,
   onSkip,
   onMarkFailed,
@@ -64,7 +66,7 @@ export function BulkImportQueue({
       if (!item.placeId) {
         onUpdateItem(index, { status: 'searching' });
 
-        const searchResults = await searchPlaceId(item.csvData.title);
+        const searchResults = await searchPlaceId(item.csvData.title, cityHint);
 
         if (searchResults.length === 0) {
           throw new Error('No Place ID found - store may not exist on Google Maps');
@@ -468,6 +470,8 @@ export function BulkImportQueue({
   return (
     <BulkImportApprovalCard
       item={currentItem}
+      initialCity={extractCity(currentItem.placeAddress || '') || cityHint || ''}
+      initialNeighborhood={extractNeighborhood(currentItem.placeAddress || '')}
       onApprove={handleApprove}
       onSkip={() => onSkip(currentIndex)}
       onMarkForReview={() => onMarkFailed(currentIndex, 'Marked for manual review')}
