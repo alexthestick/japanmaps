@@ -11,6 +11,7 @@ import { supabase } from '../lib/supabase';
 import { ikUrl } from '../utils/ikUrl';
 import { generatePassportShareCard } from '../utils/passportCanvas';
 import { computeStyleDNA, MINIMUM_STAMPS } from '../utils/computeStyleDNA';
+import { NeighborhoodBubbleMap, type NeighborhoodCount } from '../components/passport/NeighborhoodBubbleMap';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -332,11 +333,13 @@ function StyleDNACard({ checkins }: { checkins: Checkin[] }) {
 function PassportTabContent({
   checkins,
   badgeProgress,
+  neighborhoodCounts,
   loading,
   username,
 }: {
   checkins: Checkin[];
   badgeProgress: BadgeProgress[];
+  neighborhoodCounts: NeighborhoodCount[];
   loading: boolean;
   username: string;
 }) {
@@ -445,15 +448,16 @@ function PassportTabContent({
         </div>
       )}
 
-      {/* Neighborhood badges */}
-      {badgeProgress.length > 0 && (
+      {/* Neighborhood map — replaces the old horizontal badge row */}
+      {(badgeProgress.length > 0 || neighborhoodCounts.length > 0) && (
         <div>
-          <h3 className="text-xs font-bold uppercase tracking-widest text-gray-600 mb-3">Neighborhood Badges</h3>
-          <div className="flex gap-4 overflow-x-auto pb-2 scrollbar-hide">
-            {badgeProgress.map(badge => (
-              <NeighborhoodBadge key={`${badge.neighborhood}-${badge.city}`} badge={badge} />
-            ))}
-          </div>
+          <h3 className="text-xs font-bold uppercase tracking-widest text-gray-600 mb-3">
+            Neighborhood Map
+          </h3>
+          <NeighborhoodBubbleMap
+            badgeProgress={badgeProgress}
+            allCounts={neighborhoodCounts}
+          />
         </div>
       )}
 
@@ -847,6 +851,7 @@ function ProfileContent() {
   // Passport state — fetched lazily on first passport tab open
   const [checkins, setCheckins] = useState<Checkin[]>([]);
   const [badgeProgress, setBadgeProgress] = useState<BadgeProgress[]>([]);
+  const [neighborhoodCounts, setNeighborhoodCounts] = useState<NeighborhoodCount[]>([]);
   const [loadingPassport, setLoadingPassport] = useState(false);
   const passportFetchedRef = useRef(false);
 
@@ -901,9 +906,11 @@ function ProfileContent() {
     Promise.all([
       supabase.rpc('get_my_checkins'),
       supabase.rpc('get_my_badge_progress'),
-    ]).then(([checkinsResult, badgesResult]) => {
+      supabase.rpc('get_all_neighborhood_counts'),
+    ]).then(([checkinsResult, badgesResult, countsResult]) => {
       setCheckins((checkinsResult.data as Checkin[]) || []);
       setBadgeProgress((badgesResult.data as BadgeProgress[]) || []);
+      setNeighborhoodCounts((countsResult.data as NeighborhoodCount[]) || []);
       setLoadingPassport(false);
     });
   }, [activeTab, user]);
@@ -1228,6 +1235,7 @@ function ProfileContent() {
               <PassportTabContent
                 checkins={checkins}
                 badgeProgress={badgeProgress}
+                neighborhoodCounts={neighborhoodCounts}
                 loading={loadingPassport}
                 username={username}
               />
