@@ -10,6 +10,7 @@ import { RequireAuth } from '../components/common/RequireAuth';
 import { supabase } from '../lib/supabase';
 import { ikUrl } from '../utils/ikUrl';
 import { generatePassportShareCard } from '../utils/passportCanvas';
+import { computeStyleDNA, MINIMUM_STAMPS } from '../utils/computeStyleDNA';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -50,6 +51,8 @@ interface Checkin {
   visited_at: string;
   verified: boolean;
   accuracy_meters: number | null;
+  main_category: string | null;
+  primary_category: string | null;
 }
 
 interface BadgeProgress {
@@ -189,6 +192,141 @@ function GhostStamp() {
   );
 }
 
+// ─── Style DNA card ───────────────────────────────────────────────────────────
+
+const CATEGORY_COLORS: Record<string, string> = {
+  archive:      '#a855f7',
+  vintage:      '#22d9ee',
+  streetwear:   '#f59e0b',
+  concept:      '#10b981',
+  designer:     '#f472b6',
+  'avant-garde': '#818cf8',
+  select:       '#34d399',
+  military:     '#6b7280',
+  luxury:       '#fbbf24',
+  womenswear:   '#f9a8d4',
+  antiques:     '#92400e',
+  coffee:       '#a16207',
+  food:         '#3b82f6',
+  home:         '#6b7280',
+};
+
+function StyleDNACard({ checkins }: { checkins: Checkin[] }) {
+  const dna = computeStyleDNA(checkins);
+  const remaining = MINIMUM_STAMPS - checkins.length;
+
+  // ── Locked / teaser state ────────────────────────────────────────────────
+  if (!dna) {
+    return (
+      <div
+        className="rounded-2xl p-5 mb-1"
+        style={{
+          background: 'linear-gradient(135deg, rgba(168,85,247,0.06) 0%, rgba(34,217,238,0.04) 100%)',
+          border: '1px solid rgba(168,85,247,0.2)',
+        }}
+      >
+        <div className="flex items-start justify-between gap-3">
+          <div className="flex-1 min-w-0">
+            <p className="text-xs font-bold uppercase tracking-widest mb-1" style={{ color: 'rgba(168,85,247,0.6)' }}>
+              Style DNA
+            </p>
+            <p className="text-white font-bold text-base">Unlocks at {MINIMUM_STAMPS} stamps</p>
+            <p className="text-gray-500 text-sm mt-1">
+              {checkins.length > 0
+                ? `${remaining} more stamp${remaining !== 1 ? 's' : ''} to go`
+                : 'Start exploring in Radar mode'}
+            </p>
+          </div>
+          {/* Progress ring */}
+          <div className="flex-shrink-0 relative w-14 h-14">
+            <svg viewBox="0 0 56 56" className="w-14 h-14 -rotate-90">
+              <circle cx="28" cy="28" r="22" fill="none" stroke="rgba(168,85,247,0.15)" strokeWidth="4" />
+              <circle
+                cx="28" cy="28" r="22" fill="none"
+                stroke="rgba(168,85,247,0.6)" strokeWidth="4"
+                strokeLinecap="round"
+                strokeDasharray={`${2 * Math.PI * 22}`}
+                strokeDashoffset={`${2 * Math.PI * 22 * (1 - checkins.length / MINIMUM_STAMPS)}`}
+                style={{ transition: 'stroke-dashoffset 0.5s ease' }}
+              />
+            </svg>
+            <div className="absolute inset-0 flex items-center justify-center">
+              <span className="text-xs font-bold text-white">{checkins.length}/{MINIMUM_STAMPS}</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // ── Unlocked state ───────────────────────────────────────────────────────
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 8 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.4 }}
+      className="rounded-2xl overflow-hidden mb-1"
+      style={{
+        background: 'linear-gradient(135deg, rgba(168,85,247,0.1) 0%, rgba(34,217,238,0.06) 100%)',
+        border: '1px solid rgba(168,85,247,0.3)',
+      }}
+    >
+      <div className="p-5">
+        {/* Header */}
+        <p className="text-xs font-bold uppercase tracking-widest mb-3" style={{ color: 'rgba(168,85,247,0.7)' }}>
+          Style DNA
+        </p>
+
+        {/* Identity line — the headline */}
+        <p
+          className="text-xl font-black text-white leading-tight mb-4"
+          style={{ textShadow: '0 0 30px rgba(168,85,247,0.3)' }}
+        >
+          {dna.identityLine}
+        </p>
+
+        {/* Category breakdown bars */}
+        {dna.breakdown.length > 0 && (
+          <div className="space-y-2 mb-4">
+            {dna.breakdown.map(cat => {
+              const color = CATEGORY_COLORS[cat.group] ?? '#6b7280';
+              return (
+                <div key={cat.group}>
+                  <div className="flex items-center justify-between mb-1">
+                    <span className="text-xs font-medium" style={{ color }}>
+                      {cat.label}
+                    </span>
+                    <span className="text-xs tabular-nums" style={{ color: 'rgba(255,255,255,0.4)' }}>
+                      {cat.percentage}%
+                    </span>
+                  </div>
+                  <div className="h-1.5 rounded-full bg-white/5 overflow-hidden">
+                    <motion.div
+                      initial={{ width: 0 }}
+                      animate={{ width: `${cat.percentage}%` }}
+                      transition={{ duration: 0.6, delay: 0.2, ease: 'easeOut' }}
+                      className="h-full rounded-full"
+                      style={{ backgroundColor: color, opacity: 0.75 }}
+                    />
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        )}
+
+        {/* Footer: stamp count */}
+        <p className="text-xs" style={{ color: 'rgba(255,255,255,0.25)' }}>
+          Based on {dna.stampCount} stamp{dna.stampCount !== 1 ? 's' : ''}
+          {dna.classifiedCount < dna.stampCount && (
+            <span> · {dna.stampCount - dna.classifiedCount} unclassified</span>
+          )}
+        </p>
+      </div>
+    </motion.div>
+  );
+}
+
 // ─── Passport tab content ─────────────────────────────────────────────────────
 
 function PassportTabContent({
@@ -279,6 +417,9 @@ function PassportTabContent({
 
   return (
     <div className="space-y-6">
+      {/* Style DNA — shown at any stamp count (teaser below threshold, unlocked above) */}
+      <StyleDNACard checkins={checkins} />
+
       {/* Stats row */}
       <div className="flex items-center gap-0 rounded-xl bg-gray-900/60 border border-gray-800 overflow-hidden">
         {[
