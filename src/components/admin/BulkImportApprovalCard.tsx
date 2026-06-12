@@ -9,6 +9,8 @@ interface BulkImportApprovalCardProps {
   item: BulkImportQueueItem;
   initialCity?: string;
   initialNeighborhood?: string;
+  initialCategory?: MainCategory;
+  initialSubCategories?: string[];
   onApprove: (mainCategory: MainCategory, subCategories: SubCategory[], customDescription?: string, city?: string, neighborhood?: string) => void;
   onSkip: () => void;
   onMarkForReview: () => void;
@@ -20,14 +22,16 @@ export function BulkImportApprovalCard({
   item,
   initialCity = '',
   initialNeighborhood = '',
+  initialCategory,
+  initialSubCategories = [],
   onApprove,
   onSkip,
   onMarkForReview,
   onRetryWithPlaceId,
   isProcessing = false,
 }: BulkImportApprovalCardProps) {
-  const [mainCategory, setMainCategory] = useState<MainCategory>('Food');
-  const [subCategories, setSubCategories] = useState<string[]>([]);
+  const [mainCategory, setMainCategory] = useState<MainCategory>(initialCategory || 'Fashion');
+  const [subCategories, setSubCategories] = useState<string[]>(initialSubCategories);
   const [description, setDescription] = useState(item.enhancedData?.description || '');
   const [isEditingDescription, setIsEditingDescription] = useState(false);
   const [showManualPlaceId, setShowManualPlaceId] = useState(false);

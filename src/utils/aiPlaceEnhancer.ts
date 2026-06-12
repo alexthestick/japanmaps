@@ -4,6 +4,7 @@ import { logger } from './logger';
 export interface EnhancedPlaceData {
   description: string;
   instagram?: string;
+  suggestedSubCategories?: string[];
 }
 
 // Rate limiting: ensure we don't spam the endpoint
@@ -70,6 +71,7 @@ export async function enhancePlaceDetailsWithAI(
     const enhanced: EnhancedPlaceData = {
       description: data.description || fallback.description,
       instagram: data.instagram,
+      suggestedSubCategories: data.suggestedSubCategories || [],
     };
 
     logger.log(`✅ Enhanced: "${placeDetails.name}"`, enhanced);

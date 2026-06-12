@@ -117,6 +117,8 @@ export function BulkImportQueue({
 
       onUpdateItem(index, {
         enhancedData: enhanced,
+        detectedCategory: category,
+        suggestedSubCategories: enhanced.suggestedSubCategories || [],
         status: 'ready',
       });
 
@@ -472,6 +474,8 @@ export function BulkImportQueue({
       item={currentItem}
       initialCity={extractCity(currentItem.placeAddress || '') || cityHint || ''}
       initialNeighborhood={extractNeighborhood(currentItem.placeAddress || '')}
+      initialCategory={currentItem.detectedCategory}
+      initialSubCategories={currentItem.suggestedSubCategories || []}
       onApprove={handleApprove}
       onSkip={() => onSkip(currentIndex)}
       onMarkForReview={() => onMarkFailed(currentIndex, 'Marked for manual review')}

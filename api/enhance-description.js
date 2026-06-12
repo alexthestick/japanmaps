@@ -154,12 +154,16 @@ STRICT RULES:
 - Write like a knowledgeable travel writer, not a marketing brochure
 - One paragraph only, no line breaks
 
-Also extract the Instagram handle if mentioned in any review (format: @username, or "not_found").
+Also:
+- Extract the Instagram handle if mentioned in any review (format: @username, or "not_found")
+- Suggest 2-3 subcategories from this list based on what the place actually is:
+  ${subcategories}
 
 Return ONLY valid JSON, nothing else:
 {
   "description": "your paragraph here",
-  "instagram": "@handle or not_found"
+  "instagram": "@handle or not_found",
+  "suggestedSubCategories": ["subcategory1", "subcategory2"]
 }`;
 
     console.log(`🤖 Claude enhancing: ${name} (${category})`);
@@ -198,6 +202,7 @@ Return ONLY valid JSON, nothing else:
         success: true,
         description: parsed.description || editorialSummary || `${name} is located at ${address}.`,
         instagram: parsed.instagram !== 'not_found' ? parsed.instagram : undefined,
+        suggestedSubCategories: Array.isArray(parsed.suggestedSubCategories) ? parsed.suggestedSubCategories : [],
       });
     }
 

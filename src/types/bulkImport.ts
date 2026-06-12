@@ -33,6 +33,10 @@ export interface BulkImportQueueItem {
   // AI-enhanced data
   enhancedData?: EnhancedPlaceData;
 
+  // Auto-detected during processing (used to pre-fill approval card)
+  detectedCategory?: MainCategory;
+  suggestedSubCategories?: string[];
+
   // User selections
   mainCategory?: MainCategory;
   subCategories: SubCategory[];
