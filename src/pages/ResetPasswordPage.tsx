@@ -20,7 +20,20 @@ export function ResetPasswordPage() {
 
   // If Supabase redirects back here after clicking the reset link,
   // it fires a PASSWORD_RECOVERY event — switch to "update" mode.
+  //
+  // FIX: The event can fire before React mounts this component and attaches
+  // the listener, so we also check the URL hash directly on mount.
+  // Supabase puts #access_token=...&type=recovery in the redirect URL.
   useEffect(() => {
+    const params = new URLSearchParams(
+      window.location.hash.startsWith('#')
+        ? window.location.hash.slice(1)  // hash-based: #access_token=...&type=recovery
+        : window.location.search          // query-based: ?access_token=...&type=recovery
+    );
+    if (params.get('type') === 'recovery') {
+      setMode('update');
+    }
+
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event) => {
       if (event === 'PASSWORD_RECOVERY') {
         setMode('update');
