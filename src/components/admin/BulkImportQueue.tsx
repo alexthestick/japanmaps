@@ -285,6 +285,9 @@ export function BulkImportQueue({
         google_place_id: currentItem.placeId || null, // Add as extra field
       };
 
+      // Refresh session before insert — long imports can outlast the JWT expiry
+      await supabase.auth.refreshSession();
+
       // Insert store
       const { data: store, error: insertError } = await supabase
         .from('stores')
@@ -293,6 +296,16 @@ export function BulkImportQueue({
         .single();
 
       if (insertError) {
+        // Duplicate slug = store already exists — skip gracefully
+        if (insertError.message.includes('stores_slug_idx')) {
+          logger.log(`⏭️ Skipping — store already exists (duplicate slug): ${storeData.slug}`);
+          onUpdateItem(currentIndex, {
+            status: 'skipped',
+            error: `Already exists in DB (slug: ${storeData.slug})`,
+          });
+          onMoveToNext();
+          return;
+        }
         throw new Error(`Database insert failed: ${insertError.message}`);
       }
 
