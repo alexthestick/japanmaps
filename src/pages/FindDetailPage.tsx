@@ -465,19 +465,19 @@ export function FindDetailPage() {
         <div className="absolute bottom-1/3 right-1/3 w-[400px] h-[400px] bg-cyan-500/4 rounded-full blur-3xl" />
       </div>
 
-      {/* Safe-area top padding */}
-      <div style={{ paddingTop: 'env(safe-area-inset-top)' }} />
+      {/* Back button — fixed so it clears the iOS status bar on mobile,
+          sits in the normal flow gutter on desktop */}
+      <button
+        onClick={() => navigate(-1)}
+        className="fixed left-4 lg:left-8 z-50 flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm font-medium transition-all bg-black/60 backdrop-blur-sm border border-white/10 text-gray-300 hover:text-white hover:border-white/20"
+        style={{ top: 'calc(env(safe-area-inset-top, 0px) + 0.75rem)' }}
+      >
+        <ArrowLeft className="h-4 w-4" />
+        Back
+      </button>
 
-      {/* Back nav */}
-      <div className="relative px-4 lg:px-8 pt-5 pb-2 max-w-7xl mx-auto">
-        <button
-          onClick={() => navigate(-1)}
-          className="inline-flex items-center gap-1.5 text-gray-500 hover:text-gray-300 text-sm transition-colors"
-        >
-          <ArrowLeft className="h-4 w-4" />
-          Back
-        </button>
-      </div>
+      {/* Spacer so content doesn't hide under the fixed button on mobile */}
+      <div style={{ height: 'calc(env(safe-area-inset-top, 0px) + 3rem)' }} className="lg:hidden" />
 
       {/* ── Mobile: stacked layout ── */}
       <div className="lg:hidden max-w-2xl mx-auto">
