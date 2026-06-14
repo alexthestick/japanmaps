@@ -257,7 +257,7 @@ export function StoreFindsSection({ storeId, storeName, storeCity, storeNeighbor
               <p className="text-gray-500 text-sm mb-1">
                 No {activeTab === 'visit' ? 'visits' : 'hauls'} logged yet
               </p>
-              <p className="text-gray-700 text-xs mb-4">Be the first to log a {activeTab} at this store</p>
+              <p className="text-gray-700 text-xs mb-4">Be the first to log a find.</p>
               <button
                 onClick={() => openSubmitModal(activeTab)}
                 className="flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-bold transition-all"

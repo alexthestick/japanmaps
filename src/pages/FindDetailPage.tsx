@@ -3,8 +3,9 @@ import { useParams, Link, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   MapPin, ShoppingBag, ArrowLeft, Send, X,
-  MessageCircle, Clock,
+  MessageCircle, Clock, ArrowRight,
 } from 'lucide-react';
+import { ikUrl } from '../utils/ikUrl';
 import { supabase } from '../lib/supabase';
 import { useAuthContext } from '../contexts/AuthContext';
 import { extractFindShortId, getDisplayUsername } from '../utils/slugify';
@@ -128,6 +129,14 @@ export function FindDetailPage() {
   const [commentBody, setCommentBody] = useState('');
   const [submittingComment, setSubmittingComment] = useState(false);
   const [notFound, setNotFound] = useState(false);
+  const [storeData, setStoreData] = useState<{
+    id: string;
+    name: string;
+    slug: string | null;
+    photos: string[] | null;
+    neighborhood: string | null;
+    city: string;
+  } | null>(null);
 
   // Fetch find — supports both slug format (item-store-city--shortid) and plain UUID
   useEffect(() => {
@@ -180,6 +189,19 @@ export function FindDetailPage() {
         setLoadingComments(false);
       });
   }, [find]);
+
+  // Fetch linked store data for the inline store card
+  useEffect(() => {
+    if (!find?.store_id) return;
+    supabase
+      .from('stores')
+      .select('id, name, slug, photos, neighborhood, city')
+      .eq('id', find.store_id)
+      .maybeSingle()
+      .then(({ data }) => {
+        if (data) setStoreData(data as typeof storeData);
+      });
+  }, [find?.store_id]);
 
   async function handleAddComment(e: React.FormEvent) {
     e.preventDefault();
@@ -243,6 +265,191 @@ export function FindDetailPage() {
   const color = avatarColor(username);
   const initials = username.slice(0, 2).toUpperCase();
 
+  // ─── Inline store card ──────────────────────────────────────────────────────
+  const StoreCard = storeData ? (
+    <button
+      onClick={() => navigate(`/store/${storeData.slug || storeData.id}`)}
+      className="w-full text-left rounded-xl overflow-hidden border transition-all hover:border-opacity-60 group mt-4"
+      style={{ borderColor: `${typeColor}25`, backgroundColor: 'rgba(255,255,255,0.03)' }}
+    >
+      {storeData.photos?.[0] && (
+        <div className="relative h-28 overflow-hidden">
+          <img
+            src={ikUrl(storeData.photos[0], 'card')}
+            alt={storeData.name}
+            className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+          />
+          <div className="absolute inset-0 bg-gradient-to-t from-black/70 to-transparent" />
+        </div>
+      )}
+      <div className="flex items-center justify-between px-4 py-3">
+        <div>
+          <p className="text-white font-bold text-sm">{storeData.name}</p>
+          <p className="text-gray-500 text-xs flex items-center gap-1 mt-0.5">
+            <MapPin className="h-3 w-3" />
+            {storeData.neighborhood ? `${storeData.neighborhood}, ` : ''}{storeData.city}
+          </p>
+        </div>
+        <ArrowRight className="h-4 w-4 text-gray-600 group-hover:text-gray-400 transition-colors flex-shrink-0" />
+      </div>
+    </button>
+  ) : null;
+
+  // ─── Right-column content (shared between mobile and desktop) ─────────────
+  const ContentPanel = (
+    <div className="px-4 lg:px-8 py-6 lg:py-8">
+      {/* Type badge */}
+      <div
+        className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-black uppercase tracking-wider mb-5"
+        style={{ backgroundColor: `${typeColor}20`, border: `1px solid ${typeColor}60`, color: typeColor }}
+      >
+        <TypeIcon className="h-3.5 w-3.5" />
+        {typeLabel}
+      </div>
+
+      {/* User + time */}
+      <div className="flex items-center gap-3 mb-5">
+        <div
+          className="h-10 w-10 rounded-full flex items-center justify-center text-sm font-black flex-shrink-0"
+          style={{ backgroundColor: `${color}25`, border: `1.5px solid ${color}50`, color }}
+        >
+          {initials}
+        </div>
+        <div>
+          <p className="text-white font-semibold text-sm">@{username}</p>
+          <p className="text-gray-500 text-xs">{timeAgo(find.created_at)}</p>
+        </div>
+      </div>
+
+      {/* Store + location */}
+      <h1 className="text-2xl font-black text-white mb-1">{find.store_name}</h1>
+      {(find.neighborhood || find.city) && (
+        <p className="text-gray-500 text-sm flex items-center gap-1 mb-4">
+          <MapPin className="h-3.5 w-3.5" />
+          {find.neighborhood ? `${find.neighborhood}, ` : ''}{find.city}
+        </p>
+      )}
+
+      {/* Item name */}
+      {find.item_name && (
+        <div
+          className="inline-block px-3 py-1.5 rounded-full text-sm font-semibold mb-4"
+          style={{ backgroundColor: `${typeColor}15`, color: typeColor, border: `1px solid ${typeColor}30` }}
+        >
+          {find.item_name}
+        </div>
+      )}
+
+      {/* Caption */}
+      {find.caption && (
+        <p className="text-gray-300 text-base leading-relaxed mb-4">
+          {find.caption}
+        </p>
+      )}
+
+      {/* Inline store card */}
+      {StoreCard}
+
+      {/* Comments section */}
+      <div className="mt-8 pt-6 border-t border-gray-800/60">
+        <div className="flex items-center gap-2 mb-5">
+          <MessageCircle className="h-4 w-4 text-gray-500" />
+          <h2 className="text-white font-bold">
+            Comments
+            {comments.length > 0 && (
+              <span className="text-gray-600 font-normal text-sm ml-2">({comments.length})</span>
+            )}
+          </h2>
+        </div>
+
+        {loadingComments ? (
+          <div className="space-y-4">
+            {[1, 2].map(i => (
+              <div key={i} className="h-14 rounded-xl bg-gray-900 animate-pulse" />
+            ))}
+          </div>
+        ) : comments.length === 0 ? (
+          <div className="text-center py-8 text-gray-600">
+            <MessageCircle className="h-7 w-7 mx-auto mb-2 opacity-30" />
+            <p className="text-sm">No comments yet. Be the first!</p>
+          </div>
+        ) : (
+          <div className="space-y-5">
+            <AnimatePresence>
+              {comments.map(comment => (
+                <CommentItem
+                  key={comment.id}
+                  comment={comment}
+                  currentUserId={user?.id}
+                  onDelete={handleDeleteComment}
+                />
+              ))}
+            </AnimatePresence>
+          </div>
+        )}
+
+        {/* Comment input */}
+        <div className="mt-6">
+          {user ? (
+            <form onSubmit={handleAddComment} className="flex gap-3">
+              <div
+                className="h-8 w-8 rounded-full flex items-center justify-center text-xs font-black flex-shrink-0 mt-0.5"
+                style={{
+                  backgroundColor: `${avatarColor(profile?.username || user.email?.split('@')[0] || '')}25`,
+                  border: `1.5px solid ${avatarColor(profile?.username || user.email?.split('@')[0] || '')}50`,
+                  color: avatarColor(profile?.username || user.email?.split('@')[0] || ''),
+                }}
+              >
+                {(profile?.username || user.email?.split('@')[0] || '').slice(0, 2).toUpperCase()}
+              </div>
+              <div className="flex-1 flex gap-2">
+                <input
+                  type="text"
+                  value={commentBody}
+                  onChange={e => setCommentBody(e.target.value)}
+                  placeholder="Add a comment..."
+                  maxLength={500}
+                  className="flex-1 bg-gray-900 border border-gray-800 rounded-xl px-4 py-2.5 text-white text-sm placeholder-gray-600 focus:outline-none focus:border-purple-500 transition-colors"
+                />
+                <button
+                  type="submit"
+                  disabled={submittingComment || !commentBody.trim()}
+                  className="flex items-center justify-center h-10 w-10 rounded-xl transition-all disabled:opacity-40 flex-shrink-0"
+                  style={{
+                    background: 'linear-gradient(135deg, rgba(168,85,247,0.3), rgba(168,85,247,0.15))',
+                    border: '1px solid rgba(168,85,247,0.4)',
+                    color: '#a855f7',
+                  }}
+                >
+                  {submittingComment ? (
+                    <span className="animate-spin h-4 w-4 border-2 border-purple-400 border-t-transparent rounded-full" />
+                  ) : (
+                    <Send className="h-4 w-4" />
+                  )}
+                </button>
+              </div>
+            </form>
+          ) : (
+            <div className="text-center py-4">
+              <p className="text-gray-500 text-sm mb-3">Sign in to leave a comment</p>
+              <Link
+                to="/login"
+                className="inline-flex items-center gap-2 px-5 py-2.5 text-sm font-medium rounded-xl transition-colors"
+                style={{
+                  background: 'rgba(168,85,247,0.1)',
+                  border: '1px solid rgba(168,85,247,0.3)',
+                  color: '#a855f7',
+                }}
+              >
+                Sign in
+              </Link>
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+
   return (
     <div className="min-h-screen bg-black">
       {/* Ambient glow */}
@@ -251,213 +458,79 @@ export function FindDetailPage() {
         <div className="absolute bottom-1/3 right-1/3 w-[400px] h-[400px] bg-cyan-500/4 rounded-full blur-3xl" />
       </div>
 
-      {/* Safe-area top padding so the back button clears the iOS status bar */}
+      {/* Safe-area top padding */}
       <div style={{ paddingTop: 'env(safe-area-inset-top)' }} />
 
-      <div className="relative max-w-2xl mx-auto px-4 py-6">
-
-        {/* Back nav */}
+      {/* Back nav */}
+      <div className="relative px-4 lg:px-8 pt-5 pb-2 max-w-7xl mx-auto">
         <button
           onClick={() => navigate(-1)}
-          className="inline-flex items-center gap-1.5 text-gray-500 hover:text-gray-300 text-sm mb-6 transition-colors"
+          className="inline-flex items-center gap-1.5 text-gray-500 hover:text-gray-300 text-sm transition-colors"
         >
           <ArrowLeft className="h-4 w-4" />
           Back
         </button>
+      </div>
 
-        {/* Find card */}
-        <div
-          className="rounded-2xl overflow-hidden bg-gray-900 border"
-          style={{ borderColor: `${typeColor}25` }}
-        >
-          {/* Photo */}
-          {find.photo_url && (
-            <div className="relative w-full">
+      {/* ── Mobile: stacked layout ── */}
+      <div className="lg:hidden max-w-2xl mx-auto">
+        {find.photo_url && (
+          <div className="relative w-full">
+            <img
+              src={find.photo_url}
+              alt={find.store_name}
+              className="w-full h-auto block"
+              style={{ maxHeight: '75vh', objectFit: 'contain', backgroundColor: '#0a0a0a' }}
+            />
+            <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-transparent pointer-events-none" />
+            <div
+              className="absolute top-4 left-4 flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-black uppercase tracking-wider backdrop-blur-sm"
+              style={{ backgroundColor: `${typeColor}25`, border: `1px solid ${typeColor}60`, color: typeColor }}
+            >
+              <TypeIcon className="h-3.5 w-3.5" />
+              {typeLabel}
+            </div>
+          </div>
+        )}
+        {ContentPanel}
+      </div>
+
+      {/* ── Desktop: two-column layout ── */}
+      <div className="hidden lg:flex min-h-[calc(100vh-52px)]">
+        {/* Left: sticky photo */}
+        <div className="w-[55%] sticky top-0 h-[calc(100vh-52px)] flex-shrink-0">
+          {find.photo_url ? (
+            <div className="relative w-full h-full">
               <img
                 src={find.photo_url}
                 alt={find.store_name}
-                className="w-full h-auto block"
-                style={{ maxHeight: '80vh', objectFit: 'contain', backgroundColor: '#0a0a0a' }}
+                className="w-full h-full object-contain"
+                style={{ backgroundColor: '#080808' }}
               />
-              <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent pointer-events-none" />
-
-              {/* Type badge */}
+              <div className="absolute inset-0 bg-gradient-to-r from-transparent to-black/30 pointer-events-none" />
               <div
-                className="absolute top-4 left-4 flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-black uppercase tracking-wider backdrop-blur-sm"
+                className="absolute top-6 left-6 flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-black uppercase tracking-wider backdrop-blur-sm"
                 style={{ backgroundColor: `${typeColor}25`, border: `1px solid ${typeColor}60`, color: typeColor }}
               >
                 <TypeIcon className="h-3.5 w-3.5" />
                 {typeLabel}
               </div>
             </div>
-          )}
-
-          {/* Content */}
-          <div className="p-6">
-            {/* No-photo badge */}
-            {!find.photo_url && (
-              <div
-                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-black uppercase tracking-wider mb-4"
-                style={{ backgroundColor: `${typeColor}20`, border: `1px solid ${typeColor}60`, color: typeColor }}
-              >
-                <TypeIcon className="h-3.5 w-3.5" />
-                {typeLabel}
-              </div>
-            )}
-
-            {/* User + time */}
-            <div className="flex items-center gap-3 mb-4">
-              <div
-                className="h-10 w-10 rounded-full flex items-center justify-center text-sm font-black flex-shrink-0"
-                style={{ backgroundColor: `${color}25`, border: `1.5px solid ${color}50`, color }}
-              >
-                {initials}
-              </div>
-              <div>
-                <p className="text-white font-semibold text-sm">@{username}</p>
-                <p className="text-gray-500 text-xs">{timeAgo(find.created_at)}</p>
-              </div>
-            </div>
-
-            {/* Store + location */}
-            <h1 className="text-2xl font-black text-white mb-1">{find.store_name}</h1>
-            {(find.neighborhood || find.city) && (
-              <p className="text-gray-500 text-sm flex items-center gap-1 mb-4">
-                <MapPin className="h-3.5 w-3.5" />
-                {find.neighborhood ? `${find.neighborhood}, ` : ''}{find.city}
-              </p>
-            )}
-
-            {/* Item name */}
-            {find.item_name && (
-              <div
-                className="inline-block px-3 py-1.5 rounded-full text-sm font-semibold mb-4"
-                style={{ backgroundColor: `${typeColor}15`, color: typeColor, border: `1px solid ${typeColor}30` }}
-              >
-                {find.item_name}
-              </div>
-            )}
-
-            {/* Caption */}
-            {find.caption && (
-              <p className="text-gray-300 text-base leading-relaxed mb-4">
-                {find.caption}
-              </p>
-            )}
-
-            {/* Link to store */}
-            {find.store_id && (
-              <Link
-                to={`/store/${find.store_id}`}
-                className="inline-flex items-center gap-2 text-sm font-medium transition-colors mt-2"
-                style={{ color: typeColor }}
-              >
-                <MapPin className="h-4 w-4" />
-                View store on map
-              </Link>
-            )}
-          </div>
-        </div>
-
-        {/* Comments section */}
-        <div className="mt-8">
-          <div className="flex items-center gap-2 mb-6">
-            <MessageCircle className="h-5 w-5 text-gray-500" />
-            <h2 className="text-white font-bold text-lg">
-              Comments
-              {comments.length > 0 && (
-                <span className="text-gray-500 font-normal text-base ml-2">({comments.length})</span>
-              )}
-            </h2>
-          </div>
-
-          {/* Comment list */}
-          {loadingComments ? (
-            <div className="space-y-4">
-              {[1, 2].map(i => (
-                <div key={i} className="h-16 rounded-xl bg-gray-900 animate-pulse" />
-              ))}
-            </div>
-          ) : comments.length === 0 ? (
-            <div className="text-center py-10 text-gray-600">
-              <MessageCircle className="h-8 w-8 mx-auto mb-3 opacity-40" />
-              <p className="text-sm">No comments yet. Be the first!</p>
-            </div>
           ) : (
-            <div className="space-y-5">
-              <AnimatePresence>
-                {comments.map(comment => (
-                  <CommentItem
-                    key={comment.id}
-                    comment={comment}
-                    currentUserId={user?.id}
-                    onDelete={handleDeleteComment}
-                  />
-                ))}
-              </AnimatePresence>
+            /* No photo: type-colored gradient panel */
+            <div
+              className="w-full h-full flex items-center justify-center"
+              style={{ background: `linear-gradient(135deg, ${typeColor}10, ${typeColor}04, black)` }}
+            >
+              <TypeIcon className="h-24 w-24 opacity-10" style={{ color: typeColor }} />
             </div>
           )}
-
-          {/* Comment input */}
-          <div className="mt-8 pt-6 border-t border-gray-800">
-            {user ? (
-              <form onSubmit={handleAddComment} className="flex gap-3">
-                <div
-                  className="h-8 w-8 rounded-full flex items-center justify-center text-xs font-black flex-shrink-0 mt-0.5"
-                  style={{
-                    backgroundColor: `${avatarColor(profile?.username || user.email?.split('@')[0] || '')}25`,
-                    border: `1.5px solid ${avatarColor(profile?.username || user.email?.split('@')[0] || '')}50`,
-                    color: avatarColor(profile?.username || user.email?.split('@')[0] || ''),
-                  }}
-                >
-                  {(profile?.username || user.email?.split('@')[0] || '').slice(0, 2).toUpperCase()}
-                </div>
-                <div className="flex-1 flex gap-2">
-                  <input
-                    type="text"
-                    value={commentBody}
-                    onChange={e => setCommentBody(e.target.value)}
-                    placeholder="Add a comment..."
-                    maxLength={500}
-                    className="flex-1 bg-gray-900 border border-gray-800 rounded-xl px-4 py-2.5 text-white text-sm placeholder-gray-600 focus:outline-none focus:border-purple-500 transition-colors"
-                  />
-                  <button
-                    type="submit"
-                    disabled={submittingComment || !commentBody.trim()}
-                    className="flex items-center justify-center h-10 w-10 rounded-xl transition-all disabled:opacity-40 flex-shrink-0"
-                    style={{
-                      background: 'linear-gradient(135deg, rgba(168,85,247,0.3), rgba(168,85,247,0.15))',
-                      border: '1px solid rgba(168,85,247,0.4)',
-                      color: '#a855f7',
-                    }}
-                  >
-                    {submittingComment ? (
-                      <span className="animate-spin h-4 w-4 border-2 border-purple-400 border-t-transparent rounded-full" />
-                    ) : (
-                      <Send className="h-4 w-4" />
-                    )}
-                  </button>
-                </div>
-              </form>
-            ) : (
-              <div className="text-center py-4">
-                <p className="text-gray-500 text-sm mb-3">Sign in to leave a comment</p>
-                <Link
-                  to="/login"
-                  className="inline-flex items-center gap-2 px-5 py-2.5 text-sm font-medium rounded-xl transition-colors"
-                  style={{
-                    background: 'rgba(168,85,247,0.1)',
-                    border: '1px solid rgba(168,85,247,0.3)',
-                    color: '#a855f7',
-                  }}
-                >
-                  Sign in
-                </Link>
-              </div>
-            )}
-          </div>
         </div>
 
+        {/* Right: scrollable content */}
+        <div className="flex-1 overflow-y-auto border-l border-white/5">
+          {ContentPanel}
+        </div>
       </div>
     </div>
   );
