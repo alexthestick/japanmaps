@@ -205,7 +205,7 @@ export function CityPage() {
         <div className="absolute inset-0 bg-gradient-to-t from-black via-black/60 to-transparent" />
 
         {/* City Name & Info */}
-        <div className="absolute bottom-0 left-0 right-0 p-8">
+        <div className="absolute bottom-0 left-0 right-0 p-4 md:p-8">
           <div className="max-w-7xl mx-auto">
             <motion.div
               initial={{ opacity: 0, y: 20 }}
@@ -214,7 +214,7 @@ export function CityPage() {
             >
               {/* City Name */}
               <h1
-                className="text-6xl font-black text-white mb-2 italic uppercase"
+                className="text-4xl md:text-6xl font-black text-white mb-2 italic uppercase"
                 style={{
                   textShadow: `0 0 30px ${cityColor}80, 0 0 20px ${cityColor}60, 0 4px 12px rgba(0,0,0,0.8)`,
                   letterSpacing: '0.05em',
@@ -225,7 +225,7 @@ export function CityPage() {
 
               {/* Japanese Name */}
               <div
-                className="text-2xl font-bold mb-4"
+                className="text-xl md:text-2xl font-bold mb-3 md:mb-4"
                 style={{
                   color: cityColor,
                   textShadow: `0 0 15px ${cityColor}80, 0 2px 8px rgba(0,0,0,0.8)`,
@@ -234,13 +234,13 @@ export function CityPage() {
                 {cityJapaneseName}
               </div>
 
-              {/* Description */}
-              <p className="text-gray-300 text-lg max-w-3xl leading-relaxed">
+              {/* Description — desktop only (too long for 400px hero on mobile) */}
+              <p className="hidden md:block text-gray-300 text-lg max-w-3xl leading-relaxed">
                 {cityDescription}
               </p>
 
               {/* Store Count Badge */}
-              <div className="mt-4 inline-flex items-center gap-2 px-4 py-2 bg-black/60 backdrop-blur-md border-2 rounded-lg"
+              <div className="mt-3 md:mt-4 inline-flex items-center gap-2 px-4 py-2 bg-black/60 backdrop-blur-md border-2 rounded-lg"
                 style={{
                   borderColor: `${cityColor}60`,
                   boxShadow: `0 0 20px ${cityColor}30`,
