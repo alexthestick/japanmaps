@@ -30,6 +30,7 @@ interface Find {
     username: string | null;
     display_name: string | null;
   } | null;
+  stores?: { photos: string[] | null } | null;
 }
 
 // ─── Find card ─────────────────────────────────────────────────────────────────
@@ -121,36 +122,66 @@ const FindCard = memo(function FindCard({ find }: { find: Find }) {
         </div>
       )}
 
-      {/* No-photo layout */}
+      {/* No-photo layout — uses blurred store photo as background if available */}
       {!find.photo_url && (
-        <div className="p-4">
-          <div
-            className="flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-black uppercase tracking-wider w-fit mb-3"
-            style={{ backgroundColor: `${typeColor}20`, border: `1px solid ${typeColor}60`, color: typeColor }}
-          >
-            <TypeIcon className="h-3 w-3" />
-            {typeLabel}
-          </div>
-          <div className="flex items-center gap-2 mb-2">
+        <div className="relative overflow-hidden" style={{ minHeight: 160 }}>
+          {/* Blurred store photo background */}
+          {find.stores?.photos?.[0] ? (
+            <>
+              <img
+                src={ikUrl(find.stores.photos[0], 'thumb')}
+                alt=""
+                className="absolute inset-0 w-full h-full object-cover scale-110"
+                style={{ filter: 'blur(6px)', transform: 'scale(1.15)' }}
+              />
+              <div className="absolute inset-0 bg-black/75" />
+            </>
+          ) : (
+            /* Fallback: type-colored gradient */
             <div
-              className="h-7 w-7 rounded-full flex items-center justify-center text-xs font-black"
-              style={{ backgroundColor: `${typeColor}30`, color: typeColor }}
+              className="absolute inset-0"
+              style={{ background: `linear-gradient(135deg, ${typeColor}12, ${typeColor}04)` }}
+            />
+          )}
+
+          {/* Content */}
+          <div className="relative z-10 p-4">
+            <div
+              className="flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-black uppercase tracking-wider w-fit mb-3"
+              style={{ backgroundColor: `${typeColor}20`, border: `1px solid ${typeColor}60`, color: typeColor }}
             >
-              {initials}
+              <TypeIcon className="h-3 w-3" />
+              {typeLabel}
             </div>
-            <span className="text-gray-400 text-xs">@{username}</span>
-            <span className="text-gray-600 text-xs ml-auto">{timeAgo(find.created_at)}</span>
+            <div className="flex items-center gap-2 mb-2">
+              <div
+                className="h-7 w-7 rounded-full flex items-center justify-center text-xs font-black"
+                style={{ backgroundColor: `${typeColor}30`, color: typeColor }}
+              >
+                {initials}
+              </div>
+              <span className="text-gray-300 text-xs">@{username}</span>
+              <span className="text-gray-500 text-xs ml-auto">{timeAgo(find.created_at)}</span>
+            </div>
+            <p className="text-white font-bold">{find.store_name}</p>
+            {(find.neighborhood || find.city) && (
+              <p className="text-gray-400 text-sm mt-0.5 flex items-center gap-1">
+                <MapPin className="h-3 w-3" />
+                {find.neighborhood || find.city}
+              </p>
+            )}
+            {find.item_name && (
+              <p
+                className="text-xs mt-2 font-medium truncate px-2 py-1 rounded-full w-fit"
+                style={{ backgroundColor: `${typeColor}20`, color: typeColor }}
+              >
+                {find.item_name}
+              </p>
+            )}
+            {find.caption && (
+              <p className="text-gray-300 text-sm mt-2 leading-relaxed line-clamp-3">{find.caption}</p>
+            )}
           </div>
-          <p className="text-white font-bold">{find.store_name}</p>
-          {(find.neighborhood || find.city) && (
-            <p className="text-gray-500 text-sm mt-0.5 flex items-center gap-1">
-              <MapPin className="h-3 w-3" />
-              {find.neighborhood || find.city}
-            </p>
-          )}
-          {find.caption && (
-            <p className="text-gray-400 text-sm mt-3 leading-relaxed">{find.caption}</p>
-          )}
         </div>
       )}
     </motion.div>
@@ -933,7 +964,7 @@ export function FindsPage() {
 
     let query = supabase
       .from('field_notes')
-      .select('*, profiles(username, display_name)')
+      .select('*, profiles(username, display_name), stores!field_notes_store_id_fkey(photos)')
       .eq('status', 'approved')
       .order('created_at', { ascending: false })
       .range(start, start + PAGE_SIZE - 1);
@@ -1059,17 +1090,22 @@ export function FindsPage() {
 
       {/* Masonry grid */}
       <div className="relative max-w-7xl mx-auto px-4 sm:px-6 py-10">
-        {loading && finds.length === 0 ? (
-          <div className="columns-2 md:columns-3 lg:columns-4 gap-4">
-            {Array.from({ length: 12 }).map((_, i) => (
-              <div
-                key={i}
-                className="break-inside-avoid mb-4 rounded-xl bg-gray-900 animate-pulse"
-                style={{ height: `${200 + (i % 3) * 80}px` }}
-              />
-            ))}
-          </div>
-        ) : finds.length === 0 ? (
+        {/* Skeleton — fades out when content arrives */}
+        <div
+          className="columns-1 sm:columns-2 md:columns-3 lg:columns-4 gap-4 transition-opacity duration-300 pointer-events-none"
+          style={{ opacity: loading && finds.length === 0 ? 1 : 0, position: loading && finds.length === 0 ? 'relative' : 'absolute', inset: 0 }}
+          aria-hidden="true"
+        >
+          {Array.from({ length: 12 }).map((_, i) => (
+            <div
+              key={i}
+              className="break-inside-avoid mb-4 rounded-xl bg-gray-900 animate-pulse"
+              style={{ height: `${200 + (i % 3) * 80}px` }}
+            />
+          ))}
+        </div>
+
+        {!loading && finds.length === 0 ? (
           <div className="text-center py-24">
             <Camera className="h-12 w-12 text-gray-700 mx-auto mb-4" />
             <p className="text-gray-500 font-medium text-lg">No finds yet</p>
@@ -1090,7 +1126,10 @@ export function FindsPage() {
           </div>
         ) : (
           <>
-            <div className="columns-2 md:columns-3 lg:columns-4 gap-4">
+            <div
+              className="columns-1 sm:columns-2 md:columns-3 lg:columns-4 gap-4 transition-opacity duration-300"
+              style={{ opacity: loading && finds.length === 0 ? 0 : 1 }}
+            >
               {finds.map(find => (
                 <FindCard key={find.id} find={find} />
               ))}

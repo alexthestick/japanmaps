@@ -439,11 +439,11 @@ export function StoreDetailPage() {
       {/* Back Button - Fixed */}
       <button
         onClick={() => {
-          // Prefer going back if history exists and came from our app
-          if (location.key !== 'default') {
+          // Go back if we have in-app history (key !== 'default' OR browser has entries)
+          if (location.key !== 'default' || window.history.length > 1) {
             navigate(-1);
           } else {
-            // Fallback to map with preserved params if provided in state
+            // No history at all — landed directly on this page
             const state = location.state as any;
             const params = new URLSearchParams(state?.params || {});
             const fallback = `/map${params.toString() ? `?${params.toString()}` : ''}`;
