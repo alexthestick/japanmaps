@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import { useNavigate, Link, useLocation } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Eye, EyeOff, ArrowRight, MapPin, CheckCircle2, XCircle } from 'lucide-react';
 import { useAuthContext } from '../contexts/AuthContext';
@@ -15,6 +15,8 @@ type UsernameStatus = 'idle' | 'checking' | 'available' | 'taken' | 'invalid';
 export function SignupPage() {
   const { signUp, user, loading } = useAuthContext();
   const navigate = useNavigate();
+  const location = useLocation();
+  const goBack = () => { if (location.key !== 'default') { navigate(-1); } else { navigate('/'); } };
 
   const [step, setStep] = useState<'account' | 'username'>('account');
   const [email, setEmail] = useState('');
@@ -345,9 +347,9 @@ export function SignupPage() {
           </div>
 
           <div className="mt-4 text-center">
-            <Link to="/" className="text-gray-600 hover:text-gray-400 text-sm transition-colors">
+            <button onClick={goBack} className="text-gray-600 hover:text-gray-400 text-sm transition-colors">
               ← Back to Lost in Transit
-            </Link>
+            </button>
           </div>
         </div>
       </div>

@@ -1,5 +1,5 @@
 import { useEffect, useState, useCallback } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { MapPin, Navigation, Trash2, Heart, ArrowLeft, LogIn } from 'lucide-react';
 import Map, { Marker, NavigationControl } from 'react-map-gl';
 import { supabase } from '../lib/supabase';
@@ -12,6 +12,8 @@ import 'mapbox-gl/dist/mapbox-gl.css';
 
 export function SavedStoresPage() {
   const navigate = useNavigate();
+  const location = useLocation();
+  const goBack = () => { if (location.key !== 'default') { navigate(-1); } else { navigate('/'); } };
   const { user, loading: authLoading } = useAuthContext();
   const [savedStores, setSavedStores] = useState<Store[]>([]);
   const [loading, setLoading] = useState(true);
@@ -184,7 +186,7 @@ export function SavedStoresPage() {
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-4">
               <button
-                onClick={() => navigate('/')}
+                onClick={goBack}
                 className="flex items-center gap-2 text-gray-600 hover:text-gray-900 transition-colors"
               >
                 <ArrowLeft className="w-5 h-5" />

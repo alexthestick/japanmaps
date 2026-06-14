@@ -251,7 +251,10 @@ export function FindDetailPage() {
         <div className="absolute bottom-1/3 right-1/3 w-[400px] h-[400px] bg-cyan-500/4 rounded-full blur-3xl" />
       </div>
 
-      <div className="relative max-w-2xl mx-auto px-4 py-8">
+      {/* Safe-area top padding so the back button clears the iOS status bar */}
+      <div style={{ paddingTop: 'env(safe-area-inset-top)' }} />
+
+      <div className="relative max-w-2xl mx-auto px-4 py-6">
 
         {/* Back nav */}
         <button

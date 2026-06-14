@@ -26,39 +26,20 @@ export function SearchAutocomplete({ query, stores, onSelect, onClose }: SearchA
     if (query.length < 2) return [];
 
     const lowerQuery = query.toLowerCase();
-    const results: SearchSuggestion[] = [];
 
-    // 1. Find matching stores (max 6)
-    const matchingStores = stores
-      .filter(store => 
-        store.name.toLowerCase().includes(lowerQuery) ||
-        store.city.toLowerCase().includes(lowerQuery) ||
-        store.neighborhood?.toLowerCase().includes(lowerQuery)
-      )
-      .slice(0, 6);
-
-    matchingStores.forEach(store => {
-      const subtitle = store.neighborhood 
-        ? `${store.neighborhood}, ${store.city}`
-        : store.city;
-      
-      results.push({
-        type: 'store',
-        name: store.name,
-        subtitle,
-        storeId: store.id,
-        city: store.city,
-        neighborhood: store.neighborhood,
-      });
-    });
-
-    // 2. Find unique locations from matching stores (max 2)
+    // ── 1. Collect unique area matches (neighborhoods + cities) ──────────
+    // Areas go FIRST so typing "harajuku" / "osaka" / "kyoto" immediately
+    // surfaces the fly-to-area action before individual store results.
     const locationMap = new Map<string, SearchSuggestion>();
-    
-    matchingStores.forEach(store => {
-      // Add neighborhood if it matches
-      if (store.neighborhood?.toLowerCase().includes(lowerQuery)) {
-        const key = `${store.neighborhood}-${store.city}`;
+
+    stores.forEach(store => {
+      // Neighborhood match — dedup key is "neighborhood|city" so
+      // "Osaka, Osaka" (where neighborhood === city) doesn't appear twice.
+      if (
+        store.neighborhood?.toLowerCase().includes(lowerQuery) &&
+        store.neighborhood.toLowerCase() !== store.city.toLowerCase() // skip same-name dedup
+      ) {
+        const key = `${store.neighborhood.toLowerCase()}|${store.city.toLowerCase()}`;
         if (!locationMap.has(key)) {
           locationMap.set(key, {
             type: 'location',
@@ -69,10 +50,10 @@ export function SearchAutocomplete({ query, stores, onSelect, onClose }: SearchA
           });
         }
       }
-      
-      // Add city if it matches
+
+      // City match — one entry per city, subtitle "City"
       if (store.city.toLowerCase().includes(lowerQuery)) {
-        const key = store.city;
+        const key = `city|${store.city.toLowerCase()}`;
         if (!locationMap.has(key)) {
           locationMap.set(key, {
             type: 'location',
@@ -84,11 +65,36 @@ export function SearchAutocomplete({ query, stores, onSelect, onClose }: SearchA
       }
     });
 
-    // Add unique locations (max 2)
-    const uniqueLocations = Array.from(locationMap.values()).slice(0, 2);
-    results.push(...uniqueLocations);
+    // Sort areas: exact/starts-with matches before contains matches
+    const uniqueLocations = Array.from(locationMap.values())
+      .sort((a, b) => {
+        const aStarts = a.name.toLowerCase().startsWith(lowerQuery) ? 0 : 1;
+        const bStarts = b.name.toLowerCase().startsWith(lowerQuery) ? 0 : 1;
+        return aStarts - bStarts;
+      })
+      .slice(0, 3); // max 3 area results
 
-    return results.slice(0, 8); // Max 8 total
+    // ── 2. Store matches ─────────────────────────────────────────────────
+    // Only show stores whose NAME matches — city/neighborhood matches are
+    // already covered by the area results above, so we avoid flooding the
+    // list with every store in Osaka when the user types "osaka".
+    const matchingStores = stores
+      .filter(store => store.name.toLowerCase().includes(lowerQuery))
+      .slice(0, 5);
+
+    const storeResults: SearchSuggestion[] = matchingStores.map(store => ({
+      type: 'store',
+      name: store.name,
+      subtitle: store.neighborhood
+        ? `${store.neighborhood}, ${store.city}`
+        : store.city,
+      storeId: store.id,
+      city: store.city,
+      neighborhood: store.neighborhood,
+    }));
+
+    // Areas first, then stores — max 8 total
+    return [...uniqueLocations, ...storeResults].slice(0, 8);
   }, [query, stores]);
 
   // Keyboard navigation

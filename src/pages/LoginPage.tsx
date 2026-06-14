@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import { useNavigate, Link, useLocation } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { Eye, EyeOff, ArrowRight, MapPin } from 'lucide-react';
 import { useAuthContext } from '../contexts/AuthContext';
@@ -7,6 +7,9 @@ import { useAuthContext } from '../contexts/AuthContext';
 export function LoginPage() {
   const { signIn, user, loading } = useAuthContext();
   const navigate = useNavigate();
+  const location = useLocation();
+  // 'default' key means the user landed directly on this page (no prior history)
+  const goBack = () => { if (location.key !== 'default') { navigate(-1); } else { navigate('/'); } };
 
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -200,9 +203,9 @@ export function LoginPage() {
           </div>
 
           <div className="mt-6 text-center">
-            <Link to="/" className="text-gray-600 hover:text-gray-400 text-sm transition-colors">
+            <button onClick={goBack} className="text-gray-600 hover:text-gray-400 text-sm transition-colors">
               ← Back to Lost in Transit
-            </Link>
+            </button>
           </div>
         </motion.div>
       </div>
