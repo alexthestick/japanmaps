@@ -164,128 +164,209 @@ function StationRow({ post, index, isFeatured }: StationRowProps) {
   return (
     <motion.div
       ref={ref}
-      className="relative grid grid-cols-[1fr_80px_1fr] items-center gap-0 w-full"
-      style={{ minHeight: '260px' }}
+      initial={{ opacity: 0, y: 20 }}
+      animate={isInView ? { opacity: 1, y: 0 } : {}}
+      transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1], delay: 0.05 }}
     >
-      {/* ══════════ LEFT — Text Card ══════════ */}
-      <motion.div
-        initial={{ opacity: 0, x: -50 }}
-        animate={isInView ? { opacity: 1, x: 0 } : {}}
-        transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1], delay: 0.05 }}
-        onClick={() => handleNavigate(post.slug)}
-        className="group relative cursor-pointer bg-gray-900/70 backdrop-blur-sm border border-white/5 hover:border-white/15 rounded-2xl p-7 transition-all duration-300 h-full flex flex-col justify-between"
-        style={{
-          boxShadow: '0 4px 32px rgba(0,0,0,0.5)',
-        }}
-        whileHover={{ y: -4, boxShadow: '0 12px 48px rgba(0,0,0,0.6)' }}
-      >
-        {/* Featured ribbon */}
-        {isFeatured && (
-          <div
-            className="absolute -top-px left-6 right-6 h-[2px] rounded-full"
-            style={{ background: `linear-gradient(to right, transparent, ${catStyle.border}, transparent)` }}
-          />
-        )}
+      {/* ── MOBILE layout: left-rail timeline ── */}
+      <div className="flex gap-4 md:hidden">
 
-        <div>
-          {/* Category + date */}
-          <div className="flex items-center gap-3 mb-4">
-            <span
-              className={`px-2.5 py-1 text-[10px] font-black uppercase tracking-widest rounded-sm ${catStyle.bg} ${catStyle.text}`}
-              style={{ boxShadow: `0 0 10px ${catStyle.glow}` }}
-            >
-              {post.category ?? 'Article'}
-            </span>
-            <span className="text-gray-500 text-xs font-mono tracking-wide">
-              {formatDate(post.published_at)}
-            </span>
-            {isFeatured && (
-              <span className="ml-auto text-[10px] font-black uppercase tracking-widest text-cyan-400/70 border border-cyan-400/20 px-2 py-0.5 rounded-sm">
-                Latest
-              </span>
-            )}
-          </div>
-
-          {/* Title */}
-          <h3 className={`font-black italic text-white leading-tight mb-3 group-hover:text-cyan-100 transition-colors duration-300 ${isFeatured ? 'text-2xl' : 'text-lg'}`}>
-            {post.title}
-          </h3>
-
-          {/* Excerpt */}
-          {(post.intro_content || post.content) && (
-            <p className="text-gray-400 text-sm leading-relaxed line-clamp-3 mb-5">
-              {post.intro_content ?? post.content.slice(0, 150)}
-            </p>
-          )}
-        </div>
-
-        {/* CTA */}
-        <div className="flex items-center gap-2 text-cyan-400 text-sm font-bold mt-auto pt-2 border-t border-white/5">
-          <span className="relative">
-            Read article
-            <span className="absolute bottom-0 left-0 h-px w-0 bg-cyan-400 group-hover:w-full transition-all duration-300" />
-          </span>
+        {/* Left rail: number + vertical line */}
+        <div className="flex flex-col items-center flex-shrink-0" style={{ width: 36 }}>
           <motion.div
-            className="group-hover:translate-x-1 transition-transform duration-200"
+            initial={{ scale: 0, opacity: 0 }}
+            animate={isInView ? { scale: 1, opacity: 1 } : {}}
+            transition={{ duration: 0.4, delay: 0.1, type: 'spring', stiffness: 220 }}
+            className="relative z-10 flex-shrink-0"
           >
-            <ArrowRight className="w-4 h-4" />
+            {isInView && (
+              <motion.div
+                initial={{ scale: 1, opacity: 0.5 }}
+                animate={{ scale: 2.2, opacity: 0 }}
+                transition={{ duration: 1.4, repeat: Infinity, repeatDelay: 2 }}
+                className="absolute inset-0 rounded-full"
+                style={{ backgroundColor: catStyle.border }}
+              />
+            )}
+            <div
+              className="w-9 h-9 rounded-full bg-black border-2 flex items-center justify-center font-black text-xs z-10 relative"
+              style={{
+                borderColor: catStyle.border,
+                color: catStyle.border,
+                boxShadow: `0 0 14px ${catStyle.glow}`,
+              }}
+            >
+              {String(index + 1).padStart(2, '0')}
+            </div>
           </motion.div>
+          {/* Vertical connector */}
+          <div
+            className="flex-1 w-px mt-3"
+            style={{ background: `linear-gradient(to bottom, ${catStyle.border}50, transparent)` }}
+          />
         </div>
 
-        {/* Corner brackets */}
-        <div className="absolute bottom-3 right-3 w-4 h-4 border-b border-r border-white/10 group-hover:border-cyan-400/30 transition-colors duration-300" />
-        <div className="absolute top-3 left-3 w-4 h-4 border-t border-l border-white/10 group-hover:border-cyan-400/30 transition-colors duration-300" />
-      </motion.div>
-
-      {/* ══════════ CENTER — Station marker ══════════ */}
-      <div className="flex flex-col items-center justify-center h-full relative">
-        <motion.div
-          initial={{ scale: 0, opacity: 0 }}
-          animate={isInView ? { scale: 1, opacity: 1 } : {}}
-          transition={{ duration: 0.4, delay: 0.15, type: 'spring', stiffness: 220 }}
-          className="relative z-10"
-        >
-          {/* Pulse ring */}
-          {isInView && (
-            <motion.div
-              initial={{ scale: 1, opacity: 0.5 }}
-              animate={{ scale: 2.4, opacity: 0 }}
-              transition={{ duration: 1.4, repeat: Infinity, repeatDelay: 1.8 }}
-              className="absolute inset-0 rounded-full"
-              style={{ backgroundColor: catStyle.border }}
-            />
-          )}
-          <div
-            className="w-11 h-11 rounded-full bg-black border-2 flex items-center justify-center font-black text-sm z-10 relative"
-            style={{
-              borderColor: catStyle.border,
-              color: catStyle.border,
-              boxShadow: `0 0 18px ${catStyle.glow}, inset 0 0 8px rgba(0,0,0,0.5)`,
-            }}
-          >
-            {String(index + 1).padStart(2, '0')}
-          </div>
-        </motion.div>
-
-        {/* Horizontal connector lines to both sides */}
+        {/* Card: full width, hero image on top */}
         <div
-          className="absolute top-1/2 -translate-y-1/2 left-0 right-0 h-px pointer-events-none"
-          style={{
-            background: `linear-gradient(to right, transparent 0%, ${catStyle.border}40 30%, ${catStyle.border}40 70%, transparent 100%)`,
-          }}
-        />
+          onClick={() => handleNavigate(post.slug)}
+          className="group flex-1 cursor-pointer bg-gray-900/70 border border-white/5 rounded-2xl overflow-hidden mb-2 transition-all duration-300"
+          style={{ boxShadow: '0 4px 24px rgba(0,0,0,0.5)' }}
+        >
+          {/* Hero image */}
+          {post.hero_image && (
+            <div className="relative w-full aspect-[16/9] overflow-hidden">
+              <img
+                src={post.hero_image}
+                alt={post.title}
+                className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
+              />
+              <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
+              {isFeatured && (
+                <span className="absolute top-3 right-3 text-[10px] font-black uppercase tracking-widest text-cyan-400 border border-cyan-400/40 px-2 py-0.5 rounded-sm bg-black/50 backdrop-blur-sm">
+                  Latest
+                </span>
+              )}
+            </div>
+          )}
+
+          <div className="p-4">
+            {/* Category + date */}
+            <div className="flex items-center gap-2 mb-3">
+              <span
+                className={`px-2 py-0.5 text-[10px] font-black uppercase tracking-widest rounded-sm ${catStyle.bg} ${catStyle.text}`}
+                style={{ boxShadow: `0 0 8px ${catStyle.glow}` }}
+              >
+                {post.category ?? 'Article'}
+              </span>
+              <span className="text-gray-500 text-xs font-mono">
+                {formatDate(post.published_at)}
+              </span>
+            </div>
+
+            {/* Title */}
+            <h3 className="font-black italic text-white text-base leading-snug mb-2 group-hover:text-cyan-100 transition-colors duration-300">
+              {post.title}
+            </h3>
+
+            {/* Excerpt */}
+            {(post.intro_content || post.content) && (
+              <p className="text-gray-500 text-sm leading-relaxed line-clamp-2 mb-3">
+                {post.intro_content ?? post.content.slice(0, 120)}
+              </p>
+            )}
+
+            {/* CTA */}
+            <div className="flex items-center gap-1.5 text-cyan-400 text-sm font-bold">
+              Read article
+              <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-1 transition-transform duration-200" />
+            </div>
+          </div>
+        </div>
       </div>
 
-      {/* ══════════ RIGHT — Image Collage ══════════ */}
-      <motion.div
-        initial={{ opacity: 0, x: 50 }}
-        animate={isInView ? { opacity: 1, x: 0 } : {}}
-        transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1], delay: 0.1 }}
-        className="flex items-center justify-center h-full py-4"
-        style={{ minHeight: '220px' }}
-      >
-        <ImageCollage post={post} isInView={isInView} catBorderColor={catStyle.border} />
-      </motion.div>
+      {/* ── DESKTOP layout: original 3-column grid ── */}
+      <div className="hidden md:grid grid-cols-[1fr_80px_1fr] items-center gap-0 w-full" style={{ minHeight: '260px' }}>
+
+        {/* LEFT — Text Card */}
+        <motion.div
+          initial={{ opacity: 0, x: -50 }}
+          animate={isInView ? { opacity: 1, x: 0 } : {}}
+          transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1], delay: 0.05 }}
+          onClick={() => handleNavigate(post.slug)}
+          className="group relative cursor-pointer bg-gray-900/70 backdrop-blur-sm border border-white/5 hover:border-white/15 rounded-2xl p-7 transition-all duration-300 h-full flex flex-col justify-between"
+          style={{ boxShadow: '0 4px 32px rgba(0,0,0,0.5)' }}
+          whileHover={{ y: -4, boxShadow: '0 12px 48px rgba(0,0,0,0.6)' }}
+        >
+          {isFeatured && (
+            <div
+              className="absolute -top-px left-6 right-6 h-[2px] rounded-full"
+              style={{ background: `linear-gradient(to right, transparent, ${catStyle.border}, transparent)` }}
+            />
+          )}
+          <div>
+            <div className="flex items-center gap-3 mb-4">
+              <span
+                className={`px-2.5 py-1 text-[10px] font-black uppercase tracking-widest rounded-sm ${catStyle.bg} ${catStyle.text}`}
+                style={{ boxShadow: `0 0 10px ${catStyle.glow}` }}
+              >
+                {post.category ?? 'Article'}
+              </span>
+              <span className="text-gray-500 text-xs font-mono tracking-wide">
+                {formatDate(post.published_at)}
+              </span>
+              {isFeatured && (
+                <span className="ml-auto text-[10px] font-black uppercase tracking-widest text-cyan-400/70 border border-cyan-400/20 px-2 py-0.5 rounded-sm">
+                  Latest
+                </span>
+              )}
+            </div>
+            <h3 className={`font-black italic text-white leading-tight mb-3 group-hover:text-cyan-100 transition-colors duration-300 ${isFeatured ? 'text-2xl' : 'text-lg'}`}>
+              {post.title}
+            </h3>
+            {(post.intro_content || post.content) && (
+              <p className="text-gray-400 text-sm leading-relaxed line-clamp-3 mb-5">
+                {post.intro_content ?? post.content.slice(0, 150)}
+              </p>
+            )}
+          </div>
+          <div className="flex items-center gap-2 text-cyan-400 text-sm font-bold mt-auto pt-2 border-t border-white/5">
+            <span className="relative">
+              Read article
+              <span className="absolute bottom-0 left-0 h-px w-0 bg-cyan-400 group-hover:w-full transition-all duration-300" />
+            </span>
+            <motion.div className="group-hover:translate-x-1 transition-transform duration-200">
+              <ArrowRight className="w-4 h-4" />
+            </motion.div>
+          </div>
+          <div className="absolute bottom-3 right-3 w-4 h-4 border-b border-r border-white/10 group-hover:border-cyan-400/30 transition-colors duration-300" />
+          <div className="absolute top-3 left-3 w-4 h-4 border-t border-l border-white/10 group-hover:border-cyan-400/30 transition-colors duration-300" />
+        </motion.div>
+
+        {/* CENTER — Station marker */}
+        <div className="flex flex-col items-center justify-center h-full relative">
+          <motion.div
+            initial={{ scale: 0, opacity: 0 }}
+            animate={isInView ? { scale: 1, opacity: 1 } : {}}
+            transition={{ duration: 0.4, delay: 0.15, type: 'spring', stiffness: 220 }}
+            className="relative z-10"
+          >
+            {isInView && (
+              <motion.div
+                initial={{ scale: 1, opacity: 0.5 }}
+                animate={{ scale: 2.4, opacity: 0 }}
+                transition={{ duration: 1.4, repeat: Infinity, repeatDelay: 1.8 }}
+                className="absolute inset-0 rounded-full"
+                style={{ backgroundColor: catStyle.border }}
+              />
+            )}
+            <div
+              className="w-11 h-11 rounded-full bg-black border-2 flex items-center justify-center font-black text-sm z-10 relative"
+              style={{
+                borderColor: catStyle.border,
+                color: catStyle.border,
+                boxShadow: `0 0 18px ${catStyle.glow}, inset 0 0 8px rgba(0,0,0,0.5)`,
+              }}
+            >
+              {String(index + 1).padStart(2, '0')}
+            </div>
+          </motion.div>
+          <div
+            className="absolute top-1/2 -translate-y-1/2 left-0 right-0 h-px pointer-events-none"
+            style={{ background: `linear-gradient(to right, transparent 0%, ${catStyle.border}40 30%, ${catStyle.border}40 70%, transparent 100%)` }}
+          />
+        </div>
+
+        {/* RIGHT — Image Collage */}
+        <motion.div
+          initial={{ opacity: 0, x: 50 }}
+          animate={isInView ? { opacity: 1, x: 0 } : {}}
+          transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1], delay: 0.1 }}
+          className="flex items-center justify-center h-full py-4"
+          style={{ minHeight: '220px' }}
+        >
+          <ImageCollage post={post} isInView={isInView} catBorderColor={catStyle.border} />
+        </motion.div>
+      </div>
     </motion.div>
   );
 }
@@ -367,19 +448,19 @@ function MetroTimelineInner({ posts }: { posts: BlogPost[] }) {
         {/* ── Timeline ── */}
         <div className="relative">
 
-          {/* Vertical center line — sits behind the grid */}
+          {/* Vertical center line — desktop only */}
           <div
-            className="absolute left-1/2 -translate-x-1/2 top-0 bottom-0 w-px pointer-events-none"
+            className="hidden md:block absolute left-1/2 -translate-x-1/2 top-0 bottom-0 w-px pointer-events-none"
             style={{
               background: 'linear-gradient(to bottom, transparent, rgba(34,217,238,0.5) 6%, rgba(34,217,238,0.5) 94%, transparent)',
               boxShadow: '0 0 6px rgba(34,217,238,0.25)',
             }}
           />
 
-          {/* Scroll-linked traveling dot */}
+          {/* Scroll-linked traveling dot — desktop only */}
           <motion.div
             style={{ top: dotY }}
-            className="absolute left-1/2 -translate-x-1/2 z-30 pointer-events-none"
+            className="hidden md:block absolute left-1/2 -translate-x-1/2 z-30 pointer-events-none"
           >
             <div className="-translate-y-1/2">
               <motion.div
@@ -390,9 +471,9 @@ function MetroTimelineInner({ posts }: { posts: BlogPost[] }) {
             </div>
           </motion.div>
 
-          {/* Top terminal cap */}
+          {/* Top terminal cap — desktop only */}
           <div
-            className="absolute left-1/2 -translate-x-1/2 -top-1 w-2.5 h-2.5 rounded-full bg-cyan-400 z-10"
+            className="hidden md:block absolute left-1/2 -translate-x-1/2 -top-1 w-2.5 h-2.5 rounded-full bg-cyan-400 z-10"
             style={{ boxShadow: '0 0 12px rgba(34,217,238,0.9)' }}
           />
 
