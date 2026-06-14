@@ -138,39 +138,43 @@ export function FindDetailPage() {
     city: string;
   } | null>(null);
 
-  // Fetch find — supports both slug format (item-store-city--shortid) and plain UUID
+  // Fetch find + store in one pass — supports slug and plain UUID
   useEffect(() => {
     if (!id) return;
 
+    const SELECT = '*, profiles(username, display_name), stores!field_notes_store_id_fkey(id, name, slug, photos, neighborhood, city)';
     const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
     const isPlainUUID = uuidRegex.test(id);
 
+    function hydrate(data: any) {
+      const { stores, ...rest } = data;
+      setFind(rest as FindDetail);
+      if (stores) setStoreData(stores);
+    }
+
     if (isPlainUUID) {
-      // Legacy plain UUID URL
       supabase
         .from('field_notes')
-        .select('*, profiles(username, display_name)')
+        .select(SELECT)
         .eq('id', id)
         .maybeSingle()
         .then(({ data, error }) => {
           if (error || !data) setNotFound(true);
-          else setFind(data as FindDetail);
+          else hydrate(data);
           setLoadingFind(false);
         });
     } else {
-      // Slug format: extract short ID (first 8 hex chars after --)
       const shortId = extractFindShortId(id);
       if (!shortId) { setNotFound(true); setLoadingFind(false); return; }
 
-      // Fetch all finds and match client-side by UUID prefix
       supabase
         .from('field_notes')
-        .select('*, profiles(username, display_name)')
+        .select(SELECT)
         .order('created_at', { ascending: false })
         .then(({ data: allData }) => {
           const match = (allData || []).find((f: any) => f.id.startsWith(shortId));
           if (!match) setNotFound(true);
-          else setFind(match as FindDetail);
+          else hydrate(match);
           setLoadingFind(false);
         });
     }
@@ -190,18 +194,6 @@ export function FindDetailPage() {
       });
   }, [find]);
 
-  // Fetch linked store data for the inline store card
-  useEffect(() => {
-    if (!find?.store_id) return;
-    supabase
-      .from('stores')
-      .select('id, name, slug, photos, neighborhood, city')
-      .eq('id', find.store_id)
-      .maybeSingle()
-      .then(({ data }) => {
-        if (data) setStoreData(data as typeof storeData);
-      });
-  }, [find?.store_id]);
 
   async function handleAddComment(e: React.FormEvent) {
     e.preventDefault();
@@ -265,33 +257,48 @@ export function FindDetailPage() {
   const color = avatarColor(username);
   const initials = username.slice(0, 2).toUpperCase();
 
-  // ─── Inline store card ──────────────────────────────────────────────────────
+  // ─── Inline store card (compact horizontal) ────────────────────────────────
   const StoreCard = storeData ? (
     <button
       onClick={() => navigate(`/store/${storeData.slug || storeData.id}`)}
-      className="w-full text-left rounded-xl overflow-hidden border transition-all hover:border-opacity-60 group mt-4"
-      style={{ borderColor: `${typeColor}25`, backgroundColor: 'rgba(255,255,255,0.03)' }}
+      className="w-full text-left flex items-center gap-3 p-3 rounded-xl border transition-all group mt-4"
+      style={{
+        borderColor: `${typeColor}20`,
+        backgroundColor: 'rgba(255,255,255,0.03)',
+      }}
+      onMouseEnter={e => (e.currentTarget.style.borderColor = `${typeColor}50`)}
+      onMouseLeave={e => (e.currentTarget.style.borderColor = `${typeColor}20`)}
     >
-      {storeData.photos?.[0] && (
-        <div className="relative h-28 overflow-hidden">
+      {/* Square thumbnail */}
+      {storeData.photos?.[0] ? (
+        <div className="h-14 w-14 rounded-lg overflow-hidden flex-shrink-0">
           <img
-            src={ikUrl(storeData.photos[0], 'card')}
+            src={ikUrl(storeData.photos[0], 'thumb')}
             alt={storeData.name}
-            className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+            className="w-full h-full object-cover"
           />
-          <div className="absolute inset-0 bg-gradient-to-t from-black/70 to-transparent" />
+        </div>
+      ) : (
+        <div
+          className="h-14 w-14 rounded-lg flex-shrink-0 flex items-center justify-center"
+          style={{ backgroundColor: `${typeColor}10` }}
+        >
+          <MapPin className="h-5 w-5" style={{ color: typeColor, opacity: 0.5 }} />
         </div>
       )}
-      <div className="flex items-center justify-between px-4 py-3">
-        <div>
-          <p className="text-white font-bold text-sm">{storeData.name}</p>
-          <p className="text-gray-500 text-xs flex items-center gap-1 mt-0.5">
-            <MapPin className="h-3 w-3" />
+
+      {/* Info */}
+      <div className="flex-1 min-w-0">
+        <p className="text-white font-bold text-sm truncate">{storeData.name}</p>
+        <p className="text-gray-500 text-xs flex items-center gap-1 mt-0.5">
+          <MapPin className="h-3 w-3 flex-shrink-0" />
+          <span className="truncate">
             {storeData.neighborhood ? `${storeData.neighborhood}, ` : ''}{storeData.city}
-          </p>
-        </div>
-        <ArrowRight className="h-4 w-4 text-gray-600 group-hover:text-gray-400 transition-colors flex-shrink-0" />
+          </span>
+        </p>
       </div>
+
+      <ArrowRight className="h-4 w-4 text-gray-600 group-hover:text-gray-400 transition-colors flex-shrink-0" />
     </button>
   ) : null;
 
@@ -508,13 +515,6 @@ export function FindDetailPage() {
                 style={{ backgroundColor: '#080808' }}
               />
               <div className="absolute inset-0 bg-gradient-to-r from-transparent to-black/30 pointer-events-none" />
-              <div
-                className="absolute top-6 left-6 flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-black uppercase tracking-wider backdrop-blur-sm"
-                style={{ backgroundColor: `${typeColor}25`, border: `1px solid ${typeColor}60`, color: typeColor }}
-              >
-                <TypeIcon className="h-3.5 w-3.5" />
-                {typeLabel}
-              </div>
             </div>
           ) : (
             /* No photo: type-colored gradient panel */
