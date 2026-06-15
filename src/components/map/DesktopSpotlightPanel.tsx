@@ -5,6 +5,8 @@ import { Shirt, UtensilsCrossed, Coffee, Home, Building2 } from 'lucide-react';
 import { MAIN_CATEGORY_ICONS } from '../../lib/constants';
 import { ikUrl } from '../../utils/ikUrl';
 import type { Store } from '../../types/store';
+import { useKurbItemsByStores } from '../../hooks/useKurbItemsByStores';
+import type { CachedKurbItem } from '../../hooks/useKurbItemsByStores';
 
 interface DesktopSpotlightPanelProps {
   stores: Store[];
@@ -30,7 +32,21 @@ const CATEGORY_COLORS: Record<string, string> = {
   Spots:      '#10B981',
 };
 
-function StoreRow({ store, index, onSelect }: { store: Store; index: number; onSelect: () => void }) {
+function formatPrice(price: number | null): string | null {
+  if (price == null) return null;
+  return new Intl.NumberFormat('en-US', {
+    style: 'currency',
+    currency: 'USD',
+    maximumFractionDigits: 0,
+  }).format(price);
+}
+
+function StoreRow({ store, index, onSelect, kurbItems }: {
+  store: Store;
+  index: number;
+  onSelect: () => void;
+  kurbItems: CachedKurbItem[];
+}) {
   const [imgLoaded, setImgLoaded] = useState(false);
   const [hovered, setHovered] = useState(false);
   const hasPhoto = store.photos && store.photos.length > 0;
@@ -129,6 +145,37 @@ function StoreRow({ store, index, onSelect }: { store: Store; index: number; onS
               <span className="text-[10px] text-gray-600 truncate">{store.neighborhood}</span>
             )}
           </div>
+
+          {/* Kurb item thumbnails — 2 tiny images with prices */}
+          {kurbItems.length > 0 && (
+            <div className="flex items-center gap-1.5 mt-1.5">
+              {kurbItems.slice(0, 2).map(item => (
+                <a
+                  key={item.item_id}
+                  href={item.kurb_url ?? '#'}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  onClick={e => e.stopPropagation()}
+                  className="flex items-center gap-1 rounded-md overflow-hidden border border-white/8 hover:border-cyan-400/30 transition-colors bg-gray-800/60"
+                  title={item.title ?? ''}
+                >
+                  {item.image_url ? (
+                    <img
+                      src={item.image_url}
+                      alt={item.title ?? ''}
+                      className="w-6 h-6 object-cover flex-shrink-0"
+                      loading="lazy"
+                    />
+                  ) : (
+                    <div className="w-6 h-6 bg-gray-800 flex-shrink-0" />
+                  )}
+                  <span className="text-[10px] font-bold text-white pr-1.5">
+                    {formatPrice(item.price_usd)}
+                  </span>
+                </a>
+              ))}
+            </div>
+          )}
         </div>
 
         {/* Animated arrow */}
@@ -148,6 +195,8 @@ function StoreRow({ store, index, onSelect }: { store: Store; index: number; onS
 }
 
 export function DesktopSpotlightPanel({ stores, onStoreSelect, onDismiss }: DesktopSpotlightPanelProps) {
+  const kurbItems = useKurbItemsByStores(stores);
+
   return (
     <AnimatePresence>
       {stores.length > 0 && (
@@ -205,6 +254,7 @@ export function DesktopSpotlightPanel({ stores, onStoreSelect, onDismiss }: Desk
                     store={store}
                     index={index}
                     onSelect={() => onStoreSelect(store)}
+                    kurbItems={kurbItems.get(store.id) ?? []}
                   />
                 </div>
               ))}
