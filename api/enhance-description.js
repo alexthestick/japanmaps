@@ -130,7 +130,7 @@ export default async function handler(req, res) {
       .map((r, idx) => `Review ${idx + 1}: "${r.text?.text || r}"`)
       .join('\n\n');
 
-    const prompt = `You are writing store descriptions for Lost in Transit, a curated discovery map of vintage, streetwear, archive, and specialty stores across Japan. The audience is fashion-aware travelers looking for hidden gems.
+    const prompt = `You are writing store descriptions for Lost in Transit, a curated discovery map of fashion, food, and specialty stores across Japan. The audience is style-aware travelers looking for hidden gems — the kinds of places that don't show up in guidebooks.
 
 Store Information:
 - Name: ${name}
@@ -153,10 +153,11 @@ STRICT RULES:
 - Be specific and concrete — name actual item types, styles, eras, or techniques when possible
 - Write like a knowledgeable travel writer, not a marketing brochure
 - One paragraph only, no line breaks
+- CRITICAL — Accuracy over assumption: Do NOT label a store as "vintage", "archive", "secondhand", or "used" unless the reviews, store name, or Google summary specifically say so. A clothing store that sells new items should be described as a boutique or brand store. Only use "vintage" or "archive" when there is actual evidence (e.g. reviews mention used clothing, thrift, deadstock, old stock, 古着).
 
 Also:
 - Extract the Instagram handle if mentioned in any review (format: @username, or "not_found")
-- Suggest 2-3 subcategories from this list based on what the place actually is:
+- Suggest 2-3 subcategories from this list based ONLY on what the evidence actually supports — do not default to "vintage" or "archive" without evidence:
   ${subcategories}
 
 Return ONLY valid JSON, nothing else:

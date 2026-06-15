@@ -273,7 +273,7 @@ async function enhanceWithAI(placeDetails) {
 
     const { focus, subcategories } = categoryPromptMap[mainCategory] || categoryPromptMap['Fashion'];
 
-    const prompt = `You are writing store descriptions for Lost in Transit, a curated discovery map of vintage, streetwear, archive, and specialty stores across Japan. The audience is fashion-aware travelers looking for hidden gems.
+    const prompt = `You are writing store descriptions for Lost in Transit, a curated discovery map of fashion, food, and specialty stores across Japan. The audience is style-aware travelers looking for hidden gems — the kinds of places that don't show up in guidebooks.
 
 Store Information:
 - Name: ${placeDetails.name}
@@ -296,8 +296,9 @@ STRICT RULES:
 - Be specific and concrete — name actual item types, styles, eras, or techniques when possible
 - Write like a knowledgeable travel writer, not a marketing brochure
 - One paragraph only, no line breaks
+- CRITICAL — Accuracy over assumption: Do NOT label a store as "vintage", "archive", "secondhand", or "used" unless the reviews, store name, or Google summary specifically say so. A clothing store that sells new items should be described as a boutique or brand store. Only use "vintage" or "archive" when there is actual evidence (e.g. reviews mention used clothing, thrift, deadstock, old stock, 古着).
 
-Also suggest 2-3 subcategories that best describe this place from:
+Also suggest 2-3 subcategories that best describe this place from the list — do NOT default to "vintage" or "archive" without evidence:
 ${subcategories}
 
 Return ONLY valid JSON, nothing else:
