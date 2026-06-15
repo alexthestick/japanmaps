@@ -28,6 +28,8 @@ import { supabase } from '../../lib/supabase';
 import { ikUrl } from '../../utils/ikUrl';
 import { getHoursStatus } from '../../utils/hoursParser';
 import type { Store } from '../../types/store';
+import { useKurbItemsByStores } from '../../hooks/useKurbItemsByStores';
+import type { CachedKurbItem } from '../../hooks/useKurbItemsByStores';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -77,6 +79,63 @@ const THEME = {
     dimColor: 'rgba(251,191,36,0.7)',
   },
 } as const;
+
+// ─── Kurb item strip — compact horizontal scroll ─────────────────────────────
+
+function KurbStrip({ items, accentColor }: { items: CachedKurbItem[]; accentColor: string }) {
+  const display = items.slice(0, 3);
+  return (
+    <div>
+      <div className="flex items-center justify-between mb-1.5">
+        <p className="text-[10px] font-bold uppercase tracking-wide" style={{ color: accentColor, opacity: 0.7 }}>
+          Shop Online
+        </p>
+        <a
+          href="https://kurb.online"
+          target="_blank"
+          rel="noopener noreferrer"
+          onClick={e => e.stopPropagation()}
+          className="text-[9px] text-gray-600 hover:text-gray-400 transition-colors"
+        >
+          via KURB
+        </a>
+      </div>
+      <div className="flex gap-2 overflow-x-auto scrollbar-hide pb-0.5">
+        {display.map(item => (
+          <a
+            key={item.item_id}
+            href={item.kurb_url ?? '#'}
+            target="_blank"
+            rel="noopener noreferrer"
+            onClick={e => e.stopPropagation()}
+            className="flex-shrink-0 w-[68px] rounded-xl overflow-hidden bg-gray-800/80 border border-white/8 active:scale-95 transition-transform"
+          >
+            {item.image_url ? (
+              <img
+                src={item.image_url}
+                alt={item.title ?? ''}
+                className="w-full aspect-square object-cover"
+                loading="lazy"
+              />
+            ) : (
+              <div className="w-full aspect-square bg-gray-800 flex items-center justify-center">
+                <span className="text-gray-600 text-xs">?</span>
+              </div>
+            )}
+            <div className="px-1 py-0.5">
+              <p className="text-white text-[9px] font-bold truncate">
+                {item.price_usd != null ? `$${Math.round(item.price_usd)}` : '—'}
+              </p>
+              {item.brand && (
+                <p className="text-gray-500 text-[8px] truncate">{item.brand}</p>
+              )}
+            </div>
+          </a>
+        ))}
+      </div>
+    </div>
+  );
+}
 
 // ─── Helper: compact date like "Dec 3" ───────────────────────────────────────
 
@@ -207,6 +266,10 @@ export function RadarCheckinCard({
   const photo    = store.photos?.[0];
   const photoUrl = photo ? ikUrl(photo, 'thumb') : null;
   const hoursStatus = getHoursStatus(store.hours);
+
+  // ── Kurb items — only fetched if store has a vendor ID ───────────────────
+  const kurbMap   = useKurbItemsByStores(store.kurb_vendor_id != null ? [store] : []);
+  const kurbItems = kurbMap.get(store.id) ?? [];
 
   // ── Button content ────────────────────────────────────────────────────────
   const buttonContent = () => {
@@ -443,6 +506,10 @@ export function RadarCheckinCard({
                       @{store.instagram.replace('@', '')}
                     </a>
                   )}
+                  {/* Kurb items — see what's in stock before you walk in */}
+                  {kurbItems.length > 0 && (
+                    <KurbStrip items={kurbItems} accentColor={theme.color} />
+                  )}
                   {/* Soft "already stamped" indicator — no button, no urgency */}
                   <div
                     className="w-full py-2.5 rounded-xl text-sm text-center"
@@ -477,6 +544,10 @@ export function RadarCheckinCard({
                       <Instagram className="w-3 h-3 flex-shrink-0" />
                       @{store.instagram.replace('@', '')}
                     </a>
+                  )}
+                  {/* Kurb items — see what's in stock before you walk in */}
+                  {kurbItems.length > 0 && uiState === 'idle' && (
+                    <KurbStrip items={kurbItems} accentColor={theme.color} />
                   )}
                   {(userPosition.accuracy ?? 0) > 25 && uiState === 'idle' && (
                     <p className="text-xs text-center" style={{ color: 'rgba(251,191,36,0.8)' }}>

@@ -24,6 +24,7 @@ import { saveStore, unsaveStore, isStoreSaved } from '../../utils/savedStores';
 import { useNavigate } from 'react-router-dom';
 import { ikUrl } from '../../utils/ikUrl';
 import { BlurImage } from '../common/BlurImage';
+import { KurbInventory } from './KurbInventory';
 
 interface BottomSheetStoreDetailProps {
   store: Store | null;
@@ -209,6 +210,19 @@ export function BottomSheetStoreDetail({ store, onClose, isStamped }: BottomShee
                       ))}
                     </div>
                   </div>
+                )}
+
+                {/* Kurb inventory — only for stores with a vendor ID */}
+                {store.kurb_vendor_id != null && (
+                  <KurbInventory
+                    vendorId={store.kurb_vendor_id}
+                    compact
+                    accentColor={
+                      store.mainCategory
+                        ? ({ Fashion: '#22D9EE', Food: '#f97316', Coffee: '#d97706', Museum: '#8b5cf6', 'Home Goods': '#10b981', Spots: '#ec4899' } as Record<string, string>)[store.mainCategory] ?? '#22D9EE'
+                        : '#22D9EE'
+                    }
+                  />
                 )}
 
                 {/* Action buttons */}

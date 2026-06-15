@@ -4,7 +4,6 @@ import type { Store } from '../../types/store';
 import { Shirt, UtensilsCrossed, Coffee, Home, Building2 } from 'lucide-react';
 import useEmblaCarousel from 'embla-carousel-react';
 import { useKurbItemsByStores } from '../../hooks/useKurbItemsByStores';
-import type { CachedKurbItem } from '../../hooks/useKurbItemsByStores';
 
 interface SpotlightPeekContentProps {
   stores: Store[];
@@ -17,54 +16,6 @@ interface SpotlightPeekContentProps {
  * Beautiful horizontal carousel of spotlighted stores
  * Lives inside bottom sheet peek state
  */
-function formatPrice(price: number | null): string | null {
-  if (price == null) return null;
-  return new Intl.NumberFormat('en-US', {
-    style: 'currency',
-    currency: 'USD',
-    maximumFractionDigits: 0,
-  }).format(price);
-}
-
-function KurbStrip({ items }: { items: CachedKurbItem[] }) {
-  if (items.length === 0) return null;
-  const display = items.slice(0, 2);
-  return (
-    <div className="px-2.5 pb-2.5 pt-1.5 border-t border-white/5">
-      <div className="flex gap-1.5">
-        {display.map(item => (
-          <a
-            key={item.item_id}
-            href={item.kurb_url ?? '#'}
-            target="_blank"
-            rel="noopener noreferrer"
-            onClick={e => e.stopPropagation()}
-            className="flex-1 rounded-lg overflow-hidden bg-gray-800/80 border border-white/5 hover:border-cyan-400/30 transition-colors group/kurb"
-          >
-            {item.image_url ? (
-              <img
-                src={item.image_url}
-                alt={item.title ?? ''}
-                className="w-full aspect-square object-cover"
-                loading="lazy"
-              />
-            ) : (
-              <div className="w-full aspect-square bg-gray-800 flex items-center justify-center">
-                <span className="text-gray-600 text-xs">?</span>
-              </div>
-            )}
-            <div className="px-1 py-0.5">
-              <p className="text-white text-[9px] font-bold truncate leading-tight">
-                {formatPrice(item.price_usd)}
-              </p>
-            </div>
-          </a>
-        ))}
-      </div>
-      <p className="text-[9px] text-gray-600 mt-1 text-center">Shop on KURB</p>
-    </div>
-  );
-}
 
 export function SpotlightPeekContent({ stores, onStoreSelect, onDismiss }: SpotlightPeekContentProps) {
   // Pre-fetch Kurb items for all spotlight stores from cache table
@@ -194,18 +145,20 @@ export function SpotlightPeekContent({ stores, onStoreSelect, onDismiss }: Spotl
                       </div>
                     </div>
 
-                    {/* Category pill */}
-                    <div className="px-2.5 py-1.5 flex items-center justify-center gap-1.5 bg-gray-900/80 backdrop-blur-sm border-t border-gray-700/50">
-                      <Icon className="w-3 h-3 text-cyan-400" />
-                      <span className="text-[10px] font-semibold text-gray-300 uppercase tracking-wide">
-                        {store.mainCategory || 'Fashion'}
-                      </span>
+                    {/* Category pill + optional Kurb text indicator */}
+                    <div className="px-2.5 py-1.5 flex items-center justify-between gap-1.5 bg-gray-900/80 backdrop-blur-sm border-t border-gray-700/50">
+                      <div className="flex items-center gap-1.5 min-w-0">
+                        <Icon className="w-3 h-3 text-cyan-400 flex-shrink-0" />
+                        <span className="text-[10px] font-semibold text-gray-300 uppercase tracking-wide truncate">
+                          {store.mainCategory || 'Fashion'}
+                        </span>
+                      </div>
+                      {storeKurbItems.length > 0 && (
+                        <span className="text-[9px] text-cyan-400/60 font-medium flex-shrink-0">
+                          {storeKurbItems.length} on KURB
+                        </span>
+                      )}
                     </div>
-
-                    {/* Kurb inventory strip — only for stores with cached items */}
-                    {storeKurbItems.length > 0 && (
-                      <KurbStrip items={storeKurbItems} />
-                    )}
                   </div>
                 </div>
               </button>
