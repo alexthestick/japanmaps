@@ -24,6 +24,7 @@ import { cityToSlug, neighborhoodToSlug } from '../utils/cityData';
 import { useIsMobile } from '../hooks/useMediaQuery';
 import { SubmitModal } from './FindsPage';
 import { StoreFindsSection } from '../components/store/StoreFindsSection';
+import { KurbInventory } from '../components/store/KurbInventory';
 
 // Lazy-load the map widget so Mapbox GL JS (~1.6 MB) is never part of the
 // initial JS downloaded for a store page. It loads only after the store's
@@ -242,6 +243,7 @@ export function StoreDetailPage() {
         updatedAt: storeData.updated_at,
         haulCount: storeData.haul_count,
         saveCount: storeData.save_count,
+        kurb_vendor_id: storeData.kurb_vendor_id ?? null,
       };
 
       setStore(transformedStore);
@@ -911,6 +913,18 @@ export function StoreDetailPage() {
           </div>
         </div>
       </div>
+
+      {/* Kurb Inventory — only renders when store has a vendor ID */}
+      {store.kurb_vendor_id != null && (
+        <KurbInventory
+          vendorId={store.kurb_vendor_id}
+          accentColor={
+            store.mainCategory
+              ? (MAIN_CATEGORY_COLORS[store.mainCategory as keyof typeof MAIN_CATEGORY_COLORS] ?? '#22D9EE')
+              : '#22D9EE'
+          }
+        />
+      )}
 
       {/* Community Finds Section */}
       <div className="relative z-10 max-w-6xl mx-auto px-6 md:px-12 pb-12">

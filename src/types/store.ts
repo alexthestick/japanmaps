@@ -38,6 +38,7 @@ export interface Store {
   saveCount: number;
   checkin_count?: number; // GPS-verified Radar check-ins — populated once RPC returns this column
   google_place_id?: string; // Optional - for photo fetching
+  kurb_vendor_id?: number | null; // Kurb API vendor ID — null/undefined means no inventory feed
 }
 
 export interface StoreSuggestion {

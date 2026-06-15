@@ -98,6 +98,12 @@ src/
   utils/
     slugify.ts            — generateSlug(name, city). Source of truth for URL slugs.
     ikUrl.ts              — ImageKit URL builder.
+  components/
+    store/
+      KurbInventory.tsx   — Kurb API inventory section. Renders only when store.kurb_vendor_id != null.
+supabase/
+  functions/
+    get-kurb-inventory/   — Edge Function proxying Kurb API. KURB_API_KEY lives here only.
 ```
 
 ---
@@ -132,6 +138,51 @@ Script: `scripts/generate-sitemap.mjs` — fetches all slugs from live DB, skips
 
 ---
 
+## Kurb API Integration
+
+Kurb (kurb.online) is a secondhand fashion aggregator. We integrate their vendor inventory on store detail pages so users can shop items online without leaving Lost in Transit.
+
+### Architecture
+- **`stores.kurb_vendor_id` (INTEGER NULL)** — set this on any store that has a Kurb vendor. Null/absent = no Kurb section rendered.
+- **Supabase Edge Function `get-kurb-inventory`** — proxies `GET https://api.kurb.online/api/v2/partner/vendor/{id}/items?currency=USD`. The `KURB_API_KEY` lives ONLY in Supabase Edge Function secrets. It is never exposed client-side.
+  - **`verify_jwt: false`** on the Edge Function — KurbInventory fetches it without an auth header (public store pages, no session required).
+  - When `KURB_API_KEY` secret is NOT set, the function returns mock data. This is intentional for development before the real key arrives.
+- **`src/components/store/KurbInventory.tsx`** — renders the "Shop Online" horizontal scroll section. Conditionally mounted in `StoreDetailPage` only when `store.kurb_vendor_id != null`. Silently disappears on error or empty response.
+- **Attribution** — "Powered by KURB" logo link is required by API contract. It is in the section header, visible as soon as data loads.
+
+### Adding a store to Kurb
+1. Go to Supabase → Table Editor → `stores`
+2. Find the store row
+3. Set `kurb_vendor_id` to the integer vendor ID Kurb provides
+4. Save — the section appears immediately on the live store page
+
+### Setting the real API key (when Kurb provides it)
+1. Supabase Dashboard → Edge Functions → `get-kurb-inventory` → Secrets
+2. Add secret: key = `KURB_API_KEY`, value = the key Kurb sent
+3. Re-deploy the function (or it picks up secrets on next cold start)
+
+### Capping rules
+- API returns up to 20 items total, max 3 per brand (enforced client-side in `capByBrand()` as a safety net)
+- Default currency: USD (hardcoded in both Edge Function and KurbInventory fetch URL)
+
+### What NOT to do
+- **Never** put the Kurb API key in the client-side codebase or `.env` files committed to git
+- **Never** call the Kurb API directly from the frontend — always go through the Edge Function
+- Do not set `kurb_vendor_id = 0` — zero is falsy and the conditional check `!= null` would still render, but vendor ID 0 is likely invalid
+
+---
+
+## Recent UX fixes (session log — June 2026)
+
+These were fixed in a previous session to prevent regression:
+
+- **FindDetailPage** — two-column desktop layout (sticky photo left 55%, scrollable content right). Store data joined in initial field_notes query (eliminates layout shift). Back button uses `fixed` + `env(safe-area-inset-top, 0px)` to clear iOS notch.
+- **FindsPage** — skeleton + real grid coexist with CSS opacity fade (no hard DOM swap = no masonry bump on load).
+- **StoreDetailPage back button** — `location.key !== 'default' || window.history.length > 1` to handle UUID→slug `replace: true` redirect on iOS.
+- **MetroTimeline (landing page)** — separate `md:hidden` mobile layout with left-rail timeline; desktop `grid-cols-[1fr_80px_1fr]` preserved. Scroll dot and vertical center line are `hidden md:block` only.
+
+---
+
 ## What NOT to do
 
 - Do not add `animate-pulse` / `repeat: Infinity` to any `blur-3xl` element
@@ -140,3 +191,4 @@ Script: `scripts/generate-sitemap.mjs` — fetches all slugs from live DB, skips
 - Do not remove the UUID fallback in `StoreDetailPage.fetchStore`
 - Do not change `storesSortedByDistance` back to returning `{ store, distance }[]` — consumers use `(store, index)` now
 - Do not remove the `onViewportChange` call in `handleMapLoad`
+- Do not put `KURB_API_KEY` client-side or in any committed env file
