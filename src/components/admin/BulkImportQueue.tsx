@@ -92,6 +92,18 @@ export function BulkImportQueue({
 
         // Update the item reference with the new placeId
         item.placeId = bestMatch.placeId;
+
+        // Step 2b: Re-check for duplicates now that we have a place_id
+        // (the initial check ran before the place_id was known)
+        const isDuplicateByPlaceId = await checkDuplicate(item);
+        if (isDuplicateByPlaceId) {
+          onUpdateItem(index, {
+            status: 'duplicate',
+            duplicateId: isDuplicateByPlaceId,
+          });
+          setTimeout(() => onMoveToNext(), 1000);
+          return;
+        }
       }
 
       // Step 3: Fetch place details (check if placeId exists)
@@ -266,9 +278,13 @@ export function BulkImportQueue({
       const storeName = currentItem.placeName || currentItem.csvData.title;
       const storeCity = city || 'Tokyo';
 
+      // Generate slug — if the name is all Japanese (strips to empty), use place ID prefix
+      const baseSlug = generateSlug(storeName, storeCity);
+      const safeSlug = baseSlug.replace(/^-+/, '') || `store-${(currentItem.placeId || 'unknown').slice(-8)}`;
+
       const storeData: any = {
         name: storeName,
-        slug: generateSlug(storeName, storeCity),
+        slug: safeSlug,
         address: currentItem.placeAddress || currentItem.csvData.address || '',
         city: storeCity,
         neighborhood: neighborhood || currentItem.csvData.neighborhood || null,
@@ -296,14 +312,46 @@ export function BulkImportQueue({
         .single();
 
       if (insertError) {
-        // Duplicate slug = store already exists — skip gracefully
-        if (insertError.message.includes('stores_slug_idx')) {
-          logger.log(`⏭️ Skipping — store already exists (duplicate slug): ${storeData.slug}`);
-          onUpdateItem(currentIndex, {
-            status: 'skipped',
-            error: `Already exists in DB (slug: ${storeData.slug})`,
-          });
-          onMoveToNext();
+        // Slug collision — could be a genuine new store with a name that collides
+        // (e.g. Japanese-only name stripped to empty, or two stores with identical romanization)
+        // Try up to 3 suffix variants before giving up
+        if (insertError.code === '23505' || insertError.message.includes('stores_slug_idx')) {
+          let resolved = false;
+          for (let suffix = 2; suffix <= 4; suffix++) {
+            storeData.slug = `${safeSlug}-${suffix}`;
+            logger.log(`🔁 Slug collision — retrying with suffix: ${storeData.slug}`);
+            const { data: retryStore, error: retryError } = await supabase
+              .from('stores')
+              .insert([storeData])
+              .select()
+              .single();
+
+            if (!retryError && retryStore) {
+              // Success with suffix slug — continue to photo migration
+              const store = retryStore;
+              logger.log(`✅ Store inserted with suffix slug: ${storeData.slug}`);
+              if (currentItem.placeId) {
+                try {
+                  const photoUrls = await migrateStorePhotosViaEdge(store.id, currentItem.placeId, false);
+                  if (photoUrls.length > 0) {
+                    await supabase.from('stores').update({ photos: photoUrls }).eq('id', store.id);
+                  }
+                } catch (photoError) {
+                  console.error('⚠️ Photo fetch failed (continuing anyway):', photoError);
+                }
+              }
+              onUpdateItem(currentIndex, { status: 'completed' });
+              setTimeout(() => onMoveToNext(), 3000);
+              resolved = true;
+              break;
+            }
+            if (retryError?.code !== '23505' && !retryError?.message.includes('stores_slug_idx')) {
+              throw new Error(`Database insert failed: ${retryError?.message}`);
+            }
+          }
+          if (!resolved) {
+            throw new Error(`Slug collision unresolved for "${storeData.name}" — all suffix variants taken`);
+          }
           return;
         }
         throw new Error(`Database insert failed: ${insertError.message}`);
