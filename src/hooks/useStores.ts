@@ -48,6 +48,7 @@ async function fetchAllStores(): Promise<Store[]> {
     updatedAt: store.updated_at,
     haulCount: store.haul_count,
     saveCount: store.save_count,
+    kurb_vendor_id: store.kurb_vendor_id ?? null,
   }));
 
   return transformedStores;

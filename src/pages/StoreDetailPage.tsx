@@ -1,14 +1,12 @@
 import { useParams, useNavigate, useLocation, Link } from 'react-router-dom';
 import { useEffect, useState, lazy, Suspense } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
 import { supabase } from '../lib/supabase';
 import { Loader } from '../components/common/Loader';
 import { PhotoLightbox } from '../components/common/PhotoLightbox';
-import { MapPin, ExternalLink, Instagram, Clock, ArrowLeft, ShoppingBag, Globe, Heart, Share2, Camera } from 'lucide-react';
+import { MapPin, ExternalLink, Instagram, Clock, ArrowLeft, ShoppingBag, Globe, Heart } from 'lucide-react';
 import { Button } from '../components/common/Button';
 import { SaveButton } from '../components/store/SaveButton';
 import { VisitButton } from '../components/store/VisitButton';
-import { InstagramGeneratorModal } from '../components/store/InstagramGeneratorModal';
 import { MobileStoreDetail } from '../components/store/MobileStoreDetail';
 import { SEOHead, generateStoreSchema, generateBreadcrumbSchema } from '../components/seo';
 import { Breadcrumbs } from '../components/ui/Breadcrumbs';
@@ -22,7 +20,6 @@ import { MAIN_CATEGORY_COLORS } from '../lib/constants';
 import { logger } from '../utils/logger';
 import { cityToSlug, neighborhoodToSlug } from '../utils/cityData';
 import { useIsMobile } from '../hooks/useMediaQuery';
-import { SubmitModal } from './FindsPage';
 import { StoreFindsSection } from '../components/store/StoreFindsSection';
 import { KurbInventory } from '../components/store/KurbInventory';
 
@@ -44,11 +41,8 @@ export function StoreDetailPage() {
   const [error, setError] = useState<Error | null>(null);
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [lightboxOpen, setLightboxOpen] = useState(false);
-  const [instagramModalOpen, setInstagramModalOpen] = useState(false);
   const [liveSaveCount, setLiveSaveCount] = useState<number | null>(null);
   const [liveHaulCount, setLiveHaulCount] = useState<number | null>(null);
-  const [showSubmitModal, setShowSubmitModal] = useState(false);
-  const [showSubmitBanner, setShowSubmitBanner] = useState(false);
   useEffect(() => {
     if (id) {
       fetchStore(id);
@@ -889,26 +883,6 @@ export function StoreDetailPage() {
             <div className="space-y-3">
               <SaveButton storeId={store.id} variant="button" className="w-full" />
               <VisitButton storeId={store.id} visitCount={(store as any).visitCount || 0} className="w-full" />
-              <button
-                onClick={() => setInstagramModalOpen(true)}
-                className="w-full px-6 py-3 bg-gradient-to-r from-pink-500/20 to-purple-600/20 text-pink-300 font-bold uppercase rounded-lg hover:from-pink-500/30 hover:to-purple-600/30 transition-all flex items-center justify-center gap-2 border border-pink-500/30 hover:border-pink-500/50"
-                style={{
-                  boxShadow: '0 0 20px rgba(236, 72, 153, 0.2)'
-                }}
-              >
-                <Share2 className="w-5 h-5" />
-                Share to Instagram
-              </button>
-              <button
-                onClick={() => setShowSubmitModal(true)}
-                className="w-full px-6 py-3 bg-gradient-to-r from-purple-500/20 to-cyan-600/20 text-purple-300 font-bold uppercase rounded-lg hover:from-purple-500/30 hover:to-cyan-600/30 transition-all flex items-center justify-center gap-2 border border-purple-500/30 hover:border-purple-500/50"
-                style={{
-                  boxShadow: '0 0 20px rgba(168, 85, 247, 0.2)'
-                }}
-              >
-                <Camera className="w-5 h-5" />
-                Log a Find
-              </button>
             </div>
           </div>
         </div>
@@ -1025,49 +999,6 @@ export function StoreDetailPage() {
         />
       )}
 
-      {/* Instagram Generator Modal */}
-      <InstagramGeneratorModal
-        store={store}
-        isOpen={instagramModalOpen}
-        onClose={() => setInstagramModalOpen(false)}
-      />
-
-      {/* Log a Find Modal (sidebar button) */}
-      <AnimatePresence>
-        {showSubmitModal && (
-          <SubmitModal
-            onClose={() => setShowSubmitModal(false)}
-            onSubmitted={() => {
-              setShowSubmitModal(false);
-              setShowSubmitBanner(true);
-              setTimeout(() => setShowSubmitBanner(false), 5000);
-            }}
-            prefill={{
-              storeId: store.id,
-              storeName: store.name,
-              storeCity: store.city,
-              storeNeighborhood: store.neighborhood,
-              defaultType: 'haul',
-            }}
-          />
-        )}
-      </AnimatePresence>
-
-      {/* Submit banner */}
-      <AnimatePresence>
-        {showSubmitBanner && (
-          <motion.div
-            initial={{ opacity: 0, y: -20 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -20 }}
-            className="fixed left-1/2 -translate-x-1/2 z-[100] flex items-center gap-3 px-5 py-3 bg-gray-900 border border-purple-500/40 rounded-2xl shadow-2xl text-sm text-white"
-            style={{ top: 'calc(1.5rem + env(safe-area-inset-top, 0px))' }}
-          >
-            <div className="h-2 w-2 rounded-full bg-purple-400 animate-pulse" />
-            Your find has been submitted for review. Thanks!
-          </motion.div>
-        )}
-      </AnimatePresence>
     </div>
   );
 }

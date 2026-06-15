@@ -1,16 +1,14 @@
 import { useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { motion, AnimatePresence } from 'framer-motion';
-import { ArrowLeft, Share2, ShoppingBag, MapPin, Clock, Globe, Instagram, ExternalLink, ChevronDown, ChevronUp, Navigation, Map as MapIcon, Camera, Heart } from 'lucide-react';
+import { ArrowLeft, ShoppingBag, MapPin, Clock, Globe, Instagram, ExternalLink, ChevronDown, ChevronUp, Navigation, Map as MapIcon, Heart } from 'lucide-react';
 import Map, { Marker } from 'react-map-gl';
 import { MAPBOX_TOKEN, MAP_STYLE_NIGHT } from '../../lib/mapbox';
 import { MAIN_CATEGORY_COLORS } from '../../lib/constants';
 import 'mapbox-gl/dist/mapbox-gl.css';
 import { SwipeablePhotoCarousel } from './SwipeablePhotoCarousel';
 import { SaveButton } from './SaveButton';
-import { InstagramGeneratorModal } from './InstagramGeneratorModal';
 import { StoreFindsSection } from './StoreFindsSection';
-import { SubmitModal } from '../../pages/FindsPage';
+import { KurbInventory } from './KurbInventory';
 import type { Store } from '../../types/store';
 import { getGoogleMapsUrl } from '../../utils/formatters';
 import { ikUrl } from '../../utils/ikUrl';
@@ -24,11 +22,7 @@ interface MobileStoreDetailProps {
 export function MobileStoreDetail({ store, similarStores, onPhotoClick }: MobileStoreDetailProps) {
   const navigate = useNavigate();
   const location = useLocation();
-  const [showFullDescription, setShowFullDescription] = useState(false);
   const [expandedSection, setExpandedSection] = useState<string | null>(null);
-  const [instagramModalOpen, setInstagramModalOpen] = useState(false);
-  const [showLogModal, setShowLogModal] = useState(false);
-  const [showLogBanner, setShowLogBanner] = useState(false);
 
   const photos = store.photos && store.photos.length > 0
     ? store.photos
@@ -418,23 +412,20 @@ export function MobileStoreDetail({ store, similarStores, onPhotoClick }: Mobile
         {/* Action Buttons Section */}
         <div className="space-y-3">
           <SaveButton storeId={store.id} variant="button" className="w-full" />
-          <button
-            onClick={() => setInstagramModalOpen(true)}
-            className="w-full px-6 py-3 bg-gradient-to-r from-pink-500/20 to-purple-600/20 text-pink-300 font-bold uppercase rounded-lg hover:from-pink-500/30 hover:to-purple-600/30 transition-all flex items-center justify-center gap-2 border border-pink-500/30 active:scale-95"
-            style={{ boxShadow: '0 0 20px rgba(236, 72, 153, 0.2)' }}
-          >
-            <Share2 className="w-5 h-5" />
-            Share to Instagram
-          </button>
-          <button
-            onClick={() => setShowLogModal(true)}
-            className="w-full px-6 py-3 bg-gradient-to-r from-purple-500/20 to-cyan-600/20 text-purple-300 font-bold uppercase rounded-lg hover:from-purple-500/30 hover:to-cyan-600/30 transition-all flex items-center justify-center gap-2 border border-purple-500/30 active:scale-95"
-            style={{ boxShadow: '0 0 20px rgba(168, 85, 247, 0.2)' }}
-          >
-            <Camera className="w-5 h-5" />
-            Log a Find
-          </button>
         </div>
+
+        {/* Kurb Shop Online — only if this store has a vendor ID */}
+        {store.kurb_vendor_id != null && (
+          <KurbInventory
+            vendorId={store.kurb_vendor_id}
+            compact
+            accentColor={
+              store.mainCategory
+                ? (({ Fashion: '#22D9EE', Food: '#f97316', Coffee: '#d97706', Museum: '#8b5cf6', 'Home Goods': '#10b981', Spots: '#ec4899' } as Record<string, string>)[store.mainCategory] ?? '#22D9EE')
+                : '#22D9EE'
+            }
+          />
+        )}
 
         {/* Community Finds */}
         <div className="pt-2">
@@ -522,48 +513,6 @@ export function MobileStoreDetail({ store, similarStores, onPhotoClick }: Mobile
         <MapIcon className="w-5 h-5" />
       </button>
 
-      {/* Instagram Generator Modal */}
-      <InstagramGeneratorModal
-        store={store}
-        isOpen={instagramModalOpen}
-        onClose={() => setInstagramModalOpen(false)}
-      />
-
-      {/* Log a Find Modal */}
-      <AnimatePresence>
-        {showLogModal && (
-          <SubmitModal
-            onClose={() => setShowLogModal(false)}
-            onSubmitted={() => {
-              setShowLogModal(false);
-              setShowLogBanner(true);
-              setTimeout(() => setShowLogBanner(false), 5000);
-            }}
-            prefill={{
-              storeId: store.id,
-              storeName: store.name,
-              storeCity: store.city,
-              storeNeighborhood: store.neighborhood,
-              defaultType: 'haul',
-            }}
-          />
-        )}
-      </AnimatePresence>
-
-      {/* Submitted banner */}
-      <AnimatePresence>
-        {showLogBanner && (
-          <motion.div
-            initial={{ opacity: 0, y: -20 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -20 }}
-            className="fixed top-6 left-1/2 -translate-x-1/2 z-[100] flex items-center gap-3 px-5 py-3 bg-gray-900 border border-purple-500/40 rounded-2xl shadow-2xl text-sm text-white"
-          >
-            <div className="h-2 w-2 rounded-full bg-purple-400 animate-pulse" />
-            Your find has been submitted for review. Thanks!
-          </motion.div>
-        )}
-      </AnimatePresence>
     </div>
   );
 }

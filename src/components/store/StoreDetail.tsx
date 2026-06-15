@@ -8,6 +8,8 @@ import { logger } from '../../utils/logger';
 import { saveStore, unsaveStore, isStoreSaved } from '../../utils/savedStores';
 import { ikUrl } from '../../utils/ikUrl';
 import { BlurImage } from '../common/BlurImage';
+import { KurbInventory } from './KurbInventory';
+import { MAIN_CATEGORY_COLORS } from '../../lib/constants';
 
 interface StoreDetailProps {
   store: Store;
@@ -235,6 +237,26 @@ export function StoreDetail({ store, onClose, isStamped }: StoreDetailProps) {
                 </motion.div>
               ))}
             </div>
+          </motion.div>
+        )}
+
+        {/* Kurb compact teaser — only if store has vendor ID */}
+        {store.kurb_vendor_id != null && (
+          <motion.div
+            initial={{ opacity: 0, y: 16 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.40, duration: 0.35 }}
+            className="py-4 border-t border-cyan-400/20"
+          >
+            <KurbInventory
+              vendorId={store.kurb_vendor_id}
+              compact
+              accentColor={
+                store.mainCategory
+                  ? (MAIN_CATEGORY_COLORS[store.mainCategory as keyof typeof MAIN_CATEGORY_COLORS] ?? '#22D9EE')
+                  : '#22D9EE'
+              }
+            />
           </motion.div>
         )}
 

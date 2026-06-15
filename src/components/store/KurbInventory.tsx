@@ -48,6 +48,10 @@ interface KurbApiResponse {
 interface Props {
   vendorId: number;
   accentColor?: string;
+  /** When true, renders a smaller header and limits to 3 items (for map panel / mobile) */
+  compact?: boolean;
+  /** Override max items shown (default 20 for full, 3 for compact) */
+  maxItems?: number;
 }
 
 // Cap at 3 items per brand (safety net per API contract)
@@ -70,7 +74,7 @@ function formatPrice(item: KurbItem): string {
   }).format(amount);
 }
 
-export function KurbInventory({ vendorId, accentColor = '#22D9EE' }: Props) {
+export function KurbInventory({ vendorId, accentColor = '#22D9EE', compact = false, maxItems }: Props) {
   const [items, setItems] = useState<KurbItem[]>([]);
   const [attribution, setAttribution] = useState<KurbAttribution | null>(null);
   const [loading, setLoading] = useState(true);
@@ -95,7 +99,8 @@ export function KurbInventory({ vendorId, accentColor = '#22D9EE' }: Props) {
         if (!cancelled) {
           const payload = json.data ?? (json as any); // graceful fallback for mock
           setAttribution(payload.attribution ?? null);
-          const capped = capByBrand(payload.items ?? []).slice(0, 20);
+          const limit = maxItems ?? (compact ? 3 : 20);
+          const capped = capByBrand(payload.items ?? []).slice(0, limit);
           setItems(capped);
         }
       } catch (err) {
@@ -117,13 +122,13 @@ export function KurbInventory({ vendorId, accentColor = '#22D9EE' }: Props) {
   const attributionUrl = attribution?.url ?? 'https://kurb.online';
 
   return (
-    <div className="relative z-10 max-w-6xl mx-auto px-6 md:px-12 pb-12">
+    <div className={compact ? 'relative z-10' : 'relative z-10 max-w-6xl mx-auto px-6 md:px-12 pb-12'}>
       {/* Section header */}
-      <div className="flex items-center justify-between mb-5">
+      <div className={`flex items-center justify-between ${compact ? 'mb-3' : 'mb-5'}`}>
         <div className="flex items-center gap-3">
-          <ShoppingBag className="h-5 w-5" style={{ color: accentColor }} />
+          <ShoppingBag className={compact ? 'h-4 w-4' : 'h-5 w-5'} style={{ color: accentColor }} />
           <h2
-            className="text-xl font-black italic uppercase"
+            className={`${compact ? 'text-base' : 'text-xl'} font-black italic uppercase`}
             style={{ color: accentColor, textShadow: `0 0 16px ${accentColor}40` }}
           >
             Shop Online
