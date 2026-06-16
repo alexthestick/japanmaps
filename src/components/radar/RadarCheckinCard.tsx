@@ -83,21 +83,23 @@ const THEME = {
 // ─── Kurb item strip — compact horizontal scroll ─────────────────────────────
 
 function KurbStrip({ items, accentColor }: { items: CachedKurbItem[]; accentColor: string }) {
-  const display = items.slice(0, 3);
+  const display = items.slice(0, 5);
   return (
     <div>
       <div className="flex items-center justify-between mb-1.5">
         <p className="text-[10px] font-bold uppercase tracking-wide" style={{ color: accentColor, opacity: 0.7 }}>
           Shop Online
         </p>
+        {/* "Powered by KURB" — required API attribution */}
         <a
           href="https://kurb.online"
           target="_blank"
           rel="noopener noreferrer"
           onClick={e => e.stopPropagation()}
-          className="text-[9px] text-gray-600 hover:text-gray-400 transition-colors"
+          className="flex items-center gap-1 hover:opacity-80 transition-opacity"
         >
-          via KURB
+          <span className="text-[8px] text-gray-500 uppercase tracking-widest">Powered by</span>
+          <span className="text-[9px] font-bold text-gray-400">KURB</span>
         </a>
       </div>
       <div className="flex gap-2 overflow-x-auto scrollbar-hide pb-0.5">

@@ -77,6 +77,7 @@ function formatPrice(item: KurbItem): string {
 export function KurbInventory({ vendorId, accentColor = '#22D9EE', compact = false, maxItems }: Props) {
   const [items, setItems] = useState<KurbItem[]>([]);
   const [attribution, setAttribution] = useState<KurbAttribution | null>(null);
+  const [vendorKurbUrl, setVendorKurbUrl] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
 
@@ -99,7 +100,8 @@ export function KurbInventory({ vendorId, accentColor = '#22D9EE', compact = fal
         if (!cancelled) {
           const payload = json.data ?? (json as any); // graceful fallback for mock
           setAttribution(payload.attribution ?? null);
-          const limit = maxItems ?? (compact ? 3 : 20);
+          setVendorKurbUrl(payload.vendor?.kurb_url ?? null);
+          const limit = maxItems ?? (compact ? 6 : 20);
           const capped = capByBrand(payload.items ?? []).slice(0, limit);
           setItems(capped);
         }
@@ -151,14 +153,14 @@ export function KurbInventory({ vendorId, accentColor = '#22D9EE', compact = fal
         </a>
       </div>
 
-      {/* Loading skeleton */}
+      {/* Loading skeleton — count and width match the actual item display */}
       {loading && (
-        <div className="flex gap-4 overflow-x-auto pb-2 scrollbar-none">
-          {Array.from({ length: 5 }).map((_, i) => (
+        <div className={`flex ${compact ? 'gap-2' : 'gap-4'} overflow-x-auto pb-2 scrollbar-none`}>
+          {Array.from({ length: compact ? 4 : 5 }).map((_, i) => (
             <div
               key={i}
-              className="flex-shrink-0 w-40 rounded-xl bg-gray-900 animate-pulse"
-              style={{ height: 220 }}
+              className={`flex-shrink-0 ${compact ? 'w-32' : 'w-40'} rounded-xl bg-gray-900 animate-pulse`}
+              style={{ height: compact ? 190 : 220 }}
             />
           ))}
         </div>
@@ -166,14 +168,14 @@ export function KurbInventory({ vendorId, accentColor = '#22D9EE', compact = fal
 
       {/* Item cards — horizontal scroll */}
       {!loading && items.length > 0 && (
-        <div className="flex gap-3 overflow-x-auto pb-2 scrollbar-none">
+        <div className={`flex ${compact ? 'gap-2' : 'gap-3'} overflow-x-auto pb-2 scrollbar-none`}>
           {items.map(item => (
             <a
               key={item.id}
               href={item.kurb_url}
               target="_blank"
               rel="noopener noreferrer"
-              className="group flex-shrink-0 w-40 rounded-xl overflow-hidden border border-white/5 bg-gray-900/60 hover:border-white/20 transition-all"
+              className={`group flex-shrink-0 ${compact ? 'w-32' : 'w-40'} rounded-xl overflow-hidden border border-white/5 bg-gray-900/60 hover:border-white/20 transition-all`}
             >
               {/* Photo */}
               <div className="relative w-full aspect-square overflow-hidden bg-gray-800">
@@ -233,6 +235,20 @@ export function KurbInventory({ vendorId, accentColor = '#22D9EE', compact = fal
             </a>
           ))}
         </div>
+      )}
+
+      {/* View all link — compact mode only, links to vendor's Kurb page */}
+      {compact && !loading && items.length > 0 && (
+        <a
+          href={vendorKurbUrl ?? attributionUrl}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="inline-flex items-center gap-1 mt-2.5 text-xs font-semibold transition-opacity hover:opacity-100"
+          style={{ color: accentColor, opacity: 0.65 }}
+        >
+          View all items
+          <ExternalLink className="h-3 w-3" />
+        </a>
       )}
     </div>
   );
