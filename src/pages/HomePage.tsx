@@ -34,6 +34,7 @@ import { distanceMeters } from '../utils/distance';
 import { RadarCheckinCard } from '../components/radar/RadarCheckinCard';
 import { RadarSessionSummary } from '../components/radar/RadarSessionSummary';
 import { PostStampHaulPrompt } from '../components/radar/PostStampHaulPrompt';
+import { RadarHUD } from '../components/radar/RadarHUD';
 import { useCheckinCache } from '../hooks/useCheckinCache';
 
 export function HomePage() {
@@ -267,13 +268,19 @@ export function HomePage() {
   // Reset whenever the active nearby store changes so the card re-appears for a new store.
   const [cardDismissed, setCardDismissed] = useState(false);
 
-  // ── Radar session tracking (refs = no re-renders on every GPS tick) ────────
-  // sessionPositions: ring-buffer of GPS fixes during this Radar session.
-  //   Used to compute total walking distance via summed Haversine segments.
-  // sessionStampCount: incremented each time handleCheckinSuccess fires.
-  // sessionNeighborhood: last known neighborhood at the moment Radar exits.
+  // ── Radar session tracking ───────────────────────────────────────────────
+  // sessionPositionsRef: ring-buffer of GPS fixes — used for Haversine distance
+  //   on exit. Ref (not state) so GPS ticks don't cause re-renders.
+  // sessionStampCountRef: ref copy for exit summary calculation (same reason).
+  // sessionStampCount: reactive STATE copy so the HUD counter re-renders live.
   const sessionPositionsRef  = useRef<Array<{ lat: number; lng: number }>>([]);
   const sessionStampCountRef = useRef(0);
+  const [sessionStampCount, setSessionStampCount] = useState(0);
+
+  // Exit confirmation: first tap → pending state (3s window), second tap → exit.
+  // Skipped entirely when sessionStampCount === 0 (nothing to protect).
+  const [exitConfirmPending, setExitConfirmPending] = useState(false);
+  const exitConfirmTimerRef = useRef<NodeJS.Timeout>();
 
   // Session summary overlay — shown briefly after Radar exits with ≥1 stamp.
   const [sessionSummary, setSessionSummary] = useState<{
@@ -405,10 +412,25 @@ export function HomePage() {
 
   // Radar mode toggle — closes any open bottom sheet before switching modes
   // so Browse and Radar UI never overlap.
+  // Exit confirmation: if stamps > 0, first tap arms a 3-second confirm window.
+  // Second tap within that window (or immediate if no stamps) actually exits.
   const handleRadarToggle = useCallback(() => {
     if (isExploreMode) {
-      // ── Compute and show session summary if ≥1 stamp was made ──────────
       const stampCount = sessionStampCountRef.current;
+
+      // ── First tap with stamps: arm the confirm window ───────────────────
+      if (stampCount > 0 && !exitConfirmPending) {
+        setExitConfirmPending(true);
+        exitConfirmTimerRef.current = setTimeout(() => {
+          setExitConfirmPending(false);
+        }, 3000);
+        return; // don't exit yet
+      }
+
+      // ── Second tap (or no stamps): actually exit ────────────────────────
+      clearTimeout(exitConfirmTimerRef.current);
+      setExitConfirmPending(false);
+
       if (stampCount > 0) {
         // Sum consecutive Haversine segments for total walking distance
         const positions = sessionPositionsRef.current;
@@ -426,16 +448,17 @@ export function HomePage() {
         });
       }
 
-      // Reset session refs for next Radar session
+      // Reset session state + refs for next Radar session
       sessionPositionsRef.current  = [];
       sessionStampCountRef.current = 0;
+      setSessionStampCount(0);
 
       setSelectedStore(null);
       setExploreUserPosition(null);
       setNearbyStoreIndex(0);
     }
     setIsExploreMode(prev => !prev);
-  }, [isExploreMode, exploreNeighborhood]);
+  }, [isExploreMode, exploreNeighborhood, exitConfirmPending]);
 
   // Accumulate GPS positions into the session ring-buffer while Radar is active.
   // Throttled naturally by the GPS watchPosition interval (~1s on device).
@@ -449,9 +472,11 @@ export function HomePage() {
 
   // Called by RadarCheckinCard after a successful stamp or re-verification.
   // Bumps lastStampedAt → invalidates useCheckinCache → marker turns green immediately.
+  // Also increments both the ref (for exit distance calc) and reactive state (for HUD).
   const handleCheckinSuccess = useCallback((_storeName: string, _isVerification: boolean) => {
     setLastStampedAt(Date.now());
     sessionStampCountRef.current += 1;
+    setSessionStampCount(c => c + 1);
     // Show haul prompt for this store after the check-in card auto-dismisses (3s)
     if (nearbyStoreEntry?.store) {
       setTimeout(() => {
@@ -591,7 +616,7 @@ export function HomePage() {
                   setSelectedStore(store);
                 }}
                 onClearAll={handleClearAll}
-                isHidden={isScrollingDown || isSpotlightMode}
+                isHidden={isScrollingDown || isSpotlightMode || isExploreMode}
               />
 
             </>
@@ -652,47 +677,23 @@ export function HomePage() {
           ─────────────────────────────────────────────────────────────────── */}
           {isMobile && view === 'map' && (
             <>
-              {/* Status bar — shows when Radar is active */}
-              {isExploreMode && (
-                <div
-                  className="absolute left-1/2 z-[30] flex items-center gap-2 px-4 py-2 rounded-full text-xs font-medium backdrop-blur-md"
-                  style={{
-                    transform: 'translateX(-50%)',
-                    bottom: 'calc(5.5rem + env(safe-area-inset-bottom, 0px))',
-                    whiteSpace: 'nowrap',
-                    backgroundColor: 'rgba(10, 10, 15, 0.88)',
-                    border: '1px solid rgba(34, 217, 238, 0.35)',
-                    color: '#22D9EE',
-                  }}
-                >
-                  {!exploreUserPosition ? (
-                    // Locating…
-                    <>
-                      <span style={{ width: 7, height: 7, borderRadius: '50%', backgroundColor: 'rgba(34,217,238,0.4)', display: 'inline-block', flexShrink: 0 }} />
-                      Locating…
-                    </>
-                  ) : storesForMap.length === 0 ? (
-                    // No stores in range
-                    <>
-                      <span style={{ width: 7, height: 7, borderRadius: '50%', backgroundColor: 'rgba(34,217,238,0.3)', display: 'inline-block', flexShrink: 0 }} />
-                      No stores within 300m
-                      {exploreUserPosition.accuracy && exploreUserPosition.accuracy > 25 && (
-                        <span style={{ color: 'rgba(251,191,36,0.9)', marginLeft: 4 }}>· GPS weak</span>
-                      )}
-                    </>
-                  ) : (
-                    // Stores in range
-                    <>
-                      <span style={{ width: 7, height: 7, borderRadius: '50%', backgroundColor: '#22D9EE', display: 'inline-block', flexShrink: 0 }} />
-                      {exploreNeighborhood ? exploreNeighborhood : 'Nearby'}{' '}
-                      · {storesForMap.length} store{storesForMap.length !== 1 ? 's' : ''}
-                      {exploreUserPosition.accuracy && exploreUserPosition.accuracy > 25 && (
-                        <span style={{ color: 'rgba(251,191,36,0.9)', marginLeft: 4 }}>· GPS weak</span>
-                      )}
-                    </>
-                  )}
-                </div>
-              )}
+              {/* ── RADAR HUD — top strip, replaces search/filters ──────────
+                  Mounts when isExploreMode, sits at top of the map container.
+                  AnimatePresence handles the crossfade with the filter bar. */}
+              <AnimatePresence>
+                {isExploreMode && (
+                  <RadarHUD
+                    hasGps={!!exploreUserPosition}
+                    stampCount={sessionStampCount}
+                    nearestStore={
+                      nearbyStoreEntry
+                        ? { name: nearbyStoreEntry.store.name, distanceM: nearbyStoreEntry.dist }
+                        : null
+                    }
+                    neighborhood={exploreNeighborhood}
+                  />
+                )}
+              </AnimatePresence>
 
               {/* RADAR CHECK-IN CARD ─────────────────────────────────────────
                   Slides up when user enters 150m of a store in Radar mode.
@@ -762,16 +763,22 @@ export function HomePage() {
                 )}
               </AnimatePresence>
 
-              {/* Radar + List View unified bar */}
+              {/* ── Bottom bar: Radar pill (+ exit confirm) + List View ─────
+                  In Radar mode: only the radar/exit button, centered.
+                  In Browse mode: radar pill left, list view right.
+              ──────────────────────────────────────────────────────────── */}
               {!selectedStore && !isSpotlightMode && (
                 <div
-                  className="absolute left-0 right-0 z-[30] flex items-center justify-between px-5"
-                  style={{ bottom: 'calc(1.5rem + env(safe-area-inset-bottom, 0px))' }}
+                  className="absolute left-0 right-0 z-[30] flex items-center px-5"
+                  style={{
+                    bottom: 'calc(1.5rem + env(safe-area-inset-bottom, 0px))',
+                    justifyContent: isExploreMode ? 'center' : 'space-between',
+                  }}
                 >
                   {/* Onboarding tooltip — first time only, auto-dismisses after 4s */}
                   {showRadarTooltip && !isExploreMode && (
                     <div
-                      className="absolute left-0 bottom-full mb-3 px-4 py-2.5 rounded-xl text-xs font-medium text-white backdrop-blur-md pointer-events-none"
+                      className="absolute left-5 bottom-full mb-3 px-4 py-2.5 rounded-xl text-xs font-medium text-white backdrop-blur-md pointer-events-none"
                       style={{
                         backgroundColor: 'rgba(10,10,15,0.92)',
                         border: '1px solid rgba(34,217,238,0.4)',
@@ -781,7 +788,6 @@ export function HomePage() {
                     >
                       <span style={{ color: '#22D9EE' }}>◎</span>{' '}
                       Tap to discover stores as you walk nearby
-                      {/* Pointer triangle */}
                       <div style={{
                         position: 'absolute',
                         bottom: -6,
@@ -796,50 +802,65 @@ export function HomePage() {
                     </div>
                   )}
 
-                  {/* Radar pill */}
+                  {/* Radar / Exit button */}
                   <button
                     onClick={handleRadarToggle}
                     className="flex items-center gap-2.5 px-5 py-3 rounded-full font-semibold text-sm transition-all duration-300 backdrop-blur-md"
-                    style={isExploreMode ? {
-                      backgroundColor: '#22D9EE',
-                      color: '#0a0a0f',
-                      border: '2px solid rgba(34,217,238,0.9)',
-                      boxShadow: '0 0 24px rgba(34,217,238,0.5), 0 4px 16px rgba(0,0,0,0.4)',
-                    } : {
-                      backgroundColor: 'rgba(10,10,15,0.85)',
-                      color: '#22D9EE',
-                      border: '2px solid rgba(34,217,238,0.4)',
-                      boxShadow: '0 4px 16px rgba(0,0,0,0.4)',
-                    }}
+                    style={
+                      exitConfirmPending ? {
+                        // Confirm state — amber warning tone
+                        backgroundColor: 'rgba(251,191,36,0.12)',
+                        color: '#fbbf24',
+                        border: '2px solid rgba(251,191,36,0.6)',
+                        boxShadow: '0 0 20px rgba(251,191,36,0.2), 0 4px 16px rgba(0,0,0,0.4)',
+                      } : isExploreMode ? {
+                        backgroundColor: '#22D9EE',
+                        color: '#0a0a0f',
+                        border: '2px solid rgba(34,217,238,0.9)',
+                        boxShadow: '0 0 24px rgba(34,217,238,0.5), 0 4px 16px rgba(0,0,0,0.4)',
+                      } : {
+                        backgroundColor: 'rgba(10,10,15,0.85)',
+                        color: '#22D9EE',
+                        border: '2px solid rgba(34,217,238,0.4)',
+                        boxShadow: '0 4px 16px rgba(0,0,0,0.4)',
+                      }
+                    }
                   >
-                    {/* Radar SVG icon with sweep animation in Browse mode */}
-                    <svg width="18" height="18" viewBox="0 0 18 18" fill="none" style={{ flexShrink: 0 }}>
-                      <circle cx="9" cy="9" r="7.5" stroke="currentColor" strokeWidth="1.3" opacity="0.45" />
-                      <circle cx="9" cy="9" r="4.2" stroke="currentColor" strokeWidth="1.3" opacity="0.65" />
-                      <circle cx="9" cy="9" r="1.4" fill="currentColor" />
-                      {!isExploreMode && (
-                        <g style={{ transformOrigin: '9px 9px', animation: 'radar-sweep 4s linear infinite' }}>
-                          <line x1="9" y1="9" x2="9" y2="1.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
-                        </g>
-                      )}
-                    </svg>
-                    {isExploreMode ? '← Browse' : 'Radar'}
+                    {/* Radar SVG icon */}
+                    {!exitConfirmPending && (
+                      <svg width="18" height="18" viewBox="0 0 18 18" fill="none" style={{ flexShrink: 0 }}>
+                        <circle cx="9" cy="9" r="7.5" stroke="currentColor" strokeWidth="1.3" opacity="0.45" />
+                        <circle cx="9" cy="9" r="4.2" stroke="currentColor" strokeWidth="1.3" opacity="0.65" />
+                        <circle cx="9" cy="9" r="1.4" fill="currentColor" />
+                        {!isExploreMode && (
+                          <g style={{ transformOrigin: '9px 9px', animation: 'radar-sweep 4s linear infinite' }}>
+                            <line x1="9" y1="9" x2="9" y2="1.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+                          </g>
+                        )}
+                      </svg>
+                    )}
+                    {exitConfirmPending
+                      ? `End session? (${sessionStampCount} stamp${sessionStampCount !== 1 ? 's' : ''})`
+                      : isExploreMode ? '← Browse' : 'Radar'
+                    }
                   </button>
 
-                  {/* List View icon button */}
-                  <button
-                    onClick={() => setView('list')}
-                    className="flex items-center justify-center w-12 h-12 rounded-full backdrop-blur-md transition-all duration-200"
-                    style={{
-                      backgroundColor: 'rgba(10,10,15,0.85)',
-                      border: '2px solid rgba(255,255,255,0.15)',
-                      boxShadow: '0 4px 16px rgba(0,0,0,0.4)',
-                      color: 'rgba(255,255,255,0.8)',
-                    }}
-                    title="List View"
-                  >
-                    <List className="w-5 h-5" />
-                  </button>
+                  {/* List View icon — Browse mode only, hidden in Radar */}
+                  {!isExploreMode && (
+                    <button
+                      onClick={() => setView('list')}
+                      className="flex items-center justify-center w-12 h-12 rounded-full backdrop-blur-md transition-all duration-200"
+                      style={{
+                        backgroundColor: 'rgba(10,10,15,0.85)',
+                        border: '2px solid rgba(255,255,255,0.15)',
+                        boxShadow: '0 4px 16px rgba(0,0,0,0.4)',
+                        color: 'rgba(255,255,255,0.8)',
+                      }}
+                      title="List View"
+                    >
+                      <List className="w-5 h-5" />
+                    </button>
+                  )}
                 </div>
               )}
             </>

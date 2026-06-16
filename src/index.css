@@ -555,6 +555,13 @@ body {
   50%       { opacity: 0.25; }
 }
 
+/* radar-dot-breathe: slow glow pulse on the HUD GPS indicator dot.
+   Opacity only — no size change, no blur element, no GPU repaint. */
+@keyframes radar-dot-breathe {
+  0%, 100% { opacity: 1; }
+  50%       { opacity: 0.4; }
+}
+
 /* ─── Passport Stamp Perforated Border ────────────────────────────────────────
  * Simulates the punched-hole perforated edge of a passport stamp.
  * Repeating background gradients create an evenly spaced dash pattern on all
