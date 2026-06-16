@@ -97,8 +97,16 @@ export function BottomSheetStoreDetail({ store, onClose, isStamped, isExploreMod
                   />
                   <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/30 to-black/50" />
 
-                  {/* Store name */}
+                  {/* Store name + stamped badge (stacked vertically, no overlap) */}
                   <div className="absolute top-4 left-4 right-32 z-10">
+                    {/* Stamped badge sits above the name when present */}
+                    {isStamped && (
+                      <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full backdrop-blur-md mb-1.5"
+                        style={{ backgroundColor: 'rgba(16,185,129,0.2)', border: '1px solid rgba(16,185,129,0.45)' }}>
+                        <CheckCircle2 className="w-3 h-3" style={{ color: '#10b981' }} />
+                        <span className="text-[11px] font-bold" style={{ color: '#10b981' }}>Stamped</span>
+                      </div>
+                    )}
                     <h1
                       className="text-lg font-bold text-white tracking-tight italic leading-tight line-clamp-2"
                       style={{ textShadow: '0 2px 12px rgba(0,0,0,0.9)' }}
@@ -129,15 +137,6 @@ export function BottomSheetStoreDetail({ store, onClose, isStamped, isExploreMod
                       <X className="w-5 h-5 text-white" />
                     </button>
                   </div>
-
-                  {/* Stamped badge */}
-                  {isStamped && (
-                    <div className="absolute top-4 left-4 z-10 flex items-center gap-1.5 px-2.5 py-1 rounded-full backdrop-blur-md"
-                      style={{ backgroundColor: 'rgba(16,185,129,0.2)', border: '1px solid rgba(16,185,129,0.45)' }}>
-                      <CheckCircle2 className="w-3 h-3" style={{ color: '#10b981' }} />
-                      <span className="text-[11px] font-bold" style={{ color: '#10b981' }}>Stamped</span>
-                    </div>
-                  )}
 
                   {/* Category pills + save count */}
                   <div className="absolute bottom-4 left-4 right-4 flex items-end justify-between">
