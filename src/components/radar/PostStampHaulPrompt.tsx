@@ -162,7 +162,7 @@ export function PostStampHaulPrompt({ store, onClose }: PostStampHaulPromptProps
                 value={caption}
                 onChange={e => { setCaption(e.target.value); if (e.target.value) setExpanded(true); }}
                 maxLength={280}
-                placeholder="What's the vibe? Drop a note…"
+                placeholder="Add a photo or note about your find…"
                 className="w-full px-3 py-2.5 rounded-xl text-sm text-white placeholder-gray-600 focus:outline-none transition-colors"
                 style={{
                   backgroundColor: 'rgba(255,255,255,0.05)',

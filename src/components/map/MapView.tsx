@@ -603,12 +603,9 @@ export const MapView = forwardRef<MapViewHandle, MapViewProps>(({ stores, onStor
             mapRef.current = ref.getMap();
           }
         }}
-        // EXPLORE MODE: lock the map — GeolocateControl moves it, user cannot
-        dragPan={!isExploreMode}
-        scrollZoom={!isExploreMode}
-        touchZoomRotate={!isExploreMode}
-        doubleClickZoom={!isExploreMode}
-        dragRotate={!isExploreMode}
+        // EXPLORE MODE: map stays fully interactive so the user can pan freely.
+        // GeolocateControl fires position updates; the user location dot follows them.
+        // (Previous lock removed — see Scout Mode redesign plan)
       >
         <NavigationControl position="top-right" />
 

@@ -21,7 +21,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
-import { Instagram, X } from 'lucide-react';
+import { Instagram, X, BookOpen } from 'lucide-react';
 import { useAuthContext } from '../../contexts/AuthContext';
 import { MAIN_CATEGORY_COLORS } from '../../lib/constants';
 import { supabase } from '../../lib/supabase';
@@ -57,6 +57,10 @@ export interface RadarCheckinCardProps {
   userPosition: { latitude: number; longitude: number; accuracy?: number };
   onCheckinSuccess: (storeName: string, isVerification: boolean) => void;
   onDismiss: () => void;
+  /** Called when user taps "View full store" — opens store in map panel instead of navigating away */
+  onViewStore?: (store: Store) => void;
+  /** Called when user taps "Log a Find" from the REUNION card — bubbles to HomePage to render PostStampHaulPrompt at map level */
+  onLogFind?: (store: Store) => void;
 }
 
 // ─── Accent theme per emotional state ────────────────────────────────────────
@@ -221,6 +225,8 @@ export function RadarCheckinCard({
   userPosition,
   onCheckinSuccess,
   onDismiss,
+  onViewStore,
+  onLogFind,
 }: RadarCheckinCardProps) {
   const { user } = useAuthContext();
   const navigate = useNavigate();
@@ -595,11 +601,25 @@ export function RadarCheckinCard({
                     Stamped ✓
                   </div>
 
+                  {/* Log a Find — bubbles to HomePage so prompt renders at map level, not clipped inside card */}
+                  <button
+                    onClick={() => onLogFind?.(store)}
+                    className="w-full py-2.5 rounded-xl text-xs font-semibold transition-all active:scale-[0.98] flex items-center justify-center gap-1.5"
+                    style={{
+                      background: 'rgba(139,92,246,0.12)',
+                      border: '1px solid rgba(139,92,246,0.35)',
+                      color: '#c4b5fd',
+                    }}
+                  >
+                    <BookOpen className="w-3.5 h-3.5" />
+                    Log a Find
+                  </button>
+
                   {/* View Store */}
                   <button
-                    onClick={() => navigate(`/store/${store.slug || store.id}`)}
+                    onClick={() => onViewStore ? onViewStore(store) : navigate(`/store/${store.slug || store.id}`)}
                     className="w-full py-2 rounded-xl text-xs font-medium transition-all active:scale-[0.98] text-center"
-                    style={{ color: 'rgba(255,255,255,0.35)', backgroundColor: 'transparent' }}
+                    style={{ color: 'rgba(255,255,255,0.25)', backgroundColor: 'transparent' }}
                   >
                     View full store →
                   </button>
@@ -650,10 +670,10 @@ export function RadarCheckinCard({
                     {buttonContent()}
                   </button>
 
-                  {/* View Store — fallback when map pin is inaccessible */}
+                  {/* View Store — prefer onViewStore (opens bottom sheet); navigate only as last resort */}
                   {uiState === 'idle' && (
                     <button
-                      onClick={() => navigate(`/store/${store.slug || store.id}`)}
+                      onClick={() => onViewStore ? onViewStore(store) : navigate(`/store/${store.slug || store.id}`)}
                       className="w-full py-2 rounded-xl text-xs font-medium transition-all active:scale-[0.98] text-center"
                       style={{ color: 'rgba(255,255,255,0.35)', backgroundColor: 'transparent' }}
                     >

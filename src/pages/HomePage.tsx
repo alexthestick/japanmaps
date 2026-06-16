@@ -131,27 +131,24 @@ export function HomePage() {
   // Simple scroll direction detection - hide filter bar when scrolling down
   const isScrollingDown = useScrollDirection();
 
-  // Handle store clicks with two-tap behavior on mobile
+  // Handle store clicks with two-tap behavior on mobile (bypassed in radar mode)
   const handleStoreClick = useCallback((store: Store) => {
-    if (isMobile) {
-      // Mobile: Two-tap behavior
+    if (isMobile && !isExploreMode) {
+      // Mobile browse mode: Two-tap behavior (first tap shows label, second opens panel)
       if (tappedStoreId === store.id) {
-        // Second tap on same store - open detail panel
         setSelectedStore(store);
         setTappedStoreId(null);
       } else {
-        // First tap - just show store name label, don't open panel
         setTappedStoreId(store.id);
-        // Clear the tapped state after 3 seconds if no second tap
         setTimeout(() => {
           setTappedStoreId(prev => prev === store.id ? null : prev);
         }, 3000);
       }
     } else {
-      // Desktop: Single click opens detail panel immediately
+      // Desktop OR radar mode: single tap opens detail panel immediately
       setSelectedStore(store);
     }
-  }, [isMobile, tappedStoreId]);
+  }, [isMobile, tappedStoreId, isExploreMode]);
 
   // Handle label clicks - opens detail panel directly
   const handleLabelClick = useCallback((store: Store) => {
@@ -730,6 +727,8 @@ export function HomePage() {
                       userPosition={exploreUserPosition!}
                       onCheckinSuccess={handleCheckinSuccess}
                       onDismiss={() => setCardDismissed(true)}
+                      onViewStore={(store) => setSelectedStore(store)}
+                      onLogFind={(store) => setHaulPromptStore(store)}
                     />
                   </motion.div>
                 )}
