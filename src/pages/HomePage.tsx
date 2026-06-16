@@ -6,7 +6,6 @@ import { MapView } from '../components/map/MapView';
 import { SEOHead } from '../components/seo';
 import { StoreList } from '../components/store/StoreList';
 import { StoreDetail } from '../components/store/StoreDetail';
-import { BottomSheetStoreDetail } from '../components/store/BottomSheetStoreDetail';
 import { SpotlightBottomSheet } from '../components/store/SpotlightBottomSheet';
 import { DesktopSpotlightPanel } from '../components/map/DesktopSpotlightPanel';
 import { ScrollingBanner } from '../components/layout/ScrollingBanner';
@@ -464,6 +463,16 @@ export function HomePage() {
     }
   }, [nearbyStoreEntry?.store]);
 
+  // Called when the haul prompt is closed (submitted or dismissed).
+  // If more nearby stores exist, auto-advance so the next store's card appears.
+  const handleHaulPromptClose = useCallback(() => {
+    setHaulPromptStore(null);
+    if (nearbyStores.length > 1) {
+      setNearbyStoreIndex(i => (i + 1) % nearbyStores.length);
+    }
+    setCardDismissed(false);
+  }, [nearbyStores.length]);
+
   // Handle autocomplete suggestion selection (CRITICAL: prevent refresh)
   const handleSearchSuggestionSelect = useCallback((suggestion: SearchSuggestion) => {
     if (suggestion.type === 'store') {
@@ -557,6 +566,7 @@ export function HomePage() {
             exploreUserPosition={exploreUserPosition}
             stampedStoreIds={stampedStoreIds}
             checkinRadius={checkinRadius}
+            activeRadarStoreId={isExploreMode ? (nearbyStoreEntry?.store.id ?? null) : null}
           />
 
           {/* MOBILE: Floating Filter Bar (overlays map) */}
@@ -709,9 +719,14 @@ export function HomePage() {
                       checkinRadius={checkinRadius}
                       isInRange={nearbyStoreEntry.dist <= checkinRadius}
                       nearbyCount={nearbyStores.length}
-                      onNextStore={() =>
-                        setNearbyStoreIndex(i => (i + 1) % nearbyStores.length)
-                      }
+                      onNextStore={() => {
+                        const nextIdx = (safeNearbyIndex + 1) % nearbyStores.length;
+                        setNearbyStoreIndex(nextIdx);
+                        const nextStore = nearbyStores[nextIdx]?.store;
+                        if (nextStore && mapViewRef.current) {
+                          mapViewRef.current.flyToStore(nextStore.latitude, nextStore.longitude, { zoom: 17, offset: [0, -120] });
+                        }
+                      }}
                       userPosition={exploreUserPosition!}
                       onCheckinSuccess={handleCheckinSuccess}
                       onDismiss={() => setCardDismissed(true)}
@@ -728,7 +743,7 @@ export function HomePage() {
                 {isExploreMode && haulPromptStore && !selectedStore && (
                   <PostStampHaulPrompt
                     store={haulPromptStore}
-                    onClose={() => setHaulPromptStore(null)}
+                    onClose={handleHaulPromptClose}
                   />
                 )}
               </AnimatePresence>
@@ -839,6 +854,7 @@ export function HomePage() {
               spotlightedStores={spotlightedStores}
               selectedStore={selectedStore}
               isStamped={selectedStore ? stampedStoreIds.has(selectedStore.id) : false}
+              isExploreMode={isExploreMode}
               onStoreSelect={(store) => {
                 setSelectedStore(store);
                 // Pan map to store

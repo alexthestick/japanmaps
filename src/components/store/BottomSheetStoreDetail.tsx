@@ -17,7 +17,7 @@
 
 import { motion, AnimatePresence } from 'framer-motion';
 import { useState } from 'react';
-import { MapPin, ExternalLink, Instagram, Clock, Navigation, X, Heart, ArrowUpRight, CheckCircle2 } from 'lucide-react';
+import { MapPin, ExternalLink, Instagram, Clock, Navigation, X, Heart, ArrowUpRight, CheckCircle2, BookOpen } from 'lucide-react';
 import type { Store } from '../../types/store';
 import { getGoogleMapsUrl } from '../../utils/formatters';
 import { saveStore, unsaveStore, isStoreSaved } from '../../utils/savedStores';
@@ -25,15 +25,18 @@ import { useNavigate } from 'react-router-dom';
 import { ikUrl } from '../../utils/ikUrl';
 import { BlurImage } from '../common/BlurImage';
 import { KurbInventory } from './KurbInventory';
+import { PostStampHaulPrompt } from '../radar/PostStampHaulPrompt';
 
 interface BottomSheetStoreDetailProps {
   store: Store | null;
   onClose: () => void;
   isStamped?: boolean;
+  isExploreMode?: boolean;
 }
 
-export function BottomSheetStoreDetail({ store, onClose, isStamped }: BottomSheetStoreDetailProps) {
+export function BottomSheetStoreDetail({ store, onClose, isStamped, isExploreMode = false }: BottomSheetStoreDetailProps) {
   const [isSaved, setIsSaved] = useState(store ? isStoreSaved(store.id) : false);
+  const [showLogFind, setShowLogFind] = useState(false);
   const navigate = useNavigate();
 
   const handleSaveToggle = (e: React.MouseEvent) => {
@@ -235,6 +238,22 @@ export function BottomSheetStoreDetail({ store, onClose, isStamped }: BottomShee
                     Open Store
                   </button>
 
+                  {/* Log a Find — only in explore/radar mode after stamping */}
+                  {isExploreMode && isStamped && (
+                    <button
+                      onClick={() => setShowLogFind(true)}
+                      className="flex items-center justify-center gap-2 w-full px-6 py-3.5 rounded-xl font-bold border active:scale-95 transition-all"
+                      style={{
+                        background: 'rgba(139,92,246,0.15)',
+                        borderColor: 'rgba(139,92,246,0.45)',
+                        color: '#c4b5fd',
+                      }}
+                    >
+                      <BookOpen className="w-5 h-5" />
+                      Log a Find
+                    </button>
+                  )}
+
                   <a
                     href={getGoogleMapsUrl(store.latitude, store.longitude)}
                     target="_blank"
@@ -272,6 +291,14 @@ export function BottomSheetStoreDetail({ store, onClose, isStamped }: BottomShee
                     </div>
                   )}
                 </div>
+
+                {/* Log a Find prompt — overlays the sheet when open */}
+                {showLogFind && (
+                  <PostStampHaulPrompt
+                    store={store}
+                    onClose={() => setShowLogFind(false)}
+                  />
+                )}
 
                 {/* Safe area spacer */}
                 <div style={{ height: 'calc(env(safe-area-inset-bottom, 0px) + 16px)' }} />

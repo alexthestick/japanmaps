@@ -30,6 +30,7 @@ import { getHoursStatus } from '../../utils/hoursParser';
 import type { Store } from '../../types/store';
 import { useKurbItemsByStores } from '../../hooks/useKurbItemsByStores';
 import type { CachedKurbItem } from '../../hooks/useKurbItemsByStores';
+import { KurbLightbox, type KurbLightboxItem } from '../store/KurbLightbox';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -83,7 +84,9 @@ const THEME = {
 // ─── Kurb item strip — compact horizontal scroll ─────────────────────────────
 
 function KurbStrip({ items, accentColor }: { items: CachedKurbItem[]; accentColor: string }) {
-  const display = items.slice(0, 5);
+  const [lightboxItem, setLightboxItem] = useState<KurbLightboxItem | null>(null);
+  const display = items.slice(0, 4);
+
   return (
     <div>
       <div className="flex items-center justify-between mb-1.5">
@@ -104,13 +107,20 @@ function KurbStrip({ items, accentColor }: { items: CachedKurbItem[]; accentColo
       </div>
       <div className="flex gap-2 overflow-x-auto scrollbar-hide pb-0.5">
         {display.map(item => (
-          <a
+          <button
             key={item.item_id}
-            href={item.kurb_url ?? '#'}
-            target="_blank"
-            rel="noopener noreferrer"
-            onClick={e => e.stopPropagation()}
-            className="flex-shrink-0 w-[68px] rounded-xl overflow-hidden bg-gray-800/80 border border-white/8 active:scale-95 transition-transform"
+            onClick={e => {
+              e.stopPropagation();
+              setLightboxItem({
+                imageUrl: item.image_url ?? null,
+                title: item.title ?? '',
+                brand: item.brand ?? '',
+                price: item.price_usd != null ? `$${Math.round(item.price_usd)}` : '—',
+                size: item.size,
+                kurbUrl: item.kurb_url ?? 'https://kurb.online',
+              });
+            }}
+            className="flex-shrink-0 w-[68px] rounded-xl overflow-hidden bg-gray-800/80 border border-white/8 active:scale-95 transition-transform text-left"
           >
             {item.image_url ? (
               <img
@@ -132,9 +142,16 @@ function KurbStrip({ items, accentColor }: { items: CachedKurbItem[]; accentColo
                 <p className="text-gray-500 text-[8px] truncate">{item.brand}</p>
               )}
             </div>
-          </a>
+          </button>
         ))}
       </div>
+
+      {/* Lightbox */}
+      <KurbLightbox
+        item={lightboxItem}
+        accentColor={accentColor}
+        onClose={() => setLightboxItem(null)}
+      />
     </div>
   );
 }
@@ -148,6 +165,48 @@ function formatVisitDate(iso: string | null): string | null {
   } catch {
     return null;
   }
+}
+
+// ─── Stamp sound — synthesized via Web Audio API (no asset file needed) ──────
+
+function playStampSound() {
+  try {
+    const ctx = new (window.AudioContext || (window as any).webkitAudioContext)();
+
+    // Thud — low sine burst
+    const thud = ctx.createOscillator();
+    const thudGain = ctx.createGain();
+    thud.type = 'sine';
+    thud.frequency.setValueAtTime(120, ctx.currentTime);
+    thud.frequency.exponentialRampToValueAtTime(60, ctx.currentTime + 0.12);
+    thudGain.gain.setValueAtTime(0.55, ctx.currentTime);
+    thudGain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.18);
+    thud.connect(thudGain);
+    thudGain.connect(ctx.destination);
+    thud.start(ctx.currentTime);
+    thud.stop(ctx.currentTime + 0.18);
+
+    // Shimmer — short high sine, slight delay
+    const shimmer = ctx.createOscillator();
+    const shimmerGain = ctx.createGain();
+    shimmer.type = 'sine';
+    shimmer.frequency.setValueAtTime(880, ctx.currentTime + 0.05);
+    shimmer.frequency.exponentialRampToValueAtTime(1200, ctx.currentTime + 0.22);
+    shimmerGain.gain.setValueAtTime(0.18, ctx.currentTime + 0.05);
+    shimmerGain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.3);
+    shimmer.connect(shimmerGain);
+    shimmerGain.connect(ctx.destination);
+    shimmer.start(ctx.currentTime + 0.05);
+    shimmer.stop(ctx.currentTime + 0.3);
+
+    // Close context after sounds finish
+    setTimeout(() => ctx.close(), 400);
+  } catch {
+    // Autoplay policy blocked or no Web Audio support — fail silently
+  }
+
+  // Haptic on Android
+  try { navigator.vibrate?.([30, 10, 60]); } catch { /* ignore */ }
 }
 
 // ─── Component ────────────────────────────────────────────────────────────────
@@ -170,6 +229,7 @@ export function RadarCheckinCard({
   const [tooFarInfo, setTooFarInfo] = useState<TooFarInfo | null>(null);
   const [existingCheckin, setExistingCheckin] = useState<CachedStatus | null>(null);
   const [shake, setShake] = useState(false);
+  const [stampBurst, setStampBurst] = useState(false);
 
   const statusCache = useRef<Map<string, CachedStatus>>(new Map());
   const lastFetchedStore = useRef<string | null>(null);
@@ -247,6 +307,11 @@ export function RadarCheckinCard({
     setExistingCheckin(newStatus);
     setUiState('success');
 
+    // Satisfaction effect — sound + haptic + visual burst
+    playStampSound();
+    setStampBurst(true);
+    setTimeout(() => setStampBurst(false), 600);
+
     onCheckinSuccess(store.name, wasReVerification);
     setTimeout(() => { onDismiss(); }, 3000);
   }, [user, store.id, store.name, userPosition, existingCheckin, navigate, onCheckinSuccess, onDismiss]);
@@ -310,8 +375,14 @@ export function RadarCheckinCard({
   // ── Render ────────────────────────────────────────────────────────────────
   return (
     <motion.div
-      animate={shake ? { x: [0, -10, 10, -8, 8, -5, 5, -3, 3, 0] } : { x: 0 }}
-      transition={shake ? { duration: 0.5, ease: 'easeOut' } : {}}
+      animate={
+        shake
+          ? { x: [0, -10, 10, -8, 8, -5, 5, -3, 3, 0], scale: 1 }
+          : stampBurst
+            ? { scale: [1, 1.04, 0.98, 1], x: 0 }
+            : { x: 0, scale: 1 }
+      }
+      transition={shake ? { duration: 0.5, ease: 'easeOut' } : { duration: 0.45, ease: 'easeOut' }}
       className="relative w-full overflow-hidden rounded-2xl backdrop-blur-md"
       style={{
         backgroundColor: storeState === 'reunion'
@@ -523,6 +594,15 @@ export function RadarCheckinCard({
                   >
                     Stamped ✓
                   </div>
+
+                  {/* View Store */}
+                  <button
+                    onClick={() => navigate(`/store/${store.slug || store.id}`)}
+                    className="w-full py-2 rounded-xl text-xs font-medium transition-all active:scale-[0.98] text-center"
+                    style={{ color: 'rgba(255,255,255,0.35)', backgroundColor: 'transparent' }}
+                  >
+                    View full store →
+                  </button>
                 </>
               )}
 
@@ -569,6 +649,17 @@ export function RadarCheckinCard({
                   >
                     {buttonContent()}
                   </button>
+
+                  {/* View Store — fallback when map pin is inaccessible */}
+                  {uiState === 'idle' && (
+                    <button
+                      onClick={() => navigate(`/store/${store.slug || store.id}`)}
+                      className="w-full py-2 rounded-xl text-xs font-medium transition-all active:scale-[0.98] text-center"
+                      style={{ color: 'rgba(255,255,255,0.35)', backgroundColor: 'transparent' }}
+                    >
+                      View full store →
+                    </button>
+                  )}
                 </>
               )}
 

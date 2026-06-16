@@ -17,7 +17,7 @@ export interface CachedKurbItem {
 /**
  * Reads Kurb items from the kurb_items cache table for the given stores.
  *
- * Returns a Map<store_id, CachedKurbItem[]> (max 3 items per store).
+ * Returns a Map<store_id, CachedKurbItem[]> (max 4 items per store).
  *
  * Only queries stores that have kurb_vendor_id set.
  * Reads are fast (indexed) and cached in React Query for 15 min —
@@ -53,13 +53,13 @@ export function useKurbItemsByStores(stores: Store[]): Map<string, CachedKurbIte
     gcTime:    30 * 60 * 1000,
   });
 
-  // Build map: storeId → first 3 items (enough for spotlight cards)
+  // Build map: storeId → first 4 items
   const map = new Map<string, CachedKurbItem[]>();
   if (!data) return map;
 
   for (const item of data) {
     const existing = map.get(item.store_id) ?? [];
-    if (existing.length < 3) {
+    if (existing.length < 4) {
       existing.push(item);
       map.set(item.store_id, existing);
     }

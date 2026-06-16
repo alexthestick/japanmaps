@@ -24,6 +24,7 @@ interface SpotlightBottomSheetProps {
   onDismiss: () => void;
   onClose: () => void;
   isStamped?: boolean;
+  isExploreMode?: boolean;
 }
 
 export function SpotlightBottomSheet({
@@ -34,6 +35,7 @@ export function SpotlightBottomSheet({
   onDismiss,
   onClose,
   isStamped,
+  isExploreMode = false,
 }: SpotlightBottomSheetProps) {
   const [showPeek, setShowPeek] = useState(false);
 
@@ -59,7 +61,7 @@ export function SpotlightBottomSheet({
 
   // Store detail mode — delegate entirely
   if (shouldShowStoreDetail) {
-    return <BottomSheetStoreDetail store={selectedStore} onClose={onClose} isStamped={isStamped} />;
+    return <BottomSheetStoreDetail store={selectedStore} onClose={onClose} isStamped={isStamped} isExploreMode={isExploreMode} />;
   }
 
   // Peek mode — fixed height Framer Motion sheet, swipe down to dismiss

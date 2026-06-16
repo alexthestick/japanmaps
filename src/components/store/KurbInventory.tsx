@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { ExternalLink, ShoppingBag } from 'lucide-react';
+import { KurbLightbox, type KurbLightboxItem } from './KurbLightbox';
 
 // ---------- Types matching the real Kurb API response ----------
 
@@ -80,6 +81,8 @@ export function KurbInventory({ vendorId, accentColor = '#22D9EE', compact = fal
   const [vendorKurbUrl, setVendorKurbUrl] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
+  const [logoLoadError, setLogoLoadError] = useState(false);
+  const [lightboxItem, setLightboxItem] = useState<KurbLightboxItem | null>(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -145,8 +148,13 @@ export function KurbInventory({ vendorId, accentColor = '#22D9EE', compact = fal
           className="flex items-center gap-1.5 opacity-50 hover:opacity-80 transition-opacity"
         >
           <span className="text-[10px] text-gray-500 uppercase tracking-widest">Powered by</span>
-          {logoUrl ? (
-            <img src={logoUrl} alt="KURB" className="h-4 w-auto object-contain" />
+          {logoUrl && !logoLoadError ? (
+            <img
+              src={logoUrl}
+              alt="KURB"
+              className="h-4 w-auto object-contain"
+              onError={() => setLogoLoadError(true)}
+            />
           ) : (
             <span className="text-[10px] font-bold text-gray-400">KURB</span>
           )}
@@ -170,12 +178,18 @@ export function KurbInventory({ vendorId, accentColor = '#22D9EE', compact = fal
       {!loading && items.length > 0 && (
         <div className={`flex ${compact ? 'gap-2' : 'gap-3'} overflow-x-auto pb-2 scrollbar-none`}>
           {items.map(item => (
-            <a
+            <button
               key={item.id}
-              href={item.kurb_url}
-              target="_blank"
-              rel="noopener noreferrer"
-              className={`group flex-shrink-0 ${compact ? 'w-32' : 'w-40'} rounded-xl overflow-hidden border border-white/5 bg-gray-900/60 hover:border-white/20 transition-all`}
+              onClick={() => setLightboxItem({
+                imageUrl: item.image_url,
+                title: item.title,
+                brand: item.brand,
+                price: formatPrice(item),
+                size: item.size,
+                condition: item.condition,
+                kurbUrl: item.kurb_url,
+              })}
+              className={`group flex-shrink-0 text-left ${compact ? 'w-32' : 'w-40'} rounded-xl overflow-hidden border border-white/5 bg-gray-900/60 hover:border-white/20 active:scale-[0.97] transition-all`}
             >
               {/* Photo */}
               <div className="relative w-full aspect-square overflow-hidden bg-gray-800">
@@ -197,6 +211,10 @@ export function KurbInventory({ vendorId, accentColor = '#22D9EE', compact = fal
                     {item.condition}
                   </span>
                 )}
+                {/* Tap hint */}
+                <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity bg-black/20">
+                  <span className="text-[10px] font-bold text-white bg-black/60 rounded-full px-2 py-0.5">View</span>
+                </div>
               </div>
 
               {/* Info */}
@@ -229,10 +247,10 @@ export function KurbInventory({ vendorId, accentColor = '#22D9EE', compact = fal
                   style={{ backgroundColor: `${accentColor}15`, color: accentColor, border: `1px solid ${accentColor}30` }}
                 >
                   <ExternalLink className="h-3 w-3" />
-                  View on KURB
+                  Quick View
                 </div>
               </div>
-            </a>
+            </button>
           ))}
         </div>
       )}
@@ -250,6 +268,13 @@ export function KurbInventory({ vendorId, accentColor = '#22D9EE', compact = fal
           <ExternalLink className="h-3 w-3" />
         </a>
       )}
+
+      {/* Lightbox — portal-free, sits above everything via z-[300] */}
+      <KurbLightbox
+        item={lightboxItem}
+        accentColor={accentColor}
+        onClose={() => setLightboxItem(null)}
+      />
     </div>
   );
 }

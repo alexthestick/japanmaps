@@ -42,6 +42,7 @@ interface RadarStoreMarkerProps {
   distance: number;       // metres from user position
   checkinRadius: number;  // dynamic in-range threshold
   isStamped: boolean;     // user has already checked in here
+  isHighlighted?: boolean; // currently shown in the radar card (via +N chip)
   onClick: () => void;
 }
 
@@ -52,6 +53,7 @@ export const RadarStoreMarker = memo(function RadarStoreMarker({
   distance,
   checkinRadius,
   isStamped,
+  isHighlighted = false,
   onClick,
 }: RadarStoreMarkerProps) {
   const categoryColor = MAIN_CATEGORY_COLORS[store.mainCategory ?? 'Fashion'] ?? '#22D9EE';
@@ -153,6 +155,21 @@ export const RadarStoreMarker = memo(function RadarStoreMarker({
             borderRadius: '50%',
             border: `2px solid ${categoryColor}90`,
             animation: 'ring-pulse 2s ease-in-out infinite',
+            pointerEvents: 'none',
+          }}
+        />
+      )}
+
+      {/* Highlight ring — shown when this store is active in the radar card */}
+      {isHighlighted && !cfg.showRing && (
+        <div
+          style={{
+            position: 'absolute',
+            inset: -5,
+            borderRadius: '50%',
+            border: `2px solid ${categoryColor}`,
+            boxShadow: `0 0 12px ${categoryColor}60`,
+            animation: 'ring-pulse 1.5s ease-in-out infinite',
             pointerEvents: 'none',
           }}
         />

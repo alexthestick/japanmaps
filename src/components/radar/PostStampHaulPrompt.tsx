@@ -18,7 +18,7 @@
 
 import { useState, useRef, useCallback } from 'react';
 import { motion } from 'framer-motion';
-import { Camera, X, Check, ShoppingBag } from 'lucide-react';
+import { Camera, ImagePlus, X, Check, ShoppingBag } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 import { useAuthContext } from '../../contexts/AuthContext';
 import type { Store } from '../../types/store';
@@ -31,6 +31,7 @@ interface PostStampHaulPromptProps {
 export function PostStampHaulPrompt({ store, onClose }: PostStampHaulPromptProps) {
   const { user } = useAuthContext();
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const cameraInputRef = useRef<HTMLInputElement>(null);
 
   const [photo, setPhoto]         = useState<File | null>(null);
   const [photoPreview, setPhotoPreview] = useState<string | null>(null);
@@ -133,7 +134,7 @@ export function PostStampHaulPrompt({ store, onClose }: PostStampHaulPromptProps
               <ShoppingBag className="w-4 h-4" style={{ color: '#a855f7' }} />
             </div>
             <div className="flex-1 min-w-0">
-              <p className="text-white text-sm font-semibold leading-tight">Found something here?</p>
+              <p className="text-white text-sm font-semibold leading-tight">Add a photo or note</p>
               <p className="text-xs truncate" style={{ color: 'rgba(168,85,247,0.6)' }}>
                 {store.name}{store.neighborhood ? ` · ${store.neighborhood}` : ''}
               </p>
@@ -154,8 +155,24 @@ export function PostStampHaulPrompt({ store, onClose }: PostStampHaulPromptProps
           {/* ── Main action area ─────────────────────────────────────────── */}
           <div className="px-4 pb-4 pt-3 space-y-3">
 
-            {/* Photo preview or camera button */}
-            {photoPreview ? (
+            {/* Note input — always visible, primary action */}
+            {!expanded && (
+              <input
+                type="text"
+                value={caption}
+                onChange={e => { setCaption(e.target.value); if (e.target.value) setExpanded(true); }}
+                maxLength={280}
+                placeholder="What's the vibe? Drop a note…"
+                className="w-full px-3 py-2.5 rounded-xl text-sm text-white placeholder-gray-600 focus:outline-none transition-colors"
+                style={{
+                  backgroundColor: 'rgba(255,255,255,0.05)',
+                  border: '1px solid rgba(168,85,247,0.25)',
+                }}
+              />
+            )}
+
+            {/* Photo preview */}
+            {photoPreview && (
               <div className="relative w-full h-36 rounded-xl overflow-hidden">
                 <img src={photoPreview} alt="Preview" className="w-full h-full object-cover" />
                 <button
@@ -165,33 +182,54 @@ export function PostStampHaulPrompt({ store, onClose }: PostStampHaulPromptProps
                   <X className="w-3 h-3 text-white" />
                 </button>
               </div>
-            ) : (
-              <button
-                onClick={() => fileInputRef.current?.click()}
-                className="w-full h-16 rounded-xl flex items-center justify-center gap-2.5 transition-all active:scale-[0.98]"
-                style={{
-                  backgroundColor: 'rgba(168,85,247,0.08)',
-                  border: '1.5px dashed rgba(168,85,247,0.35)',
-                }}
-              >
-                <Camera className="w-5 h-5" style={{ color: 'rgba(168,85,247,0.7)' }} />
-                <span className="text-sm font-medium" style={{ color: 'rgba(168,85,247,0.8)' }}>
-                  Add a photo
-                </span>
-              </button>
             )}
 
-            {/* Hidden file input */}
+            {/* Camera + Gallery buttons — shown when no photo selected yet */}
+            {!photoPreview && (
+              <div className="flex gap-2">
+                <button
+                  onClick={() => cameraInputRef.current?.click()}
+                  className="flex-1 h-11 rounded-xl flex items-center justify-center gap-2 transition-all active:scale-[0.98]"
+                  style={{
+                    backgroundColor: 'rgba(168,85,247,0.08)',
+                    border: '1px solid rgba(168,85,247,0.25)',
+                  }}
+                >
+                  <Camera className="w-4 h-4" style={{ color: 'rgba(168,85,247,0.7)' }} />
+                  <span className="text-xs font-medium" style={{ color: 'rgba(168,85,247,0.8)' }}>Camera</span>
+                </button>
+                <button
+                  onClick={() => fileInputRef.current?.click()}
+                  className="flex-1 h-11 rounded-xl flex items-center justify-center gap-2 transition-all active:scale-[0.98]"
+                  style={{
+                    backgroundColor: 'rgba(168,85,247,0.08)',
+                    border: '1px solid rgba(168,85,247,0.25)',
+                  }}
+                >
+                  <ImagePlus className="w-4 h-4" style={{ color: 'rgba(168,85,247,0.7)' }} />
+                  <span className="text-xs font-medium" style={{ color: 'rgba(168,85,247,0.8)' }}>Gallery</span>
+                </button>
+              </div>
+            )}
+
+            {/* Hidden file inputs — camera forces capture, gallery allows library */}
             <input
-              ref={fileInputRef}
+              ref={cameraInputRef}
               type="file"
               accept="image/*"
               capture="environment"
               className="hidden"
               onChange={handlePhotoSelect}
             />
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="image/*"
+              className="hidden"
+              onChange={handlePhotoSelect}
+            />
 
-            {/* Expandable text fields — shown once photo is picked or tapped */}
+            {/* Expanded fields — item name + caption (full textarea) */}
             {expanded && (
               <motion.div
                 initial={{ height: 0, opacity: 0 }}
@@ -238,7 +276,7 @@ export function PostStampHaulPrompt({ store, onClose }: PostStampHaulPromptProps
                     color: 'rgba(168,85,247,0.8)',
                   }}
                 >
-                  Add notes
+                  More fields
                 </button>
               )}
               <button
