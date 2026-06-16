@@ -43,6 +43,10 @@ interface RadarStoreMarkerProps {
   checkinRadius: number;  // dynamic in-range threshold
   isStamped: boolean;     // user has already checked in here
   isHighlighted?: boolean; // currently shown in the radar card (via +N chip)
+  /** Render a cyan proximity ring around this marker (store is within ~50m).
+   *  Rendered INSIDE this component so pointer-events:none works — separate
+   *  <Marker> rings sit as DOM siblings and block tap events on the store marker. */
+  showProximityRing?: boolean;
   onClick: () => void;
 }
 
@@ -54,6 +58,7 @@ export const RadarStoreMarker = memo(function RadarStoreMarker({
   checkinRadius,
   isStamped,
   isHighlighted = false,
+  showProximityRing = false,
   onClick,
 }: RadarStoreMarkerProps) {
   const categoryColor = MAIN_CATEGORY_COLORS[store.mainCategory ?? 'Fashion'] ?? '#22D9EE';
@@ -170,6 +175,24 @@ export const RadarStoreMarker = memo(function RadarStoreMarker({
             border: `2px solid ${categoryColor}`,
             boxShadow: `0 0 12px ${categoryColor}60`,
             animation: 'ring-pulse 1.5s ease-in-out infinite',
+            pointerEvents: 'none',
+          }}
+        />
+      )}
+
+      {/* Proximity ring — cyan glow when user is within ~50m.
+          Rendered INSIDE this container (not as a separate <Marker>) so that
+          pointer-events:none actually passes taps through to the disc click handler.
+          A sibling <Marker> container would block taps on stamped stores. */}
+      {showProximityRing && state !== 'in_range' && (
+        <div
+          style={{
+            position: 'absolute',
+            inset: -13,
+            borderRadius: '50%',
+            border: '2px solid rgba(34,217,238,0.8)',
+            boxShadow: '0 0 12px rgba(34,217,238,0.4)',
+            animation: 'ring-pulse 2.5s ease-in-out infinite',
             pointerEvents: 'none',
           }}
         />

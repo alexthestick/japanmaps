@@ -682,6 +682,7 @@ export const MapView = forwardRef<MapViewHandle, MapViewProps>(({ stores, onStor
                     checkinRadius={checkinRadius}
                     isStamped={stampedStoreIds?.has(store.id) ?? false}
                     isHighlighted={activeRadarStoreId === store.id}
+                    showProximityRing={dist <= 50}
                     onClick={() => onStoreClick(store)}
                   />
                 </Marker>
@@ -782,34 +783,10 @@ export const MapView = forwardRef<MapViewHandle, MapViewProps>(({ stores, onStor
           </Marker>
         )}
 
-        {/* EXPLORE MODE: 50m proximity ring — appears around stores in check-in range.
-            Uses a border-only ring so there's no filled element causing GPU repaints. */}
-        {isExploreMode && exploreUserPosition && stores.map(store => {
-          const dx = (store.latitude - exploreUserPosition.latitude) * 111000;
-          const dy = (store.longitude - exploreUserPosition.longitude) * 111000 * Math.cos(exploreUserPosition.latitude * Math.PI / 180);
-          const dist = Math.sqrt(dx * dx + dy * dy);
-          if (dist > 50) return null;
-          return (
-            <Marker
-              key={`proximity-ring-${store.id}`}
-              longitude={store.longitude}
-              latitude={store.latitude}
-              anchor="center"
-            >
-              <div
-                style={{
-                  width: '56px',
-                  height: '56px',
-                  borderRadius: '50%',
-                  border: '2px solid rgba(34, 217, 238, 0.8)',
-                  boxShadow: '0 0 12px rgba(34, 217, 238, 0.4)',
-                  pointerEvents: 'none',
-                  animation: 'ring-pulse 2.5s ease-in-out infinite',
-                }}
-              />
-            </Marker>
-          );
-        })}
+        {/* EXPLORE MODE: proximity ring now rendered INSIDE RadarStoreMarker via
+            showProximityRing={dist <= 50} prop. Rendering it as a separate <Marker>
+            created a DOM sibling container whose pointer-events blocked taps on
+            stamped store markers. */}
       </Map>
 
       {/* Map style toggle - Removed: Now only controlled by header */}
