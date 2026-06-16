@@ -14,6 +14,7 @@
  * Framer Motion: slides up + fades in. Exit reverses.
  */
 
+import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, ShoppingBag, ExternalLink } from 'lucide-react';
 
@@ -34,7 +35,7 @@ interface Props {
 }
 
 export function KurbLightbox({ item, accentColor = '#22D9EE', onClose }: Props) {
-  return (
+  return createPortal(
     <AnimatePresence>
       {item && (
         <>
@@ -65,28 +66,33 @@ export function KurbLightbox({ item, accentColor = '#22D9EE', onClose }: Props) 
               <div className="w-10 h-1 rounded-full bg-gray-700" />
             </div>
 
-            {/* Close button */}
-            <button
-              onClick={onClose}
-              className="absolute top-4 right-4 z-10 p-2 rounded-full bg-black/60 backdrop-blur-md"
-              aria-label="Close"
-            >
-              <X className="w-5 h-5 text-white" />
-            </button>
-
             <div className="overflow-y-auto" style={{ maxHeight: 'calc(88dvh - 28px)' }}>
-              {/* Image */}
-              <div className="w-full bg-gray-800" style={{ aspectRatio: '1/1', maxHeight: '55vmax' }}>
+              {/* Back button — always visible at top of scroll area */}
+              <div className="flex items-center justify-between px-4 pb-3">
+                <button
+                  onClick={onClose}
+                  className="flex items-center gap-1.5 text-sm font-semibold text-gray-300 active:opacity-60 transition-opacity"
+                  aria-label="Close"
+                >
+                  <X className="w-4 h-4" />
+                  Back
+                </button>
+              </div>
+
+              {/* Image — object-contain so full item always visible */}
+              <div
+                className="w-full bg-gray-900 flex items-center justify-center"
+                style={{ maxHeight: '45vh', minHeight: 200 }}
+              >
                 {item.imageUrl ? (
                   <img
                     src={item.imageUrl}
                     alt={item.title}
-                    className="w-full h-full object-cover"
+                    className="w-full object-contain"
+                    style={{ maxHeight: '45vh' }}
                   />
                 ) : (
-                  <div className="w-full h-full flex items-center justify-center">
-                    <ShoppingBag className="w-12 h-12 text-gray-700" />
-                  </div>
+                  <ShoppingBag className="w-12 h-12 text-gray-700" />
                 )}
               </div>
 
@@ -152,6 +158,7 @@ export function KurbLightbox({ item, accentColor = '#22D9EE', onClose }: Props) 
           </motion.div>
         </>
       )}
-    </AnimatePresence>
+    </AnimatePresence>,
+    document.body,
   );
 }
