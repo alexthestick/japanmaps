@@ -21,7 +21,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
-import { Instagram, X, BookOpen } from 'lucide-react';
+import { Instagram, X, BookOpen, Navigation, ArrowUpRight } from 'lucide-react';
 import { useAuthContext } from '../../contexts/AuthContext';
 import { MAIN_CATEGORY_COLORS } from '../../lib/constants';
 import { supabase } from '../../lib/supabase';
@@ -415,13 +415,15 @@ export function RadarCheckinCard({
       {/* ── Top row ───────────────────────────────────────────────────────── */}
       <div className="flex items-center gap-3 pl-4 pr-8 py-3">
 
-        {/* Store photo — reunion gets a soft green ring */}
-        <div
-          className="w-11 h-11 rounded-xl overflow-hidden flex-shrink-0 relative"
+        {/* Store photo — tappable: opens full store bottom sheet */}
+        <button
+          onClick={() => onViewStore?.(store)}
+          className="w-11 h-11 rounded-xl overflow-hidden flex-shrink-0 relative active:scale-95 transition-transform"
           style={{
             backgroundColor: `${theme.rgba}0.08)`,
             border: `1px solid ${theme.rgba}0.25)`,
           }}
+          aria-label="View store details"
         >
           {photoUrl ? (
             <img src={photoUrl} alt={store.name} className="w-full h-full object-cover" />
@@ -430,6 +432,13 @@ export function RadarCheckinCard({
               <span style={{ color: theme.color, opacity: 0.5, fontSize: 20, lineHeight: 1 }}>◎</span>
             </div>
           )}
+          {/* Expand affordance — top-right corner overlay */}
+          <div
+            className="absolute top-0 right-0 w-4 h-4 rounded-bl-lg flex items-center justify-center"
+            style={{ backgroundColor: 'rgba(0,0,0,0.55)' }}
+          >
+            <ArrowUpRight className="w-2.5 h-2.5" style={{ color: 'rgba(255,255,255,0.75)' }} />
+          </div>
           {/* Small stamp indicator on photo for reunion mode */}
           {storeState === 'reunion' && (
             <div
@@ -439,7 +448,7 @@ export function RadarCheckinCard({
               <span style={{ fontSize: '0.55rem', color: '#fff', fontWeight: 900 }}>✓</span>
             </div>
           )}
-        </div>
+        </button>
 
         {/* Store name + metadata row */}
         <div className="flex-1 min-w-0">
@@ -521,18 +530,20 @@ export function RadarCheckinCard({
           </div>
         )}
 
-        {/* Cycle chip */}
+        {/* Explore nearby chip — icon + count makes the navigation action obvious */}
         {nearbyCount > 1 && (
           <button
             onClick={(e) => { e.stopPropagation(); onNextStore(); }}
-            className="flex-shrink-0 px-2.5 py-1.5 rounded-full text-xs font-bold transition-all active:scale-95"
+            className="flex-shrink-0 flex items-center gap-1 px-2.5 py-1.5 rounded-full text-xs font-bold transition-all active:scale-95"
             style={{
               backgroundColor: `${theme.rgba}0.1)`,
               border: `1px solid ${theme.rgba}0.35)`,
               color: theme.color,
             }}
+            aria-label={`Explore ${nearbyCount - 1} nearby stores`}
           >
-            +{nearbyCount - 1}
+            <Navigation className="w-3 h-3 flex-shrink-0" />
+            <span>{nearbyCount - 1} nearby</span>
           </button>
         )}
       </div>
@@ -615,14 +626,7 @@ export function RadarCheckinCard({
                     Log a Find
                   </button>
 
-                  {/* View Store */}
-                  <button
-                    onClick={() => onViewStore ? onViewStore(store) : navigate(`/store/${store.slug || store.id}`)}
-                    className="w-full py-2 rounded-xl text-xs font-medium transition-all active:scale-[0.98] text-center"
-                    style={{ color: 'rgba(255,255,255,0.25)', backgroundColor: 'transparent' }}
-                  >
-                    View full store →
-                  </button>
+                  {/* View full store removed — tap the photo instead */}
                 </>
               )}
 
@@ -670,16 +674,7 @@ export function RadarCheckinCard({
                     {buttonContent()}
                   </button>
 
-                  {/* View Store — prefer onViewStore (opens bottom sheet); navigate only as last resort */}
-                  {uiState === 'idle' && (
-                    <button
-                      onClick={() => onViewStore ? onViewStore(store) : navigate(`/store/${store.slug || store.id}`)}
-                      className="w-full py-2 rounded-xl text-xs font-medium transition-all active:scale-[0.98] text-center"
-                      style={{ color: 'rgba(255,255,255,0.35)', backgroundColor: 'transparent' }}
-                    >
-                      View full store →
-                    </button>
-                  )}
+                  {/* View full store removed — tap the photo instead */}
                 </>
               )}
 
