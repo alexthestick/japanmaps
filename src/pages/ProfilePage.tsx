@@ -908,8 +908,28 @@ function ProfileContent() {
       supabase.rpc('get_my_badge_progress'),
       supabase.rpc('get_all_neighborhood_counts'),
     ]).then(([checkinsResult, badgesResult, countsResult]) => {
-      setCheckins((checkinsResult.data as Checkin[]) || []);
-      setBadgeProgress((badgesResult.data as BadgeProgress[]) || []);
+      const rawCheckins = (checkinsResult.data as Checkin[]) || [];
+      let rawBadgeProgress = (badgesResult.data as BadgeProgress[]) || [];
+
+      // Fallback: if the RPC returns empty but we have checkins, derive
+      // neighborhood badge progress directly from checkin data so the map
+      // always renders. (get_my_badge_progress can return empty on auth
+      // timing edge-cases even when checkins are present.)
+      if (rawBadgeProgress.length === 0 && rawCheckins.length > 0) {
+        const derived: Record<string, BadgeProgress> = {};
+        for (const c of rawCheckins) {
+          if (!c.neighborhood || !c.city) continue;
+          const key = `${c.city}:${c.neighborhood}`;
+          if (!derived[key]) {
+            derived[key] = { neighborhood: c.neighborhood, city: c.city, visited_count: 0, total_store_count: 0 };
+          }
+          derived[key].visited_count++;
+        }
+        rawBadgeProgress = Object.values(derived);
+      }
+
+      setCheckins(rawCheckins);
+      setBadgeProgress(rawBadgeProgress);
       setNeighborhoodCounts((countsResult.data as NeighborhoodCount[]) || []);
       setLoadingPassport(false);
     });
@@ -1101,25 +1121,25 @@ function ProfileContent() {
               </div>
 
               {/* Stats */}
-              <div className="flex items-center gap-6 mt-5">
-                <div className="text-center">
+              <div className="flex items-center gap-4 mt-5 flex-wrap">
+                <div className="text-center min-w-[36px]">
                   <p className="text-white font-bold text-xl">{savedStores.length}</p>
                   <p className="text-gray-500 text-xs">Saved</p>
                 </div>
                 <div className="h-8 w-px bg-gray-800" />
-                <div className="text-center">
+                <div className="text-center min-w-[36px]">
                   <p className="text-white font-bold text-xl">{finds.filter(n => n.type === 'visit').length}</p>
                   <p className="text-gray-500 text-xs">Visits</p>
                 </div>
                 <div className="h-8 w-px bg-gray-800" />
-                <div className="text-center">
+                <div className="text-center min-w-[36px]">
                   <p className="text-white font-bold text-xl">{finds.filter(n => n.type === 'haul').length}</p>
                   <p className="text-gray-500 text-xs">Finds</p>
                 </div>
                 {checkins.length > 0 && (
                   <>
                     <div className="h-8 w-px bg-gray-800" />
-                    <div className="text-center">
+                    <div className="text-center min-w-[36px]">
                       <p className="text-white font-bold text-xl">{checkins.length}</p>
                       <p className="text-gray-500 text-xs">Stamps</p>
                     </div>

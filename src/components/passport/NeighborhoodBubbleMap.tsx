@@ -78,18 +78,18 @@ const TIER_STYLE: Record<Tier, {
     labelColor:  'rgba(255,255,255,0.2)',
   },
   visited: {
-    fill:        'rgba(34,217,238,0.08)',
-    stroke:      'rgba(34,217,238,0.35)',
-    strokeWidth: 1.5,
+    fill:        'rgba(34,217,238,0.15)',
+    stroke:      'rgba(34,217,238,0.6)',
+    strokeWidth: 2,
     filterId:    'glow-visited',
-    labelColor:  'rgba(34,217,238,0.5)',
+    labelColor:  'rgba(34,217,238,0.75)',
   },
   bronze: {
-    fill:        'rgba(245,158,11,0.12)',
-    stroke:      'rgba(245,158,11,0.7)',
-    strokeWidth: 1.5,
+    fill:        'rgba(245,158,11,0.16)',
+    stroke:      'rgba(245,158,11,0.85)',
+    strokeWidth: 2,
     filterId:    'glow-bronze',
-    labelColor:  'rgba(245,158,11,0.8)',
+    labelColor:  'rgba(245,158,11,0.9)',
   },
   silver: {
     fill:        'rgba(203,213,225,0.14)',
@@ -237,15 +237,26 @@ function CityMap({ cityName, nodes, selectedName, onSelect }: CityMapProps) {
 
   const selected = projected.find(n => n.name === selectedName) ?? null;
 
+  const stampedCount = nodes.filter(n => n.visitedCount > 0).length;
+  const totalCount   = nodes.length;
+
   return (
     <div>
-      {/* City label */}
-      <p
-        className="text-[10px] font-black uppercase tracking-[0.2em] mb-2 ml-1"
-        style={{ color: 'rgba(255,255,255,0.25)' }}
-      >
-        {cityName}
-      </p>
+      {/* City label + progress count */}
+      <div className="flex items-baseline justify-between mb-2 ml-1 mr-1">
+        <p
+          className="text-[10px] font-black uppercase tracking-[0.2em]"
+          style={{ color: 'rgba(255,255,255,0.25)' }}
+        >
+          {cityName}
+        </p>
+        <p className="text-[10px]" style={{ color: 'rgba(255,255,255,0.2)' }}>
+          <span style={{ color: stampedCount > 0 ? '#22d9ee' : 'rgba(255,255,255,0.2)', fontWeight: 700 }}>
+            {stampedCount}
+          </span>
+          {' / '}{totalCount} neighborhoods
+        </p>
+      </div>
 
       {/* SVG map */}
       <div
@@ -415,22 +426,27 @@ function CityMap({ cityName, nodes, selectedName, onSelect }: CityMapProps) {
 // ─── Legend ───────────────────────────────────────────────────────────────────
 
 function MapLegend() {
-  const items: Array<{ symbol: string; label: string; color: string }> = [
-    { symbol: '○', label: 'Unexplored', color: 'rgba(255,255,255,0.2)' },
-    { symbol: '◎', label: 'Bronze 3+',  color: 'rgba(245,158,11,0.8)' },
-    { symbol: '◉', label: 'Silver 7+',  color: 'rgba(203,213,225,0.9)' },
-    { symbol: '✦', label: 'Gold 15+',   color: '#22d9ee'               },
+  const items: Array<{ symbol: string; label: string; sublabel: string; color: string }> = [
+    { symbol: '○', label: 'Unexplored', sublabel: '0 stamps',  color: 'rgba(255,255,255,0.2)' },
+    { symbol: '●', label: 'Visited',    sublabel: '1–2 stamps', color: 'rgba(34,217,238,0.75)' },
+    { symbol: '◎', label: 'Bronze',     sublabel: '3+ stamps',  color: 'rgba(245,158,11,0.9)'  },
+    { symbol: '◉', label: 'Silver',     sublabel: '7+ stamps',  color: 'rgba(203,213,225,0.9)' },
+    { symbol: '✦', label: 'Gold',       sublabel: '15+ stamps', color: '#22d9ee'               },
   ];
   return (
-    <div className="flex items-center justify-center gap-4 flex-wrap">
-      {items.map(item => (
-        <div key={item.label} className="flex items-center gap-1">
-          <span style={{ color: item.color, fontSize: 10 }}>{item.symbol}</span>
-          <span className="text-[9px] uppercase tracking-wide" style={{ color: 'rgba(255,255,255,0.25)' }}>
-            {item.label}
-          </span>
-        </div>
-      ))}
+    <div className="rounded-xl px-4 py-3" style={{ backgroundColor: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.06)' }}>
+      <p className="text-[9px] font-bold uppercase tracking-widest mb-2.5" style={{ color: 'rgba(255,255,255,0.2)' }}>
+        Tiers
+      </p>
+      <div className="flex items-start justify-between gap-1 flex-wrap">
+        {items.map(item => (
+          <div key={item.label} className="flex flex-col items-center gap-0.5">
+            <span style={{ color: item.color, fontSize: 12, lineHeight: 1 }}>{item.symbol}</span>
+            <span className="text-[9px] font-semibold" style={{ color: item.color }}>{item.label}</span>
+            <span className="text-[8px]" style={{ color: 'rgba(255,255,255,0.2)' }}>{item.sublabel}</span>
+          </div>
+        ))}
+      </div>
     </div>
   );
 }
@@ -452,9 +468,9 @@ export function NeighborhoodBubbleMap({ badgeProgress, allCounts }: Neighborhood
     [...new Set(badgeProgress.map(bp => bp.city))],
   [badgeProgress]);
 
-  if (citiesWithStamps.length === 0) return null;
-
   // For each city, build the full node list (stamped + ghost)
+  // NOTE: This useMemo MUST stay before the early return to avoid a React hooks
+  // rules violation (hooks cannot be called after a conditional return).
   const cityMaps = useMemo(() => {
     return citiesWithStamps.map(city => {
       // All neighborhoods in this city from the counts RPC
@@ -485,6 +501,8 @@ export function NeighborhoodBubbleMap({ badgeProgress, allCounts }: Neighborhood
       return { city, nodes };
     });
   }, [citiesWithStamps, allCounts, badgeProgress, progressMap]);
+
+  if (citiesWithStamps.length === 0) return null;
 
   const handleSelect = (name: string | null) => {
     setSelectedName(prev => prev === name ? null : name);
