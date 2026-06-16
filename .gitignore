@@ -36,3 +36,4 @@ supabase/006_import_stores.sql
 .vercel
 __pycache__/
 *.py
+vite.config.ts.timestamp-*.mjs
