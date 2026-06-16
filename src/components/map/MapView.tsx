@@ -18,9 +18,58 @@ import { useToast } from '../../hooks/useToast';
 import { useIsMobile } from '../../hooks/useMediaQuery';
 import { useSearchArea } from '../../hooks/useSearchArea';
 import type { Store } from '../../types/store';
-import type { Map as MapboxMap } from 'mapbox-gl';
+import type { Map as MapboxMap, GeoJSONSource } from 'mapbox-gl';
+import { Crosshair } from 'lucide-react';
 import 'mapbox-gl/dist/mapbox-gl.css';
 import { logger } from '../../utils/logger';
+
+// ── Radar path trail helpers (imperative Mapbox GL JS, bypasses React render loop) ──
+
+function ensurePathLayers(map: MapboxMap) {
+  if (!map.getSource('radar-path')) {
+    map.addSource('radar-path', {
+      type: 'geojson',
+      lineMetrics: true, // reserved for future line-gradient; no cost when unused
+      data: { type: 'Feature', geometry: { type: 'LineString', coordinates: [] }, properties: {} },
+    });
+  }
+  if (!map.getLayer('radar-path-glow')) {
+    map.addLayer({
+      id: 'radar-path-glow',
+      type: 'line',
+      source: 'radar-path',
+      layout: { 'line-cap': 'round', 'line-join': 'round' },
+      paint: { 'line-color': '#22D9EE', 'line-width': 12, 'line-blur': 8, 'line-opacity': 0.35 },
+    });
+  }
+  if (!map.getLayer('radar-path-core')) {
+    map.addLayer({
+      id: 'radar-path-core',
+      type: 'line',
+      source: 'radar-path',
+      layout: { 'line-cap': 'round', 'line-join': 'round' },
+      paint: { 'line-color': '#a5f3fc', 'line-width': 2.5, 'line-opacity': 0.85 },
+    });
+  }
+}
+
+function removePathLayers(map: MapboxMap) {
+  // Layers must be removed before their source
+  ['radar-path-core', 'radar-path-glow'].forEach(id => {
+    if (map.getLayer(id)) map.removeLayer(id);
+  });
+  if (map.getSource('radar-path')) map.removeSource('radar-path');
+}
+
+function updatePathData(map: MapboxMap, coords: [number, number][]) {
+  const source = map.getSource('radar-path') as GeoJSONSource | undefined;
+  if (!source) return;
+  source.setData({
+    type: 'Feature',
+    geometry: { type: 'LineString', coordinates: coords },
+    properties: {},
+  });
+}
 
 // 🎯 PHASE 1: Marker Tier System for Performance
 // Tier 0 (zoom < 12): Tiny glowing dots - atmosphere mode
@@ -130,10 +179,62 @@ export const MapView = forwardRef<MapViewHandle, MapViewProps>(({ stores, onStor
   // we only need trigger(), so we only type trigger().
   const geolocateRef = useRef<{ trigger: () => void } | null>(null);
 
+  // RADAR PATH: Accumulator ref (no re-renders on update — setData is called directly).
+  const pathCoordsRef = useRef<[number, number][]>([]);
+  const lastPathPointRef = useRef<[number, number] | null>(null);
+
+  // RE-CENTER BUTTON: Tracks whether user has panned away from their GPS position.
+  // Set to true on user-initiated map moves (evt.originalEvent present),
+  // reset to false on re-center tap and on radar exit.
+  const [hasUserDrifted, setHasUserDrifted] = useState(false);
+
+  // Ref mirror of isExploreMode — lets handleMapMove read current value without
+  // adding isExploreMode to its dependency array (would recreate the callback on toggle).
+  const isExploreModeRef = useRef(isExploreMode);
+  useEffect(() => { isExploreModeRef.current = isExploreMode; }, [isExploreMode]);
+
   // EXPLORE MODE: Activate map locking + heading via GeolocateControl.
   useEffect(() => {
     if (isExploreMode && geolocateRef.current) {
       geolocateRef.current.trigger();
+    }
+  }, [isExploreMode]);
+
+  // RADAR PATH: Add Mapbox source + layers on radar entry; remove on exit.
+  // Uses the imperative Mapbox API so path updates bypass React's render loop entirely.
+  useEffect(() => {
+    if (!mapRef.current) return;
+    const map = mapRef.current;
+
+    if (isExploreMode) {
+      // addLayers is idempotent (guarded by getSource/getLayer checks)
+      const addLayers = () => {
+        ensurePathLayers(map);
+        // Re-populate accumulated trail after a style swap (day/night toggle wipes layers)
+        if (pathCoordsRef.current.length >= 2) {
+          updatePathData(map, pathCoordsRef.current);
+        }
+      };
+
+      if (map.isStyleLoaded()) addLayers();
+      else map.once('style.load', addLayers);
+
+      // Re-add whenever the base style reloads (day ↔ night toggle)
+      map.on('style.load', addLayers);
+
+      // Fresh path for new session
+      pathCoordsRef.current = [];
+      lastPathPointRef.current = null;
+
+      return () => {
+        map.off('style.load', addLayers);
+      };
+    } else {
+      // Radar exit: clear state + remove layers from map
+      pathCoordsRef.current = [];
+      lastPathPointRef.current = null;
+      setHasUserDrifted(false);
+      removePathLayers(map);
     }
   }, [isExploreMode]);
 
@@ -154,12 +255,39 @@ export const MapView = forwardRef<MapViewHandle, MapViewProps>(({ stores, onStor
 
     const watchId = navigator.geolocation.watchPosition(
       (position) => {
-        logger.log('[ExploreMode] Direct GPS fix', position.coords.latitude, position.coords.longitude);
-        onUserPositionUpdate?.({
-          latitude:  position.coords.latitude,
-          longitude: position.coords.longitude,
-          accuracy:  position.coords.accuracy,
-        });
+        const { latitude, longitude, accuracy } = position.coords;
+        logger.log('[ExploreMode] Direct GPS fix', latitude, longitude, 'accuracy:', accuracy);
+
+        // Always update the user dot (display-only — all fixes welcome)
+        onUserPositionUpdate?.({ latitude, longitude, accuracy });
+
+        // PATH TRAIL: only accumulate high-quality fixes (skip urban canyon bounce)
+        if (mapRef.current && accuracy <= 50) {
+          const newPoint: [number, number] = [longitude, latitude];
+          const last = lastPathPointRef.current;
+
+          if (last) {
+            const dist = distanceMeters(last[1], last[0], latitude, longitude);
+            if (dist < 5) {
+              // Standing still — skip (dedup gate)
+            } else if (dist > 200) {
+              // Large gap: tunnel / signal loss. Start a fresh segment.
+              pathCoordsRef.current = [newPoint];
+              lastPathPointRef.current = newPoint;
+              updatePathData(mapRef.current, pathCoordsRef.current);
+            } else {
+              pathCoordsRef.current.push(newPoint);
+              lastPathPointRef.current = newPoint;
+              if (pathCoordsRef.current.length >= 2) {
+                updatePathData(mapRef.current, pathCoordsRef.current);
+              }
+            }
+          } else {
+            // First accurate fix — seed the trail
+            pathCoordsRef.current = [newPoint];
+            lastPathPointRef.current = newPoint;
+          }
+        }
       },
       (error) => {
         console.warn('[ExploreMode] Direct GPS error:', error.code, error.message);
@@ -572,6 +700,12 @@ export const MapView = forwardRef<MapViewHandle, MapViewProps>(({ stores, onStor
     moveTimeoutRef.current = setTimeout(() => {
       setIsMapMoving(false);
     }, 500);
+
+    // RE-CENTER BUTTON: User-initiated pans in radar mode → show re-center button.
+    // Programmatic flyTo calls don't have originalEvent, so they don't trigger this.
+    if (isExploreModeRef.current && evt.originalEvent) {
+      setHasUserDrifted(true);
+    }
 
     // PHASE 3: Throttle viewport bounds updates to max 4/sec (250ms)
     // The spotlight algorithm doesn't need sub-frame accuracy
@@ -1111,6 +1245,37 @@ export const MapView = forwardRef<MapViewHandle, MapViewProps>(({ stores, onStor
           onClick={handleSearchArea}
           isActive={isSpotlightMode}
         />
+      )}
+
+      {/* RE-CENTER BUTTON: Appears in radar mode after the user pans away from their location.
+          Programmatic flyTo calls (activeRadarStoreId highlight, etc.) don't set hasUserDrifted
+          because they don't carry originalEvent — only genuine user drags do. */}
+      {isExploreMode && exploreUserPosition && hasUserDrifted && (
+        <button
+          onClick={() => {
+            if (mapRef.current && exploreUserPosition) {
+              mapRef.current.flyTo({
+                center: [exploreUserPosition.longitude, exploreUserPosition.latitude],
+                zoom: 16,
+                duration: 1200,
+                essential: true,
+              });
+            }
+            setHasUserDrifted(false);
+          }}
+          className="absolute right-4 z-[30] flex items-center justify-center rounded-full active:scale-95 transition-all"
+          style={{
+            bottom: 'calc(88px + env(safe-area-inset-bottom, 0px))',
+            width: 44,
+            height: 44,
+            backgroundColor: 'rgba(6, 8, 14, 0.92)',
+            border: '1.5px solid rgba(34, 217, 238, 0.5)',
+            boxShadow: '0 0 16px rgba(34, 217, 238, 0.25), 0 2px 8px rgba(0,0,0,0.5)',
+          }}
+          aria-label="Re-center on my location"
+        >
+          <Crosshair className="w-5 h-5" style={{ color: '#22D9EE' }} />
+        </button>
       )}
 
       {/* Toast Notifications */}
