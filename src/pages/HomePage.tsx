@@ -32,7 +32,7 @@ import type { SearchSuggestion } from '../components/store/SearchAutocomplete';
 import { MAJOR_CITIES_JAPAN, LOCATIONS, NEIGHBORHOOD_COORDINATES } from '../lib/constants';
 import { distanceMeters } from '../utils/distance';
 import { RadarCheckinCard } from '../components/radar/RadarCheckinCard';
-import { RadarSessionSummary } from '../components/radar/RadarSessionSummary';
+import { RadarFieldReport } from '../components/radar/RadarFieldReport';
 import { PostStampHaulPrompt } from '../components/radar/PostStampHaulPrompt';
 import { RadarHUD } from '../components/radar/RadarHUD';
 import { useCheckinCache } from '../hooks/useCheckinCache';
@@ -274,7 +274,9 @@ export function HomePage() {
   // sessionStampCountRef: ref copy for exit summary calculation (same reason).
   // sessionStampCount: reactive STATE copy so the HUD counter re-renders live.
   const sessionPositionsRef  = useRef<Array<{ lat: number; lng: number }>>([]);
-  const sessionStampCountRef = useRef(0);
+  const sessionStampCountRef    = useRef(0);
+  const sessionStampedStoresRef = useRef<Store[]>([]);
+  const sessionStartTimeRef     = useRef<number>(0);
   const [sessionStampCount, setSessionStampCount] = useState(0);
 
   // Exit confirmation: first tap → pending state (3s window), second tap → exit.
@@ -282,11 +284,14 @@ export function HomePage() {
   const [exitConfirmPending, setExitConfirmPending] = useState(false);
   const exitConfirmTimerRef = useRef<NodeJS.Timeout>();
 
-  // Session summary overlay — shown briefly after Radar exits with ≥1 stamp.
+  // Session summary overlay — shown after Radar exits with ≥1 stamp.
+  // Rendered as RadarFieldReport (full-screen debrief). Manual dismiss only.
   const [sessionSummary, setSessionSummary] = useState<{
     stamps: number;
     distanceKm: number;
+    durationMinutes: number;
     neighborhood: string | null;
+    stores: Store[];
   } | null>(null);
 
   // Post-stamp haul prompt — store that was just stamped (null = hidden).
@@ -430,6 +435,7 @@ export function HomePage() {
       // ── Second tap (or no stamps): actually exit ────────────────────────
       clearTimeout(exitConfirmTimerRef.current);
       setExitConfirmPending(false);
+      setHaulPromptStore(null); // clear any in-flight haul prompt before exit
 
       if (stampCount > 0) {
         // Sum consecutive Haversine segments for total walking distance
@@ -441,21 +447,29 @@ export function HomePage() {
             positions[i].lat,     positions[i].lng,
           );
         }
+        const durationMinutes = (Date.now() - sessionStartTimeRef.current) / 60_000;
         setSessionSummary({
           stamps: stampCount,
           distanceKm: totalMeters / 1000,
+          durationMinutes,
           neighborhood: exploreNeighborhood,
+          stores: [...sessionStampedStoresRef.current],
         });
       }
 
       // Reset session state + refs for next Radar session
-      sessionPositionsRef.current  = [];
-      sessionStampCountRef.current = 0;
+      sessionPositionsRef.current      = [];
+      sessionStampCountRef.current     = 0;
+      sessionStampedStoresRef.current  = [];
       setSessionStampCount(0);
 
       setSelectedStore(null);
       setExploreUserPosition(null);
       setNearbyStoreIndex(0);
+    } else {
+      // ── Entering Radar mode — record start time and clear store list ──
+      sessionStartTimeRef.current     = Date.now();
+      sessionStampedStoresRef.current = [];
     }
     setIsExploreMode(prev => !prev);
   }, [isExploreMode, exploreNeighborhood, exitConfirmPending]);
@@ -477,8 +491,15 @@ export function HomePage() {
     setLastStampedAt(Date.now());
     sessionStampCountRef.current += 1;
     setSessionStampCount(c => c + 1);
-    // Show haul prompt for this store after the check-in card auto-dismisses (3s)
+    // Track this store in the session list (deduplicate — re-verifications don't re-add)
     if (nearbyStoreEntry?.store) {
+      const alreadyTracked = sessionStampedStoresRef.current.some(
+        s => s.id === nearbyStoreEntry.store.id
+      );
+      if (!alreadyTracked) {
+        sessionStampedStoresRef.current.push(nearbyStoreEntry.store);
+      }
+      // Show haul prompt after the check-in card auto-dismisses (3s)
       setTimeout(() => {
         setHaulPromptStore(nearbyStoreEntry.store);
       }, 3200); // 200ms after the card's 3s auto-dismiss fires
@@ -740,7 +761,7 @@ export function HomePage() {
                   log a find. Disappears on close or after submit.
               ──────────────────────────────────────────────────────────────── */}
               <AnimatePresence>
-                {isExploreMode && haulPromptStore && !selectedStore && (
+                {haulPromptStore && !selectedStore && (
                   <PostStampHaulPrompt
                     store={haulPromptStore}
                     onClose={handleHaulPromptClose}
@@ -754,11 +775,17 @@ export function HomePage() {
               ──────────────────────────────────────────────────────────────── */}
               <AnimatePresence>
                 {sessionSummary && !isExploreMode && (
-                  <RadarSessionSummary
+                  <RadarFieldReport
                     stamps={sessionSummary.stamps}
                     distanceKm={sessionSummary.distanceKm}
+                    durationMinutes={sessionSummary.durationMinutes}
                     neighborhood={sessionSummary.neighborhood}
+                    stores={sessionSummary.stores}
                     onDismiss={() => setSessionSummary(null)}
+                    onLogFind={(store) => {
+                      setSessionSummary(null);
+                      setHaulPromptStore(store);
+                    }}
                   />
                 )}
               </AnimatePresence>
