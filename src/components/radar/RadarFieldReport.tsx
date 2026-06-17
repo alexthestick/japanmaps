@@ -9,11 +9,13 @@
  * Colors: emerald green (#10b981) on near-black.
  */
 
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState, useCallback } from 'react';
 import { motion } from 'framer-motion';
-import { X, MapPin, PenLine } from 'lucide-react';
+import { X, MapPin, PenLine, Share2, Loader2 } from 'lucide-react';
+import html2canvas from 'html2canvas';
 import type { Store } from '../../types/store';
 import { ikUrl } from '../../utils/ikUrl';
+import { ShareFieldReportCard } from './ShareFieldReportCard';
 
 // ─── Count-up animation ───────────────────────────────────────────────────────
 // Counts from 0 → target over `duration` ms using ease-out cubic.
@@ -39,6 +41,16 @@ function CountUp({ target, duration = 900 }: { target: number; duration?: number
   return <>{count}</>;
 }
 
+// ─── Download helper ──────────────────────────────────────────────────────────
+function triggerDownload(blob: Blob) {
+  const url = URL.createObjectURL(blob);
+  const a   = document.createElement('a');
+  a.href     = url;
+  a.download = 'lost-in-transit-field-report.png';
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
 // ─── Types ────────────────────────────────────────────────────────────────────
 export interface RadarFieldReportProps {
   stamps: number;
@@ -61,6 +73,52 @@ export function RadarFieldReport({
   onDismiss,
   onLogFind,
 }: RadarFieldReportProps) {
+  // ── Share card ref + state ────────────────────────────────────────────────
+  const shareCardRef = useRef<HTMLDivElement>(null);
+  const [isSharing, setIsSharing] = useState(false);
+
+  // ── Capture + share ───────────────────────────────────────────────────────
+  const handleShare = useCallback(async () => {
+    if (!shareCardRef.current || isSharing) return;
+    setIsSharing(true);
+
+    try {
+      const canvas = await html2canvas(shareCardRef.current, {
+        scale: 2,
+        useCORS: true,
+        allowTaint: false,
+        backgroundColor: '#030706',
+        logging: false,
+      });
+
+      canvas.toBlob(async (blob) => {
+        if (!blob) { setIsSharing(false); return; }
+
+        const file = new File([blob], 'lost-in-transit-field-report.png', { type: 'image/png' });
+
+        // Native share API (iOS / Android) — preferred path
+        if (typeof navigator.canShare === 'function' && navigator.canShare({ files: [file] })) {
+          try {
+            await navigator.share({ files: [file], title: 'Lost in Transit — Field Report' });
+          } catch (err) {
+            // User cancelled — don't fallback to download
+            if ((err as Error).name !== 'AbortError') {
+              triggerDownload(blob);
+            }
+          }
+        } else {
+          // Desktop fallback: trigger PNG download
+          triggerDownload(blob);
+        }
+
+        setIsSharing(false);
+      }, 'image/png');
+    } catch (err) {
+      console.error('[ShareFieldReport] capture failed:', err);
+      setIsSharing(false);
+    }
+  }, [isSharing]);
+
   // ── Stat strings ─────────────────────────────────────────────────────────
   const distanceStr = distanceKm < 0.1
     ? `${Math.round(distanceKm * 1000)}m`
@@ -115,14 +173,32 @@ export function RadarFieldReport({
           >
             ◎ Field Report
           </span>
-          <button
-            onClick={onDismiss}
-            className="w-8 h-8 flex items-center justify-center rounded-full active:scale-90 transition-transform"
-            style={{ backgroundColor: 'rgba(255,255,255,0.06)' }}
-            aria-label="Close field report"
-          >
-            <X className="w-4 h-4" style={{ color: 'rgba(255,255,255,0.38)' }} />
-          </button>
+
+          <div className="flex items-center gap-2">
+            {/* Share button */}
+            <button
+              onClick={handleShare}
+              disabled={isSharing}
+              className="w-8 h-8 flex items-center justify-center rounded-full active:scale-90 transition-transform disabled:opacity-50"
+              style={{ backgroundColor: 'rgba(16,185,129,0.1)', border: '1px solid rgba(16,185,129,0.22)' }}
+              aria-label="Share field report"
+            >
+              {isSharing
+                ? <Loader2 className="w-3.5 h-3.5 animate-spin" style={{ color: '#10b981' }} />
+                : <Share2 className="w-3.5 h-3.5" style={{ color: '#10b981' }} />
+              }
+            </button>
+
+            {/* Close button */}
+            <button
+              onClick={onDismiss}
+              className="w-8 h-8 flex items-center justify-center rounded-full active:scale-90 transition-transform"
+              style={{ backgroundColor: 'rgba(255,255,255,0.06)' }}
+              aria-label="Close field report"
+            >
+              <X className="w-4 h-4" style={{ color: 'rgba(255,255,255,0.38)' }} />
+            </button>
+          </div>
         </div>
 
         {/* ── Hero: animated stamp count ─────────────────────────────────── */}
@@ -328,6 +404,19 @@ export function RadarFieldReport({
         </div>
 
       </motion.div>
+
+      {/* ── Off-screen share card (html2canvas target) ───────────────────── */}
+      {/* Mounted while the Field Report is visible so images are pre-loaded.
+          fixed + left:-9999px keeps it out of view without hiding it
+          (visibility:hidden breaks html2canvas capture). */}
+      <ShareFieldReportCard
+        stamps={stamps}
+        distanceKm={distanceKm}
+        durationMinutes={durationMinutes}
+        neighborhood={neighborhood}
+        stores={stores}
+        cardRef={shareCardRef}
+      />
     </motion.div>
   );
 }
