@@ -10,6 +10,7 @@
  */
 
 import { useEffect, useRef, useState, useCallback } from 'react';
+import { createPortal } from 'react-dom';
 import { motion } from 'framer-motion';
 import { X, MapPin, PenLine, Share2, Loader2 } from 'lucide-react';
 import html2canvas from 'html2canvas';
@@ -132,6 +133,7 @@ export function RadarFieldReport({
 
   // ── Render ────────────────────────────────────────────────────────────────
   return (
+    <>
     <motion.div
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
@@ -405,18 +407,26 @@ export function RadarFieldReport({
 
       </motion.div>
 
-      {/* ── Off-screen share card (html2canvas target) ───────────────────── */}
-      {/* Mounted while the Field Report is visible so images are pre-loaded.
-          fixed + left:-9999px keeps it out of view without hiding it
-          (visibility:hidden breaks html2canvas capture). */}
-      <ShareFieldReportCard
-        stamps={stamps}
-        distanceKm={distanceKm}
-        durationMinutes={durationMinutes}
-        neighborhood={neighborhood}
-        stores={stores}
-        cardRef={shareCardRef}
-      />
     </motion.div>
+
+      {/* ── Off-screen share card — rendered via portal to document.body ────
+          position:fixed inside a Framer Motion animated div doesn't escape
+          to the viewport (CSS transforms create a new containing block).
+          Portal bypasses this entirely — the card lives outside all transforms
+          so left:-9999px genuinely puts it off-screen.
+          Images are pre-loaded while the Field Report is visible so capture
+          fires instantly when the user taps Share. */}
+      {createPortal(
+        <ShareFieldReportCard
+          stamps={stamps}
+          distanceKm={distanceKm}
+          durationMinutes={durationMinutes}
+          neighborhood={neighborhood}
+          stores={stores}
+          cardRef={shareCardRef}
+        />,
+        document.body
+      )}
+    </>
   );
 }
