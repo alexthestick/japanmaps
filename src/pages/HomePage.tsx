@@ -35,6 +35,7 @@ import { RadarCheckinCard } from '../components/radar/RadarCheckinCard';
 import { RadarFieldReport } from '../components/radar/RadarFieldReport';
 import { PostStampHaulPrompt } from '../components/radar/PostStampHaulPrompt';
 import { RadarHUD } from '../components/radar/RadarHUD';
+import { NeighborhoodEntryCard } from '../components/radar/NeighborhoodEntryCard';
 import { useCheckinCache } from '../hooks/useCheckinCache';
 
 export function HomePage() {
@@ -279,6 +280,19 @@ export function HomePage() {
   const sessionStartTimeRef     = useRef<number>(0);
   const [sessionStampCount, setSessionStampCount] = useState(0);
 
+  // Live walking distance this session (metres). Updated on each GPS tick.
+  // Displayed in the HUD row 2 right zone. Reset to 0 on each radar entry.
+  const [sessionDistanceM, setSessionDistanceM] = useState(0);
+
+  // Neighborhood entry card — shown when user crosses into a new neighborhood.
+  // prevNeighborhoodRef tracks what we last showed so we don't re-fire.
+  const prevNeighborhoodRef = useRef<string | null>(null);
+  const [neighborhoodEntry, setNeighborhoodEntry] = useState<{
+    name: string;
+    isReturning: boolean;
+    storeCount: number;
+  } | null>(null);
+
   // Exit confirmation: first tap → pending state (3s window), second tap → exit.
   // Skipped entirely when sessionStampCount === 0 (nothing to protect).
   const [exitConfirmPending, setExitConfirmPending] = useState(false);
@@ -339,6 +353,17 @@ export function HomePage() {
     }
     return closestDist < 1500 ? closestName : null;
   }, [exploreUserPosition]);
+
+  // Stamps in the current neighborhood this session.
+  // Re-computed whenever the neighborhood changes or a new stamp is added.
+  // sessionStampedStoresRef is a ref (not reactive) so we use sessionStampCount
+  // as a reactive trigger — it bumps on every stamp.
+  const neighborhoodStampCount = useMemo(() => {
+    if (!exploreNeighborhood) return 0;
+    return sessionStampedStoresRef.current.filter(
+      s => s.neighborhood === exploreNeighborhood
+    ).length;
+  }, [exploreNeighborhood, sessionStampCount]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Handle incoming store selection from navigation (e.g., from StoreDetailPage "View on Map")
   useEffect(() => {
@@ -467,22 +492,63 @@ export function HomePage() {
       setExploreUserPosition(null);
       setNearbyStoreIndex(0);
     } else {
-      // ── Entering Radar mode — record start time and clear store list ──
+      // ── Entering Radar mode — record start time and clear session state ──
       sessionStartTimeRef.current     = Date.now();
       sessionStampedStoresRef.current = [];
+      setSessionDistanceM(0);
+      prevNeighborhoodRef.current = null;
+      setNeighborhoodEntry(null);
     }
     setIsExploreMode(prev => !prev);
   }, [isExploreMode, exploreNeighborhood, exitConfirmPending]);
 
   // Accumulate GPS positions into the session ring-buffer while Radar is active.
+  // Also tracks live walking distance (Haversine delta per fix) for HUD display.
   // Throttled naturally by the GPS watchPosition interval (~1s on device).
+  // Gap guard: skip segments > 200m to suppress GPS jumps (same threshold as MapView trail).
   useEffect(() => {
     if (!isExploreMode || !exploreUserPosition) return;
-    sessionPositionsRef.current.push({
-      lat: exploreUserPosition.latitude,
-      lng: exploreUserPosition.longitude,
-    });
+    const { latitude: lat, longitude: lng } = exploreUserPosition;
+    const prev = sessionPositionsRef.current[sessionPositionsRef.current.length - 1];
+    if (prev) {
+      const seg = distanceMeters(prev.lat, prev.lng, lat, lng);
+      if (seg < 200) {
+        setSessionDistanceM(d => d + seg);
+      }
+    }
+    sessionPositionsRef.current.push({ lat, lng });
   }, [isExploreMode, exploreUserPosition]);
+
+  // Detect neighborhood changes while Radar is active and fire the entry card.
+  // Compares exploreNeighborhood against prevNeighborhoodRef — fires on:
+  //   • Initial GPS lock + neighborhood detection (prev = null → first area)
+  //   • User walking from one area to another (Harajuku → Shibuya)
+  // If GPS is lost (exploreNeighborhood → null), prev ref is reset so re-entry
+  // triggers the card again.
+  useEffect(() => {
+    if (!isExploreMode) {
+      prevNeighborhoodRef.current = null;
+      return;
+    }
+    if (!exploreNeighborhood) {
+      prevNeighborhoodRef.current = null;
+      return;
+    }
+    if (exploreNeighborhood === prevNeighborhoodRef.current) return;
+
+    // Neighborhood changed — fire the entry card
+    prevNeighborhoodRef.current = exploreNeighborhood;
+
+    const storeCount = filteredStores.filter(
+      s => s.neighborhood === exploreNeighborhood
+    ).length;
+
+    const isReturning = sessionStampedStoresRef.current.some(
+      s => s.neighborhood === exploreNeighborhood
+    );
+
+    setNeighborhoodEntry({ name: exploreNeighborhood, isReturning, storeCount });
+  }, [isExploreMode, exploreNeighborhood, filteredStores]);
 
   // Called by RadarCheckinCard after a successful stamp or re-verification.
   // Bumps lastStampedAt → invalidates useCheckinCache → marker turns green immediately.
@@ -706,12 +772,32 @@ export function HomePage() {
                   <RadarHUD
                     hasGps={!!exploreUserPosition}
                     stampCount={sessionStampCount}
+                    distanceM={sessionDistanceM}
+                    neighborhood={exploreNeighborhood}
+                    neighborhoodStampCount={neighborhoodStampCount}
                     nearestStore={
                       nearbyStoreEntry
                         ? { name: nearbyStoreEntry.store.name, distanceM: nearbyStoreEntry.dist }
                         : null
                     }
-                    neighborhood={exploreNeighborhood}
+                  />
+                )}
+              </AnimatePresence>
+
+              {/* NEIGHBORHOOD ENTRY CARD ─────────────────────────────────────
+                  RPG-style "entering neighborhood" notification.
+                  Slides down from below the HUD when the user crosses into
+                  a new area. Auto-dismisses after 2.5 seconds.
+                  z-[45]: below HUD (z-50), above check-in card (z-35).
+              ──────────────────────────────────────────────────────────────── */}
+              <AnimatePresence>
+                {isExploreMode && neighborhoodEntry && (
+                  <NeighborhoodEntryCard
+                    key={neighborhoodEntry.name}
+                    neighborhood={neighborhoodEntry.name}
+                    isReturning={neighborhoodEntry.isReturning}
+                    storeCount={neighborhoodEntry.storeCount}
+                    onDismiss={() => setNeighborhoodEntry(null)}
                   />
                 )}
               </AnimatePresence>
