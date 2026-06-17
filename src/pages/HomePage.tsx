@@ -37,6 +37,8 @@ import { PostStampHaulPrompt } from '../components/radar/PostStampHaulPrompt';
 import { RadarHUD } from '../components/radar/RadarHUD';
 import { NeighborhoodEntryCard } from '../components/radar/NeighborhoodEntryCard';
 import { useCheckinCache } from '../hooks/useCheckinCache';
+import { useNeighborhoodQuests } from '../hooks/useNeighborhoodQuests';
+import { NeighborhoodCompleteCard } from '../components/radar/NeighborhoodCompleteCard';
 
 export function HomePage() {
   const [searchParams, setSearchParams] = useSearchParams();
@@ -265,6 +267,11 @@ export function HomePage() {
   // on store detail panels in both Radar and Browse mode.
   const stampedStoreIds = useCheckinCache(true, lastStampedAt);
 
+  // Neighborhood quest system — computes all-time progress for each neighborhood.
+  // Runs unconditionally (same rule as useSpotlightStores) so results are ready
+  // the instant the user enters a new neighborhood without a one-render lag.
+  const questsByNeighborhood = useNeighborhoodQuests(stampedStoreIds);
+
   // Dismiss state for the check-in card after a successful stamp.
   // Reset whenever the active nearby store changes so the card re-appears for a new store.
   const [cardDismissed, setCardDismissed] = useState(false);
@@ -291,6 +298,15 @@ export function HomePage() {
     name: string;
     isReturning: boolean;
     storeCount: number;
+  } | null>(null);
+
+  // Neighborhood quest system — tracks which neighborhoods were completed this
+  // session so the full-screen card fires exactly once per neighborhood per session.
+  const sessionCompletedNeighborhoodsRef = useRef<Set<string>>(new Set());
+  const [neighborhoodComplete, setNeighborhoodComplete] = useState<{
+    neighborhood: string;
+    storeCount: number;
+    questSlug: string;
   } | null>(null);
 
   // Exit confirmation: first tap → pending state (3s window), second tap → exit.
@@ -498,6 +514,8 @@ export function HomePage() {
       setSessionDistanceM(0);
       prevNeighborhoodRef.current = null;
       setNeighborhoodEntry(null);
+      sessionCompletedNeighborhoodsRef.current = new Set();
+      setNeighborhoodComplete(null);
     }
     setIsExploreMode(prev => !prev);
   }, [isExploreMode, exploreNeighborhood, exitConfirmPending]);
@@ -549,6 +567,24 @@ export function HomePage() {
 
     setNeighborhoodEntry({ name: exploreNeighborhood, isReturning, storeCount });
   }, [isExploreMode, exploreNeighborhood, filteredStores]);
+
+  // Detect when a neighborhood quest becomes complete after a stamp.
+  // Fires whenever stampedStoreIds updates (i.e., after each stamp refetch).
+  // Only triggers the card once per neighborhood per session (sessionCompletedNeighborhoodsRef).
+  useEffect(() => {
+    if (!isExploreMode || !exploreNeighborhood) return;
+    const progress = questsByNeighborhood.get(exploreNeighborhood);
+    if (!progress || !progress.isComplete) return;
+    if (sessionCompletedNeighborhoodsRef.current.has(exploreNeighborhood)) return;
+
+    // First completion in this session — fire the card
+    sessionCompletedNeighborhoodsRef.current.add(exploreNeighborhood);
+    setNeighborhoodComplete({
+      neighborhood: exploreNeighborhood,
+      storeCount: progress.total,
+      questSlug: progress.questSlug,
+    });
+  }, [stampedStoreIds, isExploreMode, exploreNeighborhood, questsByNeighborhood]);
 
   // Called by RadarCheckinCard after a successful stamp or re-verification.
   // Bumps lastStampedAt → invalidates useCheckinCache → marker turns green immediately.
@@ -798,6 +834,24 @@ export function HomePage() {
                     isReturning={neighborhoodEntry.isReturning}
                     storeCount={neighborhoodEntry.storeCount}
                     onDismiss={() => setNeighborhoodEntry(null)}
+                    questProgress={questsByNeighborhood.get(neighborhoodEntry.name)}
+                  />
+                )}
+              </AnimatePresence>
+
+              {/* NEIGHBORHOOD COMPLETE CARD ──────────────────────────────────
+                  Full-screen achievement overlay — shown once per neighborhood
+                  per session when the user stamps the final quest store.
+                  z-[250] clears HUD (z-50) and BottomSheet (z-[201]).
+              ──────────────────────────────────────────────────────────────── */}
+              <AnimatePresence>
+                {isExploreMode && neighborhoodComplete && (
+                  <NeighborhoodCompleteCard
+                    key={neighborhoodComplete.neighborhood}
+                    neighborhood={neighborhoodComplete.neighborhood}
+                    storeCount={neighborhoodComplete.storeCount}
+                    questSlug={neighborhoodComplete.questSlug}
+                    onDismiss={() => setNeighborhoodComplete(null)}
                   />
                 )}
               </AnimatePresence>

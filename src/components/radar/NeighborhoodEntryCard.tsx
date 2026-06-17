@@ -8,15 +8,21 @@
  *   ENTERING  — first time in this neighborhood this session (cyan/teal)
  *   RETURNING — user has already stamped a store here this session (amber)
  *
+ * When questProgress is provided, shows a quest progress bar + "X / Y stores"
+ * count. Completed quests show a COMPLETE badge instead of the store count.
+ *
  * Auto-dismisses after 2.5 seconds. Also dismissible by tap.
  * Positioned absolute at top-[76px] (4px gap below 72px HUD) with z-[45].
- *
- * The "N stores here" count gives the user an immediate quest prompt —
- * the foundation for the neighborhood-completion system.
  */
 
 import { useEffect } from 'react';
 import { motion } from 'framer-motion';
+
+interface QuestProgressProps {
+  stamped: number;
+  total: number;
+  isComplete: boolean;
+}
 
 interface NeighborhoodEntryCardProps {
   /** Neighborhood name to display */
@@ -27,15 +33,18 @@ interface NeighborhoodEntryCardProps {
   storeCount: number;
   /** Called when card should be dismissed */
   onDismiss: () => void;
+  /** Optional quest progress for this neighborhood */
+  questProgress?: QuestProgressProps;
 }
 
-const AUTO_DISMISS_MS = 2500;
+const AUTO_DISMISS_MS = 3000; // slightly longer when quest info is shown
 
 export function NeighborhoodEntryCard({
   neighborhood,
   isReturning,
   storeCount,
   onDismiss,
+  questProgress,
 }: NeighborhoodEntryCardProps) {
   // Auto-dismiss after delay
   useEffect(() => {
@@ -43,14 +52,40 @@ export function NeighborhoodEntryCard({
     return () => clearTimeout(t);
   }, [onDismiss]);
 
-  // Color scheme: cyan for ENTERING, amber for RETURNING
-  const accent     = isReturning ? '#fbbf24' : '#22D9EE';
-  const accentDim  = isReturning ? 'rgba(251,191,36,0.15)' : 'rgba(34,217,238,0.12)';
-  const accentBorder = isReturning ? 'rgba(251,191,36,0.28)' : 'rgba(34,217,238,0.25)';
-  const accentGlow = isReturning ? 'rgba(251,191,36,0.08)' : 'rgba(34,217,238,0.07)';
+  // Color scheme: cyan for ENTERING, amber for RETURNING, gold for COMPLETE
+  const isComplete = questProgress?.isComplete ?? false;
 
-  const label  = isReturning ? 'BACK IN'   : 'ENTERING';
-  const icon   = isReturning ? '↩'          : '▶';
+  const accent = isComplete
+    ? '#f59e0b'       // amber-500 — achievement gold
+    : isReturning
+    ? '#fbbf24'       // amber-400
+    : '#22D9EE';      // cyan
+
+  const accentDim  = isComplete
+    ? 'rgba(245,158,11,0.15)'
+    : isReturning
+    ? 'rgba(251,191,36,0.15)'
+    : 'rgba(34,217,238,0.12)';
+
+  const accentBorder = isComplete
+    ? 'rgba(245,158,11,0.35)'
+    : isReturning
+    ? 'rgba(251,191,36,0.28)'
+    : 'rgba(34,217,238,0.25)';
+
+  const accentGlow = isComplete
+    ? 'rgba(245,158,11,0.12)'
+    : isReturning
+    ? 'rgba(251,191,36,0.08)'
+    : 'rgba(34,217,238,0.07)';
+
+  const label = isComplete ? 'COMPLETE ✓' : isReturning ? 'BACK IN' : 'ENTERING';
+  const icon  = isComplete ? '★'           : isReturning ? '↩'       : '▶';
+
+  // Quest progress bar fill %
+  const progressPct = questProgress
+    ? Math.min(100, (questProgress.stamped / Math.max(1, questProgress.total)) * 100)
+    : 0;
 
   return (
     <motion.button
@@ -95,7 +130,13 @@ export function NeighborhoodEntryCard({
           {/* Status label */}
           <p
             className="text-[9px] font-black uppercase tracking-[0.26em] leading-none mb-0.5"
-            style={{ color: isReturning ? 'rgba(251,191,36,0.55)' : 'rgba(34,217,238,0.55)' }}
+            style={{
+              color: isComplete
+                ? 'rgba(245,158,11,0.7)'
+                : isReturning
+                ? 'rgba(251,191,36,0.55)'
+                : 'rgba(34,217,238,0.55)',
+            }}
           >
             {label}
           </p>
@@ -112,16 +153,55 @@ export function NeighborhoodEntryCard({
             {neighborhood}
           </p>
 
-          {/* Store count */}
-          {storeCount > 0 && (
-            <p
-              className="text-[10px] mt-0.5 leading-none truncate"
-              style={{ color: 'rgba(255,255,255,0.32)' }}
+          {/* Quest progress or store count */}
+          {questProgress ? (
+            isComplete ? (
+              <p
+                className="text-[10px] mt-0.5 leading-none font-semibold"
+                style={{ color: 'rgba(245,158,11,0.65)' }}
+              >
+                All {questProgress.total} stores visited — neighborhood complete!
+              </p>
+            ) : (
+              <p
+                className="text-[10px] mt-0.5 leading-none"
+                style={{ color: 'rgba(255,255,255,0.32)' }}
+              >
+                {questProgress.stamped} / {questProgress.total} quest stores visited
+              </p>
+            )
+          ) : (
+            storeCount > 0 && (
+              <p
+                className="text-[10px] mt-0.5 leading-none truncate"
+                style={{ color: 'rgba(255,255,255,0.32)' }}
+              >
+                {storeCount} {storeCount === 1 ? 'store' : 'stores'} to discover here
+              </p>
+            )
+          )}
+
+          {/* Quest progress bar — only when quest exists and not complete */}
+          {questProgress && !isComplete && questProgress.total > 0 && (
+            <div
+              className="mt-2 rounded-full overflow-hidden"
+              style={{
+                height: 3,
+                backgroundColor: 'rgba(255,255,255,0.08)',
+              }}
             >
-              {isReturning
-                ? `${storeCount} ${storeCount === 1 ? 'store' : 'stores'} to discover here`
-                : `${storeCount} ${storeCount === 1 ? 'store' : 'stores'} to discover here`}
-            </p>
+              <motion.div
+                initial={{ width: 0 }}
+                animate={{ width: `${progressPct}%` }}
+                transition={{ duration: 0.6, ease: 'easeOut', delay: 0.15 }}
+                style={{
+                  height: '100%',
+                  borderRadius: 9999,
+                  background: `linear-gradient(90deg, ${accent}cc, ${accent})`,
+                  boxShadow: `0 0 6px ${accent}88`,
+                }}
+              />
+            </div>
           )}
         </div>
 
