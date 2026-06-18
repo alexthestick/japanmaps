@@ -29,9 +29,10 @@ import { supabase } from '../lib/supabase';
 export interface QuestStore {
   storeId: string;
   storeName: string;
-  /** Coordinates for flyToStore when tapped in QuestDetailSheet */
-  latitude: number;
-  longitude: number;
+  // Note: coordinates are NOT stored here — stores.latitude/longitude don't
+  // exist as columns; coords live in stores.location (PostGIS geography).
+  // When flyToStore is needed, look up the store from the main filteredStores
+  // list in HomePage (which has lat/lng via the get_stores_with_coordinates RPC).
 }
 
 export interface QuestProgress {
@@ -59,8 +60,8 @@ interface StoreStub {
   id: string;
   name: string;
   neighborhood: string | null;
-  latitude: number;
-  longitude: number;
+  // location (PostGIS geography) is not selected — we only need neighborhood
+  // for quest derivation. Coords come from filteredStores in HomePage at flyTo time.
 }
 
 interface QuestDef {
@@ -126,12 +127,10 @@ export function useNeighborhoodQuests(
       if (allStoreIds.length === 0) return [];
       const { data, error } = await supabase
         .from('stores')
-        .select('id, name, neighborhood, latitude, longitude')
+        .select('id, name, neighborhood')
         .in('id', allStoreIds);
       if (error) throw error;
-      // Cast through unknown: the generated types don't enumerate latitude/longitude
-      // on stores even though they exist in the DB. The select string above is correct.
-      return (data ?? []) as unknown as StoreStub[];
+      return (data ?? []) as StoreStub[];
     },
     enabled: allStoreIds.length > 0,
     staleTime: 10 * 60 * 1000, // 10 min
@@ -180,8 +179,6 @@ export function useNeighborhoodQuests(
         questStores: resolvedStubs.map((s) => ({
           storeId: s.id,
           storeName: s.name,
-          latitude: s.latitude,
-          longitude: s.longitude,
         })),
       });
     }

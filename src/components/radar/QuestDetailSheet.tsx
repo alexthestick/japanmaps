@@ -35,8 +35,8 @@ interface QuestDetailSheetProps {
   onBack: () => void;
   /** Called to close everything */
   onClose: () => void;
-  /** Called when user taps a store — parent flies map to it + closes sheets */
-  onStoreTap: (store: QuestStore) => void;
+  /** Called when user taps a store — parent looks up coords from filteredStores + flies map to it */
+  onStoreTap: (storeId: string) => void;
 }
 
 // ── Sub-components ────────────────────────────────────────────────────────────
@@ -249,7 +249,7 @@ export function QuestDetailSheet({
                   key={store.storeId}
                   store={store}
                   isStamped={stampedStoreIds.has(store.storeId)}
-                  onTap={() => onStoreTap(store)}
+                  onTap={() => onStoreTap(store.storeId)}
                 />
               ))}
             </div>

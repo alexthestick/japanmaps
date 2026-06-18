@@ -979,9 +979,10 @@ export function HomePage() {
                   setQuestMenuOpen(true);
                 }}
                 onClose={() => setQuestDetailNeighborhood(null)}
-                onStoreTap={(store) => {
+                onStoreTap={(storeId) => {
                   setQuestDetailNeighborhood(null);
-                  if (mapViewRef.current?.flyToStore) {
+                  const store = filteredStores.find(s => s.id === storeId);
+                  if (store && mapViewRef.current?.flyToStore) {
                     mapViewRef.current.flyToStore(store.latitude, store.longitude, { zoom: 17 });
                   }
                 }}
