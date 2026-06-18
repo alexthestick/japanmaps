@@ -20,6 +20,8 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { X, ArrowLeft, BookOpen, MapPin } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import type { QuestProgress, QuestStore } from '../../hooks/useNeighborhoodQuests';
+import { ikUrl } from '../../utils/ikUrl';
+import { MAIN_CATEGORY_COLORS } from '../../lib/constants';
 
 const GOLD = '#f59e0b';
 const GOLD_DIM = 'rgba(245,158,11,0.12)';
@@ -50,46 +52,87 @@ function StoreRow({
   isStamped: boolean;
   onTap: () => void;
 }) {
+  const categoryColor =
+    (MAIN_CATEGORY_COLORS as Record<string, string>)[store.mainCategory ?? ''] ??
+    'rgba(255,255,255,0.35)';
+
   return (
     <button
       onClick={onTap}
       className="w-full flex items-center gap-3 px-4 py-3 text-left transition-colors duration-150 active:bg-white/5"
       style={{ borderBottom: '1px solid rgba(255,255,255,0.04)' }}
     >
-      {/* Stamp indicator */}
-      <div
-        className="w-7 h-7 rounded-full flex items-center justify-center flex-shrink-0"
-        style={{
-          backgroundColor: isStamped ? GOLD_DIM : 'rgba(255,255,255,0.04)',
-          border: `1.5px solid ${isStamped ? GOLD_BORDER : 'rgba(255,255,255,0.1)'}`,
-        }}
-      >
-        {isStamped ? (
-          <span style={{ fontSize: 12, color: GOLD, lineHeight: 1 }}>✓</span>
+      {/* Store photo thumbnail — 40×40 rounded, falls back to stamp indicator */}
+      <div className="relative flex-shrink-0">
+        {store.photoUrl ? (
+          <div
+            className="w-10 h-10 rounded-xl overflow-hidden"
+            style={{
+              border: isStamped
+                ? `1.5px solid ${GOLD_BORDER}`
+                : '1.5px solid rgba(255,255,255,0.1)',
+            }}
+          >
+            <img
+              src={ikUrl(store.photoUrl, 'thumb')}
+              alt={store.storeName}
+              className="w-full h-full object-cover"
+              style={{ opacity: isStamped ? 0.55 : 1 }}
+            />
+          </div>
         ) : (
-          <MapPin
-            className="w-3 h-3"
-            style={{ color: 'rgba(255,255,255,0.2)' }}
-          />
+          /* Fallback: pin icon badge when no photo */
+          <div
+            className="w-10 h-10 rounded-xl flex items-center justify-center"
+            style={{
+              backgroundColor: isStamped ? GOLD_DIM : 'rgba(255,255,255,0.04)',
+              border: `1.5px solid ${isStamped ? GOLD_BORDER : 'rgba(255,255,255,0.1)'}`,
+            }}
+          >
+            <MapPin className="w-4 h-4" style={{ color: isStamped ? GOLD : 'rgba(255,255,255,0.2)' }} />
+          </div>
+        )}
+        {/* Stamp badge overlaid on photo */}
+        {isStamped && (
+          <div
+            className="absolute -bottom-1 -right-1 w-4 h-4 rounded-full flex items-center justify-center"
+            style={{ backgroundColor: GOLD, border: '1.5px solid rgba(6,8,14,0.9)' }}
+          >
+            <span style={{ fontSize: 8, color: '#0a0a0f', lineHeight: 1, fontWeight: 900 }}>✓</span>
+          </div>
         )}
       </div>
 
-      {/* Store name */}
-      <span
-        className="flex-1 text-[13px] font-medium leading-tight truncate"
-        style={{
-          color: isStamped ? 'rgba(245,158,11,0.75)' : 'rgba(255,255,255,0.75)',
-          textDecoration: isStamped ? 'line-through' : 'none',
-          textDecorationColor: 'rgba(245,158,11,0.4)',
-        }}
-      >
-        {store.storeName}
-      </span>
+      {/* Name + category */}
+      <div className="flex-1 min-w-0">
+        <span
+          className="block text-[13px] font-semibold leading-tight truncate"
+          style={{
+            color: isStamped ? 'rgba(245,158,11,0.7)' : 'rgba(255,255,255,0.82)',
+            textDecoration: isStamped ? 'line-through' : 'none',
+            textDecorationColor: 'rgba(245,158,11,0.4)',
+          }}
+        >
+          {store.storeName}
+        </span>
+        {store.mainCategory && (
+          <span
+            className="inline-block mt-0.5 text-[9px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded-full"
+            style={{
+              color: categoryColor,
+              backgroundColor: `${categoryColor}18`,
+              border: `1px solid ${categoryColor}28`,
+            }}
+          >
+            {store.mainCategory}
+          </span>
+        )}
+      </div>
 
       {/* Fly-to hint */}
       {!isStamped && (
         <span
-          className="text-[10px] flex-shrink-0 font-medium"
+          className="text-[11px] flex-shrink-0 font-medium"
           style={{ color: 'rgba(255,255,255,0.18)' }}
         >
           ↗

@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { useParams, Link } from 'react-router-dom';
+import { useParams, Link, useNavigate, useLocation } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
 import { Loader } from '../components/common/Loader';
 import { ParallaxGuideSection } from '../components/common/ParallaxGuideSection';
@@ -43,6 +43,17 @@ export function BlogPostPage() {
   const { slug } = useParams<{ slug: string }>();
   const [post, setPost] = useState<BlogPost | null>(null);
   const [loading, setLoading] = useState(true);
+  const navigate = useNavigate();
+  const location = useLocation();
+
+  // Back navigation — go to previous page (preserves radar mode state) or fall back to /map
+  const handleBack = () => {
+    if (location.key !== 'default') {
+      navigate(-1);
+    } else {
+      navigate('/map');
+    }
+  };
 
   useEffect(() => {
     if (slug) {
@@ -121,10 +132,35 @@ export function BlogPostPage() {
     },
   };
 
+  // Floating back button — rendered on top of both article layouts.
+  // Uses navigate(-1) when history exists (from radar mode / in-app nav)
+  // so the user lands back on the map with radar still active.
+  const BackButton = (
+    <button
+      onClick={handleBack}
+      className="fixed z-[999] flex items-center gap-1.5 px-3 py-2 rounded-full text-xs font-semibold backdrop-blur-md transition-all duration-200 active:scale-95"
+      style={{
+        top: 'calc(env(safe-area-inset-top, 0px) + 12px)',
+        left: 16,
+        backgroundColor: 'rgba(10,10,15,0.82)',
+        color: 'rgba(255,255,255,0.85)',
+        border: '1px solid rgba(255,255,255,0.15)',
+        boxShadow: '0 2px 12px rgba(0,0,0,0.4)',
+      }}
+      aria-label="Go back"
+    >
+      <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+        <path d="M9 2L4 7l5 5" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
+      </svg>
+      Back
+    </button>
+  );
+
   // Render Parallax Store Guide with Bulletin Board styling
   if (post.article_type === 'parallax_store_guide') {
     return (
       <>
+        {BackButton}
         {/* SEO Head */}
         <SEOHead
           title={post.title}
@@ -363,6 +399,7 @@ export function BlogPostPage() {
   // Render Standard Article (bulletin board style - fallback)
   return (
     <>
+      {BackButton}
       {/* SEO Head */}
       <SEOHead
         title={post.title}

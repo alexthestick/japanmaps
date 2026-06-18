@@ -29,6 +29,10 @@ import { supabase } from '../lib/supabase';
 export interface QuestStore {
   storeId: string;
   storeName: string;
+  /** First photo URL for the thumbnail in QuestDetailSheet (may be undefined) */
+  photoUrl?: string;
+  /** Main category for the category pill (Fashion, Food, etc.) */
+  mainCategory?: string;
   // Note: coordinates are NOT stored here — stores.latitude/longitude don't
   // exist as columns; coords live in stores.location (PostGIS geography).
   // When flyToStore is needed, look up the store from the main filteredStores
@@ -60,6 +64,8 @@ interface StoreStub {
   id: string;
   name: string;
   neighborhood: string | null;
+  photos: string[];
+  main_category: string | null;
   // location (PostGIS geography) is not selected — we only need neighborhood
   // for quest derivation. Coords come from filteredStores in HomePage at flyTo time.
 }
@@ -127,7 +133,7 @@ export function useNeighborhoodQuests(
       if (allStoreIds.length === 0) return [];
       const { data, error } = await supabase
         .from('stores')
-        .select('id, name, neighborhood')
+        .select('id, name, neighborhood, photos, main_category')
         .in('id', allStoreIds);
       if (error) throw error;
       return (data ?? []) as StoreStub[];
@@ -179,6 +185,8 @@ export function useNeighborhoodQuests(
         questStores: resolvedStubs.map((s) => ({
           storeId: s.id,
           storeName: s.name,
+          photoUrl: s.photos?.[0] ?? undefined,
+          mainCategory: s.main_category ?? undefined,
         })),
       });
     }

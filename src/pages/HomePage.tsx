@@ -853,7 +853,6 @@ export function HomePage() {
                     isReturning={neighborhoodEntry.isReturning}
                     storeCount={neighborhoodEntry.storeCount}
                     onDismiss={() => setNeighborhoodEntry(null)}
-                    questProgress={questsByNeighborhood.get(neighborhoodEntry.name)}
                     topOffset={questTopOffset}
                   />
                 )}
@@ -988,39 +987,20 @@ export function HomePage() {
                 }}
               />
 
-              {/* ── Bottom bar: 3-column grid ──────────────────────────────────
-                  Browse mode: [empty] [Radar pill] [List View]
-                  Radar mode:  [Trophy/Quest] [Exit pill] [spacer]
-                  Grid ensures the center button is always visually centered.
+              {/* ── Bottom bar: Radar left · Trophy/List right ─────────────────
+                  Browse mode: [Radar pill] ········· [List View icon]
+                  Radar mode:  [← Browse pill] ······ [Trophy icon]
+                  Simple flex justify-between — pill always on the left so it
+                  doesn't visually clash with the "Search this area" button
+                  which appears in the center of the map.
               ──────────────────────────────────────────────────────────── */}
               {!selectedStore && !isSpotlightMode && (
                 <div
-                  className="absolute left-0 right-0 z-[30] grid grid-cols-3 items-center px-5"
+                  className="absolute left-0 right-0 z-[30] flex items-center justify-between px-5"
                   style={{ bottom: 'calc(1.5rem + env(safe-area-inset-bottom, 0px))' }}
                 >
-                  {/* Left slot: Quest trophy (radar mode) or empty (browse mode) */}
-                  <div className="flex justify-start">
-                    {isExploreMode && (
-                      <button
-                        onClick={() => setQuestMenuOpen(true)}
-                        className="flex items-center justify-center w-12 h-12 rounded-full backdrop-blur-md transition-all duration-200 active:scale-95"
-                        style={{
-                          backgroundColor: 'rgba(10,10,15,0.85)',
-                          border: `2px solid ${hasQuestRow ? 'rgba(245,158,11,0.45)' : 'rgba(255,255,255,0.15)'}`,
-                          boxShadow: hasQuestRow
-                            ? '0 0 14px rgba(245,158,11,0.25), 0 4px 16px rgba(0,0,0,0.4)'
-                            : '0 4px 16px rgba(0,0,0,0.4)',
-                          color: hasQuestRow ? '#f59e0b' : 'rgba(255,255,255,0.6)',
-                        }}
-                        aria-label="Quest menu"
-                      >
-                        <Trophy className="w-5 h-5" />
-                      </button>
-                    )}
-                  </div>
-
-                  {/* Center slot: Radar / Exit button (+ onboarding tooltip) */}
-                  <div className="flex justify-center relative">
+                  {/* Left: Radar / Browse pill + onboarding tooltip */}
+                  <div className="relative">
                     {/* Onboarding tooltip — first time only, auto-dismisses after 4s */}
                     {showRadarTooltip && !isExploreMode && (
                       <div
@@ -1029,6 +1009,7 @@ export function HomePage() {
                           backgroundColor: 'rgba(10,10,15,0.92)',
                           border: '1px solid rgba(34,217,238,0.4)',
                           boxShadow: '0 0 20px rgba(34,217,238,0.2)',
+                          left: 0,
                         }}
                       >
                         <span style={{ color: '#22D9EE' }}>◎</span>{' '}
@@ -1036,8 +1017,8 @@ export function HomePage() {
                         <div style={{
                           position: 'absolute',
                           bottom: -6,
-                          left: '50%',
-                          transform: 'translateX(-50%) rotate(45deg)',
+                          left: 24,
+                          transform: 'rotate(45deg)',
                           width: 12,
                           height: 12,
                           backgroundColor: 'rgba(10,10,15,0.92)',
@@ -1046,7 +1027,6 @@ export function HomePage() {
                         }} />
                       </div>
                     )}
-
                     <button
                       onClick={handleRadarToggle}
                       className="flex items-center gap-2.5 px-5 py-3 rounded-full font-semibold text-sm transition-all duration-300 backdrop-blur-md"
@@ -1088,24 +1068,38 @@ export function HomePage() {
                     </button>
                   </div>
 
-                  {/* Right slot: List View (browse mode) or spacer (radar mode) */}
-                  <div className="flex justify-end">
-                    {!isExploreMode && (
-                      <button
-                        onClick={() => setView('list')}
-                        className="flex items-center justify-center w-12 h-12 rounded-full backdrop-blur-md transition-all duration-200"
-                        style={{
-                          backgroundColor: 'rgba(10,10,15,0.85)',
-                          border: '2px solid rgba(255,255,255,0.15)',
-                          boxShadow: '0 4px 16px rgba(0,0,0,0.4)',
-                          color: 'rgba(255,255,255,0.8)',
-                        }}
-                        title="List View"
-                      >
-                        <List className="w-5 h-5" />
-                      </button>
-                    )}
-                  </div>
+                  {/* Right: Trophy (radar mode) or List View (browse mode) */}
+                  {isExploreMode ? (
+                    <button
+                      onClick={() => setQuestMenuOpen(true)}
+                      className="flex items-center justify-center w-12 h-12 rounded-full backdrop-blur-md transition-all duration-200 active:scale-95"
+                      style={{
+                        backgroundColor: 'rgba(10,10,15,0.85)',
+                        border: `2px solid ${hasQuestRow ? 'rgba(245,158,11,0.45)' : 'rgba(255,255,255,0.15)'}`,
+                        boxShadow: hasQuestRow
+                          ? '0 0 14px rgba(245,158,11,0.25), 0 4px 16px rgba(0,0,0,0.4)'
+                          : '0 4px 16px rgba(0,0,0,0.4)',
+                        color: hasQuestRow ? '#f59e0b' : 'rgba(255,255,255,0.6)',
+                      }}
+                      aria-label="Quest menu"
+                    >
+                      <Trophy className="w-5 h-5" />
+                    </button>
+                  ) : (
+                    <button
+                      onClick={() => setView('list')}
+                      className="flex items-center justify-center w-12 h-12 rounded-full backdrop-blur-md transition-all duration-200"
+                      style={{
+                        backgroundColor: 'rgba(10,10,15,0.85)',
+                        border: '2px solid rgba(255,255,255,0.15)',
+                        boxShadow: '0 4px 16px rgba(0,0,0,0.4)',
+                        color: 'rgba(255,255,255,0.8)',
+                      }}
+                      title="List View"
+                    >
+                      <List className="w-5 h-5" />
+                    </button>
+                  )}
                 </div>
               )}
             </>
