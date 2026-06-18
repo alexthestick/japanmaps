@@ -23,6 +23,8 @@ export type Database = {
           id: string
           intro_content: string | null
           published_at: string | null
+          quest_enabled: boolean
+          quest_type: string | null
           referenced_stores: string[] | null
           sections_data: Json | null
           slug: string
@@ -37,6 +39,8 @@ export type Database = {
           id?: string
           intro_content?: string | null
           published_at?: string | null
+          quest_enabled?: boolean
+          quest_type?: string | null
           referenced_stores?: string[] | null
           sections_data?: Json | null
           slug: string
@@ -51,6 +55,8 @@ export type Database = {
           id?: string
           intro_content?: string | null
           published_at?: string | null
+          quest_enabled?: boolean
+          quest_type?: string | null
           referenced_stores?: string[] | null
           sections_data?: Json | null
           slug?: string

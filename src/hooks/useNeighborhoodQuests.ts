@@ -1,16 +1,17 @@
 /**
  * useNeighborhoodQuests
  *
- * Loads all neighborhood guide articles (blog_posts) and computes the
- * user's all-time quest progress for each neighborhood.
+ * Loads quest-enabled neighborhood guide articles and computes the user's
+ * all-time quest progress for each neighborhood.
  *
  * Data flow:
- *   1. Fetch blog_posts with sections_data (lightweight — 14 rows)
- *   2. Fetch all store stubs (id, name, neighborhood) for name matching
- *   3. For each article, extract store_name values from sections_data and
- *      match them to store IDs by exact case-insensitive name lookup
- *   4. Derive the quest's neighborhood from the most-common `store.neighborhood`
- *      among matched stores (avoids relying on article title parsing)
+ *   1. Fetch blog_posts WHERE quest_enabled = true (lightweight — ~12 rows)
+ *      Returns id, title, slug, quest_type, referenced_stores (UUID array)
+ *   2. Batch-fetch store stubs (id, name, neighborhood) for all referenced
+ *      store UUIDs in a single .in() query — no name matching needed
+ *   3. For each neighborhood article, derive the neighborhood from the
+ *      most-common `store.neighborhood` among referenced stores
+ *   4. One quest per neighborhood (first article wins)
  *   5. Compute progress: how many quest store IDs are in stampedStoreIds
  *
  * Returns a Map<neighborhood, QuestProgress> for O(1) lookup in the HUD.
@@ -49,15 +50,23 @@ export interface QuestProgress {
   isComplete: boolean;
 }
 
-// ── Helpers ───────────────────────────────────────────────────────────────────
+// ── Internal types ────────────────────────────────────────────────────────────
 
-/** Extract store_name values from sections_data JSON array */
-function extractStoreNames(sectionsData: unknown): string[] {
-  if (!Array.isArray(sectionsData)) return [];
-  return sectionsData
-    .map((s: { store_name?: string }) => (s.store_name ?? '').trim())
-    .filter((n) => n.length > 0);
+interface StoreStub {
+  id: string;
+  name: string;
+  neighborhood: string | null;
 }
+
+interface QuestDef {
+  questId: string;
+  questTitle: string;
+  questSlug: string;
+  neighborhood: string;
+  questStores: QuestStore[];
+}
+
+// ── Helpers ───────────────────────────────────────────────────────────────────
 
 /** Return the most-common non-null value from an array */
 function mostCommon(values: (string | null | undefined)[]): string | null {
@@ -69,96 +78,87 @@ function mostCommon(values: (string | null | undefined)[]): string | null {
   return [...counts.entries()].sort((a, b) => b[1] - a[1])[0][0];
 }
 
-// ── Internal store stub (lightweight — only what we need for matching) ────────
-
-interface StoreStub {
-  id: string;
-  name: string;
-  neighborhood: string | null;
-}
-
-// ── Quest definition (stable — only changes if blog posts or stores change) ───
-
-interface QuestDef {
-  questId: string;
-  questTitle: string;
-  questSlug: string;
-  neighborhood: string;
-  questStores: QuestStore[];
-}
-
 // ── Hook ──────────────────────────────────────────────────────────────────────
 
 export function useNeighborhoodQuests(
   stampedStoreIds: Set<string>,
 ): Map<string, QuestProgress> {
-  // ── 1. Fetch blog posts (sections_data only) ────────────────────────────
-  const { data: blogPosts } = useQuery({
-    queryKey: ['neighborhood-quests-posts'],
+  // ── 1. Fetch quest-enabled articles (no sections_data — just UUID arrays) ──
+  const { data: questPosts } = useQuery({
+    queryKey: ['neighborhood-quests-posts-v2'],
     queryFn: async () => {
       const { data, error } = await supabase
         .from('blog_posts')
-        .select('id, title, slug, sections_data')
-        .not('sections_data', 'is', null);
+        .select('id, title, slug, quest_type, referenced_stores')
+        .eq('quest_enabled', true)
+        .not('referenced_stores', 'is', null);
       if (error) throw error;
       return (data ?? []) as {
         id: string;
         title: string;
         slug: string;
-        sections_data: unknown;
+        quest_type: string;
+        referenced_stores: string[];
       }[];
     },
     staleTime: 30 * 60 * 1000, // 30 min — articles rarely change
   });
 
-  // ── 2. Fetch lightweight store stubs for name matching ──────────────────
+  // ── 2. Collect all unique referenced store IDs across all quest articles ───
+  const allStoreIds = useMemo((): string[] => {
+    if (!questPosts) return [];
+    const ids = new Set<string>();
+    for (const post of questPosts) {
+      for (const id of (post.referenced_stores ?? [])) ids.add(id);
+    }
+    return [...ids].sort(); // sort for stable React Query key
+  }, [questPosts]);
+
+  // ── 3. Batch-fetch store stubs for all referenced IDs in one query ─────────
   const { data: storeStubs } = useQuery({
-    queryKey: ['store-stubs-for-quests'],
+    queryKey: ['quest-store-stubs', allStoreIds],
     queryFn: async () => {
+      if (allStoreIds.length === 0) return [];
       const { data, error } = await supabase
         .from('stores')
-        .select('id, name, neighborhood');
+        .select('id, name, neighborhood')
+        .in('id', allStoreIds);
       if (error) throw error;
       return (data ?? []) as StoreStub[];
     },
+    enabled: allStoreIds.length > 0,
     staleTime: 10 * 60 * 1000, // 10 min
   });
 
-  // ── 3. Build name → stub lookup ─────────────────────────────────────────
-  const storeNameMap = useMemo((): Map<string, StoreStub> => {
+  // ── 4. Build id → stub lookup for O(1) access ─────────────────────────────
+  const storeById = useMemo((): Map<string, StoreStub> => {
     if (!storeStubs) return new Map();
-    const map = new Map<string, StoreStub>();
-    for (const stub of storeStubs) {
-      const key = stub.name.toLowerCase().trim();
-      // If duplicate name, prefer the one with a neighborhood (more specific)
-      if (!map.has(key) || (!map.get(key)!.neighborhood && stub.neighborhood)) {
-        map.set(key, stub);
-      }
-    }
-    return map;
+    return new Map(storeStubs.map((s) => [s.id, s]));
   }, [storeStubs]);
 
-  // ── 4. Derive quest definitions (stable — not dependent on stamps) ───────
+  // ── 5. Derive quest definitions (stable — not dependent on stamps) ─────────
   const questDefs = useMemo((): QuestDef[] => {
-    if (!blogPosts || storeNameMap.size === 0) return [];
+    if (!questPosts || storeById.size === 0) return [];
 
     const seen = new Set<string>(); // one quest per neighborhood
     const defs: QuestDef[] = [];
 
-    for (const post of blogPosts) {
-      const storeNames = extractStoreNames(post.sections_data);
-      if (storeNames.length === 0) continue;
+    for (const post of questPosts) {
+      // Only neighborhood-type quests in this hook
+      if (post.quest_type !== 'neighborhood') continue;
 
-      // Match store names to stubs
-      const matchedStubs: (StoreStub & { originalName: string })[] = [];
-      for (const name of storeNames) {
-        const stub = storeNameMap.get(name.toLowerCase().trim());
-        if (stub) matchedStubs.push({ ...stub, originalName: name });
-      }
-      if (matchedStubs.length === 0) continue;
+      const storeIds = post.referenced_stores ?? [];
+      if (storeIds.length === 0) continue;
 
-      // Derive neighborhood from most-common neighborhood among matched stores
-      const neighborhood = mostCommon(matchedStubs.map((s) => s.neighborhood));
+      // Resolve stubs — skip IDs that aren't in the DB (store deleted, etc.)
+      const resolvedStubs = storeIds
+        .map((id) => storeById.get(id))
+        .filter((s): s is StoreStub => s !== undefined);
+
+      if (resolvedStubs.length === 0) continue;
+
+      // Derive neighborhood from most-common neighborhood among resolved stores
+      const neighborhood = mostCommon(resolvedStubs.map((s) => s.neighborhood));
       if (!neighborhood) continue;
 
       // One quest per neighborhood (first article wins)
@@ -170,7 +170,7 @@ export function useNeighborhoodQuests(
         questTitle: post.title.trim(),
         questSlug: post.slug,
         neighborhood,
-        questStores: matchedStubs.map((s) => ({
+        questStores: resolvedStubs.map((s) => ({
           storeId: s.id,
           storeName: s.name,
         })),
@@ -178,14 +178,14 @@ export function useNeighborhoodQuests(
     }
 
     return defs;
-  }, [blogPosts, storeNameMap]);
+  }, [questPosts, storeById]);
 
-  // ── 5. Compute progress (updates on every stamp) ─────────────────────────
+  // ── 6. Compute progress (updates on every stamp) ──────────────────────────
   return useMemo((): Map<string, QuestProgress> => {
     const map = new Map<string, QuestProgress>();
     for (const def of questDefs) {
       const stamped = def.questStores.filter((s) =>
-        stampedStoreIds.has(s.storeId)
+        stampedStoreIds.has(s.storeId),
       ).length;
       map.set(def.neighborhood, {
         ...def,
