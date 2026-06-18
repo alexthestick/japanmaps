@@ -409,11 +409,6 @@ export function HomePage() {
     ).length;
   }, [exploreNeighborhood, sessionStampCount]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Current neighborhood's quest progress — drives RadarHUD row 3 and NeighborhoodEntryCard topOffset.
-  const currentQuestProgress = useMemo(() => {
-    if (!isExploreMode || !exploreNeighborhood) return null;
-    return questsByNeighborhood.get(exploreNeighborhood) ?? null;
-  }, [isExploreMode, exploreNeighborhood, questsByNeighborhood]);
 
   // Active quest progress (accepted by user) — overrides GPS neighborhood in RadarHUD row 3.
   const activeQuestProgress = useMemo(() => {
@@ -447,7 +442,8 @@ export function HomePage() {
 
   // True when the quest row is visible inside the HUD (affects layout of things below it).
   // Active quest takes priority over GPS neighborhood quest.
-  const hasQuestRow = !!(activeQuestProgress ?? currentQuestProgress)?.total;
+  // Quest row only shows in HUD when user has explicitly accepted a quest.
+  const hasQuestRow = !!(activeQuestProgress)?.total;
   // Top offset for NeighborhoodEntryCard: clears HUD + optional quest row + 4px gap.
   const questTopOffset = getRadarHudHeight(hasQuestRow) + 4;
 
@@ -900,7 +896,7 @@ export function HomePage() {
                         ? { name: nearbyStoreEntry.store.name, distanceM: nearbyStoreEntry.dist }
                         : null
                     }
-                    questProgress={activeQuestProgress ?? currentQuestProgress}
+                    questProgress={activeQuestProgress ?? null}
                     activeQuestNeighborhood={activeQuestNeighborhood}
                   />
                 )}
