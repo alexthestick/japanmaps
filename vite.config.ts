@@ -87,6 +87,10 @@ export default defineConfig({
         skipWaiting: true,
         clientsClaim: true,
 
+        // Remove stale precache entries after a SW update so old chunk hashes
+        // don't linger and cause "failed to fetch" errors on next visits.
+        cleanupOutdatedCaches: true,
+
         // Precache all build output (JS bundles, CSS, HTML, fonts, icons)
         globPatterns: ['**/*.{js,css,html,ico,png,svg,woff,woff2}'],
 
@@ -94,11 +98,30 @@ export default defineConfig({
         // At 1,625 kB it is the largest single asset in the build, and it is
         // only needed on the /map route. Precaching it forces every first-time
         // visitor to download it in the background even on pages that never
-        // show a map. It will still be fetched and cached at runtime the first
-        // time the user visits /map, via the StaleWhileRevalidate rule below.
+        // show a map. It is cached at runtime the first time the user visits
+        // /map via the CacheFirst rule below, keyed by its content hash so
+        // each deploy's version is stored separately and cleaned up by the
+        // expiration plugin after 30 days.
         globIgnores: ['**/mapbox-gl*.js'],
 
         runtimeCaching: [
+          // Mapbox GL JS local chunk — excluded from precache (too large to
+          // force on every visitor). Cache at runtime with CacheFirst: each
+          // filename contains a content hash so different deploy versions
+          // coexist safely, and the 30-day expiration prevents unbounded growth.
+          {
+            urlPattern: /\/assets\/mapbox-gl.*\.js$/i,
+            handler: 'CacheFirst',
+            options: {
+              cacheName: 'mapbox-gl-chunk',
+              expiration: {
+                maxEntries: 3,
+                maxAgeSeconds: 60 * 60 * 24 * 30, // 30 days
+              },
+              cacheableResponse: { statuses: [200] },
+            },
+          },
+
           // ImageKit CDN images — cache aggressively for 30 days.
           //
           // IMPORTANT — credentials: 'omit' is required here.

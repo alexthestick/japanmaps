@@ -6,6 +6,22 @@ import './index.css'
 import App from './App.tsx'
 import { AppErrorBoundary } from './components/common/AppErrorBoundary.tsx'
 
+// ── Service worker update handler ───────────────────────────────────────────
+// When a new service worker activates and claims this tab, the old HTML is
+// still loaded and references old chunk hashes that no longer exist on the
+// server. Reloading immediately after the SW controller changes ensures the
+// user gets the new HTML (with new hashes) on the very next page load — no
+// white screen, no manual refresh required.
+if ('serviceWorker' in navigator) {
+  let reloading = false;
+  navigator.serviceWorker.addEventListener('controllerchange', () => {
+    if (!reloading) {
+      reloading = true;
+      window.location.reload();
+    }
+  });
+}
+
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
