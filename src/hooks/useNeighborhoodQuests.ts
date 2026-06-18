@@ -29,6 +29,9 @@ import { supabase } from '../lib/supabase';
 export interface QuestStore {
   storeId: string;
   storeName: string;
+  /** Coordinates for flyToStore when tapped in QuestDetailSheet */
+  latitude: number;
+  longitude: number;
 }
 
 export interface QuestProgress {
@@ -56,6 +59,8 @@ interface StoreStub {
   id: string;
   name: string;
   neighborhood: string | null;
+  latitude: number;
+  longitude: number;
 }
 
 interface QuestDef {
@@ -121,10 +126,12 @@ export function useNeighborhoodQuests(
       if (allStoreIds.length === 0) return [];
       const { data, error } = await supabase
         .from('stores')
-        .select('id, name, neighborhood')
+        .select('id, name, neighborhood, latitude, longitude')
         .in('id', allStoreIds);
       if (error) throw error;
-      return (data ?? []) as StoreStub[];
+      // Cast through unknown: the generated types don't enumerate latitude/longitude
+      // on stores even though they exist in the DB. The select string above is correct.
+      return (data ?? []) as unknown as StoreStub[];
     },
     enabled: allStoreIds.length > 0,
     staleTime: 10 * 60 * 1000, // 10 min
@@ -173,6 +180,8 @@ export function useNeighborhoodQuests(
         questStores: resolvedStubs.map((s) => ({
           storeId: s.id,
           storeName: s.name,
+          latitude: s.latitude,
+          longitude: s.longitude,
         })),
       });
     }

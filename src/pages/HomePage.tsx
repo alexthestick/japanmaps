@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef, useMemo, useCallback } from 'react';
 import { useSearchParams, useNavigate, useLocation } from 'react-router-dom';
 import { AnimatePresence, motion } from 'framer-motion';
-import { Dices, List } from 'lucide-react';
+import { Dices, List, Trophy } from 'lucide-react';
 import { MapView } from '../components/map/MapView';
 import { SEOHead } from '../components/seo';
 import { StoreList } from '../components/store/StoreList';
@@ -27,15 +27,18 @@ import { useSpotlightStores } from '../hooks/useSpotlightStores';
 import { Loader } from '../components/common/Loader';
 import type { Store, MainCategory } from '../types/store';
 import { sortStores } from '../utils/helpers';
-import { getCityDataWithCounts, type CityData } from '../utils/cityData';
+// getCityDataWithCounts is currently unused (city data not shown in this view)
+// import { getCityDataWithCounts, type CityData } from '../utils/cityData';
 import type { SearchSuggestion } from '../components/store/SearchAutocomplete';
 import { MAJOR_CITIES_JAPAN, LOCATIONS, NEIGHBORHOOD_COORDINATES } from '../lib/constants';
 import { distanceMeters } from '../utils/distance';
 import { RadarCheckinCard } from '../components/radar/RadarCheckinCard';
 import { RadarFieldReport } from '../components/radar/RadarFieldReport';
 import { PostStampHaulPrompt } from '../components/radar/PostStampHaulPrompt';
-import { RadarHUD } from '../components/radar/RadarHUD';
+import { RadarHUD, getRadarHudHeight } from '../components/radar/RadarHUD';
 import { NeighborhoodEntryCard } from '../components/radar/NeighborhoodEntryCard';
+import { QuestMenuSheet } from '../components/radar/QuestMenuSheet';
+import { QuestDetailSheet } from '../components/radar/QuestDetailSheet';
 import { useCheckinCache } from '../hooks/useCheckinCache';
 import { useNeighborhoodQuests } from '../hooks/useNeighborhoodQuests';
 import { NeighborhoodCompleteCard } from '../components/radar/NeighborhoodCompleteCard';
@@ -327,6 +330,10 @@ export function HomePage() {
   // Post-stamp haul prompt — store that was just stamped (null = hidden).
   const [haulPromptStore, setHaulPromptStore] = useState<Store | null>(null);
 
+  // Quest UI state — menu + detail sheet (both in radar mode only)
+  const [questMenuOpen, setQuestMenuOpen] = useState(false);
+  const [questDetailNeighborhood, setQuestDetailNeighborhood] = useState<string | null>(null);
+
   // Index into nearbyStores — lets the user cycle to the next nearby store via the "+X" chip.
   const [nearbyStoreIndex, setNearbyStoreIndex] = useState(0);
 
@@ -380,6 +387,17 @@ export function HomePage() {
       s => s.neighborhood === exploreNeighborhood
     ).length;
   }, [exploreNeighborhood, sessionStampCount]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Current neighborhood's quest progress — drives RadarHUD row 3 and NeighborhoodEntryCard topOffset.
+  const currentQuestProgress = useMemo(() => {
+    if (!isExploreMode || !exploreNeighborhood) return null;
+    return questsByNeighborhood.get(exploreNeighborhood) ?? null;
+  }, [isExploreMode, exploreNeighborhood, questsByNeighborhood]);
+
+  // True when the quest row is visible inside the HUD (affects layout of things below it).
+  const hasQuestRow = !!currentQuestProgress && currentQuestProgress.total > 0;
+  // Top offset for NeighborhoodEntryCard: clears HUD + optional quest row + 4px gap.
+  const questTopOffset = getRadarHudHeight(hasQuestRow) + 4;
 
   // Handle incoming store selection from navigation (e.g., from StoreDetailPage "View on Map")
   useEffect(() => {
@@ -816,6 +834,7 @@ export function HomePage() {
                         ? { name: nearbyStoreEntry.store.name, distanceM: nearbyStoreEntry.dist }
                         : null
                     }
+                    questProgress={currentQuestProgress}
                   />
                 )}
               </AnimatePresence>
@@ -835,6 +854,7 @@ export function HomePage() {
                     storeCount={neighborhoodEntry.storeCount}
                     onDismiss={() => setNeighborhoodEntry(null)}
                     questProgress={questsByNeighborhood.get(neighborhoodEntry.name)}
+                    topOffset={questTopOffset}
                   />
                 )}
               </AnimatePresence>
@@ -930,104 +950,161 @@ export function HomePage() {
                 )}
               </AnimatePresence>
 
-              {/* ── Bottom bar: Radar pill (+ exit confirm) + List View ─────
-                  In Radar mode: only the radar/exit button, centered.
-                  In Browse mode: radar pill left, list view right.
+              {/* QUEST MENU SHEET ────────────────────────────────────────────
+                  Trophy button → full quest list.
+                  Tap a row → closes menu, opens QuestDetailSheet for that
+                  neighborhood. z-[202] to clear BottomSheet (z-[201]).
+              ──────────────────────────────────────────────────────────── */}
+              <QuestMenuSheet
+                isOpen={questMenuOpen}
+                onClose={() => setQuestMenuOpen(false)}
+                questsByNeighborhood={questsByNeighborhood}
+                currentNeighborhood={exploreNeighborhood}
+                onQuestTap={(neighborhood) => {
+                  setQuestMenuOpen(false);
+                  setQuestDetailNeighborhood(neighborhood);
+                }}
+              />
+
+              {/* QUEST DETAIL SHEET ──────────────────────────────────────────
+                  Store list for a single quest. Tap store → flyToStore + close.
+                  Back → reopens QuestMenuSheet.
+              ──────────────────────────────────────────────────────────── */}
+              <QuestDetailSheet
+                isOpen={!!questDetailNeighborhood}
+                quest={questDetailNeighborhood ? (questsByNeighborhood.get(questDetailNeighborhood) ?? null) : null}
+                stampedStoreIds={stampedStoreIds}
+                onBack={() => {
+                  setQuestDetailNeighborhood(null);
+                  setQuestMenuOpen(true);
+                }}
+                onClose={() => setQuestDetailNeighborhood(null)}
+                onStoreTap={(store) => {
+                  setQuestDetailNeighborhood(null);
+                  if (mapViewRef.current?.flyToStore) {
+                    mapViewRef.current.flyToStore(store.latitude, store.longitude, { zoom: 17 });
+                  }
+                }}
+              />
+
+              {/* ── Bottom bar: 3-column grid ──────────────────────────────────
+                  Browse mode: [empty] [Radar pill] [List View]
+                  Radar mode:  [Trophy/Quest] [Exit pill] [spacer]
+                  Grid ensures the center button is always visually centered.
               ──────────────────────────────────────────────────────────── */}
               {!selectedStore && !isSpotlightMode && (
                 <div
-                  className="absolute left-0 right-0 z-[30] flex items-center px-5"
-                  style={{
-                    bottom: 'calc(1.5rem + env(safe-area-inset-bottom, 0px))',
-                    justifyContent: isExploreMode ? 'center' : 'space-between',
-                  }}
+                  className="absolute left-0 right-0 z-[30] grid grid-cols-3 items-center px-5"
+                  style={{ bottom: 'calc(1.5rem + env(safe-area-inset-bottom, 0px))' }}
                 >
-                  {/* Onboarding tooltip — first time only, auto-dismisses after 4s */}
-                  {showRadarTooltip && !isExploreMode && (
-                    <div
-                      className="absolute left-5 bottom-full mb-3 px-4 py-2.5 rounded-xl text-xs font-medium text-white backdrop-blur-md pointer-events-none"
-                      style={{
-                        backgroundColor: 'rgba(10,10,15,0.92)',
-                        border: '1px solid rgba(34,217,238,0.4)',
-                        boxShadow: '0 0 20px rgba(34,217,238,0.2)',
-                        maxWidth: '200px',
-                      }}
-                    >
-                      <span style={{ color: '#22D9EE' }}>◎</span>{' '}
-                      Tap to discover stores as you walk nearby
-                      <div style={{
-                        position: 'absolute',
-                        bottom: -6,
-                        left: 24,
-                        width: 12,
-                        height: 12,
-                        backgroundColor: 'rgba(10,10,15,0.92)',
-                        borderRight: '1px solid rgba(34,217,238,0.4)',
-                        borderBottom: '1px solid rgba(34,217,238,0.4)',
-                        transform: 'rotate(45deg)',
-                      }} />
-                    </div>
-                  )}
-
-                  {/* Radar / Exit button */}
-                  <button
-                    onClick={handleRadarToggle}
-                    className="flex items-center gap-2.5 px-5 py-3 rounded-full font-semibold text-sm transition-all duration-300 backdrop-blur-md"
-                    style={
-                      exitConfirmPending ? {
-                        // Confirm state — amber warning tone
-                        backgroundColor: 'rgba(251,191,36,0.12)',
-                        color: '#fbbf24',
-                        border: '2px solid rgba(251,191,36,0.6)',
-                        boxShadow: '0 0 20px rgba(251,191,36,0.2), 0 4px 16px rgba(0,0,0,0.4)',
-                      } : isExploreMode ? {
-                        backgroundColor: '#22D9EE',
-                        color: '#0a0a0f',
-                        border: '2px solid rgba(34,217,238,0.9)',
-                        boxShadow: '0 0 24px rgba(34,217,238,0.5), 0 4px 16px rgba(0,0,0,0.4)',
-                      } : {
-                        backgroundColor: 'rgba(10,10,15,0.85)',
-                        color: '#22D9EE',
-                        border: '2px solid rgba(34,217,238,0.4)',
-                        boxShadow: '0 4px 16px rgba(0,0,0,0.4)',
-                      }
-                    }
-                  >
-                    {/* Radar SVG icon */}
-                    {!exitConfirmPending && (
-                      <svg width="18" height="18" viewBox="0 0 18 18" fill="none" style={{ flexShrink: 0 }}>
-                        <circle cx="9" cy="9" r="7.5" stroke="currentColor" strokeWidth="1.3" opacity="0.45" />
-                        <circle cx="9" cy="9" r="4.2" stroke="currentColor" strokeWidth="1.3" opacity="0.65" />
-                        <circle cx="9" cy="9" r="1.4" fill="currentColor" />
-                        {!isExploreMode && (
-                          <g style={{ transformOrigin: '9px 9px', animation: 'radar-sweep 4s linear infinite' }}>
-                            <line x1="9" y1="9" x2="9" y2="1.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
-                          </g>
-                        )}
-                      </svg>
+                  {/* Left slot: Quest trophy (radar mode) or empty (browse mode) */}
+                  <div className="flex justify-start">
+                    {isExploreMode && (
+                      <button
+                        onClick={() => setQuestMenuOpen(true)}
+                        className="flex items-center justify-center w-12 h-12 rounded-full backdrop-blur-md transition-all duration-200 active:scale-95"
+                        style={{
+                          backgroundColor: 'rgba(10,10,15,0.85)',
+                          border: `2px solid ${hasQuestRow ? 'rgba(245,158,11,0.45)' : 'rgba(255,255,255,0.15)'}`,
+                          boxShadow: hasQuestRow
+                            ? '0 0 14px rgba(245,158,11,0.25), 0 4px 16px rgba(0,0,0,0.4)'
+                            : '0 4px 16px rgba(0,0,0,0.4)',
+                          color: hasQuestRow ? '#f59e0b' : 'rgba(255,255,255,0.6)',
+                        }}
+                        aria-label="Quest menu"
+                      >
+                        <Trophy className="w-5 h-5" />
+                      </button>
                     )}
-                    {exitConfirmPending
-                      ? `End session? (${sessionStampCount} stamp${sessionStampCount !== 1 ? 's' : ''})`
-                      : isExploreMode ? '← Browse' : 'Radar'
-                    }
-                  </button>
+                  </div>
 
-                  {/* List View icon — Browse mode only, hidden in Radar */}
-                  {!isExploreMode && (
+                  {/* Center slot: Radar / Exit button (+ onboarding tooltip) */}
+                  <div className="flex justify-center relative">
+                    {/* Onboarding tooltip — first time only, auto-dismisses after 4s */}
+                    {showRadarTooltip && !isExploreMode && (
+                      <div
+                        className="absolute bottom-full mb-3 px-4 py-2.5 rounded-xl text-xs font-medium text-white backdrop-blur-md pointer-events-none whitespace-nowrap"
+                        style={{
+                          backgroundColor: 'rgba(10,10,15,0.92)',
+                          border: '1px solid rgba(34,217,238,0.4)',
+                          boxShadow: '0 0 20px rgba(34,217,238,0.2)',
+                        }}
+                      >
+                        <span style={{ color: '#22D9EE' }}>◎</span>{' '}
+                        Tap to discover stores as you walk nearby
+                        <div style={{
+                          position: 'absolute',
+                          bottom: -6,
+                          left: '50%',
+                          transform: 'translateX(-50%) rotate(45deg)',
+                          width: 12,
+                          height: 12,
+                          backgroundColor: 'rgba(10,10,15,0.92)',
+                          borderRight: '1px solid rgba(34,217,238,0.4)',
+                          borderBottom: '1px solid rgba(34,217,238,0.4)',
+                        }} />
+                      </div>
+                    )}
+
                     <button
-                      onClick={() => setView('list')}
-                      className="flex items-center justify-center w-12 h-12 rounded-full backdrop-blur-md transition-all duration-200"
-                      style={{
-                        backgroundColor: 'rgba(10,10,15,0.85)',
-                        border: '2px solid rgba(255,255,255,0.15)',
-                        boxShadow: '0 4px 16px rgba(0,0,0,0.4)',
-                        color: 'rgba(255,255,255,0.8)',
-                      }}
-                      title="List View"
+                      onClick={handleRadarToggle}
+                      className="flex items-center gap-2.5 px-5 py-3 rounded-full font-semibold text-sm transition-all duration-300 backdrop-blur-md"
+                      style={
+                        exitConfirmPending ? {
+                          backgroundColor: 'rgba(251,191,36,0.12)',
+                          color: '#fbbf24',
+                          border: '2px solid rgba(251,191,36,0.6)',
+                          boxShadow: '0 0 20px rgba(251,191,36,0.2), 0 4px 16px rgba(0,0,0,0.4)',
+                        } : isExploreMode ? {
+                          backgroundColor: '#22D9EE',
+                          color: '#0a0a0f',
+                          border: '2px solid rgba(34,217,238,0.9)',
+                          boxShadow: '0 0 24px rgba(34,217,238,0.5), 0 4px 16px rgba(0,0,0,0.4)',
+                        } : {
+                          backgroundColor: 'rgba(10,10,15,0.85)',
+                          color: '#22D9EE',
+                          border: '2px solid rgba(34,217,238,0.4)',
+                          boxShadow: '0 4px 16px rgba(0,0,0,0.4)',
+                        }
+                      }
                     >
-                      <List className="w-5 h-5" />
+                      {!exitConfirmPending && (
+                        <svg width="18" height="18" viewBox="0 0 18 18" fill="none" style={{ flexShrink: 0 }}>
+                          <circle cx="9" cy="9" r="7.5" stroke="currentColor" strokeWidth="1.3" opacity="0.45" />
+                          <circle cx="9" cy="9" r="4.2" stroke="currentColor" strokeWidth="1.3" opacity="0.65" />
+                          <circle cx="9" cy="9" r="1.4" fill="currentColor" />
+                          {!isExploreMode && (
+                            <g style={{ transformOrigin: '9px 9px', animation: 'radar-sweep 4s linear infinite' }}>
+                              <line x1="9" y1="9" x2="9" y2="1.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+                            </g>
+                          )}
+                        </svg>
+                      )}
+                      {exitConfirmPending
+                        ? `End session? (${sessionStampCount} stamp${sessionStampCount !== 1 ? 's' : ''})`
+                        : isExploreMode ? '← Browse' : 'Radar'
+                      }
                     </button>
-                  )}
+                  </div>
+
+                  {/* Right slot: List View (browse mode) or spacer (radar mode) */}
+                  <div className="flex justify-end">
+                    {!isExploreMode && (
+                      <button
+                        onClick={() => setView('list')}
+                        className="flex items-center justify-center w-12 h-12 rounded-full backdrop-blur-md transition-all duration-200"
+                        style={{
+                          backgroundColor: 'rgba(10,10,15,0.85)',
+                          border: '2px solid rgba(255,255,255,0.15)',
+                          boxShadow: '0 4px 16px rgba(0,0,0,0.4)',
+                          color: 'rgba(255,255,255,0.8)',
+                        }}
+                        title="List View"
+                      >
+                        <List className="w-5 h-5" />
+                      </button>
+                    )}
+                  </div>
                 </div>
               )}
             </>

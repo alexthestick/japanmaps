@@ -4,7 +4,8 @@
  * Ambient status strip shown when Radar mode is active.
  * Sits at the top of the map container (below the main nav header).
  *
- * Two-row layout (72px total):
+ * Two-row layout (72px base) — expands to three rows (96px) when a
+ * neighborhood quest is active:
  *
  *   Row 1 (42px) — primary context
  *     Left:  ● GPS dot · RADAR · [neighborhood] [N★]
@@ -14,6 +15,9 @@
  *     Left:  ★ N stamps  (or "— no stamps yet —")
  *     Right: X.Xkm walked (shown once GPS is locked and distance > 10m)
  *
+ *   Row 3 (24px) — quest progress [only when questProgress is provided]
+ *     🏆  [neighborhood] Quest · X / Y stores  [thin gold bar at bottom]
+ *
  * Design rules:
  *   - Neighborhood is ALWAYS visible in row 1 — never displaced by store proximity.
  *   - "N ★ here" stamp count shows when ≥1 stamp in current neighborhood this session.
@@ -22,10 +26,21 @@
  *   - No animations on large blur elements (GPU repaint rule from CLAUDE.md).
  */
 
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
+import type { QuestProgress } from '../../hooks/useNeighborhoodQuests';
 
-// ── HUD height constant — NeighborhoodEntryCard uses this for top positioning ─
+// ── HUD height constants ───────────────────────────────────────────────────────
 export const RADAR_HUD_HEIGHT = 72;
+export const QUEST_ROW_HEIGHT = 24;
+
+/** Total HUD height including quest row (when active) */
+export function getRadarHudHeight(hasQuest: boolean): number {
+  return hasQuest ? RADAR_HUD_HEIGHT + QUEST_ROW_HEIGHT : RADAR_HUD_HEIGHT;
+}
+
+const GOLD = '#f59e0b';
+const GOLD_DIM = 'rgba(245,158,11,0.15)';
+const GOLD_BORDER = 'rgba(245,158,11,0.22)';
 
 interface RadarHUDProps {
   /** Whether GPS lock is confirmed (exploreUserPosition != null) */
@@ -40,6 +55,8 @@ interface RadarHUDProps {
   neighborhoodStampCount: number;
   /** Nearest unstamped store within 150m, or null */
   nearestStore: { name: string; distanceM: number } | null;
+  /** Quest progress for the current neighborhood — renders row 3 when provided */
+  questProgress?: QuestProgress | null;
 }
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
@@ -58,8 +75,15 @@ export function RadarHUD({
   neighborhood,
   neighborhoodStampCount,
   nearestStore,
+  questProgress,
 }: RadarHUDProps) {
   const showDistance = hasGps && distanceM >= 10;
+  const hasQuest = !!questProgress && questProgress.total > 0;
+  const totalHeight = getRadarHudHeight(hasQuest);
+
+  const questPct = hasQuest
+    ? Math.min(100, (questProgress!.stamped / questProgress!.total) * 100)
+    : 0;
 
   return (
     <motion.div
@@ -67,17 +91,20 @@ export function RadarHUD({
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, y: -8 }}
       transition={{ duration: 0.22, ease: 'easeOut' }}
-      className="absolute left-0 right-0 z-[50] flex flex-col"
+      className="absolute left-0 right-0 z-[50] flex flex-col overflow-hidden"
       style={{
         top: 0,
-        height: RADAR_HUD_HEIGHT,
+        height: totalHeight,
         backgroundColor: 'rgba(6, 8, 14, 0.96)',
-        borderBottom: '1px solid rgba(34, 217, 238, 0.18)',
+        borderBottom: hasQuest
+          ? `1px solid ${GOLD_BORDER}`
+          : '1px solid rgba(34, 217, 238, 0.18)',
         backdropFilter: 'blur(12px)',
+        transition: 'height 0.25s ease, border-color 0.25s ease',
       }}
     >
       {/* ── Row 1: GPS context + nearest store ──────────────────────────────── */}
-      <div className="flex items-center px-4" style={{ height: 42 }}>
+      <div className="flex items-center px-4" style={{ height: 42, flexShrink: 0 }}>
 
         {/* Left zone: breathing dot · RADAR · neighborhood · stamp count here */}
         <div className="flex items-center gap-2 flex-1 min-w-0 pr-2">
@@ -140,9 +167,7 @@ export function RadarHUD({
         {/* Right zone: nearest store name + distance */}
         {nearestStore && (
           <div className="flex flex-col items-end flex-shrink-0 max-w-[44%]">
-            <span
-              className="text-[11px] font-bold text-white leading-tight truncate max-w-full"
-            >
+            <span className="text-[11px] font-bold text-white leading-tight truncate max-w-full">
               {nearestStore.name}
             </span>
             <span
@@ -162,7 +187,7 @@ export function RadarHUD({
       />
 
       {/* ── Row 2: Stamp count + distance walked ────────────────────────────── */}
-      <div className="flex items-center justify-between px-4" style={{ height: 30 }}>
+      <div className="flex items-center justify-between px-4" style={{ height: 30, flexShrink: 0 }}>
 
         {/* Left: stamp count */}
         <div className="flex items-center gap-1.5">
@@ -205,6 +230,63 @@ export function RadarHUD({
           </span>
         )}
       </div>
+
+      {/* ── Row 3: Quest progress (only when quest is active) ───────────────── */}
+      <AnimatePresence>
+        {hasQuest && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.2 }}
+            className="relative flex items-center px-4 gap-2"
+            style={{
+              height: QUEST_ROW_HEIGHT,
+              flexShrink: 0,
+              backgroundColor: GOLD_DIM,
+            }}
+          >
+            {/* Trophy icon */}
+            <span className="text-[10px] flex-shrink-0" style={{ color: GOLD }}>
+              🏆
+            </span>
+
+            {/* Label */}
+            <span
+              className="text-[10px] font-semibold truncate flex-1"
+              style={{ color: 'rgba(245,158,11,0.8)' }}
+            >
+              {questProgress!.neighborhood} Quest
+            </span>
+
+            {/* X / Y counter */}
+            <span
+              className="text-[10px] font-black tabular-nums flex-shrink-0"
+              style={{ color: questProgress!.isComplete ? GOLD : 'rgba(245,158,11,0.65)' }}
+            >
+              {questProgress!.isComplete
+                ? '✓ Complete'
+                : `${questProgress!.stamped} / ${questProgress!.total}`}
+            </span>
+
+            {/* Thin gold progress bar at very bottom of row */}
+            <div
+              className="absolute bottom-0 left-0 right-0"
+              style={{ height: 2, backgroundColor: 'rgba(245,158,11,0.12)' }}
+            >
+              <motion.div
+                animate={{ width: `${questPct}%` }}
+                transition={{ duration: 0.5, ease: 'easeOut' }}
+                style={{
+                  height: '100%',
+                  backgroundColor: GOLD,
+                  boxShadow: `0 0 6px ${GOLD}88`,
+                }}
+              />
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </motion.div>
   );
 }

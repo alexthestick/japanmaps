@@ -35,6 +35,9 @@ interface NeighborhoodEntryCardProps {
   onDismiss: () => void;
   /** Optional quest progress for this neighborhood */
   questProgress?: QuestProgressProps;
+  /** Top offset in px — defaults to 76 (RADAR_HUD_HEIGHT + 4).
+   *  Pass RADAR_HUD_HEIGHT + QUEST_ROW_HEIGHT + 4 = 100 when quest row is visible. */
+  topOffset?: number;
 }
 
 const AUTO_DISMISS_MS = 3000; // slightly longer when quest info is shown
@@ -45,6 +48,7 @@ export function NeighborhoodEntryCard({
   storeCount,
   onDismiss,
   questProgress,
+  topOffset = 76,
 }: NeighborhoodEntryCardProps) {
   // Auto-dismiss after delay
   useEffect(() => {
@@ -97,7 +101,7 @@ export function NeighborhoodEntryCard({
       onClick={onDismiss}
       className="absolute left-4 right-4 z-[45] rounded-2xl text-left overflow-hidden"
       style={{
-        top: 76, // 72px HUD + 4px gap
+        top: topOffset,
         backgroundColor: 'rgba(6, 8, 14, 0.93)',
         border: `1px solid ${accentBorder}`,
         backdropFilter: 'blur(16px)',
