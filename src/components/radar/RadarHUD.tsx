@@ -55,8 +55,10 @@ interface RadarHUDProps {
   neighborhoodStampCount: number;
   /** Nearest unstamped store within 150m, or null */
   nearestStore: { name: string; distanceM: number } | null;
-  /** Quest progress for the current neighborhood — renders row 3 when provided */
+  /** Quest progress to show in row 3 — either the accepted quest or GPS neighborhood quest */
   questProgress?: QuestProgress | null;
+  /** The neighborhood of the accepted quest — used to show compass prefix when off-site */
+  activeQuestNeighborhood?: string | null;
 }
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
@@ -76,6 +78,7 @@ export function RadarHUD({
   neighborhoodStampCount,
   nearestStore,
   questProgress,
+  activeQuestNeighborhood,
 }: RadarHUDProps) {
   const showDistance = hasGps && distanceM >= 10;
   const hasQuest = !!questProgress && questProgress.total > 0;
@@ -251,12 +254,16 @@ export function RadarHUD({
               🏆
             </span>
 
-            {/* Label */}
+            {/* Label — show compass prefix when hunting a quest in a different neighborhood */}
             <span
               className="text-[10px] font-semibold truncate flex-1"
               style={{ color: 'rgba(245,158,11,0.8)' }}
             >
-              {questProgress!.neighborhood} Quest
+              {activeQuestNeighborhood &&
+               activeQuestNeighborhood === questProgress!.neighborhood &&
+               activeQuestNeighborhood !== neighborhood
+                ? `→ ${questProgress!.neighborhood}`
+                : questProgress!.neighborhood}{' Quest'}
             </span>
 
             {/* X / Y counter */}

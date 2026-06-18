@@ -132,27 +132,25 @@ export function BlogPostPage() {
     },
   };
 
-  // Floating back button — rendered on top of both article layouts.
+  // Inline back button — sits below the hero image in the article flow.
   // Uses navigate(-1) when history exists (from radar mode / in-app nav)
   // so the user lands back on the map with radar still active.
   const BackButton = (
     <button
       onClick={handleBack}
-      className="fixed z-[999] flex items-center gap-1.5 px-3 py-2 rounded-full text-xs font-semibold backdrop-blur-md transition-all duration-200 active:scale-95"
+      className="flex items-center gap-1.5 px-4 py-2 font-bold text-sm transition-all duration-200 active:scale-95 hover:-translate-y-0.5"
       style={{
-        top: 'calc(env(safe-area-inset-top, 0px) + 12px)',
-        left: 16,
-        backgroundColor: 'rgba(10,10,15,0.82)',
-        color: 'rgba(255,255,255,0.85)',
-        border: '1px solid rgba(255,255,255,0.15)',
-        boxShadow: '0 2px 12px rgba(0,0,0,0.4)',
+        color: '#2C1810',
+        fontFamily: 'Comic Sans MS, cursive',
+        backgroundColor: '#FFFDE7',
+        border: '1.5px solid rgba(44,24,16,0.18)',
+        borderRadius: '4px',
+        boxShadow: '0 3px 10px rgba(0,0,0,0.18), 2px 2px 0 rgba(0,0,0,0.06)',
+        transform: 'rotate(-0.8deg)',
       }}
       aria-label="Go back"
     >
-      <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
-        <path d="M9 2L4 7l5 5" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
-      </svg>
-      Back
+      ← Back
     </button>
   );
 
@@ -160,7 +158,6 @@ export function BlogPostPage() {
   if (post.article_type === 'parallax_store_guide') {
     return (
       <>
-        {BackButton}
         {/* SEO Head */}
         <SEOHead
           title={post.title}
@@ -360,6 +357,11 @@ export function BlogPostPage() {
                   </div>
                 </div>
 
+                {/* Back button — below hero image, before store sections */}
+                <div className="mb-6 md:mb-8">
+                  {BackButton}
+                </div>
+
                 {/* Parallax Store Sections */}
                 {post.sections_data && post.sections_data.map((section, index) => (
                   <ParallaxGuideSection
@@ -399,7 +401,6 @@ export function BlogPostPage() {
   // Render Standard Article (bulletin board style - fallback)
   return (
     <>
-      {BackButton}
       {/* SEO Head */}
       <SEOHead
         title={post.title}
@@ -468,6 +469,11 @@ export function BlogPostPage() {
               />
             </div>
           )}
+
+          {/* Back button — below hero image */}
+          <div className="mb-4 md:mb-6">
+            {BackButton}
+          </div>
 
           <div className="mb-6 md:mb-8">
             <p

@@ -43,6 +43,8 @@ interface RadarStoreMarkerProps {
   checkinRadius: number;  // dynamic in-range threshold
   isStamped: boolean;     // user has already checked in here
   isHighlighted?: boolean; // currently shown in the radar card (via +N chip)
+  /** This store is a target in the user's active quest — shows gold beacon when far */
+  isQuestTarget?: boolean;
   /** Render a cyan proximity ring around this marker (store is within ~50m).
    *  Rendered INSIDE this component so pointer-events:none works — separate
    *  <Marker> rings sit as DOM siblings and block tap events on the store marker. */
@@ -58,6 +60,7 @@ export const RadarStoreMarker = memo(function RadarStoreMarker({
   checkinRadius,
   isStamped,
   isHighlighted = false,
+  isQuestTarget = false,
   showProximityRing = false,
   onClick,
 }: RadarStoreMarkerProps) {
@@ -92,10 +95,11 @@ export const RadarStoreMarker = memo(function RadarStoreMarker({
   //   in_range   — solid filled disc, white icon, glow ring. "You're here. Stamp it."
   //   stamped    — faded green solid, ✓ icon. "Already been."
 
-  type DiscState = 'far' | 'approaching' | 'in_range' | 'stamped';
+  type DiscState = 'far' | 'quest_target' | 'approaching' | 'in_range' | 'stamped';
   const state: DiscState = isStamped ? 'stamped'
-    : isInRange    ? 'in_range'
-    : isApproaching ? 'approaching'
+    : isInRange      ? 'in_range'
+    : isApproaching  ? 'approaching'
+    : isQuestTarget  ? 'quest_target'  // gold beacon — far but quest-relevant
     : 'far';
 
   const cfg = {
@@ -106,6 +110,15 @@ export const RadarStoreMarker = memo(function RadarStoreMarker({
       iconColor: '#6b7280',
       opacity: 0.7,
       shadow: 'none',
+      showRing: false,
+    },
+    quest_target: {
+      size: 30, iconSize: 11,
+      bg: 'rgba(245,158,11,0.12)',
+      border: `1.5px solid rgba(245,158,11,0.55)`,
+      iconColor: '#f59e0b',
+      opacity: 1,
+      shadow: `0 0 8px rgba(245,158,11,0.25)`,
       showRing: false,
     },
     approaching: {
@@ -218,6 +231,8 @@ export const RadarStoreMarker = memo(function RadarStoreMarker({
       >
         {state === 'stamped' ? (
           <span style={{ color: '#10b981', fontSize: cfg.iconSize + 2, lineHeight: 1, fontWeight: 700 }}>✓</span>
+        ) : state === 'quest_target' ? (
+          <span style={{ color: '#f59e0b', fontSize: cfg.iconSize + 1, lineHeight: 1 }}>◆</span>
         ) : (
           <Icon size={cfg.iconSize} color={cfg.iconColor} strokeWidth={state === 'in_range' ? 2.5 : 2} />
         )}

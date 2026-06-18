@@ -31,6 +31,8 @@ interface QuestMenuSheetProps {
   questsByNeighborhood: Map<string, QuestProgress>;
   /** Current GPS neighborhood — pinned at top */
   currentNeighborhood: string | null;
+  /** The quest the user has explicitly accepted (null = none) */
+  activeQuestNeighborhood: string | null;
   /** Tap a quest row to open its detail sheet */
   onQuestTap: (neighborhood: string) => void;
 }
@@ -46,10 +48,12 @@ function pct(q: QuestProgress): number {
 function QuestRow({
   quest,
   isPinned,
+  isActive,
   onClick,
 }: {
   quest: QuestProgress;
   isPinned: boolean;
+  isActive: boolean;
   onClick: () => void;
 }) {
   const progressPct = pct(quest);
@@ -102,6 +106,18 @@ function QuestRow({
                 }}
               >
                 Here
+              </span>
+            )}
+            {isActive && !quest.isComplete && (
+              <span
+                className="text-[9px] font-black uppercase tracking-wider px-1.5 py-0.5 rounded-full flex-shrink-0"
+                style={{
+                  backgroundColor: 'rgba(245,158,11,0.15)',
+                  color: GOLD,
+                  border: `1px solid ${GOLD_BORDER}`,
+                }}
+              >
+                ★ Active
               </span>
             )}
             {quest.isComplete && (
@@ -177,6 +193,7 @@ export function QuestMenuSheet({
   onClose,
   questsByNeighborhood,
   currentNeighborhood,
+  activeQuestNeighborhood,
   onQuestTap,
 }: QuestMenuSheetProps) {
   // Split: pinned (current neighborhood) + rest sorted by progress
@@ -267,6 +284,7 @@ export function QuestMenuSheet({
                   <QuestRow
                     quest={pinnedQuest}
                     isPinned
+                    isActive={activeQuestNeighborhood === pinnedQuest.neighborhood}
                     onClick={() => onQuestTap(pinnedQuest.neighborhood)}
                   />
                 </>
@@ -286,6 +304,7 @@ export function QuestMenuSheet({
                       key={q.neighborhood}
                       quest={q}
                       isPinned={false}
+                      isActive={activeQuestNeighborhood === q.neighborhood}
                       onClick={() => onQuestTap(q.neighborhood)}
                     />
                   ))}

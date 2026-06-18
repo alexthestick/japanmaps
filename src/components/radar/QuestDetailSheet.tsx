@@ -33,6 +33,12 @@ interface QuestDetailSheetProps {
   quest: QuestProgress | null;
   /** Set of all store IDs the user has ever stamped */
   stampedStoreIds: Set<string>;
+  /** The currently accepted quest neighborhood (null = none active) */
+  activeQuestNeighborhood: string | null;
+  /** Called when user taps "Start Quest" */
+  onQuestAccept: (neighborhood: string) => void;
+  /** Called when user taps "Abandon Quest" */
+  onQuestAbandon: () => void;
   /** Called to go back to QuestMenuSheet */
   onBack: () => void;
   /** Called to close everything */
@@ -148,6 +154,9 @@ export function QuestDetailSheet({
   isOpen,
   quest,
   stampedStoreIds,
+  activeQuestNeighborhood,
+  onQuestAccept,
+  onQuestAbandon,
   onBack,
   onClose,
   onStoreTap,
@@ -297,25 +306,61 @@ export function QuestDetailSheet({
               ))}
             </div>
 
-            {/* Footer: Read guide CTA */}
+            {/* Footer: Start/Abandon Quest + Read guide */}
             <div
-              className="px-4 py-3 flex-shrink-0"
+              className="px-4 pt-3 pb-3 flex-shrink-0 flex flex-col gap-2"
               style={{ borderTop: '1px solid rgba(255,255,255,0.06)' }}
             >
+              {/* Primary CTA: Start or Abandon quest */}
+              {(() => {
+                const isThisQuestActive = activeQuestNeighborhood === quest.neighborhood;
+                if (quest.isComplete) {
+                  // Already done — just show the guide link as primary
+                  return null;
+                }
+                return isThisQuestActive ? (
+                  <button
+                    onClick={onQuestAbandon}
+                    className="w-full flex items-center justify-center gap-2 py-3 rounded-2xl font-semibold text-[13px] transition-all duration-200 active:scale-[0.98]"
+                    style={{
+                      backgroundColor: 'rgba(255,255,255,0.04)',
+                      color: 'rgba(255,255,255,0.38)',
+                      border: '1px solid rgba(255,255,255,0.09)',
+                    }}
+                  >
+                    ✕ Abandon Quest
+                  </button>
+                ) : (
+                  <button
+                    onClick={() => onQuestAccept(quest.neighborhood)}
+                    className="w-full flex items-center justify-center gap-2 py-3.5 rounded-2xl font-bold text-[14px] transition-all duration-200 active:scale-[0.98]"
+                    style={{
+                      background: `linear-gradient(135deg, ${GOLD}22 0%, ${GOLD}10 100%)`,
+                      color: GOLD,
+                      border: `1.5px solid ${GOLD_BORDER}`,
+                      boxShadow: `0 0 20px ${GOLD}18`,
+                    }}
+                  >
+                    ★ Start Quest
+                  </button>
+                );
+              })()}
+
+              {/* Secondary: Read the guide */}
               <button
                 onClick={() => {
                   onClose();
                   navigate(`/blog/${quest.questSlug}`);
                 }}
-                className="w-full flex items-center justify-center gap-2 py-3.5 rounded-2xl font-semibold text-[13px] transition-all duration-200 active:scale-[0.98]"
+                className="w-full flex items-center justify-center gap-2 py-2.5 rounded-2xl font-semibold text-[12px] transition-all duration-200 active:scale-[0.98]"
                 style={{
-                  backgroundColor: GOLD_DIM,
-                  color: GOLD,
-                  border: `1px solid ${GOLD_BORDER}`,
+                  backgroundColor: 'transparent',
+                  color: 'rgba(255,255,255,0.32)',
+                  border: '1px solid rgba(255,255,255,0.07)',
                 }}
               >
-                <BookOpen className="w-4 h-4" />
-                Read the guide →
+                <BookOpen className="w-3.5 h-3.5" />
+                Read the guide
               </button>
             </div>
           </motion.div>

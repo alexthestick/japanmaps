@@ -231,8 +231,8 @@ export function HomePage() {
   const { stores: filteredStores, loading, error } = useStores(storeFilters);
 
   // EXPLORE MODE: Filter stores to 300m radius around user position.
-  // Must be defined after filteredStores — references it directly.
   // In browse mode returns filteredStores unchanged.
+  // Quest store expansion happens in storesForMapWithQuest below (after quest state is declared).
   const storesForMap = useMemo(() => {
     if (!isExploreMode || !exploreUserPosition) return filteredStores;
     return filteredStores.filter(store =>
@@ -334,6 +334,23 @@ export function HomePage() {
   const [questMenuOpen, setQuestMenuOpen] = useState(false);
   const [questDetailNeighborhood, setQuestDetailNeighborhood] = useState<string | null>(null);
 
+  // Active quest — persisted so it survives app restarts.
+  // null = no quest accepted. Set via "Start Quest" in QuestDetailSheet.
+  const [activeQuestNeighborhood, setActiveQuestNeighborhood] = useState<string | null>(() => {
+    try { return localStorage.getItem('active-quest-neighborhood'); } catch { return null; }
+  });
+
+  const handleQuestAccept = useCallback((neighborhood: string) => {
+    setActiveQuestNeighborhood(neighborhood);
+    try { localStorage.setItem('active-quest-neighborhood', neighborhood); } catch {}
+    setQuestDetailNeighborhood(null);
+  }, []);
+
+  const handleQuestAbandon = useCallback(() => {
+    setActiveQuestNeighborhood(null);
+    try { localStorage.removeItem('active-quest-neighborhood'); } catch {}
+  }, []);
+
   // Index into nearbyStores — lets the user cycle to the next nearby store via the "+X" chip.
   const [nearbyStoreIndex, setNearbyStoreIndex] = useState(0);
 
@@ -394,8 +411,39 @@ export function HomePage() {
     return questsByNeighborhood.get(exploreNeighborhood) ?? null;
   }, [isExploreMode, exploreNeighborhood, questsByNeighborhood]);
 
+  // Active quest progress (accepted by user) — overrides GPS neighborhood in RadarHUD row 3.
+  const activeQuestProgress = useMemo(() => {
+    if (!isExploreMode || !activeQuestNeighborhood) return null;
+    return questsByNeighborhood.get(activeQuestNeighborhood) ?? null;
+  }, [isExploreMode, activeQuestNeighborhood, questsByNeighborhood]);
+
+  // Set of store IDs in the active quest — passed to MapView for quest beacon markers.
+  const activeQuestStoreIds = useMemo((): Set<string> => {
+    if (!activeQuestProgress) return new Set();
+    return new Set(activeQuestProgress.questStores.map(s => s.storeId));
+  }, [activeQuestProgress]);
+
+  // Extends the 300m base with unstamped quest stores up to 2km when a quest is active.
+  // Defined here (after activeQuestStoreIds) so all deps are in scope.
+  const storesForMapWithQuest = useMemo(() => {
+    if (!activeQuestStoreIds.size || !isExploreMode || !exploreUserPosition) return storesForMap;
+    const baseIds = new Set(storesForMap.map(s => s.id));
+    const extras = filteredStores.filter(store =>
+      activeQuestStoreIds.has(store.id) &&
+      !baseIds.has(store.id) &&
+      distanceMeters(
+        exploreUserPosition.latitude,
+        exploreUserPosition.longitude,
+        store.latitude,
+        store.longitude
+      ) <= 2000
+    );
+    return extras.length > 0 ? [...storesForMap, ...extras] : storesForMap;
+  }, [storesForMap, filteredStores, activeQuestStoreIds, isExploreMode, exploreUserPosition]);
+
   // True when the quest row is visible inside the HUD (affects layout of things below it).
-  const hasQuestRow = !!currentQuestProgress && currentQuestProgress.total > 0;
+  // Active quest takes priority over GPS neighborhood quest.
+  const hasQuestRow = !!(activeQuestProgress ?? currentQuestProgress)?.total;
   // Top offset for NeighborhoodEntryCard: clears HUD + optional quest row + 4px gap.
   const questTopOffset = getRadarHudHeight(hasQuestRow) + 4;
 
@@ -589,20 +637,31 @@ export function HomePage() {
   // Detect when a neighborhood quest becomes complete after a stamp.
   // Fires whenever stampedStoreIds updates (i.e., after each stamp refetch).
   // Only triggers the card once per neighborhood per session (sessionCompletedNeighborhoodsRef).
+  // Checks both the GPS neighborhood quest AND the explicitly accepted active quest.
   useEffect(() => {
-    if (!isExploreMode || !exploreNeighborhood) return;
-    const progress = questsByNeighborhood.get(exploreNeighborhood);
-    if (!progress || !progress.isComplete) return;
-    if (sessionCompletedNeighborhoodsRef.current.has(exploreNeighborhood)) return;
+    if (!isExploreMode) return;
 
-    // First completion in this session — fire the card
-    sessionCompletedNeighborhoodsRef.current.add(exploreNeighborhood);
-    setNeighborhoodComplete({
-      neighborhood: exploreNeighborhood,
-      storeCount: progress.total,
-      questSlug: progress.questSlug,
-    });
-  }, [stampedStoreIds, isExploreMode, exploreNeighborhood, questsByNeighborhood]);
+    const checkAndFire = (neighborhood: string | null) => {
+      if (!neighborhood) return;
+      const progress = questsByNeighborhood.get(neighborhood);
+      if (!progress || !progress.isComplete) return;
+      if (sessionCompletedNeighborhoodsRef.current.has(neighborhood)) return;
+      sessionCompletedNeighborhoodsRef.current.add(neighborhood);
+      setNeighborhoodComplete({
+        neighborhood,
+        storeCount: progress.total,
+        questSlug: progress.questSlug,
+      });
+    };
+
+    // GPS neighborhood quest
+    checkAndFire(exploreNeighborhood);
+
+    // Active quest (may be in a different neighborhood)
+    if (activeQuestNeighborhood && activeQuestNeighborhood !== exploreNeighborhood) {
+      checkAndFire(activeQuestNeighborhood);
+    }
+  }, [stampedStoreIds, isExploreMode, exploreNeighborhood, activeQuestNeighborhood, questsByNeighborhood]);
 
   // Called by RadarCheckinCard after a successful stamp or re-verification.
   // Bumps lastStampedAt → invalidates useCheckinCache → marker turns green immediately.
@@ -709,7 +768,7 @@ export function HomePage() {
           {/* Full-screen Map */}
           <MapView
             ref={mapViewRef}
-            stores={storesForMap}
+            stores={storesForMapWithQuest}
             onStoreClick={handleStoreClick}
             selectedCity={selectedCity}
             selectedNeighborhood={selectedNeighborhood}
@@ -730,6 +789,7 @@ export function HomePage() {
             stampedStoreIds={stampedStoreIds}
             checkinRadius={checkinRadius}
             activeRadarStoreId={isExploreMode ? (nearbyStoreEntry?.store.id ?? null) : null}
+            activeQuestStoreIds={isExploreMode ? activeQuestStoreIds : undefined}
           />
 
           {/* MOBILE: Floating Filter Bar (overlays map) */}
@@ -834,7 +894,8 @@ export function HomePage() {
                         ? { name: nearbyStoreEntry.store.name, distanceM: nearbyStoreEntry.dist }
                         : null
                     }
-                    questProgress={currentQuestProgress}
+                    questProgress={activeQuestProgress ?? currentQuestProgress}
+                    activeQuestNeighborhood={activeQuestNeighborhood}
                   />
                 )}
               </AnimatePresence>
@@ -959,6 +1020,7 @@ export function HomePage() {
                 onClose={() => setQuestMenuOpen(false)}
                 questsByNeighborhood={questsByNeighborhood}
                 currentNeighborhood={exploreNeighborhood}
+                activeQuestNeighborhood={activeQuestNeighborhood}
                 onQuestTap={(neighborhood) => {
                   setQuestMenuOpen(false);
                   setQuestDetailNeighborhood(neighborhood);
@@ -973,6 +1035,9 @@ export function HomePage() {
                 isOpen={!!questDetailNeighborhood}
                 quest={questDetailNeighborhood ? (questsByNeighborhood.get(questDetailNeighborhood) ?? null) : null}
                 stampedStoreIds={stampedStoreIds}
+                activeQuestNeighborhood={activeQuestNeighborhood}
+                onQuestAccept={handleQuestAccept}
+                onQuestAbandon={handleQuestAbandon}
                 onBack={() => {
                   setQuestDetailNeighborhood(null);
                   setQuestMenuOpen(true);

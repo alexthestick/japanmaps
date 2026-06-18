@@ -157,13 +157,15 @@ interface MapViewProps {
   checkinRadius?: number;
   // Radar mode: ID of the store currently shown in the radar card — gets a highlight ring
   activeRadarStoreId?: string | null;
+  // Active quest store IDs — these get a gold beacon marker when beyond 150m
+  activeQuestStoreIds?: Set<string>;
 }
 
 export interface MapViewHandle {
   flyToStore: (latitude: number, longitude: number, options?: { offset?: [number, number]; zoom?: number }) => void;
 }
 
-export const MapView = forwardRef<MapViewHandle, MapViewProps>(({ stores, onStoreClick, selectedCity, selectedNeighborhood, isSearchActive = false, activeMainCategory, activeSubCategory, styleMode: controlledStyleMode, onStyleModeChange, tappedStoreId, onLabelClick, onSearchArea, selectedStore, onViewportChange, spotlightedStoreIds = [], isSpotlightMode = false, isExploreMode = false, onUserPositionUpdate, exploreUserPosition = null, stampedStoreIds, checkinRadius = 50, activeRadarStoreId = null }, ref) => {
+export const MapView = forwardRef<MapViewHandle, MapViewProps>(({ stores, onStoreClick, selectedCity, selectedNeighborhood, isSearchActive = false, activeMainCategory, activeSubCategory, styleMode: controlledStyleMode, onStyleModeChange, tappedStoreId, onLabelClick, onSearchArea, selectedStore, onViewportChange, spotlightedStoreIds = [], isSpotlightMode = false, isExploreMode = false, onUserPositionUpdate, exploreUserPosition = null, stampedStoreIds, checkinRadius = 50, activeRadarStoreId = null, activeQuestStoreIds }, ref) => {
   const [viewState, setViewState] = useState({
     longitude: DEFAULT_CENTER.longitude,
     latitude: DEFAULT_CENTER.latitude,
@@ -816,6 +818,7 @@ export const MapView = forwardRef<MapViewHandle, MapViewProps>(({ stores, onStor
                     checkinRadius={checkinRadius}
                     isStamped={stampedStoreIds?.has(store.id) ?? false}
                     isHighlighted={activeRadarStoreId === store.id}
+                    isQuestTarget={activeQuestStoreIds?.has(store.id) ?? false}
                     showProximityRing={dist <= 50}
                     onClick={() => onStoreClick(store)}
                   />
