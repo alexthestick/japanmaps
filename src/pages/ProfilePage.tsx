@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useMemo } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
@@ -12,6 +12,7 @@ import { ikUrl } from '../utils/ikUrl';
 import { generatePassportShareCard } from '../utils/passportCanvas';
 import { computeStyleDNA, MINIMUM_STAMPS } from '../utils/computeStyleDNA';
 import { NeighborhoodBubbleMap, type NeighborhoodCount } from '../components/passport/NeighborhoodBubbleMap';
+import { useNeighborhoodQuests } from '../hooks/useNeighborhoodQuests';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -330,6 +331,10 @@ function StyleDNACard({ checkins }: { checkins: Checkin[] }) {
 
 // ─── Passport tab content ─────────────────────────────────────────────────────
 
+const QUEST_GOLD        = '#f59e0b';
+const QUEST_GOLD_DIM    = 'rgba(245,158,11,0.12)';
+const QUEST_GOLD_BORDER = 'rgba(245,158,11,0.28)';
+
 function PassportTabContent({
   checkins,
   badgeProgress,
@@ -344,6 +349,17 @@ function PassportTabContent({
   username: string;
 }) {
   const [sharing, setSharing] = useState(false);
+
+  // ── Quest trophy wall ────────────────────────────────────────────────────────
+  const stampedStoreIds = useMemo(
+    () => new Set(checkins.map(c => c.store_id)),
+    [checkins]
+  );
+  const questsByNeighborhood = useNeighborhoodQuests(stampedStoreIds);
+  const completedQuests = useMemo(
+    () => [...questsByNeighborhood.values()].filter(q => q.isComplete),
+    [questsByNeighborhood]
+  );
 
   const handleShare = async () => {
     if (sharing || checkins.length < 5) return;
@@ -458,6 +474,56 @@ function PassportTabContent({
             badgeProgress={badgeProgress}
             allCounts={neighborhoodCounts}
           />
+        </div>
+      )}
+
+      {/* Quest Trophy Wall */}
+      {completedQuests.length > 0 && (
+        <div>
+          <h3 className="text-xs font-bold uppercase tracking-widest text-gray-600 mb-3">
+            Completed Quests · {completedQuests.length}
+          </h3>
+          <div className="space-y-2">
+            {completedQuests.map(quest => (
+              <a
+                key={quest.questId}
+                href={`/blog/${quest.questSlug}`}
+                className="flex items-center gap-3 px-4 py-3.5 rounded-xl no-underline transition-all active:scale-[0.98]"
+                style={{
+                  backgroundColor: QUEST_GOLD_DIM,
+                  border: `1px solid ${QUEST_GOLD_BORDER}`,
+                }}
+              >
+                {/* Trophy badge */}
+                <div
+                  className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0"
+                  style={{
+                    backgroundColor: 'rgba(245,158,11,0.18)',
+                    border: `1.5px solid rgba(245,158,11,0.45)`,
+                    boxShadow: '0 0 12px rgba(245,158,11,0.15)',
+                  }}
+                >
+                  <span style={{ fontSize: 18, lineHeight: 1 }}>★</span>
+                </div>
+
+                {/* Text */}
+                <div className="flex-1 min-w-0">
+                  <p
+                    className="text-sm font-bold leading-tight truncate"
+                    style={{ color: QUEST_GOLD }}
+                  >
+                    {quest.neighborhood}
+                  </p>
+                  <p className="text-[11px] mt-0.5" style={{ color: 'rgba(245,158,11,0.55)' }}>
+                    {quest.total} store{quest.total !== 1 ? 's' : ''} stamped · Quest complete
+                  </p>
+                </div>
+
+                {/* Chevron */}
+                <ChevronRight className="w-4 h-4 flex-shrink-0" style={{ color: 'rgba(245,158,11,0.35)' }} />
+              </a>
+            ))}
+          </div>
         </div>
       )}
 

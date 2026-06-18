@@ -28,6 +28,7 @@ import { supabase } from '../../lib/supabase';
 import { ikUrl } from '../../utils/ikUrl';
 import { getHoursStatus } from '../../utils/hoursParser';
 import type { Store } from '../../types/store';
+import type { QuestProgress } from '../../hooks/useNeighborhoodQuests';
 import { useKurbItemsByStores } from '../../hooks/useKurbItemsByStores';
 import type { CachedKurbItem } from '../../hooks/useKurbItemsByStores';
 import { KurbLightbox, type KurbLightboxItem } from '../store/KurbLightbox';
@@ -61,6 +62,10 @@ export interface RadarCheckinCardProps {
   onViewStore?: (store: Store) => void;
   /** Called when user taps "Log a Find" from the REUNION card — bubbles to HomePage to render PostStampHaulPrompt at map level */
   onLogFind?: (store: Store) => void;
+  /** Active quest progress — shown as a gold pill when this store is a quest target */
+  activeQuestProgress?: QuestProgress | null;
+  /** True when this store's ID is in the active quest's store list */
+  isQuestTarget?: boolean;
 }
 
 // ─── Accent theme per emotional state ────────────────────────────────────────
@@ -227,6 +232,8 @@ export function RadarCheckinCard({
   onDismiss,
   onViewStore,
   onLogFind,
+  activeQuestProgress,
+  isQuestTarget = false,
 }: RadarCheckinCardProps) {
   const { user } = useAuthContext();
   const navigate = useNavigate();
@@ -453,6 +460,23 @@ export function RadarCheckinCard({
         {/* Store name + metadata row */}
         <div className="flex-1 min-w-0">
           <p className="text-white font-semibold text-sm leading-tight truncate">{store.name}</p>
+
+          {/* Quest progress pill — shown when this store is part of the active quest */}
+          {isQuestTarget && activeQuestProgress && !activeQuestProgress.isComplete && (
+            <div className="flex items-center gap-1 mt-1 mb-0.5">
+              <span
+                className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold"
+                style={{
+                  backgroundColor: 'rgba(245,158,11,0.14)',
+                  border: '1px solid rgba(245,158,11,0.35)',
+                  color: '#f59e0b',
+                }}
+              >
+                ★ {activeQuestProgress.neighborhood} Quest · {activeQuestProgress.stamped}/{activeQuestProgress.total}
+              </span>
+            </div>
+          )}
+
           <div className="flex items-center gap-1.5 mt-0.5 flex-wrap">
 
             {/* Category pill */}

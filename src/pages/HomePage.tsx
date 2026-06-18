@@ -42,6 +42,7 @@ import { QuestDetailSheet } from '../components/radar/QuestDetailSheet';
 import { useCheckinCache } from '../hooks/useCheckinCache';
 import { useNeighborhoodQuests } from '../hooks/useNeighborhoodQuests';
 import { NeighborhoodCompleteCard } from '../components/radar/NeighborhoodCompleteCard';
+import { RadarOnboardingCard, hasSeenRadarOnboarding } from '../components/radar/RadarOnboardingCard';
 
 export function HomePage() {
   const [searchParams, setSearchParams] = useSearchParams();
@@ -278,6 +279,9 @@ export function HomePage() {
   // Dismiss state for the check-in card after a successful stamp.
   // Reset whenever the active nearby store changes so the card re-appears for a new store.
   const [cardDismissed, setCardDismissed] = useState(false);
+
+  // Onboarding overlay — shown once when radar mode first activates, never again.
+  const [showOnboarding, setShowOnboarding] = useState(false);
 
   // ── Radar session tracking ───────────────────────────────────────────────
   // sessionPositionsRef: ring-buffer of GPS fixes — used for Haversine distance
@@ -582,6 +586,8 @@ export function HomePage() {
       setNeighborhoodEntry(null);
       sessionCompletedNeighborhoodsRef.current = new Set();
       setNeighborhoodComplete(null);
+      // Show onboarding card on first-ever radar activation
+      if (!hasSeenRadarOnboarding()) setShowOnboarding(true);
     }
     setIsExploreMode(prev => !prev);
   }, [isExploreMode, exploreNeighborhood, exitConfirmPending]);
@@ -971,8 +977,20 @@ export function HomePage() {
                       onDismiss={() => setCardDismissed(true)}
                       onViewStore={(store) => setSelectedStore(store)}
                       onLogFind={(store) => setHaulPromptStore(store)}
+                      activeQuestProgress={activeQuestProgress ?? null}
+                      isQuestTarget={activeQuestStoreIds.has(nearbyStoreEntry.store.id)}
                     />
                   </motion.div>
+                )}
+              </AnimatePresence>
+
+              {/* RADAR ONBOARDING ────────────────────────────────────────────
+                  Shown once on first Radar activation. Auto-dismisses after 8s.
+                  Persisted via localStorage so it never shows again.
+              ──────────────────────────────────────────────────────────────── */}
+              <AnimatePresence>
+                {isExploreMode && showOnboarding && (
+                  <RadarOnboardingCard onDismiss={() => setShowOnboarding(false)} />
                 )}
               </AnimatePresence>
 
