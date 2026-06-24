@@ -199,22 +199,13 @@ export function AdminDashboard() {
     try {
       setLoadingStores(true);
 
-      // PostgREST caps at 1000 rows by default — paginate to get all stores.
-      const PAGE_SIZE = 1000;
-      let allData: any[] = [];
-      let from = 0;
-      while (true) {
-        const { data, error } = await supabase
-          .rpc('get_stores_with_coordinates')
-          .range(from, from + PAGE_SIZE - 1);
-        if (error) throw error;
-        if (!data || data.length === 0) break;
-        allData = [...allData, ...data];
-        if (data.length < PAGE_SIZE) break;
-        from += PAGE_SIZE;
-      }
+      // get_all_stores_json() returns all stores as a single JSONB blob,
+      // bypassing PostgREST's 1000-row max_rows limit entirely.
+      const { data, error } = await supabase.rpc('get_all_stores_json');
+      if (error) throw error;
 
-      const transformedStores: Store[] = allData.map((s: any) => ({
+      const rows: any[] = Array.isArray(data) ? data : [];
+      const transformedStores: Store[] = rows.map((s: any) => ({
         id: s.id,
         name: s.name,
         address: s.address,

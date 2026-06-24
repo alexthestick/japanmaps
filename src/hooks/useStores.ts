@@ -9,37 +9,24 @@ import { logger } from '../utils/logger';
  * Uses React Query for automatic caching
  */
 async function fetchAllStores(): Promise<Store[]> {
-  // Supabase PostgREST caps responses at 1000 rows by default.
-  // Paginate in batches of 1000 to fetch all stores regardless of total count.
-  const PAGE_SIZE = 1000;
-  let allData: any[] = [];
-  let from = 0;
+  // get_all_stores_json() returns ALL stores as a single JSONB blob,
+  // bypassing PostgREST's 1000-row max_rows limit entirely.
+  const { data, error } = await supabase.rpc('get_all_stores_json');
 
-  while (true) {
-    const { data, error } = await supabase
-      .rpc('get_stores_with_coordinates')
-      .range(from, from + PAGE_SIZE - 1);
-
-    if (error) {
-      console.error('Error fetching stores:', error);
-      throw error;
-    }
-
-    if (!data || data.length === 0) break;
-    allData = [...allData, ...data];
-    if (data.length < PAGE_SIZE) break;
-    from += PAGE_SIZE;
+  if (error) {
+    console.error('Error fetching stores:', error);
+    throw error;
   }
 
-  const data = allData;
+  const rows: any[] = Array.isArray(data) ? data : [];
 
-  if (data.length === 0) {
+  if (rows.length === 0) {
     logger.warn('No stores returned from database');
     return [];
   }
 
   // Transform data to match Store type
-  const transformedStores: Store[] = data.map((store: any) => ({
+  const transformedStores: Store[] = rows.map((store: any) => ({
     id: store.id,
     slug: store.slug || generateSlug(store.name, store.city), // Use DB slug or generate one
     name: store.name,
