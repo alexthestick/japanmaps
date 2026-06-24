@@ -9,14 +9,31 @@ import { logger } from '../utils/logger';
  * Uses React Query for automatic caching
  */
 async function fetchAllStores(): Promise<Store[]> {
-  const { data, error } = await supabase.rpc('get_stores_with_coordinates');
+  // Supabase PostgREST caps responses at 1000 rows by default.
+  // Paginate in batches of 1000 to fetch all stores regardless of total count.
+  const PAGE_SIZE = 1000;
+  let allData: any[] = [];
+  let from = 0;
 
-  if (error) {
-    console.error('Error fetching stores:', error);
-    throw error;
+  while (true) {
+    const { data, error } = await supabase
+      .rpc('get_stores_with_coordinates')
+      .range(from, from + PAGE_SIZE - 1);
+
+    if (error) {
+      console.error('Error fetching stores:', error);
+      throw error;
+    }
+
+    if (!data || data.length === 0) break;
+    allData = [...allData, ...data];
+    if (data.length < PAGE_SIZE) break;
+    from += PAGE_SIZE;
   }
 
-  if (!data || data.length === 0) {
+  const data = allData;
+
+  if (data.length === 0) {
     logger.warn('No stores returned from database');
     return [];
   }

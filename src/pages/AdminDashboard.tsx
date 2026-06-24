@@ -11,11 +11,42 @@ import { MainCategoryMigration } from '../components/admin/MainCategoryMigration
 import { NeighborhoodList } from '../components/admin/NeighborhoodList';
 import { BlogPostEditor } from '../components/admin/BlogPostEditor';
 import { SocialPostCreator } from '../components/admin/SocialPostCreator';
+import { CarouselCreator } from '../components/admin/CarouselCreator';
 import { SubstackImporter } from '../components/admin/SubstackImporter';
 import { Modal } from '../components/common/Modal';
 import type { StoreSuggestion, Store } from '../types/store';
 import type { ParallaxStoreSection } from '../types/blog';
 import { logger } from '../utils/logger';
+
+// ── Social inner tab switcher — defined at module level (NOT inside AdminDashboard)
+// so React sees a stable component type across renders and never remounts it.
+function SocialInnerTabs() {
+  const [inner, setInner] = useState<'single' | 'carousel'>('single');
+  return (
+    <div>
+      <div className="flex gap-1 border-b border-gray-200 mb-6 px-6">
+        <button
+          onClick={() => setInner('single')}
+          className={`px-4 py-2 text-sm font-semibold border-b-2 -mb-px transition-colors ${
+            inner === 'single' ? 'border-cyan-500 text-cyan-600' : 'border-transparent text-gray-500 hover:text-gray-800'
+          }`}
+        >
+          📸 Single Post
+        </button>
+        <button
+          onClick={() => setInner('carousel')}
+          className={`px-4 py-2 text-sm font-semibold border-b-2 -mb-px transition-colors ${
+            inner === 'carousel' ? 'border-cyan-500 text-cyan-600' : 'border-transparent text-gray-500 hover:text-gray-800'
+          }`}
+        >
+          🎞 Carousel
+        </button>
+      </div>
+      {inner === 'single' && <SocialPostCreator />}
+      {inner === 'carousel' && <CarouselCreator />}
+    </div>
+  );
+}
 
 // Module-level cache to persist data across component remounts
 let adminDataCache: {
@@ -167,11 +198,23 @@ export function AdminDashboard() {
   async function fetchStores() {
     try {
       setLoadingStores(true);
-      const { data, error } = await supabase.rpc('get_stores_with_coordinates');
 
-      if (error) throw error;
+      // PostgREST caps at 1000 rows by default — paginate to get all stores.
+      const PAGE_SIZE = 1000;
+      let allData: any[] = [];
+      let from = 0;
+      while (true) {
+        const { data, error } = await supabase
+          .rpc('get_stores_with_coordinates')
+          .range(from, from + PAGE_SIZE - 1);
+        if (error) throw error;
+        if (!data || data.length === 0) break;
+        allData = [...allData, ...data];
+        if (data.length < PAGE_SIZE) break;
+        from += PAGE_SIZE;
+      }
 
-      const transformedStores: Store[] = (data || []).map((s: any) => ({
+      const transformedStores: Store[] = allData.map((s: any) => ({
         id: s.id,
         name: s.name,
         address: s.address,
@@ -195,10 +238,12 @@ export function AdminDashboard() {
         haulCount: s.haul_count || 0,
         saveCount: s.save_count || 0,
         google_place_id: s.google_place_id || undefined,
+        kurb_vendor_id: s.kurb_vendor_id ?? null,
       }));
 
       setStores(transformedStores);
       adminDataCache.stores = transformedStores;
+      adminDataCache.hasFetched = true;
     } catch (error) {
       console.error('Error fetching stores:', error);
     } finally {
@@ -759,7 +804,7 @@ export function AdminDashboard() {
 
       {/* Social Post Creator Tab */}
       {activeTab === 'social' && (
-        <SocialPostCreator />
+        <SocialInnerTabs />
       )}
 
       {/* Finds Approval Tab */}
