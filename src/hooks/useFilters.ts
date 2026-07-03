@@ -7,7 +7,6 @@ export function useFilters() {
     cities: [],
     categories: [],
     priceRanges: [],
-    verified: undefined,
     searchQuery: '',
   });
 
@@ -39,7 +38,6 @@ export function useFilters() {
       cities: [],
       categories: [],
       priceRanges: [],
-      verified: undefined,
       searchQuery: '',
     });
   };

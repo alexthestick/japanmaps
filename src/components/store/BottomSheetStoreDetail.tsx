@@ -149,12 +149,6 @@ export function BottomSheetStoreDetail({ store, onClose, isStamped, isExploreMod
                           {cat}
                         </span>
                       ))}
-                      {store.verified && (
-                        <span className="flex items-center gap-1 px-2.5 py-1.5 rounded-full bg-cyan-500/25 backdrop-blur-sm border border-cyan-400/50 text-white font-bold text-xs">
-                          <CheckCircle2 className="w-3 h-3" />
-                          Verified
-                        </span>
-                      )}
                     </div>
                     {store.saveCount > 0 && (
                       <div className="flex items-center gap-1 px-2.5 py-1.5 bg-black/60 backdrop-blur-sm rounded-full border border-cyan-400/30">

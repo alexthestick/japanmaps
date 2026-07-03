@@ -277,11 +277,6 @@ export function SavedStoresPage() {
                         <div className={`absolute inset-0 bg-gradient-to-t from-black/40 to-transparent transition-opacity ${
                           isHovered ? 'opacity-100' : 'opacity-0'
                         }`} />
-                        {store.verified && (
-                          <div className="absolute top-2 right-2 w-6 h-6 bg-blue-500 rounded-full flex items-center justify-center shadow-lg">
-                            <span className="text-white text-xs font-bold">✓</span>
-                          </div>
-                        )}
                       </div>
 
                       {/* Store Info */}

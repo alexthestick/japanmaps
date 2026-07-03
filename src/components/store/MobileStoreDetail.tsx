@@ -108,11 +108,6 @@ export function MobileStoreDetail({ store, similarStores, onPhotoClick }: Mobile
             >
               {store.name}
             </h1>
-            {store.verified && (
-              <span className="flex-shrink-0 px-2 py-1 bg-cyan-500/20 text-cyan-300 text-xs font-bold uppercase rounded-full border border-cyan-500/30">
-                Verified
-              </span>
-            )}
           </div>
 
           {/* Location */}

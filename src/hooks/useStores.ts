@@ -105,12 +105,6 @@ function applyFilters(stores: Store[], filters?: StoreFilters): Store[] {
     );
   }
 
-  if (filters?.verified !== undefined) {
-    filtered = filtered.filter(store =>
-      store.verified === filters.verified
-    );
-  }
-
   if (filters?.searchQuery) {
     const query = filters.searchQuery.toLowerCase();
     filtered = filtered.filter(store =>

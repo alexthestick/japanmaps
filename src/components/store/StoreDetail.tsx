@@ -145,7 +145,7 @@ export function StoreDetail({ store, onClose, isStamped }: StoreDetailProps) {
             )}
           </div>
 
-          {/* Category pills + verified */}
+          {/* Category pills */}
           <div className="flex flex-wrap gap-1.5 text-xs pt-1">
             {store.categories.slice(0, 3).map((cat, idx) => (
               <motion.span
@@ -158,18 +158,6 @@ export function StoreDetail({ store, onClose, isStamped }: StoreDetailProps) {
                 {cat.replace('-', ' ')}
               </motion.span>
             ))}
-            {store.verified && (
-              <motion.span
-                initial={{ opacity: 0, scale: 0.8 }}
-                animate={{ opacity: 1, scale: 1 }}
-                transition={{ delay: 0.5 }}
-                className="flex items-center gap-1 px-2.5 py-1 bg-gradient-to-r from-cyan-500/30 to-blue-500/30 text-white font-bold uppercase tracking-wider rounded-full border border-cyan-400/50"
-                style={{ boxShadow: '0 0 10px rgba(34, 217, 238, 0.3)' }}
-              >
-                <CheckCircle2 className="w-3 h-3" />
-                Verified
-              </motion.span>
-            )}
           </div>
         </motion.div>
 
