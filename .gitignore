@@ -37,3 +37,4 @@ supabase/006_import_stores.sql
 __pycache__/
 *.py
 vite.config.ts.timestamp-*.mjs
+supabase/.temp/
