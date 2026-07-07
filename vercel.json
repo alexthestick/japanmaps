@@ -4,11 +4,24 @@
   "framework": "vite",
   "rewrites": [
     {
-      "source": "/((?!api|assets|icons|sitemap.xml|robots.txt|manifest.webmanifest|sw.js|workbox-.*).*)",
+      "source": "/((?!api|assets|icons|sitemap.xml|robots.txt|manifest.webmanifest|sw.js|workbox-|\\.well-known).*)",
       "destination": "/index.html"
     }
   ],
   "headers": [
+    {
+      "source": "/.well-known/apple-app-site-association",
+      "headers": [
+        {
+          "key": "Content-Type",
+          "value": "application/json"
+        },
+        {
+          "key": "Cache-Control",
+          "value": "public, max-age=3600"
+        }
+      ]
+    },
     {
       "source": "/sitemap.xml",
       "headers": [

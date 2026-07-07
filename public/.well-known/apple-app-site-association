@@ -1,0 +1,19 @@
+{
+  "applinks": {
+    "details": [
+      {
+        "appIDs": ["XCFGZ4NCW6.com.lostintransit.app"],
+        "components": [
+          {
+            "/": "/store/*",
+            "comment": "Store detail pages — opens Lost in Transit app"
+          },
+          {
+            "/": "/find/*",
+            "comment": "Find detail pages — opens Lost in Transit app"
+          }
+        ]
+      }
+    ]
+  }
+}
