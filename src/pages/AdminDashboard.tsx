@@ -9,6 +9,9 @@ import { EditStoreForm } from '../components/forms/EditStoreForm';
 import { StoreListTable } from '../components/admin/StoreListTable';
 import { MainCategoryMigration } from '../components/admin/MainCategoryMigration';
 import { NeighborhoodList } from '../components/admin/NeighborhoodList';
+import { OverviewTab } from '../components/admin/OverviewTab';
+import { DataQualityTab } from '../components/admin/DataQualityTab';
+import { DuplicateDetector } from '../components/admin/DuplicateDetector';
 import { BlogPostEditor } from '../components/admin/BlogPostEditor';
 import { SocialPostCreator } from '../components/admin/SocialPostCreator';
 import { CarouselCreator } from '../components/admin/CarouselCreator';
@@ -87,7 +90,8 @@ export function AdminDashboard() {
     intro_content: string;
     sections: ParallaxStoreSection[];
   } | null>(null);
-  const [activeTab, setActiveTab] = useState<'stores' | 'suggestions' | 'migration' | 'neighborhoods' | 'blog' | 'social' | 'finds'>('stores');
+  const [activeTab, setActiveTab] = useState<'overview' | 'stores' | 'suggestions' | 'migration' | 'neighborhoods' | 'blog' | 'social' | 'finds' | 'quality' | 'duplicates'>('overview');
+  const [qualityFilter, setQualityFilter] = useState<string>('critical');
   const [pendingFinds, setPendingFinds] = useState<any[]>([]);
   const [loadingFinds, setLoadingFinds] = useState(false);
 
@@ -507,7 +511,17 @@ export function AdminDashboard() {
       </div>
 
       {/* Tabs */}
-      <div className="flex gap-4 mb-6 border-b border-gray-200">
+      <div className="flex flex-wrap gap-1 mb-6 border-b border-gray-200">
+        <button
+          onClick={() => setActiveTab('overview')}
+          className={`px-4 py-2 font-medium border-b-2 transition-colors ${
+            activeTab === 'overview'
+              ? 'border-blue-500 text-blue-600'
+              : 'border-transparent text-gray-600 hover:text-gray-900'
+          }`}
+        >
+          📊 Overview
+        </button>
         <button
           onClick={() => setActiveTab('stores')}
           className={`px-4 py-2 font-medium border-b-2 transition-colors ${
@@ -578,7 +592,40 @@ export function AdminDashboard() {
         >
           🔍 Finds ({pendingFinds.filter(f => f.status === 'pending').length})
         </button>
+        <button
+          onClick={() => setActiveTab('quality')}
+          className={`px-4 py-2 font-medium border-b-2 transition-colors ${
+            activeTab === 'quality'
+              ? 'border-orange-500 text-orange-600'
+              : 'border-transparent text-gray-600 hover:text-gray-900'
+          }`}
+        >
+          🚨 Data Quality
+        </button>
+        <button
+          onClick={() => setActiveTab('duplicates')}
+          className={`px-4 py-2 font-medium border-b-2 transition-colors ${
+            activeTab === 'duplicates'
+              ? 'border-red-500 text-red-600'
+              : 'border-transparent text-gray-600 hover:text-gray-900'
+          }`}
+        >
+          🔁 Duplicates
+        </button>
       </div>
+
+      {/* Overview Tab */}
+      {activeTab === 'overview' && (
+        <OverviewTab
+          stores={stores}
+          suggestions={suggestions}
+          pendingFinds={pendingFinds}
+          onNavigate={(tab, filter) => {
+            if (filter) setQualityFilter(filter);
+            setActiveTab(tab as any);
+          }}
+        />
+      )}
 
       {/* Store List Tab */}
       {activeTab === 'stores' && (
@@ -904,6 +951,16 @@ export function AdminDashboard() {
             </div>
           )}
         </div>
+      )}
+
+      {/* Data Quality Tab */}
+      {activeTab === 'quality' && (
+        <DataQualityTab stores={stores} initialFilter={qualityFilter} />
+      )}
+
+      {/* Duplicate Detector Tab */}
+      {activeTab === 'duplicates' && (
+        <DuplicateDetector stores={stores} />
       )}
 
       {/* Add Store Modal */}

@@ -56,6 +56,11 @@ export function CarouselCreator() {
   const [selectedStore, setSelectedStore] = useState<Store | null>(null);
   const [loadingStores, setLoadingStores] = useState(false);
 
+  // Searchable store picker state
+  const [storeSearchQuery, setStoreSearchQuery] = useState('');
+  const [showStoreDropdown, setShowStoreDropdown] = useState(false);
+  const storePickerRef = useRef<HTMLDivElement>(null);
+
   // Slide navigation
   const [activeSlide, setActiveSlide] = useState(0);
 
@@ -244,6 +249,29 @@ export function CarouselCreator() {
     }
   }
 
+  // ─── Store search picker ──────────────────────────────────────────────────────
+
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    function handleClickOutside(e: MouseEvent) {
+      if (storePickerRef.current && !storePickerRef.current.contains(e.target as Node)) {
+        setShowStoreDropdown(false);
+        if (selectedStore) setStoreSearchQuery(selectedStore.name);
+        else setStoreSearchQuery('');
+      }
+    }
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, [selectedStore]);
+
+  const filteredStores = storeSearchQuery.trim() === ''
+    ? stores
+    : stores.filter(s =>
+        s.name.toLowerCase().includes(storeSearchQuery.toLowerCase()) ||
+        s.city.toLowerCase().includes(storeSearchQuery.toLowerCase()) ||
+        (s.neighborhood || '').toLowerCase().includes(storeSearchQuery.toLowerCase())
+      );
+
   // ─── AI generate ─────────────────────────────────────────────────────────────
 
   async function handleAiGenerate() {
@@ -379,30 +407,78 @@ export function CarouselCreator() {
         {/* ── Left Panel ──────────────────────────────────────────── */}
         <div className="space-y-5">
 
-          {/* Store Selector */}
+          {/* Store Selector — searchable combobox */}
           <div className="border border-gray-200 rounded-lg p-4 bg-white">
             <label className="block text-sm font-semibold text-gray-800 mb-2 flex items-center gap-2">
               <span className="text-lg">🏪</span> Select Store
+              {stores.length > 0 && (
+                <span className="text-xs text-gray-400 font-normal">({stores.length} stores)</span>
+              )}
             </label>
-            <select
-              value={selectedStore?.id || ''}
-              onChange={(e) => {
-                const store = stores.find(s => s.id === e.target.value);
-                setSelectedStore(store || null);
-                setActiveSlide(0);
-              }}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-cyan-500"
-              disabled={loadingStores}
-            >
-              <option value="">
-                {loadingStores ? 'Loading stores...' : 'Choose a store...'}
-              </option>
-              {stores.map(store => (
-                <option key={store.id} value={store.id}>
-                  {store.name} — {store.city}
-                </option>
-              ))}
-            </select>
+            <div className="relative" ref={storePickerRef}>
+              <input
+                type="text"
+                value={storeSearchQuery}
+                onChange={(e) => {
+                  setStoreSearchQuery(e.target.value);
+                  setShowStoreDropdown(true);
+                }}
+                onFocus={() => {
+                  setStoreSearchQuery('');
+                  setShowStoreDropdown(true);
+                }}
+                placeholder={loadingStores ? 'Loading stores...' : 'Type to search stores...'}
+                disabled={loadingStores}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-cyan-500 text-sm"
+              />
+              {/* Selected store badge */}
+              {selectedStore && !showStoreDropdown && (
+                <div className="mt-1.5 flex items-center gap-1.5 text-xs text-cyan-700 font-semibold">
+                  <span>✓</span>
+                  <span>{selectedStore.name} — {selectedStore.city}</span>
+                  <button
+                    onClick={() => { setSelectedStore(null); setStoreSearchQuery(''); }}
+                    className="ml-auto text-gray-400 hover:text-red-400 transition-colors"
+                    title="Clear selection"
+                  >
+                    ✕
+                  </button>
+                </div>
+              )}
+              {/* Dropdown results */}
+              {showStoreDropdown && (
+                <div className="absolute z-50 left-0 right-0 top-full mt-1 bg-white border border-gray-200 rounded-md shadow-lg max-h-56 overflow-y-auto">
+                  {filteredStores.length === 0 ? (
+                    <div className="px-3 py-3 text-sm text-gray-500 text-center">No stores found</div>
+                  ) : (
+                    filteredStores.slice(0, 80).map(store => (
+                      <button
+                        key={store.id}
+                        className={`w-full text-left px-3 py-2 text-sm hover:bg-cyan-50 transition-colors border-b border-gray-100 last:border-0 ${
+                          selectedStore?.id === store.id ? 'bg-cyan-50 font-semibold text-cyan-700' : 'text-gray-800'
+                        }`}
+                        onClick={() => {
+                          setSelectedStore(store);
+                          setStoreSearchQuery(store.name);
+                          setShowStoreDropdown(false);
+                          setActiveSlide(0);
+                        }}
+                      >
+                        <span className="font-medium">{store.name}</span>
+                        <span className="text-gray-400 text-xs ml-1.5">
+                          {store.city}{store.neighborhood ? ` · ${store.neighborhood}` : ''}
+                        </span>
+                      </button>
+                    ))
+                  )}
+                  {filteredStores.length > 80 && (
+                    <div className="px-3 py-2 text-xs text-gray-400 text-center bg-gray-50">
+                      Showing 80 of {filteredStores.length} — type more to narrow results
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
           </div>
 
           {/* Slide Tabs */}
@@ -910,28 +986,23 @@ export function CarouselCreator() {
               {/* Base dark overlay — same as SocialPostCreator */}
               <div className="absolute inset-0 bg-black/20" style={{ pointerEvents: 'none' }} />
 
-              {/* Cover gradient (slide 0) */}
+              {/* Cover gradient (slide 0) — only when toggled on, light enough to not darken photo */}
               {activeSlide === 0 && showGradient && (
                 <div
                   className="absolute inset-0"
                   style={{
-                    background: 'linear-gradient(to top, rgba(0,0,0,0.85) 0%, rgba(0,0,0,0.4) 45%, rgba(0,0,0,0) 75%)',
+                    background: 'linear-gradient(to top, rgba(0,0,0,0.55) 0%, rgba(0,0,0,0.1) 45%, rgba(0,0,0,0) 65%)',
                     pointerEvents: 'none',
                   }}
                 />
               )}
 
-              {/* Info/Detail: heavier overlay for text contrast */}
-              {(activeSlide === 1 || activeSlide === 2) && (
-                <div className="absolute inset-0 bg-black/30" style={{ pointerEvents: 'none' }} />
-              )}
-
-              {/* Address: gradient from bottom */}
+              {/* Address: light gradient just enough for text readability */}
               {activeSlide === 3 && (
                 <div
                   className="absolute inset-0"
                   style={{
-                    background: 'linear-gradient(to top, rgba(0,0,0,0.9) 0%, rgba(0,0,0,0.55) 50%, rgba(0,0,0,0.1) 100%)',
+                    background: 'linear-gradient(to top, rgba(0,0,0,0.65) 0%, rgba(0,0,0,0.2) 50%, rgba(0,0,0,0) 100%)',
                     pointerEvents: 'none',
                   }}
                 />
