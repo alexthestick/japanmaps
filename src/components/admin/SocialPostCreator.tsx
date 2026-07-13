@@ -148,11 +148,15 @@ export function SocialPostCreator() {
   async function fetchStores() {
     try {
       setLoadingStores(true);
-      const { data, error } = await supabase.rpc('get_stores_with_coordinates');
+      // Use get_all_stores_json — returns ALL stores as a single JSONB blob,
+      // bypassing PostgREST's 1000-row limit that get_stores_with_coordinates hits.
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const { data, error } = await (supabase as any).rpc('get_all_stores_json');
 
       if (error) throw error;
 
-      const transformedStores: Store[] = (data || []).map((s: any) => ({
+      const rows: any[] = Array.isArray(data) ? data : [];
+      const transformedStores: Store[] = rows.map((s: any) => ({
         id: s.id,
         name: s.name,
         address: s.address,
@@ -162,7 +166,7 @@ export function SocialPostCreator() {
         latitude: s.latitude,
         longitude: s.longitude,
         mainCategory: s.main_category || 'Fashion',
-        categories: s.categories,
+        categories: s.categories || [],
         priceRange: s.price_range || undefined,
         description: s.description || undefined,
         photos: s.photos || [],
@@ -175,7 +179,7 @@ export function SocialPostCreator() {
         updatedAt: s.updated_at,
         haulCount: s.haul_count || 0,
         saveCount: s.save_count || 0,
-        google_place_id: s.google_place_id || undefined,
+        kurb_vendor_id: s.kurb_vendor_id ?? null,
       }));
 
       // Sort alphabetically
