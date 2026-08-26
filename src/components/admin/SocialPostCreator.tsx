@@ -69,6 +69,16 @@ export function SocialPostCreator() {
   const [captionSize, setCaptionSize] = useState(48);
   const [captionColor, setCaptionColor] = useState('#FFFFFF');
 
+  // Grid, snap, and element locking
+  const [showGrid, setShowGrid] = useState(false);
+  const [gridType, setGridType] = useState<'thirds' | 'fine'>('thirds');
+  const [snapToGrid, setSnapToGrid] = useState(false);
+  const GRID_SIZE = 108; // canvas units (1080/10) — 10-column snap
+  const [locked, setLocked] = useState<Record<string, boolean>>({
+    storeName: false, location: false, logo: false, icon: false, categoryIcon: false, caption: false,
+  });
+  const toggleLock = (key: string) => setLocked(prev => ({ ...prev, [key]: !prev[key] }));
+
   // Fetch stores on mount
   useEffect(() => {
     fetchStores();
@@ -108,17 +118,23 @@ export function SocialPostCreator() {
       });
   }, [selectedPhotoIndex, selectedStore]);
 
-  // Adjust positions when format changes
+  // Adjust positions when format changes — reset ALL elements to format-appropriate defaults
   useEffect(() => {
     if (format === 'story') {
       setStoreNamePos({ x: 50, y: 1600 });
       setLocationPos({ x: 50, y: 1700 });
       setCaptionPos({ x: 50, y: 900 });
+      setLogoPos({ x: 50, y: 50 });
+      setIconPos({ x: 950, y: 50 });
+      setCategoryIconPos({ x: 50, y: 1850 });
     } else {
       // portrait 4:5
       setStoreNamePos({ x: 50, y: 1150 });
       setLocationPos({ x: 50, y: 1220 });
       setCaptionPos({ x: 50, y: 600 });
+      setLogoPos({ x: 50, y: 50 });
+      setIconPos({ x: 950, y: 50 });
+      setCategoryIconPos({ x: 50, y: 1270 });
     }
   }, [format]);
 
@@ -205,7 +221,7 @@ export function SocialPostCreator() {
         pixelRatio: 2,
         width: canvasWidth,
         height: canvasHeight,
-        skipFonts: true,
+        // Do NOT skip fonts — Plus Jakarta Sans must be embedded so export matches preview
       });
 
       // Restore the transform
@@ -575,6 +591,71 @@ export function SocialPostCreator() {
             )}
           </div>
 
+          {/* Grid + Lock Controls */}
+          <div className="border border-gray-200 rounded-lg p-4 bg-white space-y-4">
+            <h3 className="text-sm font-semibold text-gray-800 flex items-center gap-2">
+              <span className="text-lg">📐</span> Canvas Guides &amp; Locks
+            </h3>
+
+            {/* Grid toggles */}
+            <div className="space-y-2">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <input type="checkbox" id="showGrid" checked={showGrid}
+                    onChange={(e) => setShowGrid(e.target.checked)}
+                    className="w-4 h-4 text-cyan-500 border-gray-300 rounded focus:ring-cyan-500" />
+                  <label htmlFor="showGrid" className="text-sm text-gray-700">Show gridlines</label>
+                </div>
+                {showGrid && (
+                  <div className="flex gap-1">
+                    {(['thirds', 'fine'] as const).map(t => (
+                      <button key={t} onClick={() => setGridType(t)}
+                        className={`px-2 py-0.5 text-xs rounded font-medium transition-colors ${gridType === t ? 'bg-cyan-500 text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}`}>
+                        {t === 'thirds' ? '⅓ Rule of Thirds' : '⊞ Fine'}
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
+              <div className="flex items-center gap-2">
+                <input type="checkbox" id="snapGrid" checked={snapToGrid}
+                  onChange={(e) => setSnapToGrid(e.target.checked)}
+                  className="w-4 h-4 text-cyan-500 border-gray-300 rounded focus:ring-cyan-500" />
+                <label htmlFor="snapGrid" className="text-sm text-gray-700">Snap to grid</label>
+                <span className="text-xs text-gray-400 ml-1">(108px cells)</span>
+              </div>
+            </div>
+
+            {/* Element locks */}
+            <div className="border-t pt-3">
+              <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">Lock elements</p>
+              <div className="grid grid-cols-2 gap-1.5">
+                {([
+                  { key: 'storeName', label: 'Store Name' },
+                  { key: 'location', label: 'Location' },
+                  { key: 'logo', label: 'Logo' },
+                  { key: 'icon', label: 'L·T Icon' },
+                  { key: 'caption', label: 'Caption' },
+                  { key: 'categoryIcon', label: 'Cat. Icon' },
+                ] as const).map(({ key, label }) => (
+                  <button key={key} onClick={() => toggleLock(key)}
+                    className={`flex items-center gap-1.5 px-2 py-1.5 rounded-md text-xs font-medium transition-all border ${
+                      locked[key]
+                        ? 'bg-amber-50 border-amber-300 text-amber-700'
+                        : 'bg-gray-50 border-gray-200 text-gray-600 hover:border-gray-300'
+                    }`}>
+                    <span>{locked[key] ? '🔒' : '🔓'}</span>
+                    {label}
+                  </button>
+                ))}
+              </div>
+              <button onClick={() => setLocked({ storeName: false, location: false, logo: false, icon: false, categoryIcon: false, caption: false })}
+                className="mt-2 text-xs text-gray-400 hover:text-gray-600 transition-colors">
+                Unlock all
+              </button>
+            </div>
+          </div>
+
           {/* Custom Caption */}
           <div className="border border-gray-200 rounded-lg p-4 bg-white space-y-3">
             <h3 className="text-sm font-semibold text-gray-800 flex items-center gap-2">
@@ -809,10 +890,10 @@ export function SocialPostCreator() {
           {/* Export Button */}
           <Button
             onClick={handleExport}
-            disabled={!storeImage || !storeName}
+            disabled={!storeImage || !storeName || imageUrlLoading}
             className="w-full py-4 text-lg font-semibold"
           >
-            📥 Export as Image ({canvasWidth}×{canvasHeight})
+            {imageUrlLoading ? '⏳ Loading photo…' : `📥 Export as Image (${canvasWidth}×${canvasHeight})`}
           </Button>
 
           <p className="text-xs text-gray-500 text-center italic">
@@ -896,10 +977,13 @@ export function SocialPostCreator() {
               {showTrainIcon && (
                 <Draggable
                   position={iconPos}
-                  onStop={(e, data) => setIconPos({ x: data.x, y: data.y })}
+                  onStop={(_, data) => setIconPos({ x: data.x, y: data.y })}
                   bounds="parent"
+                  scale={scaleRatio}
+                  grid={snapToGrid ? [GRID_SIZE, GRID_SIZE] : undefined}
+                  disabled={locked.icon}
                 >
-                  <div className="absolute cursor-move">
+                  <div className="absolute" style={{ cursor: locked.icon ? 'default' : 'move' }}>
                     <svg width="120" height="50" viewBox="0 0 120 50" fill="none" xmlns="http://www.w3.org/2000/svg">
                       {/* L */}
                       <text x="0" y="40" fontFamily="Plus Jakarta Sans, sans-serif" fontSize="48" fontWeight="900" fill={iconColor}>L</text>
@@ -925,10 +1009,13 @@ export function SocialPostCreator() {
               {showLogo && (
                 <Draggable
                   position={logoPos}
-                  onStop={(e, data) => setLogoPos({ x: data.x, y: data.y })}
+                  onStop={(_, data) => setLogoPos({ x: data.x, y: data.y })}
                   bounds="parent"
+                  scale={scaleRatio}
+                  grid={snapToGrid ? [GRID_SIZE, GRID_SIZE] : undefined}
+                  disabled={locked.logo}
                 >
-                  <div className="absolute cursor-move" style={{ whiteSpace: 'nowrap', display: 'inline-block' }}>
+                  <div className="absolute" style={{ whiteSpace: 'nowrap', display: 'inline-block', cursor: locked.logo ? 'default' : 'move' }}>
                     <div
                       className="font-black tracking-wider"
                       style={{
@@ -950,10 +1037,13 @@ export function SocialPostCreator() {
               {storeName && (
                 <Draggable
                   position={storeNamePos}
-                  onStop={(e, data) => setStoreNamePos({ x: data.x, y: data.y })}
+                  onStop={(_, data) => setStoreNamePos({ x: data.x, y: data.y })}
                   bounds="parent"
+                  scale={scaleRatio}
+                  grid={snapToGrid ? [GRID_SIZE, GRID_SIZE] : undefined}
+                  disabled={locked.storeName}
                 >
-                  <div className="absolute cursor-move" style={{ whiteSpace: 'nowrap', display: 'inline-block' }}>
+                  <div className="absolute" style={{ whiteSpace: 'nowrap', display: 'inline-block', cursor: locked.storeName ? 'default' : 'move' }}>
                     <div
                       className="font-black tracking-tight"
                       style={{
@@ -975,10 +1065,13 @@ export function SocialPostCreator() {
               {location && (
                 <Draggable
                   position={locationPos}
-                  onStop={(e, data) => setLocationPos({ x: data.x, y: data.y })}
+                  onStop={(_, data) => setLocationPos({ x: data.x, y: data.y })}
                   bounds="parent"
+                  scale={scaleRatio}
+                  grid={snapToGrid ? [GRID_SIZE, GRID_SIZE] : undefined}
+                  disabled={locked.location}
                 >
-                  <div className="absolute cursor-move" style={{ whiteSpace: 'nowrap', display: 'inline-block' }}>
+                  <div className="absolute" style={{ whiteSpace: 'nowrap', display: 'inline-block', cursor: locked.location ? 'default' : 'move' }}>
                     <div
                       className="font-semibold"
                       style={{
@@ -1000,10 +1093,13 @@ export function SocialPostCreator() {
               {showCategoryIcon && (
                 <Draggable
                   position={categoryIconPos}
-                  onStop={(e, data) => setCategoryIconPos({ x: data.x, y: data.y })}
+                  onStop={(_, data) => setCategoryIconPos({ x: data.x, y: data.y })}
                   bounds="parent"
+                  scale={scaleRatio}
+                  grid={snapToGrid ? [GRID_SIZE, GRID_SIZE] : undefined}
+                  disabled={locked.categoryIcon}
                 >
-                  <div className="absolute cursor-move">
+                  <div className="absolute" style={{ cursor: locked.categoryIcon ? 'default' : 'move' }}>
                     <svg
                       width={categoryIconSize}
                       height={categoryIconSize}
@@ -1064,10 +1160,13 @@ export function SocialPostCreator() {
               {showCaption && captionText && (
                 <Draggable
                   position={captionPos}
-                  onStop={(e, data) => setCaptionPos({ x: data.x, y: data.y })}
+                  onStop={(_, data) => setCaptionPos({ x: data.x, y: data.y })}
                   bounds="parent"
+                  scale={scaleRatio}
+                  grid={snapToGrid ? [GRID_SIZE, GRID_SIZE] : undefined}
+                  disabled={locked.caption}
                 >
-                  <div className="absolute cursor-move" style={{ display: 'inline-block' }}>
+                  <div className="absolute" style={{ display: 'inline-block', cursor: locked.caption ? 'default' : 'move' }}>
                     <div
                       className="font-bold"
                       style={{
@@ -1105,6 +1204,54 @@ export function SocialPostCreator() {
                 </div>
               )}
             </div>
+
+            {/* ── Grid Overlay — rendered outside canvasRef so it won't be exported ── */}
+            {showGrid && (() => {
+              const vW = format === 'portrait' ? 432 : 303;
+              const vH = 540;
+              const gridSpacingPx = GRID_SIZE * scaleRatio; // visual pixels per grid cell
+              return (
+                <div
+                  className="absolute top-0 left-0 pointer-events-none"
+                  style={{ width: `${vW}px`, height: `${vH}px`, zIndex: 50 }}
+                >
+                  {gridType === 'thirds' ? (
+                    /* Rule-of-thirds: 2 vertical + 2 horizontal lines */
+                    <>
+                      {/* Vertical thirds */}
+                      {[1, 2].map(n => (
+                        <div key={`v${n}`} className="absolute top-0 bottom-0" style={{
+                          left: `${(vW / 3) * n}px`, width: '1px',
+                          background: 'rgba(0,217,255,0.5)',
+                        }} />
+                      ))}
+                      {/* Horizontal thirds */}
+                      {[1, 2].map(n => (
+                        <div key={`h${n}`} className="absolute left-0 right-0" style={{
+                          top: `${(vH / 3) * n}px`, height: '1px',
+                          background: 'rgba(0,217,255,0.5)',
+                        }} />
+                      ))}
+                      {/* Center crosshair */}
+                      <div className="absolute" style={{
+                        left: `${vW / 2 - 8}px`, top: `${vH / 2 - 8}px`,
+                        width: '16px', height: '16px',
+                        border: '1px solid rgba(0,217,255,0.7)', borderRadius: '50%',
+                      }} />
+                    </>
+                  ) : (
+                    /* Fine grid via CSS background */
+                    <div className="w-full h-full" style={{
+                      backgroundImage: `
+                        linear-gradient(to right, rgba(0,217,255,0.2) 1px, transparent 1px),
+                        linear-gradient(to bottom, rgba(0,217,255,0.2) 1px, transparent 1px)
+                      `,
+                      backgroundSize: `${gridSpacingPx}px ${gridSpacingPx}px`,
+                    }} />
+                  )}
+                </div>
+              );
+            })()}
           </div>
         </div>
       </div>
