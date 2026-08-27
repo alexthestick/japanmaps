@@ -121,8 +121,12 @@ export function AddStoreForm({ onSuccess, onCancel }: AddStoreFormProps) {
 
   const handleMainCategoryChange = (newMainCategory: string) => {
     setSelectedMainCategory(newMainCategory);
-    // Clear categories when main category changes
-    // For Coffee and Museum, set empty array which is valid
+    // Must also update the RHF form value — the radio's onChange override
+    // replaces react-hook-form's own onChange, so RHF never sees the change
+    // without this explicit setValue call.
+    setValue('mainCategory', newMainCategory, { shouldValidate: true });
+    // Clear sub-categories when main category changes
+    // For Coffee, Museum, Spots — empty array is valid (no subcategories required)
     setSelectedCategories([]);
     setValue('categories', [], { shouldValidate: true });
   };
