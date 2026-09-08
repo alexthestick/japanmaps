@@ -53,6 +53,7 @@ async function fetchAllStores(): Promise<Store[]> {
     haulCount: store.haul_count,
     saveCount: store.save_count,
     kurb_vendor_id: store.kurb_vendor_id ?? null,
+    sourceType: (store.source_type ?? 'curated') as 'curated' | 'chain' | 'general',
   }));
 
   return transformedStores;
@@ -105,11 +106,21 @@ function applyFilters(stores: Store[], filters?: StoreFilters): Store[] {
     );
   }
 
+  if (filters?.curatedOnly) {
+    filtered = filtered.filter(store => (store.sourceType ?? 'curated') === 'curated');
+  }
+
   if (filters?.searchQuery) {
     const query = filters.searchQuery.toLowerCase();
     filtered = filtered.filter(store =>
       store.name.toLowerCase().includes(query) ||
-      store.city.toLowerCase().includes(query)
+      store.city.toLowerCase().includes(query) ||
+      (store.neighborhood?.toLowerCase().includes(query) ?? false)
+    );
+    // Tier-ranked search: curated first, then chain, then general.
+    const TIER_RANK: Record<string, number> = { curated: 0, chain: 1, general: 2 };
+    filtered.sort(
+      (a, b) => (TIER_RANK[a.sourceType ?? 'curated'] ?? 0) - (TIER_RANK[b.sourceType ?? 'curated'] ?? 0),
     );
   }
 

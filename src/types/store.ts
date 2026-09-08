@@ -39,6 +39,9 @@ export interface Store {
   checkin_count?: number; // GPS-verified Radar check-ins — populated once RPC returns this column
   google_place_id?: string; // Optional - for photo fetching
   kurb_vendor_id?: number | null; // Kurb API vendor ID — null/undefined means no inventory feed
+  // ── Three-Tier Store Map ──────────────────────────────────────────────────
+  /** 'curated' = hand-edited; 'chain' = known chain locator; 'general' = OSM/Overpass */
+  sourceType?: 'curated' | 'chain' | 'general';
 }
 
 export interface StoreSuggestion {
@@ -68,6 +71,8 @@ export interface StoreFilters {
   selectedNeighborhood?: string | null;
   selectedCategory?: string | null;
   selectedPrice?: string | null;
+  /** When true: only show curated stores (sourceType === 'curated'). Chain + general hidden. */
+  curatedOnly?: boolean;
 }
 
 export type SortOption = 'name' | 'city' | 'recent' | 'category';

@@ -226,6 +226,7 @@ export function HomePage() {
     selectedCity,
     selectedNeighborhood,
     selectedCategory: selectedSubCategories[0] || null,
+    curatedOnly: true,
   }), [selectedCity, selectedMainCategory, selectedSubCategories, searchQuery, selectedNeighborhood]);
 
   // Fetch all stores once (React Query caches for 5 min), apply filters client-side
