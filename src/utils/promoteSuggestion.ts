@@ -1,6 +1,7 @@
 import { supabase } from '../lib/supabase';
 import { generateSlug } from './slugify';
 import { migrateStorePhotosViaEdge } from './edgePhotoFetcher';
+import { assertNoGeneratedColumns } from './generatedColumns';
 import type { MainCategory, SubCategory } from '../types/store';
 
 export interface PromoteSuggestionInput {
@@ -90,14 +91,14 @@ export async function promoteSuggestion(
     verification_status: 'unverified',
     google_place_id: input.googlePlaceId || null,
     import_source: 'discovery_bot',
-    // find_store_duplicates()'s fuzzy_name tier filters on normalized_name
-    // <> '' — leaving this null would make the newly-promoted store
-    // invisible to future fuzzy dedup (only google_place_id/instagram exact
-    // matches would still catch a re-discovery). Mirrors the SQL side's
-    // lower + strip-non-alphanumeric normalization closely enough for
-    // Latin-script names; doesn't need to be byte-identical to be useful.
-    normalized_name: normalizeName(input.storeName),
+    // Do NOT set normalized_name here. It's a Postgres GENERATED ALWAYS
+    // column — Postgres computes and stores it automatically from `name`
+    // on every insert, so find_store_duplicates()'s fuzzy_name tier works
+    // with zero client involvement. Setting it explicitly (even to a
+    // "matching" value) throws Postgres error 428C9 and breaks the whole
+    // approve flow. This has happened twice; see generatedColumns.ts.
   };
+  assertNoGeneratedColumns('stores', storeData);
 
   let store: { id: string } | null = null;
   let lastError: { message?: string; code?: string } | null = null;
@@ -153,15 +154,6 @@ export async function promoteSuggestion(
   }
 
   return { storeId: store.id, slug: (storeData.slug as string) ?? safeSlug };
-}
-
-/** Rough client-side mirror of the DB's unaccent + strip-non-alphanumeric normalization. */
-function normalizeName(name: string): string {
-  return name
-    .normalize('NFD')
-    .replace(/[̀-ͯ]/g, '') // strip combining diacritical marks
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, '');
 }
 
 /**

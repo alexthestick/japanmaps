@@ -15,6 +15,7 @@ import { MAIN_CATEGORIES, MAIN_CATEGORY_ICONS, FASHION_SUB_CATEGORIES, FOOD_SUB_
 import { formatLocationForDB } from '../../utils/helpers';
 import type { Store } from '../../types/store';
 import { logger } from '../../utils/logger';
+import { assertNoGeneratedColumns } from '../../utils/generatedColumns';
 
 const baseStoreSchema = z.object({
   name: z.string().min(1, 'Store name is required'),
@@ -329,6 +330,7 @@ export function EditStoreForm({ store, onSuccess, onCancel }: EditStoreFormProps
 
       logger.log('Updating store:', store.id);
       logger.log('Update data:', updateData);
+      assertNoGeneratedColumns('stores', updateData);
 
       const { data: result, error } = await (supabase.from('stores') as any)
         .update(updateData)

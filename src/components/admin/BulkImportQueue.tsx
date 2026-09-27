@@ -10,6 +10,7 @@ import type { PlaceDetails } from './FetchPlaceIdButton';
 import { Loader, CheckCircle, XCircle, AlertTriangle } from 'lucide-react';
 import { logger } from '../../utils/logger';
 import { generateSlug } from '../../utils/slugify';
+import { assertNoGeneratedColumns } from '../../utils/generatedColumns';
 
 interface BulkImportQueueProps {
   items: BulkImportQueueItem[];
@@ -300,6 +301,7 @@ export function BulkImportQueue({
         verified: false,
         google_place_id: currentItem.placeId || null, // Add as extra field
       };
+      assertNoGeneratedColumns('stores', storeData);
 
       // Refresh session before insert — long imports can outlast the JWT expiry
       await supabase.auth.refreshSession();

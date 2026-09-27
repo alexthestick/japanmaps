@@ -2,6 +2,7 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { supabase } from '../../lib/supabase';
+import { assertNoGeneratedColumns } from '../../utils/generatedColumns';
 import { useState } from 'react';
 import { Input } from '../common/Input';
 import { Button } from '../common/Button';
@@ -164,6 +165,7 @@ export function AddStoreForm({ onSuccess, onCancel }: AddStoreFormProps) {
       };
 
       logger.log('Inserting store data:', storeData);
+      assertNoGeneratedColumns('stores', storeData);
 
       const { error } = await (supabase.from('stores') as any).insert([storeData]);
 
