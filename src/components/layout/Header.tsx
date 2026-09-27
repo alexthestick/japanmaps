@@ -1,7 +1,8 @@
 import { Link, useNavigate } from 'react-router-dom';
-import { MapPin, Menu, X, Heart, User, ShoppingBag, LogOut, Info, Store, ChevronDown } from 'lucide-react';
+import { MapPin, Menu, X, Heart, User, ShoppingBag, LogOut, Info, Store, ChevronDown, Inbox } from 'lucide-react';
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { getSavedStoreCount } from '../../utils/savedStores';
+import { getPendingSuggestionCount } from '../../utils/pendingSuggestions';
 import { MapStyleToggle } from '../map/MapStyleToggle';
 import { useAuthContext } from '../../contexts/AuthContext';
 
@@ -158,8 +159,10 @@ function ProfileButton() {
 
 // ─── Main Header ──────────────────────────────────────────────────────────────
 export function Header({ onCitiesClick }: HeaderProps) {
+  const { isAdmin } = useAuthContext();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [savedCount, setSavedCount] = useState(0);
+  const [pendingSuggestionCount, setPendingSuggestionCount] = useState(0);
   const [styleMode, setStyleMode] = useState<'day' | 'night'>(() => {
     try {
       const saved = localStorage.getItem('map-style-mode');
@@ -175,6 +178,33 @@ export function Header({ onCitiesClick }: HeaderProps) {
     window.addEventListener('savedStoresChanged', handleChange);
     return () => window.removeEventListener('savedStoresChanged', handleChange);
   }, []);
+
+  // Nav-level pending-suggestions badge (admin only) — visible from any
+  // page, not just while already on the Suggestions tab. Refetches
+  // whenever AdminDashboard dispatches 'suggestionsChanged' (fires after
+  // every fetchSuggestions(), i.e. after approve/reject/bulk actions), and
+  // on a slow poll so a fresh submission from the weekly discovery sweep
+  // shows up without Alex needing to reload.
+  useEffect(() => {
+    if (!isAdmin) {
+      setPendingSuggestionCount(0);
+      return;
+    }
+    let cancelled = false;
+    const refresh = () => {
+      getPendingSuggestionCount().then((count) => {
+        if (!cancelled) setPendingSuggestionCount(count);
+      });
+    };
+    refresh();
+    const intervalId = window.setInterval(refresh, 2 * 60 * 1000);
+    window.addEventListener('suggestionsChanged', refresh);
+    return () => {
+      cancelled = true;
+      window.clearInterval(intervalId);
+      window.removeEventListener('suggestionsChanged', refresh);
+    };
+  }, [isAdmin]);
 
   useEffect(() => {
     try { localStorage.setItem('map-style-mode', styleMode); } catch {}
@@ -285,6 +315,23 @@ export function Header({ onCitiesClick }: HeaderProps) {
               )}
             </Link>
 
+            {/* Admin-only: pending store-suggestions badge, visible from any page */}
+            {isAdmin && (
+              <Link
+                to="/admin"
+                className="relative text-gray-400 hover:text-cyan-300 transition-all p-2 rounded-lg hover:bg-cyan-500/10"
+                title={pendingSuggestionCount > 0 ? `${pendingSuggestionCount} pending suggestion(s)` : 'Store suggestions'}
+              >
+                <Inbox className={`w-4 h-4 transition-all ${pendingSuggestionCount > 0 ? 'text-amber-400' : ''}`}
+                  style={{ filter: pendingSuggestionCount > 0 ? 'drop-shadow(0 0 6px rgba(251, 191, 36, 0.6))' : '' }} />
+                {pendingSuggestionCount > 0 && (
+                  <span className="absolute -top-0.5 -right-0.5 min-w-[16px] h-4 px-1 bg-amber-500 text-white text-[10px] rounded-full flex items-center justify-center font-bold">
+                    {pendingSuggestionCount}
+                  </span>
+                )}
+              </Link>
+            )}
+
             {/* Profile avatar + dropdown */}
             <ProfileButton />
 
@@ -343,6 +390,13 @@ export function Header({ onCitiesClick }: HeaderProps) {
                 <Heart className={`w-4 h-4 ${savedCount > 0 ? 'fill-cyan-400 text-cyan-400' : ''}`} />
                 Saved Stores {savedCount > 0 && `(${savedCount})`}
               </Link>
+              {isAdmin && (
+                <Link to="/admin" onClick={() => setMobileMenuOpen(false)}
+                  className="flex items-center gap-2 text-gray-300 hover:text-amber-300 transition-colors px-3 py-2 text-sm">
+                  <Inbox className={`w-4 h-4 ${pendingSuggestionCount > 0 ? 'text-amber-400' : ''}`} />
+                  Suggestions {pendingSuggestionCount > 0 && `(${pendingSuggestionCount})`}
+                </Link>
+              )}
               <Link to="/profile" onClick={() => setMobileMenuOpen(false)}
                 className="flex items-center gap-2 text-gray-300 hover:text-white transition-colors px-3 py-2 text-sm">
                 <User className="h-4 w-4 text-gray-500" />

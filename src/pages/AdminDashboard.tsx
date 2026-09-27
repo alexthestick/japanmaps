@@ -7,6 +7,7 @@ import { Button } from '../components/common/Button';
 import { AddStoreForm } from '../components/forms/AddStoreForm';
 import { EditStoreForm } from '../components/forms/EditStoreForm';
 import { StoreListTable } from '../components/admin/StoreListTable';
+import { SuggestionReviewCard } from '../components/admin/SuggestionReviewCard';
 import { MainCategoryMigration } from '../components/admin/MainCategoryMigration';
 import { NeighborhoodList } from '../components/admin/NeighborhoodList';
 import { OverviewTab } from '../components/admin/OverviewTab';
@@ -17,9 +18,11 @@ import { SocialPostCreator } from '../components/admin/SocialPostCreator';
 import { CarouselCreator } from '../components/admin/CarouselCreator';
 import { SubstackImporter } from '../components/admin/SubstackImporter';
 import { Modal } from '../components/common/Modal';
-import type { StoreSuggestion, Store } from '../types/store';
+import type { StoreSuggestion, Store, MainCategory } from '../types/store';
 import type { ParallaxStoreSection } from '../types/blog';
 import { logger } from '../utils/logger';
+import { MAIN_CATEGORIES } from '../lib/constants';
+import { promoteSuggestion, revertSuggestionToPending } from '../utils/promoteSuggestion';
 
 // ── Social inner tab switcher — defined at module level (NOT inside AdminDashboard)
 // so React sees a stable component type across renders and never remounts it.
@@ -94,6 +97,13 @@ export function AdminDashboard() {
   const [qualityFilter, setQualityFilter] = useState<string>('critical');
   const [pendingFinds, setPendingFinds] = useState<any[]>([]);
   const [loadingFinds, setLoadingFinds] = useState(false);
+  const [categoryBySuggestion, setCategoryBySuggestion] = useState<Record<string, MainCategory>>({});
+  const [promotingId, setPromotingId] = useState<string | null>(null);
+  // Rich review card: single-open accordion (keeps review one-at-a-time,
+  // matching how Alex actually works the queue) + manual bulk-select.
+  const [expandedSuggestionId, setExpandedSuggestionId] = useState<string | null>(null);
+  const [selectedSuggestionIds, setSelectedSuggestionIds] = useState<Set<string>>(new Set());
+  const [bulkProcessing, setBulkProcessing] = useState(false);
 
   const isFetchingRef = useRef(false);
 
@@ -122,20 +132,45 @@ export function AdminDashboard() {
       const transformedSuggestions: StoreSuggestion[] = (data || []).map((s: any) => ({
         id: s.id,
         submitterName: s.submitter_name || undefined,
-        submitterEmail: s.submitter_email,
+        submitterEmail: s.submitter_email || undefined,
         storeName: s.store_name,
         city: s.city,
-        country: s.country,
-        address: s.address || '',
-        reason: s.reason,
+        country: s.country || undefined,
+        address: s.address || undefined,
+        neighborhood: s.neighborhood || undefined,
+        reason: s.reason || undefined,
+        notes: s.notes || undefined,
         instagram: s.instagram || undefined,
         website: s.website || undefined,
         status: s.status as any,
         createdAt: s.created_at,
+        source: s.source,
+        sourceRef: s.source_ref || undefined,
+        categoryHint: s.category_hint || undefined,
+        mainCategory: s.main_category || undefined,
+        googlePlaceId: s.google_place_id || undefined,
+        geocodeConfidence: s.geocode_confidence || undefined,
+        possibleDuplicateOf: s.possible_duplicate_of || undefined,
+        timesSeen: s.times_seen ?? 1,
+        lastSeenAt: s.last_seen_at || undefined,
+        lat: s.lat ?? undefined,
+        lng: s.lng ?? undefined,
+        googlePhotoNames: s.google_photo_names || undefined,
+        oembedHtml: s.oembed_html || undefined,
+        oembedThumbnailUrl: s.oembed_thumbnail_url || undefined,
+        oembedAuthorName: s.oembed_author_name || undefined,
+        oembedFetchedAt: s.oembed_fetched_at || undefined,
+        followerCount: s.follower_count ?? undefined,
+        promotedStoreId: s.promoted_store_id || undefined,
       }));
 
       setSuggestions(transformedSuggestions);
       adminDataCache.suggestions = transformedSuggestions;
+      // Tells Header's nav-level pending-count badge to refetch — fires
+      // after every suggestions load, including the refetch that follows
+      // approve/reject/bulk actions, so the badge stays in sync without a
+      // separate dispatch at every call site.
+      window.dispatchEvent(new Event('suggestionsChanged'));
     } catch (error) {
       console.error('Error fetching suggestions:', error);
     } finally {
@@ -259,6 +294,175 @@ export function AdminDashboard() {
     } catch (error) {
       console.error('Error updating suggestion:', error);
       alert('Failed to update suggestion');
+    }
+  }
+
+  // The actual "publish" step — turns a suggestion into a real, unverified
+  // store row. Used both for the normal pending -> approved path and for
+  // promoting an orphan (status already 'approved' but promoted_store_id
+  // is still null, i.e. approved before this flow existed).
+  async function handleApproveAndPublish(suggestion: StoreSuggestion) {
+    if (!suggestion.id) return;
+    const mainCategory =
+      categoryBySuggestion[suggestion.id] || suggestion.mainCategory || MAIN_CATEGORIES[0];
+
+    setPromotingId(suggestion.id);
+    try {
+      await promoteSuggestion({
+        id: suggestion.id,
+        storeName: suggestion.storeName,
+        city: suggestion.city,
+        neighborhood: suggestion.neighborhood,
+        address: suggestion.address,
+        country: suggestion.country,
+        instagram: suggestion.instagram,
+        website: suggestion.website,
+        lat: suggestion.lat,
+        lng: suggestion.lng,
+        googlePlaceId: suggestion.googlePlaceId,
+        mainCategory,
+        notes: suggestion.notes || suggestion.reason,
+      });
+      await fetchSuggestions();
+      await fetchStores();
+    } catch (error) {
+      console.error('Error approving suggestion:', error);
+      alert(error instanceof Error ? error.message : 'Failed to approve and publish suggestion');
+    } finally {
+      setPromotingId(null);
+    }
+  }
+
+  // Orphan-row escape hatch (the real MISMATCH test row is one of these):
+  // flips an approved-but-never-promoted suggestion back to pending so it
+  // goes through the normal review flow again, instead of being stuck.
+  async function handleRevertToPending(suggestion: StoreSuggestion) {
+    if (!suggestion.id) return;
+    if (
+      !confirm(
+        `Revert "${suggestion.storeName}" back to pending? It'll show up in the review queue again.`,
+      )
+    ) {
+      return;
+    }
+    try {
+      await revertSuggestionToPending(suggestion.id);
+      await fetchSuggestions();
+    } catch (error) {
+      console.error('Error reverting suggestion:', error);
+      alert(error instanceof Error ? error.message : 'Failed to revert suggestion');
+    }
+  }
+
+  function toggleSuggestionSelected(id: string) {
+    setSelectedSuggestionIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  }
+
+  const selectablePendingSuggestions = suggestions.filter(
+    (s) => s.status === 'pending' || (s.status === 'approved' && !s.promotedStoreId),
+  );
+
+  function toggleSelectAllPending() {
+    setSelectedSuggestionIds((prev) => {
+      if (prev.size === selectablePendingSuggestions.length && prev.size > 0) {
+        return new Set();
+      }
+      return new Set(selectablePendingSuggestions.map((s) => s.id!).filter(Boolean));
+    });
+  }
+
+  // Bulk approve — sequential, not Promise.all: each promoteSuggestion()
+  // call hits Google Places (photo migration) and Supabase, and running
+  // 10+ at once risks tripping rate limits and makes a partial-failure
+  // impossible to attribute to one row. Continues past individual
+  // failures so one bad row doesn't block the rest of the batch, then
+  // reports exactly which ones failed.
+  async function handleBulkApprove() {
+    const targets = suggestions.filter((s) => s.id && selectedSuggestionIds.has(s.id));
+    if (targets.length === 0) return;
+    const blocked = targets.filter((s) => s.geocodeConfidence === 'none');
+    if (blocked.length > 0) {
+      alert(
+        `${blocked.length} selected suggestion(s) have no coordinates and can't be approved: ` +
+          blocked.map((s) => s.storeName).join(', ') +
+          '. Deselect them or fix their location first.',
+      );
+      return;
+    }
+    if (!confirm(`Approve & publish ${targets.length} selected suggestion(s)?`)) return;
+
+    setBulkProcessing(true);
+    const failures: { name: string; error: string }[] = [];
+    try {
+      for (const suggestion of targets) {
+        if (!suggestion.id) continue;
+        const mainCategory =
+          categoryBySuggestion[suggestion.id] || suggestion.mainCategory || MAIN_CATEGORIES[0];
+        try {
+          await promoteSuggestion({
+            id: suggestion.id,
+            storeName: suggestion.storeName,
+            city: suggestion.city,
+            neighborhood: suggestion.neighborhood,
+            address: suggestion.address,
+            country: suggestion.country,
+            instagram: suggestion.instagram,
+            website: suggestion.website,
+            lat: suggestion.lat,
+            lng: suggestion.lng,
+            googlePlaceId: suggestion.googlePlaceId,
+            mainCategory,
+            notes: suggestion.notes || suggestion.reason,
+          });
+        } catch (error) {
+          failures.push({
+            name: suggestion.storeName,
+            error: error instanceof Error ? error.message : 'Unknown error',
+          });
+        }
+      }
+      await fetchSuggestions();
+      await fetchStores();
+      setSelectedSuggestionIds(new Set());
+      if (failures.length > 0) {
+        alert(
+          `Published ${targets.length - failures.length}/${targets.length}. Failed:\n` +
+            failures.map((f) => `- ${f.name}: ${f.error}`).join('\n'),
+        );
+      }
+    } finally {
+      setBulkProcessing(false);
+    }
+  }
+
+  async function handleBulkReject() {
+    const targets = suggestions.filter(
+      (s) => s.id && selectedSuggestionIds.has(s.id) && s.status === 'pending',
+    );
+    if (targets.length === 0) return;
+    if (!confirm(`Reject ${targets.length} selected suggestion(s)?`)) return;
+
+    setBulkProcessing(true);
+    try {
+      const { error } = await (supabase.from('store_suggestions') as any)
+        .update({ status: 'rejected' })
+        .in(
+          'id',
+          targets.map((s) => s.id),
+        );
+      if (error) throw error;
+      await fetchSuggestions();
+      setSelectedSuggestionIds(new Set());
+    } catch (error) {
+      console.error('Error bulk-rejecting suggestions:', error);
+      alert('Failed to reject selected suggestions');
+    } finally {
+      setBulkProcessing(false);
     }
   }
 
@@ -652,92 +856,64 @@ export function AdminDashboard() {
             {loadingSuggestions && <span className="text-sm text-gray-500 ml-2">(Loading...)</span>}
           </h2>
 
-        {suggestions.length === 0 ? (
-          <p className="text-gray-600">No suggestions yet.</p>
-        ) : (
-          <div className="space-y-4">
-            {suggestions.map(suggestion => (
-              <div
-                key={suggestion.id}
-                className="border border-gray-200 rounded-lg p-4"
-              >
-                <div className="flex items-start justify-between mb-2">
-                  <div>
-                    <h3 className="font-semibold text-gray-900">{suggestion.storeName}</h3>
-                    <p className="text-sm text-gray-600">
-                      {suggestion.city}, {suggestion.country}
-                    </p>
-                  </div>
-                  <span
-                    className={`px-3 py-1 rounded-full text-xs font-medium ${
-                      suggestion.status === 'pending'
-                        ? 'bg-yellow-100 text-yellow-800'
-                        : suggestion.status === 'approved'
-                        ? 'bg-green-100 text-green-800'
-                        : 'bg-red-100 text-red-800'
-                    }`}
-                  >
-                    {suggestion.status}
-                  </span>
-                </div>
+          {selectablePendingSuggestions.length > 0 && (
+            <div className="flex flex-wrap items-center gap-3 mb-4 p-3 bg-gray-50 border border-gray-200 rounded-lg">
+              <label className="flex items-center gap-2 text-sm text-gray-700">
+                <input
+                  type="checkbox"
+                  checked={
+                    selectedSuggestionIds.size === selectablePendingSuggestions.length &&
+                    selectablePendingSuggestions.length > 0
+                  }
+                  onChange={toggleSelectAllPending}
+                  className="w-4 h-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                />
+                Select all ({selectablePendingSuggestions.length})
+              </label>
+              {selectedSuggestionIds.size > 0 && (
+                <>
+                  <span className="text-sm text-gray-500">{selectedSuggestionIds.size} selected</span>
+                  <Button size="sm" disabled={bulkProcessing} onClick={handleBulkApprove}>
+                    {bulkProcessing ? 'Working…' : 'Approve & Publish Selected'}
+                  </Button>
+                  <Button size="sm" variant="outline" disabled={bulkProcessing} onClick={handleBulkReject}>
+                    Reject Selected
+                  </Button>
+                </>
+              )}
+            </div>
+          )}
 
-                <p className="text-sm text-gray-700 mb-2">
-                  <strong>Reason:</strong> {suggestion.reason}
-                </p>
-
-                {suggestion.address && (
-                  <p className="text-sm text-gray-600 mb-1">
-                    <strong>Address:</strong> {suggestion.address}
-                  </p>
-                )}
-
-                {suggestion.submitterEmail && (
-                  <p className="text-sm text-gray-600 mb-1">
-                    <strong>Submitted by:</strong> {suggestion.submitterName || 'Anonymous'} ({suggestion.submitterEmail})
-                  </p>
-                )}
-
-                {suggestion.instagram && (
-                  <p className="text-sm text-gray-600 mb-1">
-                    <strong>Instagram:</strong> {suggestion.instagram}
-                  </p>
-                )}
-
-                {suggestion.website && (
-                  <p className="text-sm text-gray-600 mb-3">
-                    <strong>Website:</strong>{' '}
-                    <a
-                      href={suggestion.website}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="text-blue-600 hover:underline"
-                    >
-                      {suggestion.website}
-                    </a>
-                  </p>
-                )}
-
-                {suggestion.status === 'pending' && (
-                  <div className="flex gap-2 mt-3">
-                    <Button
-                      size="sm"
-                      onClick={() => handleStatusChange(suggestion.id!, 'approved')}
-                    >
-                      Approve
-                    </Button>
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      onClick={() => handleStatusChange(suggestion.id!, 'rejected')}
-                    >
-                      Reject
-                    </Button>
-                  </div>
-                )}
-              </div>
-            ))}
-          </div>
-        )}
+          {suggestions.length === 0 ? (
+            <p className="text-gray-600">No suggestions yet.</p>
+          ) : (
+            <div className="space-y-3">
+              {suggestions.map((suggestion) => (
+                <SuggestionReviewCard
+                  key={suggestion.id}
+                  suggestion={suggestion}
+                  isExpanded={expandedSuggestionId === suggestion.id}
+                  onToggleExpand={() =>
+                    setExpandedSuggestionId((prev) => (prev === suggestion.id ? null : suggestion.id!))
+                  }
+                  isSelected={!!suggestion.id && selectedSuggestionIds.has(suggestion.id)}
+                  onToggleSelect={() => suggestion.id && toggleSuggestionSelected(suggestion.id)}
+                  category={
+                    (suggestion.id && categoryBySuggestion[suggestion.id]) ||
+                    suggestion.mainCategory ||
+                    MAIN_CATEGORIES[0]
+                  }
+                  onCategoryChange={(cat) =>
+                    setCategoryBySuggestion((prev) => ({ ...prev, [suggestion.id!]: cat }))
+                  }
+                  onApprove={() => handleApproveAndPublish(suggestion)}
+                  onReject={() => suggestion.id && handleStatusChange(suggestion.id, 'rejected')}
+                  onRevertToPending={() => handleRevertToPending(suggestion)}
+                  isPromoting={promotingId === suggestion.id}
+                />
+              ))}
+            </div>
+          )}
         </div>
       )}
 

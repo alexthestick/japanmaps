@@ -47,16 +47,43 @@ export interface Store {
 export interface StoreSuggestion {
   id?: string;
   submitterName?: string;
-  submitterEmail: string;
+  /** Only present for source: 'public_form' — discovery_bot rows have no submitter. */
+  submitterEmail?: string;
   storeName: string;
   city: string;
-  country: string;
-  address: string;
-  reason: string;
+  country?: string;
+  address?: string;
+  neighborhood?: string;
+  /** The submitter's or bot's stated reason (public_form) — separate from `notes`. */
+  reason?: string;
+  /** Free-text context, mainly populated by discovery_bot. */
+  notes?: string;
   instagram?: string;
   website?: string;
   status: 'pending' | 'approved' | 'rejected';
   createdAt?: string;
+  // ── Phase 1/2: discovery-pipeline fields (discovery_bot rows only) ──────
+  source: 'public_form' | 'discovery_bot';
+  sourceRef?: string;
+  categoryHint?: string;
+  mainCategory?: MainCategory;
+  googlePlaceId?: string;
+  geocodeConfidence?: 'high' | 'low' | 'none';
+  possibleDuplicateOf?: string;
+  timesSeen: number;
+  lastSeenAt?: string;
+  lat?: number;
+  lng?: number;
+  googlePhotoNames?: string[];
+  oembedHtml?: string;
+  oembedThumbnailUrl?: string;
+  oembedAuthorName?: string;
+  oembedFetchedAt?: string;
+  followerCount?: number;
+  /** Set once this suggestion has been promoted into a real store row. A
+   *  suggestion with status 'approved' and promotedStoreId still undefined
+   *  is an orphan — approved but never actually published. */
+  promotedStoreId?: string;
 }
 
 export interface StoreFilters {
