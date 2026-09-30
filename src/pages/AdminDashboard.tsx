@@ -23,6 +23,7 @@ import type { ParallaxStoreSection } from '../types/blog';
 import { logger } from '../utils/logger';
 import { MAIN_CATEGORIES } from '../lib/constants';
 import { promoteSuggestion, revertSuggestionToPending } from '../utils/promoteSuggestion';
+import { defaultSubCategoriesFromHint } from '../utils/subCategoryOptions';
 
 // ── Social inner tab switcher — defined at module level (NOT inside AdminDashboard)
 // so React sees a stable component type across renders and never remounts it.
@@ -98,6 +99,7 @@ export function AdminDashboard() {
   const [pendingFinds, setPendingFinds] = useState<any[]>([]);
   const [loadingFinds, setLoadingFinds] = useState(false);
   const [categoryBySuggestion, setCategoryBySuggestion] = useState<Record<string, MainCategory>>({});
+  const [categoriesBySuggestion, setCategoriesBySuggestion] = useState<Record<string, string[]>>({});
   const [promotingId, setPromotingId] = useState<string | null>(null);
   // Rich review card: single-open accordion (keeps review one-at-a-time,
   // matching how Alex actually works the queue) + manual bulk-select.
@@ -305,6 +307,9 @@ export function AdminDashboard() {
     if (!suggestion.id) return;
     const mainCategory =
       categoryBySuggestion[suggestion.id] || suggestion.mainCategory || MAIN_CATEGORIES[0];
+    const categories =
+      categoriesBySuggestion[suggestion.id] ??
+      defaultSubCategoriesFromHint(mainCategory, suggestion.categoryHint);
 
     setPromotingId(suggestion.id);
     try {
@@ -321,6 +326,7 @@ export function AdminDashboard() {
         lng: suggestion.lng,
         googlePlaceId: suggestion.googlePlaceId,
         mainCategory,
+        categories,
         notes: suggestion.notes || suggestion.reason,
       });
       await fetchSuggestions();
@@ -403,6 +409,9 @@ export function AdminDashboard() {
         if (!suggestion.id) continue;
         const mainCategory =
           categoryBySuggestion[suggestion.id] || suggestion.mainCategory || MAIN_CATEGORIES[0];
+        const categories =
+          categoriesBySuggestion[suggestion.id] ??
+          defaultSubCategoriesFromHint(mainCategory, suggestion.categoryHint);
         try {
           await promoteSuggestion({
             id: suggestion.id,
@@ -417,6 +426,7 @@ export function AdminDashboard() {
             lng: suggestion.lng,
             googlePlaceId: suggestion.googlePlaceId,
             mainCategory,
+            categories,
             notes: suggestion.notes || suggestion.reason,
           });
         } catch (error) {
@@ -903,8 +913,28 @@ export function AdminDashboard() {
                     suggestion.mainCategory ||
                     MAIN_CATEGORIES[0]
                   }
-                  onCategoryChange={(cat) =>
-                    setCategoryBySuggestion((prev) => ({ ...prev, [suggestion.id!]: cat }))
+                  onCategoryChange={(cat) => {
+                    setCategoryBySuggestion((prev) => ({ ...prev, [suggestion.id!]: cat }));
+                    // Sub-categories from the old main category rarely make sense
+                    // under the new one (e.g. "vintage" under Food) — reset to
+                    // the new category's hint-based default, same as
+                    // AddStoreForm.tsx clearing categories on category change.
+                    setCategoriesBySuggestion((prev) => ({
+                      ...prev,
+                      [suggestion.id!]: defaultSubCategoriesFromHint(cat, suggestion.categoryHint),
+                    }));
+                  }}
+                  categories={
+                    (suggestion.id ? categoriesBySuggestion[suggestion.id] : undefined) ??
+                    defaultSubCategoriesFromHint(
+                      (suggestion.id && categoryBySuggestion[suggestion.id]) ||
+                        suggestion.mainCategory ||
+                        MAIN_CATEGORIES[0],
+                      suggestion.categoryHint,
+                    )
+                  }
+                  onCategoriesChange={(cats) =>
+                    setCategoriesBySuggestion((prev) => ({ ...prev, [suggestion.id!]: cats }))
                   }
                   onApprove={() => handleApproveAndPublish(suggestion)}
                   onReject={() => suggestion.id && handleStatusChange(suggestion.id, 'rejected')}

@@ -2,7 +2,7 @@ import { supabase } from '../lib/supabase';
 import { generateSlug } from './slugify';
 import { migrateStorePhotosViaEdge } from './edgePhotoFetcher';
 import { assertNoGeneratedColumns } from './generatedColumns';
-import type { MainCategory, SubCategory } from '../types/store';
+import type { MainCategory } from '../types/store';
 
 export interface PromoteSuggestionInput {
   /** store_suggestions.id being promoted */
@@ -19,7 +19,7 @@ export interface PromoteSuggestionInput {
   googlePlaceId?: string | null;
   /** Chosen by the admin at approve time (Phase 2: single-select dropdown) */
   mainCategory: MainCategory;
-  categories?: SubCategory[];
+  categories?: string[];
   notes?: string | null;
 }
 

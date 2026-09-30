@@ -13,6 +13,7 @@ import {
 } from 'lucide-react';
 import type { StoreSuggestion, MainCategory } from '../../types/store';
 import { MAIN_CATEGORIES } from '../../lib/constants';
+import { getSubCategoryOptions } from '../../utils/subCategoryOptions';
 import { Button } from '../common/Button';
 import { useSocialEmbed } from '../../hooks/useSocialEmbed';
 
@@ -24,6 +25,8 @@ interface SuggestionReviewCardProps {
   onToggleSelect: () => void;
   category: MainCategory;
   onCategoryChange: (category: MainCategory) => void;
+  categories: string[];
+  onCategoriesChange: (categories: string[]) => void;
   onApprove: () => void;
   onReject: () => void;
   onRevertToPending: () => void;
@@ -51,6 +54,8 @@ export function SuggestionReviewCard({
   onToggleSelect,
   category,
   onCategoryChange,
+  categories,
+  onCategoriesChange,
   onApprove,
   onReject,
   onRevertToPending,
@@ -314,17 +319,12 @@ export function SuggestionReviewCard({
           {/* Pending: category + approve/reject */}
           {isPending && (
             <div className="flex flex-wrap items-center gap-2 pt-1">
-              <select
-                value={category}
-                onChange={(e) => onCategoryChange(e.target.value as MainCategory)}
-                className="text-sm border border-gray-300 rounded-md px-2 py-1.5"
-              >
-                {MAIN_CATEGORIES.map((cat) => (
-                  <option key={cat} value={cat}>
-                    {cat}
-                  </option>
-                ))}
-              </select>
+              <CategoryControls
+                category={category}
+                onCategoryChange={onCategoryChange}
+                categories={categories}
+                onCategoriesChange={onCategoriesChange}
+              />
               <Button size="sm" disabled={isPromoting || !canApprove} onClick={onApprove}>
                 {isPromoting ? 'Publishing…' : 'Approve & Publish'}
               </Button>
@@ -344,17 +344,12 @@ export function SuggestionReviewCard({
                 ⚠️ Marked approved, but no store was ever created for this suggestion.
               </p>
               <div className="flex flex-wrap items-center gap-2">
-                <select
-                  value={category}
-                  onChange={(e) => onCategoryChange(e.target.value as MainCategory)}
-                  className="text-sm border border-gray-300 rounded-md px-2 py-1.5"
-                >
-                  {MAIN_CATEGORIES.map((cat) => (
-                    <option key={cat} value={cat}>
-                      {cat}
-                    </option>
-                  ))}
-                </select>
+                <CategoryControls
+                  category={category}
+                  onCategoryChange={onCategoryChange}
+                  categories={categories}
+                  onCategoriesChange={onCategoriesChange}
+                />
                 <Button size="sm" disabled={isPromoting || !canApprove} onClick={onApprove}>
                   {isPromoting ? 'Publishing…' : 'Promote now'}
                 </Button>
@@ -371,6 +366,66 @@ export function SuggestionReviewCard({
               Published as a store.
             </p>
           )}
+        </div>
+      )}
+    </div>
+  );
+}
+
+/**
+ * Main-category select + sub-category pill picker, shared between the
+ * pending and orphan-approved states below. Sub-category options depend
+ * on the selected main category (Fashion/Food/Home Goods only — Coffee,
+ * Museum and Spots have none, same as AddStoreForm.tsx / EditStoreForm.tsx).
+ */
+function CategoryControls({
+  category,
+  onCategoryChange,
+  categories,
+  onCategoriesChange,
+}: {
+  category: MainCategory;
+  onCategoryChange: (category: MainCategory) => void;
+  categories: string[];
+  onCategoriesChange: (categories: string[]) => void;
+}) {
+  const subCategoryOptions = getSubCategoryOptions(category);
+
+  const toggleSubCategory = (sub: string) => {
+    onCategoriesChange(
+      categories.includes(sub) ? categories.filter((c) => c !== sub) : [...categories, sub],
+    );
+  };
+
+  return (
+    <div className="flex flex-wrap items-center gap-2">
+      <select
+        value={category}
+        onChange={(e) => onCategoryChange(e.target.value as MainCategory)}
+        className="text-sm border border-gray-300 rounded-md px-2 py-1.5"
+      >
+        {MAIN_CATEGORIES.map((cat) => (
+          <option key={cat} value={cat}>
+            {cat}
+          </option>
+        ))}
+      </select>
+      {subCategoryOptions.length > 0 && (
+        <div className="flex flex-wrap gap-1">
+          {subCategoryOptions.map((sub) => (
+            <button
+              key={sub}
+              type="button"
+              onClick={() => toggleSubCategory(sub)}
+              className={`px-2 py-1 rounded-full text-xs capitalize transition-colors ${
+                categories.includes(sub)
+                  ? 'bg-blue-600 text-white'
+                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+              }`}
+            >
+              {sub}
+            </button>
+          ))}
         </div>
       )}
     </div>

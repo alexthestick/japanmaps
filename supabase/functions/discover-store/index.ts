@@ -237,7 +237,11 @@ Deno.serve(async (req: Request) => {
     store_name: name,
     city,
     neighborhood,
-    address,
+    // Prefer whatever Muse extracted from the post itself; Places' own
+    // formatted_address is a solid fallback when the post didn't have one
+    // (the common case) — it's already being fetched below for geocoding,
+    // it was just never written here before.
+    address: address || geocode.formatted_address || null,
     instagram,
     notes,
     source: 'discovery_bot',
