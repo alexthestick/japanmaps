@@ -91,23 +91,12 @@ export function generateStoreSchema(store: Store): object {
     schema.keywords = store.categories.join(', ');
   }
 
-  // Add aggregate rating based on save count (signals popularity to Google)
-  const saveCount = store.saveCount || 0;
-  if (saveCount >= 1) {
-    // Map save count to a rating: 1-4 saves = 4.0, 5-9 = 4.3, 10-19 = 4.5, 20+ = 4.8
-    let ratingValue = 4.0;
-    if (saveCount >= 20) ratingValue = 4.8;
-    else if (saveCount >= 10) ratingValue = 4.5;
-    else if (saveCount >= 5) ratingValue = 4.3;
-
-    schema.aggregateRating = {
-      '@type': 'AggregateRating',
-      ratingValue: ratingValue,
-      bestRating: 5,
-      worstRating: 1,
-      ratingCount: saveCount,
-    };
-  }
+  // NOTE (2026-10-03): aggregateRating was deliberately removed here. It was
+  // fabricating a 4.0-4.8 star rating from internal save counts, not real
+  // customer reviews. Google's structured data guidelines require ratings to
+  // reflect genuine reviews -- shipping a synthesized one risks losing rich-
+  // result eligibility site-wide, not just a warning on one page. Re-add only
+  // if backed by real review data.
 
   // Add opening hours if available
   if (store.hours) {
