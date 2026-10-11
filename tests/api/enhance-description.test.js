@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { handleEnhance } from './enhance-description.js';
+import { handleEnhance } from '../../api/enhance-description.js';
 
 function mockResponse() {
   return {

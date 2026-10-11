@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { enhanceWithAI } from './import-store.js';
+import { enhanceWithAI } from '../../api/import-store.js';
 
 test('single-store import prompt uses the store website, not Google editorial or review text', async () => {
   const previousKey = process.env.ANTHROPIC_API_KEY;
