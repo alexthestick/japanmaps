@@ -2,9 +2,10 @@
  * Japan Maps - ImageKit Delete Proxy (Server-Side)
  *
  * This endpoint handles photo deletion from ImageKit.
- * Previously missing - now implemented.
+ * A signed-in user may delete only files uploaded into their own folder.
+ * Admins may also delete other ImageKit files.
  */
-import ImageKit from 'imagekit';
+import ImageKit from '@imagekit/nodejs';
 import { createClient } from '@supabase/supabase-js';
 
 // Rate limiting
@@ -25,9 +26,18 @@ const ALLOWED_ORIGINS = [
 function isOriginAllowed(origin) {
   if (!origin) return false;
   if (ALLOWED_ORIGINS.includes(origin)) return true;
-  if (origin.endsWith('.vercel.app')) return true;
-  if (origin.includes('lostintransitjp.com')) return true;
   return false;
+}
+
+export function isUserOwnedFile(filePath, userId) {
+  return typeof filePath === 'string' &&
+    typeof userId === 'string' &&
+    filePath.startsWith(`/stores/${userId}/`);
+}
+
+export async function canDeleteImage(filePath, userId, getAdminStatus) {
+  if (isUserOwnedFile(filePath, userId)) return true;
+  return await getAdminStatus() === true;
 }
 
 function checkRateLimit(ip) {
@@ -119,29 +129,43 @@ export default async function handler(req, res) {
   }
 
   try {
-    const { fileId } = req.body;
+    const { fileId } = req.body || {};
 
-    if (!fileId) {
-      return res.status(400).json({ error: 'fileId is required' });
+    if (typeof fileId !== 'string' || !/^[a-zA-Z0-9_-]{1,128}$/.test(fileId)) {
+      return res.status(400).json({ error: 'A valid fileId is required' });
     }
 
     // Initialize ImageKit
-    const publicKey = process.env.VITE_IMAGEKIT_PUBLIC_KEY;
     const privateKey = process.env.IMAGEKIT_PRIVATE_KEY;
-    const urlEndpoint = process.env.VITE_IMAGEKIT_URL_ENDPOINT;
 
-    if (!publicKey || !privateKey || !urlEndpoint) {
+    if (!privateKey) {
       throw new Error('ImageKit credentials not configured');
     }
 
-    const imagekit = new ImageKit({
-      publicKey,
-      privateKey,
-      urlEndpoint,
+    const imagekit = new ImageKit({ privateKey });
+
+    // Never trust a caller-supplied file ID as proof of ownership. ImageKit's
+    // server-side file details are the source of truth for the upload folder.
+    const file = await imagekit.files.get(fileId);
+    const authorized = await canDeleteImage(file.filePath, user.id, async () => {
+      const supabase = createClient(
+        process.env.VITE_SUPABASE_URL,
+        process.env.SUPABASE_SERVICE_ROLE_KEY
+      );
+      const { data: profile, error: profileError } = await supabase
+        .from('profiles')
+        .select('is_admin')
+        .eq('id', user.id)
+        .single();
+      return !profileError && profile?.is_admin === true;
     });
 
+    if (!authorized) {
+      return res.status(403).json({ error: 'You cannot delete this image' });
+    }
+
     // Delete from ImageKit
-    await imagekit.deleteFile(fileId);
+    await imagekit.files.delete(fileId);
 
     console.log(`✅ [Japan Maps] Photo deleted for user: ${user.id}, fileId: ${fileId}`);
 
