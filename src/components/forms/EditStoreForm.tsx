@@ -7,15 +7,13 @@ import { CheckCircle } from 'lucide-react';
 import { Input } from '../common/Input';
 import { Button } from '../common/Button';
 import { PhotoUrlManager } from '../admin/PhotoUrlManager';
-import { PhotoMigrationButton } from '../admin/PhotoMigrationButton';
 import { GoogleMapsStoreExtractor, type ExtractedStoreData } from '../admin/GoogleMapsStoreExtractor';
-import { BulkPhotoMigration } from '../admin/BulkPhotoMigration';
 import { FetchPlaceIdButton, type PlaceDetails } from '../admin/FetchPlaceIdButton';
 import { MAIN_CATEGORIES, MAIN_CATEGORY_ICONS, FASHION_SUB_CATEGORIES, FOOD_SUB_CATEGORIES, HOME_GOODS_SUB_CATEGORIES, PRICE_RANGES } from '../../lib/constants';
-import { formatLocationForDB } from '../../utils/helpers';
 import type { Store } from '../../types/store';
 import { logger } from '../../utils/logger';
 import { assertNoGeneratedColumns } from '../../utils/generatedColumns';
+import { isGoogleHostedPhotoUrl } from '../../utils/photoSource';
 
 const baseStoreSchema = z.object({
   name: z.string().min(1, 'Store name is required'),
@@ -60,10 +58,7 @@ export function EditStoreForm({ store, onSuccess, onCancel }: EditStoreFormProps
   const [selectedCategories, setSelectedCategories] = useState<string[]>(store.categories);
   const [selectedMainCategory, setSelectedMainCategory] = useState<string>(store.mainCategory || 'Fashion');
   const [pendingFormData, setPendingFormData] = useState<any>(null);
-  const [googlePlaceId, setGooglePlaceId] = useState<string | undefined>(store.google_place_id);
-  const [storePhotos, setStorePhotos] = useState<string[]>(store.photos || []);
-  const [placeDetails, setPlaceDetails] = useState<PlaceDetails | null>(null);
-  const [autoMigratePhotos, setAutoMigratePhotos] = useState(false);
+  const [storePhotos] = useState<string[]>(store.photos || []);
   const [showAutoFillMessage, setShowAutoFillMessage] = useState(false);
   const [enhancedData, setEnhancedData] = useState<any>(null); // Store AI-enhanced data for preview
   const [showPreview, setShowPreview] = useState(false);
@@ -99,43 +94,6 @@ export function EditStoreForm({ store, onSuccess, onCancel }: EditStoreFormProps
   useEffect(() => {
     setSelectedCategories(store.categories);
   }, [store]);
-
-  // Auto-trigger photo migration when place details are fetched
-  useEffect(() => {
-    if (autoMigratePhotos && googlePlaceId && placeDetails?.photos && placeDetails.photos.length > 0) {
-      // Automatically migrate photos
-      const migratePhotos = async () => {
-        try {
-          const { migrateStorePhotosViaEdge } = await import('../../utils/edgePhotoFetcher');
-          const photoUrls = await migrateStorePhotosViaEdge(
-            store.id,
-            googlePlaceId,
-            false, // Not a dry run - actually upload
-            () => {} // No progress callback needed for auto-migration
-          );
-
-          if (photoUrls.length > 0) {
-            // Update store with new photos
-            const updatedPhotos = [...(store.photos || []), ...photoUrls];
-            const { error } = await supabase
-              .from('stores')
-              .update({ photos: updatedPhotos })
-              .eq('id', store.id);
-
-            if (!error) {
-              store.photos = updatedPhotos;
-              setStorePhotos(updatedPhotos);
-            }
-          }
-        } catch (error) {
-          console.error('Auto photo migration failed:', error);
-        }
-      };
-
-      migratePhotos();
-      setAutoMigratePhotos(false); // Reset flag
-    }
-  }, [autoMigratePhotos, googlePlaceId, placeDetails, store.id, store.photos]);
 
   // Track form changes to save alongside photos
   useEffect(() => {
@@ -175,19 +133,17 @@ export function EditStoreForm({ store, onSuccess, onCancel }: EditStoreFormProps
     // Show loading message
     setShowAutoFillMessage(true);
 
-    // Store place details for photo migration
-    setPlaceDetails(details);
-
-    // Trigger automatic photo migration if photos are available
-    if (details.photos && details.photos.length > 0) {
-      setAutoMigratePhotos(true);
-    }
-
     // Enhance with AI (get description, Instagram, price range, categories)
     try {
       logger.log('🔍 Starting AI enhancement with details:', details);
       const { enhancePlaceDetailsWithAI } = await import('../../utils/aiPlaceEnhancer');
-      const enhanced = await enhancePlaceDetailsWithAI(details as any, (selectedMainCategory as any) || 'Fashion');
+      const enhanced = await enhancePlaceDetailsWithAI(details, (selectedMainCategory as any) || 'Fashion', selectedCategories, {
+        website: store.website || details.website,
+        instagram: store.instagram || '',
+        city: store.city,
+        neighborhood: store.neighborhood || '',
+        categoryHints: selectedCategories,
+      });
 
       logger.log('✅ AI enhancement successful:', enhanced);
 
@@ -209,12 +165,12 @@ export function EditStoreForm({ store, onSuccess, onCancel }: EditStoreFormProps
         address: details.address,
         latitude: details.latitude,
         longitude: details.longitude,
-        description: details.editorialSummary || details.description || `${details.name} is a clothing store located at ${details.address}.`,
+        description: `${details.name} in ${store.neighborhood || store.city}.`,
+        needsReview: true,
         hours: details.hours,
         website: details.website,
         rating: details.rating,
         userRatingCount: details.userRatingCount,
-        photos: details.photos,
       });
 
       setShowPreview(true);
@@ -298,16 +254,19 @@ export function EditStoreForm({ store, onSuccess, onCancel }: EditStoreFormProps
   };
 
   const onSubmit = async (data: StoreFormData) => {
-    setIsSubmitting(true);
     try {
       // Parse manual photo URLs from the text input
       const manualPhotoUrls = data.photoUrls
         ? data.photoUrls.split('\n').map(url => url.trim()).filter(url => url)
         : [];
 
-      // Merge with existing migrated photos (storePhotos state contains the migrated ones)
-      // Only add manual URLs that aren't already in the migrated photos
+      // Preserve existing photos and add only new manual URLs.
       const uniqueManualUrls = manualPhotoUrls.filter(url => !storePhotos.includes(url));
+      if (uniqueManualUrls.some(isGoogleHostedPhotoUrl)) {
+        alert("Google photos can't be stored. Add your own or the store's photos.");
+        return;
+      }
+      setIsSubmitting(true);
       const photos = [...storePhotos, ...uniqueManualUrls];
 
       const updateData = {
@@ -365,7 +324,7 @@ export function EditStoreForm({ store, onSuccess, onCancel }: EditStoreFormProps
       <div className="mb-4 p-4 bg-blue-50 border-2 border-blue-200 rounded-lg">
         <div className="flex items-center gap-2 text-blue-800">
           <CheckCircle className="w-5 h-5 animate-spin" />
-          <p className="font-medium">✨ AI is enhancing store data... (analyzing reviews, extracting details)</p>
+          <p className="font-medium">✨ Preparing store details from the store website...</p>
         </div>
       </div>
     )}
@@ -390,7 +349,8 @@ export function EditStoreForm({ store, onSuccess, onCancel }: EditStoreFormProps
           {/* Description */}
           {enhancedData.description && (
             <div className="bg-white p-4 rounded-lg border border-purple-200">
-              <p className="text-sm font-semibold text-purple-900 mb-2">📝 AI-Generated Description:</p>
+              <p className="text-sm font-semibold text-purple-900 mb-2">📝 Description draft:</p>
+              {enhancedData.needsReview && <p className="mb-2 text-sm text-amber-800">Needs review — no usable store website text was available.</p>}
               <p className="text-gray-700 text-sm leading-relaxed">{enhancedData.description}</p>
             </div>
           )}
@@ -724,21 +684,12 @@ export function EditStoreForm({ store, onSuccess, onCancel }: EditStoreFormProps
 
     {/* Photo Management Section - Outside the form */}
     <div className="mt-6 pt-6 border-t border-gray-200 space-y-6">
-      {/* Photo Migration Warning */}
-      <PhotoMigrationButton
-        store={store}
-        onSuccess={() => {
-          if (onSuccess) onSuccess();
-        }}
-      />
-
       {/* Step 1: Fetch Google Place ID + Full Store Data */}
       <FetchPlaceIdButton
         store={store}
         onSuccess={(placeId, details) => {
           // Update both the store object and local state to trigger re-render
           store.google_place_id = placeId;
-          setGooglePlaceId(placeId);
 
           // Auto-populate form fields if we got place details
           if (details) {
@@ -747,59 +698,8 @@ export function EditStoreForm({ store, onSuccess, onCancel }: EditStoreFormProps
         }}
       />
 
-      {/* Step 2: Bulk Photo Migration via Edge Function (only if Place ID exists) */}
-      {googlePlaceId && (
-        <>
-          <BulkPhotoMigration
-            storeId={store.id}
-            storeName={store.name}
-            googlePlaceId={googlePlaceId}
-            currentPhotoCount={store.photos?.length || 0}
-            onMigrationComplete={async (photoUrls) => {
-              // Update store with new photos - merge with existing, avoiding duplicates
-              const existingPhotos = store.photos || [];
-              const newUniquePhotos = photoUrls.filter(url => !existingPhotos.includes(url));
-              const updatedPhotos = [...existingPhotos, ...newUniquePhotos];
-              
-              const { error } = await supabase
-                .from('stores')
-                .update({ photos: updatedPhotos })
-                .eq('id', store.id);
-
-              if (!error) {
-                // Update local store object AND state to show photos immediately
-                store.photos = updatedPhotos;
-                setStorePhotos(updatedPhotos);
-                // Don't navigate away - let user continue editing or manually close
-              }
-            }}
-          />
-
-          {/* Show migrated photos preview */}
-          {storePhotos.length > 0 && (
-            <div className="p-4 bg-green-50 border-2 border-green-200 rounded-lg">
-              <h4 className="font-semibold text-green-900 mb-2">
-                ✓ {storePhotos.length} Photo{storePhotos.length > 1 ? 's' : ''} in Database
-              </h4>
-              <div className="grid grid-cols-5 gap-2">
-                {storePhotos.map((url, idx) => (
-                  <img
-                    key={idx}
-                    src={url}
-                    alt={`Photo ${idx + 1}`}
-                    className="w-full h-20 object-cover rounded border border-green-300"
-                  />
-                ))}
-              </div>
-              <p className="text-xs text-green-700 mt-2">
-                These photos are saved to the database and will appear on the store page.
-              </p>
-            </div>
-          )}
-        </>
-      )}
-
-      {/* Manual Photo URL Manager (fallback) */}
+      <p className="text-sm text-gray-600">Google photos can't be stored. Add your own or the store's photos.</p>
+      {/* Manual Photo URL Manager */}
       <PhotoUrlManager
         store={store}
         currentPhotos={storePhotos}

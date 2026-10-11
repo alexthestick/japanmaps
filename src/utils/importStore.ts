@@ -23,7 +23,7 @@ export interface ImportStoreResult {
   userRatingCount: number;
   types: string[];
   suggestedCategories: string[];
-  photoCount: number;
+  needsReview?: boolean;
 }
 
 export interface ImportStoreError {

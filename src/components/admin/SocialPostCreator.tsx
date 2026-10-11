@@ -4,6 +4,7 @@ import { toPng } from 'html-to-image';
 import { Button } from '../common/Button';
 import { supabase } from '../../lib/supabase';
 import type { Store } from '../../types/store';
+import { isGoogleHostedPhotoUrl } from '../../utils/photoSource';
 
 type FormatType = 'portrait' | 'story';
 
@@ -101,6 +102,12 @@ export function SocialPostCreator() {
   useEffect(() => {
     const url = selectedStore?.photos?.[selectedPhotoIndex];
     if (!url) return;
+    if (isGoogleHostedPhotoUrl(url)) {
+      setStoreImage('');
+      setImageUrlError('Google-hosted photos cannot be copied into a new post. Choose another image.');
+      return;
+    }
+    setImageUrlError('');
 
     setImageUrlLoading(true);
     setStoreImage(''); // clear while loading
@@ -256,6 +263,9 @@ export function SocialPostCreator() {
   }
 
   async function fetchImageAsBase64(url: string): Promise<string> {
+    if (isGoogleHostedPhotoUrl(url)) {
+      throw new Error('Google-hosted photos cannot be copied.');
+    }
     const toBase64 = (blob: Blob): Promise<string> =>
       new Promise((resolve, reject) => {
         const reader = new FileReader();
@@ -306,6 +316,11 @@ export function SocialPostCreator() {
     setImageUrlError('');
     if (!url) {
       setStoreImage('');
+      return;
+    }
+    if (isGoogleHostedPhotoUrl(url)) {
+      setStoreImage('');
+      setImageUrlError('Google-hosted photos cannot be copied into a new post. Choose another image.');
       return;
     }
     setImageUrlLoading(true);
@@ -475,12 +490,12 @@ export function SocialPostCreator() {
                 onChange={handleImageUpload}
                 className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm"
               />
-              <p className="text-xs text-gray-500">Or paste image URL (Google Photos, etc.):</p>
+              <p className="text-xs text-gray-500">Or paste a photo URL you have permission to use:</p>
               <input
                 type="url"
                 value={imageUrl}
                 onChange={(e) => handleImageUrlLoad(e.target.value)}
-                placeholder="https://lh3.googleusercontent.com/..."
+                placeholder="https://your-store.example/photo.jpg"
                 className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm"
               />
               {imageUrlLoading && (

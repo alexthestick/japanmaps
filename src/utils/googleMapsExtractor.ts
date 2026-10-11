@@ -1,15 +1,8 @@
 /**
- * Extract photo URLs from Google Maps using Place Details API
- * Uses direct googleusercontent.com URLs that work without additional API calls
+ * Legacy Google Maps helpers. Photo extraction is disabled.
  */
 
 const GOOGLE_PLACES_API_KEY = import.meta.env.VITE_GOOGLE_PLACES_API_KEY;
-
-interface GooglePhotoData {
-  url: string;
-  width: number;
-  height: number;
-}
 
 /**
  * Extract Place ID from various Google Maps URL formats
@@ -46,7 +39,7 @@ export async function fetchPlaceDetails(placeId: string): Promise<any> {
   }
 
   const response = await fetch(
-    `https://maps.googleapis.com/maps/api/place/details/json?place_id=${placeId}&fields=photos&key=${GOOGLE_PLACES_API_KEY}`,
+    `https://maps.googleapis.com/maps/api/place/details/json?place_id=${placeId}&fields=name,formatted_address,geometry,opening_hours,website&key=${GOOGLE_PLACES_API_KEY}`,
     {
       mode: 'cors',
     }
@@ -69,41 +62,8 @@ export async function fetchPlaceDetails(placeId: string): Promise<any> {
  * Main function: Extract photo URLs from Google Maps URL
  */
 export async function extractPhotoUrlsFromMapsUrl(googleMapsUrl: string): Promise<string[]> {
-  try {
-    // Step 1: Handle shortened URLs by following redirects
-    let fullUrl = googleMapsUrl;
-    if (googleMapsUrl.includes('goo.gl')) {
-      const response = await fetch(googleMapsUrl, { redirect: 'follow' });
-      fullUrl = response.url;
-    }
-
-    // Step 2: Extract Place ID from URL
-    const placeId = extractPlaceIdFromUrl(fullUrl);
-
-    if (!placeId || placeId === 'REDIRECT_NEEDED') {
-      throw new Error('Could not extract Place ID from URL. Try copying the full URL from your browser address bar.');
-    }
-
-    // Step 3: Fetch place details from Google API
-    const placeDetails = await fetchPlaceDetails(placeId);
-
-    // Step 4: Extract photo references and convert to direct URLs
-    const photoUrls: string[] = [];
-
-    if (placeDetails.photos && placeDetails.photos.length > 0) {
-      placeDetails.photos.forEach((photo: any) => {
-        // Convert photo reference to direct googleusercontent URL
-        const photoReference = photo.photo_reference;
-        const directUrl = `https://maps.googleapis.com/maps/api/place/photo?maxwidth=1600&photo_reference=${photoReference}&key=${GOOGLE_PLACES_API_KEY}`;
-        photoUrls.push(directUrl);
-      });
-    }
-
-    return photoUrls.slice(0, 20); // Max 20 photos
-  } catch (error) {
-    console.error('Error extracting photos:', error);
-    throw error;
-  }
+  void googleMapsUrl;
+  throw new Error('Google photo URLs cannot be imported or stored.');
 }
 
 /**
@@ -111,22 +71,8 @@ export async function extractPhotoUrlsFromMapsUrl(googleMapsUrl: string): Promis
  * This is a simpler approach that works client-side
  */
 export function extractPhotoUrlsFromPageSource(htmlContent: string): string[] {
-  const photoUrls: string[] = [];
-  const uniqueUrls = new Set<string>();
-
-  // Match all googleusercontent URLs
-  const urlRegex = /https:\/\/lh[0-9]\.googleusercontent\.com\/p\/[A-Za-z0-9_-]+/g;
-  const matches = htmlContent.match(urlRegex);
-
-  if (matches) {
-    matches.forEach(url => {
-      // Add high-resolution parameter
-      const highResUrl = url + '=w1600';
-      uniqueUrls.add(highResUrl);
-    });
-  }
-
-  return Array.from(uniqueUrls).slice(0, 20);
+  void htmlContent;
+  throw new Error('Google photo URLs cannot be imported or stored.');
 }
 
 /**
@@ -134,12 +80,6 @@ export function extractPhotoUrlsFromPageSource(htmlContent: string): string[] {
  * This works for API photo references
  */
 export function convertPhotoReferenceToDirectUrl(photoReference: string): string {
-  // If it's already a direct URL, return it
-  if (photoReference.includes('googleusercontent.com')) {
-    return photoReference;
-  }
-
-  // For now, we can't convert photo references without making an API call
-  // Users will need to paste the direct URLs
-  throw new Error('Cannot convert photo reference without API call. Please use direct image URLs from Google Maps.');
+  void photoReference;
+  throw new Error('Google photo references cannot be converted for storage.');
 }

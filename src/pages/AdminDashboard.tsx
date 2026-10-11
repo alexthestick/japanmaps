@@ -157,7 +157,6 @@ export function AdminDashboard() {
         lastSeenAt: s.last_seen_at || undefined,
         lat: s.lat ?? undefined,
         lng: s.lng ?? undefined,
-        googlePhotoNames: s.google_photo_names || undefined,
         oembedHtml: s.oembed_html || undefined,
         oembedThumbnailUrl: s.oembed_thumbnail_url || undefined,
         oembedAuthorName: s.oembed_author_name || undefined,
@@ -1240,4 +1239,3 @@ export function AdminDashboard() {
     </div>
   );
 }
-

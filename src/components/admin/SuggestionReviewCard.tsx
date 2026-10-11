@@ -1,4 +1,3 @@
-import { useMemo } from 'react';
 import {
   ChevronDown,
   ChevronRight,
@@ -36,10 +35,7 @@ interface SuggestionReviewCardProps {
 /**
  * One suggestion, one card. Collapsed by default so the queue stays
  * scannable and bulk-select stays cheap; expanding a card is the only
- * thing that triggers Google Places photo requests or loads the oEmbed
- * post — per Alex's "lazy photo fetch on card open" requirement, so a
- * 20-row queue doesn't burn Places Photo quota on candidates that get
- * bulk-rejected unseen.
+ * thing that loads the oEmbed post. Google photos are not fetched or stored.
  *
  * Per Alex's explicit design directive, the expanded view's core section
  * is "What They Sell" — notes + embedded source post + (future) IG bio —
@@ -65,21 +61,6 @@ export function SuggestionReviewCard({
   const isOrphanApproved = suggestion.status === 'approved' && !suggestion.promotedStoreId;
   const isPublished = suggestion.status === 'approved' && !!suggestion.promotedStoreId;
   const canApprove = suggestion.geocodeConfidence !== 'none';
-
-  // Only build photo URLs (and only render the oEmbed post) once the card
-  // is actually open — this is the "lazy fetch" boundary. Collapsed cards
-  // never touch the Places Photo API or Meta's oEmbed HTML.
-  const photoUrls = useMemo(() => {
-    if (!isExpanded || !suggestion.googlePhotoNames?.length) return [];
-    const apiKey = import.meta.env.VITE_GOOGLE_PLACES_API_KEY;
-    if (!apiKey) return [];
-    return suggestion.googlePhotoNames
-      .slice(0, 3)
-      .map(
-        (name) =>
-          `https://places.googleapis.com/v1/${name}/media?key=${apiKey}&maxHeightPx=400&maxWidthPx=400`,
-      );
-  }, [isExpanded, suggestion.googlePhotoNames]);
 
   useSocialEmbed(isExpanded ? suggestion.oembedHtml : null);
 
@@ -238,30 +219,11 @@ export function SuggestionReviewCard({
                 </div>
               ) : null}
 
-              {/* Google Places photos — the lazy-fetched part */}
-              {photoUrls.length > 0 && (
-                <div>
-                  <p className="text-xs font-medium text-gray-500 mb-1">
-                    Photos (from Google Places)
-                  </p>
-                  <div className="flex gap-2 flex-wrap">
-                    {photoUrls.map((url, i) => (
-                      <img
-                        key={i}
-                        src={url}
-                        alt={`${suggestion.storeName} photo ${i + 1}`}
-                        className="w-24 h-24 object-cover rounded-md border border-gray-200"
-                        loading="lazy"
-                      />
-                    ))}
-                  </div>
-                </div>
-              )}
             </div>
 
-            {!suggestion.oembedHtml && !suggestion.sourceRef && photoUrls.length === 0 && (
+            {!suggestion.oembedHtml && !suggestion.sourceRef && (
               <p className="text-xs text-gray-400">
-                No source post or photos captured for this candidate.
+                No source post captured for this candidate.
               </p>
             )}
           </div>
@@ -296,7 +258,14 @@ export function SuggestionReviewCard({
             )}
             {suggestion.reason && <p>Reason: {suggestion.reason}</p>}
             {suggestion.googlePlaceId && (
-              <p className="font-mono text-gray-400 truncate">{suggestion.googlePlaceId}</p>
+              <a
+                href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(`${suggestion.storeName}, ${suggestion.city}`)}&query_place_id=${encodeURIComponent(suggestion.googlePlaceId)}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-blue-600 hover:underline inline-flex items-center gap-1"
+              >
+                View on Google Maps <ExternalLink className="w-3 h-3" />
+              </a>
             )}
           </div>
 

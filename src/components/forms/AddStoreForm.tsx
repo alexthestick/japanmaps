@@ -11,6 +11,7 @@ import { formatLocationForDB } from '../../utils/helpers';
 import { GoogleMapsStoreExtractor, type ExtractedStoreData } from '../admin/GoogleMapsStoreExtractor';
 import { logger } from '../../utils/logger';
 import { generateSlug } from '../../utils/slugify';
+import { isGoogleHostedPhotoUrl } from '../../utils/photoSource';
 
 const baseStoreSchema = z.object({
   name: z.string().min(1, 'Store name is required'),
@@ -55,7 +56,6 @@ export function AddStoreForm({ onSuccess, onCancel }: AddStoreFormProps) {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
   const [selectedMainCategory, setSelectedMainCategory] = useState<string>('Fashion');
-  const [extractedPhotos, setExtractedPhotos] = useState<string[]>([]);
 
   const {
     register,
@@ -100,11 +100,6 @@ export function AddStoreForm({ onSuccess, onCancel }: AddStoreFormProps) {
       setValue('mainCategory', data.mainCategory);
     }
 
-    // Store extracted photos
-    if (data.photoUrls && data.photoUrls.length > 0) {
-      setExtractedPhotos(data.photoUrls);
-    }
-
     // Auto-fill categories if available
     if (data.categories && data.categories.length > 0) {
       setSelectedCategories(data.categories);
@@ -133,17 +128,17 @@ export function AddStoreForm({ onSuccess, onCancel }: AddStoreFormProps) {
   };
 
   const onSubmit = async (data: StoreFormData) => {
+    if (data.photoUrl && isGoogleHostedPhotoUrl(data.photoUrl)) {
+      alert("Google photos can't be stored. Add your own or the store's photos.");
+      return;
+    }
     logger.log('✅ Form submitted successfully!');
     logger.log('Store data:', data);
     logger.log('Selected categories:', selectedCategories);
     
     setIsSubmitting(true);
     try {
-      // Combine manual photo URL with extracted photos
-      const photos = [
-        ...(data.photoUrl ? [data.photoUrl] : []),
-        ...extractedPhotos
-      ];
+      const photos = data.photoUrl ? [data.photoUrl] : [];
 
       const storeData = {
         name: data.name,
@@ -185,25 +180,6 @@ export function AddStoreForm({ onSuccess, onCancel }: AddStoreFormProps) {
     <div className="space-y-6">
       {/* AI Store Extractor - Place at top for easy access */}
       <GoogleMapsStoreExtractor onApplyData={handleApplyExtractedData} />
-
-      {/* Show extracted photos preview */}
-      {extractedPhotos.length > 0 && (
-        <div className="p-4 bg-green-50 border-2 border-green-200 rounded-lg">
-          <p className="text-sm font-medium text-green-800 mb-2">
-            ✓ {extractedPhotos.length} photos extracted and ready to save!
-          </p>
-          <div className="flex gap-2 overflow-x-auto">
-            {extractedPhotos.map((url, idx) => (
-              <img
-                key={idx}
-                src={url}
-                alt={`Extracted photo ${idx + 1}`}
-                className="w-20 h-20 object-cover rounded border border-green-300"
-              />
-            ))}
-          </div>
-        </div>
-      )}
 
       <form 
         onSubmit={handleSubmit(onSubmit, (errors) => {
@@ -521,4 +497,3 @@ export function AddStoreForm({ onSuccess, onCancel }: AddStoreFormProps) {
     </div>
   );
 }
-

@@ -74,7 +74,6 @@ export interface StoreSuggestion {
   lastSeenAt?: string;
   lat?: number;
   lng?: number;
-  googlePhotoNames?: string[];
   oembedHtml?: string;
   oembedThumbnailUrl?: string;
   oembedAuthorName?: string;
@@ -103,5 +102,4 @@ export interface StoreFilters {
 }
 
 export type SortOption = 'name' | 'city' | 'recent' | 'category';
-
 

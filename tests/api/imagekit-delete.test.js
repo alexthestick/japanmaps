@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import handler, { canDeleteImage, isUserOwnedFile } from './imagekit-delete.js';
+import handler, { canDeleteImage, isUserOwnedFile } from '../../api/imagekit-delete.js';
 
 const userId = 'a11b22c3-d444-4e55-8f66-778899aabbcc';
 

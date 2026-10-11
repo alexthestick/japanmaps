@@ -5,6 +5,15 @@ export interface EnhancedPlaceData {
   description: string;
   instagram?: string;
   suggestedSubCategories?: string[];
+  needsReview?: boolean;
+}
+
+interface StoreOwnedContext {
+  categoryHints?: string[];
+  website?: string;
+  instagram?: string;
+  city?: string;
+  neighborhood?: string;
 }
 
 // Rate limiting: ensure we don't spam the endpoint
@@ -29,13 +38,12 @@ async function waitForRateLimit(): Promise<void> {
 export async function enhancePlaceDetailsWithAI(
   placeDetails: PlaceDetails,
   category: 'Fashion' | 'Food' | 'Coffee' | 'Home Goods' | 'Museum' | 'Spots' = 'Fashion',
-  subCategories?: string[]
+  subCategories?: string[],
+  context: StoreOwnedContext = {}
 ): Promise<EnhancedPlaceData> {
   const fallback: EnhancedPlaceData = {
-    description:
-      placeDetails.editorialSummary ||
-      placeDetails.description ||
-      `${placeDetails.name} is located at ${placeDetails.address}.`,
+    description: `${placeDetails.name}${context.neighborhood || context.city ? ` in ${context.neighborhood || context.city}` : ''}.`,
+    needsReview: true,
   };
 
   try {
@@ -48,11 +56,12 @@ export async function enhancePlaceDetailsWithAI(
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         name: placeDetails.name,
-        address: placeDetails.address,
-        types: placeDetails.types || [],
-        reviews: placeDetails.reviews || [],
-        editorialSummary: placeDetails.editorialSummary || '',
         category,
+        categoryHints: context.categoryHints || subCategories || [],
+        website: context.website || placeDetails.website || '',
+        instagram: context.instagram || '',
+        city: context.city || '',
+        neighborhood: context.neighborhood || '',
       }),
     });
 
@@ -72,6 +81,7 @@ export async function enhancePlaceDetailsWithAI(
       description: data.description || fallback.description,
       instagram: data.instagram,
       suggestedSubCategories: data.suggestedSubCategories || [],
+      needsReview: Boolean(data.needsReview),
     };
 
     logger.log(`✅ Enhanced: "${placeDetails.name}"`, enhanced);

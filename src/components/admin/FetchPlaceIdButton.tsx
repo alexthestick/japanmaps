@@ -17,11 +17,8 @@ export interface PlaceDetails {
   phoneNumber?: string;
   rating?: number;
   userRatingCount?: number;
-  photos?: Array<{ name: string }>;
-  reviews?: Array<{ text: { text: string } }>;
   types?: string[];
   priceLevel?: string;
-  editorialSummary?: string;
 }
 
 interface FetchPlaceIdButtonProps {
@@ -85,7 +82,7 @@ export function FetchPlaceIdButton({ store, onSuccess }: FetchPlaceIdButtonProps
         headers: {
           'Content-Type': 'application/json',
           'X-Goog-Api-Key': apiKey,
-          'X-Goog-FieldMask': 'id,displayName,formattedAddress,location,editorialSummary,regularOpeningHours,websiteUri,internationalPhoneNumber,rating,userRatingCount,photos,reviews,types,priceLevel',
+          'X-Goog-FieldMask': 'id,displayName,formattedAddress,location,regularOpeningHours,websiteUri,internationalPhoneNumber,rating,userRatingCount,types,priceLevel',
         },
       });
 
@@ -108,17 +105,13 @@ export function FetchPlaceIdButton({ store, onSuccess }: FetchPlaceIdButtonProps
         address: data.formattedAddress || '',
         latitude: data.location?.latitude || 0,
         longitude: data.location?.longitude || 0,
-        description: data.editorialSummary?.text || '',
         hours: hoursText,
         website: data.websiteUri || '',
         phoneNumber: data.internationalPhoneNumber || '',
         rating: data.rating,
         userRatingCount: data.userRatingCount,
-        photos: data.photos || [],
-        reviews: data.reviews || [],
         types: data.types || [],
         priceLevel: data.priceLevel,
-        editorialSummary: data.editorialSummary?.text || '',
       };
     } catch (error) {
       console.error('Error fetching place details:', error);
@@ -148,8 +141,8 @@ export function FetchPlaceIdButton({ store, onSuccess }: FetchPlaceIdButtonProps
       setResult({
         success: true,
         message: placeDetails
-          ? `✓ Saved "${placeName}" with full details! ${placeDetails.photos?.length || 0} photos available.`
-          : `✓ Saved "${placeName}"! You can now fetch photos.`,
+          ? `✓ Saved "${placeName}" with place details for review.`
+          : `✓ Saved "${placeName}".`,
       });
 
       setPlaceOptions([]); // Clear options
