@@ -269,25 +269,6 @@ export function BulkImportApprovalCard({
         </div>
       )}
 
-      {/* Photos */}
-      {item.placeDetails?.photos && item.placeDetails.photos.length > 0 && (
-        <div className="space-y-2">
-          <label className="block text-sm font-medium text-gray-700">
-            Photos ({item.placeDetails.photos.length})
-          </label>
-          <div className="flex gap-2 overflow-x-auto">
-            {item.placeDetails.photos.slice(0, 5).map((photo: any, idx: number) => (
-              <img
-                key={idx}
-                src={`https://places.googleapis.com/v1/${photo.name}/media?key=${import.meta.env.VITE_GOOGLE_PLACES_API_KEY}&maxHeightPx=200&maxWidthPx=200`}
-                alt={`Photo ${idx + 1}`}
-                className="w-24 h-24 object-cover rounded-lg border-2 border-gray-200"
-              />
-            ))}
-          </div>
-        </div>
-      )}
-
       {/* Description */}
       <div className="space-y-2">
         <div className="flex items-center justify-between">

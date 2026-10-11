@@ -1,6 +1,5 @@
 import { supabase } from '../lib/supabase';
 import { generateSlug } from './slugify';
-import { migrateStorePhotosViaEdge } from './edgePhotoFetcher';
 import { assertNoGeneratedColumns } from './generatedColumns';
 import type { MainCategory } from '../types/store';
 
@@ -33,11 +32,9 @@ export interface PromoteSuggestionResult {
  * "publish" step the Admin Dashboard's Approve button never actually did
  * (it only ever flipped suggestion.status, so approving created nothing).
  *
- * Mirrors BulkImportQueue.tsx's insert -> slug-retry -> photo-migration
- * pattern so a promoted store behaves exactly like a manually-imported one:
- * same slug generation (generateSlug), same 23505 collision handling with
- * -2/-3/-4 suffixes, same best-effort migrateStorePhotosViaEdge() call when
- * a google_place_id is available.
+ * Mirrors BulkImportQueue.tsx's insert -> slug-retry pattern: same slug
+ * generation and collision handling. Photos stay empty until independently
+ * sourced images are added by an admin.
  *
  * Safe to call on a suggestion whose status is already 'pending' or
  * 'approved' (the latter covers the orphan case: a row Alex already
@@ -126,19 +123,6 @@ export async function promoteSuggestion(
     throw new Error(
       `Slug collision unresolved for "${input.storeName}" — all suffix variants taken (${lastError?.message})`,
     );
-  }
-
-  // Photos: best-effort, exactly like BulkImportQueue — a failure here never
-  // blocks the promotion, it just leaves photos empty for now.
-  if (input.googlePlaceId) {
-    try {
-      const photoUrls = await migrateStorePhotosViaEdge(store.id, input.googlePlaceId, false);
-      if (photoUrls.length > 0) {
-        await supabase.from('stores').update({ photos: photoUrls }).eq('id', store.id);
-      }
-    } catch (photoError) {
-      console.error('Photo migration failed (continuing anyway):', photoError);
-    }
   }
 
   const { error: updateError } = await supabase

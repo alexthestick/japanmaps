@@ -2,12 +2,11 @@ import { useEffect, useState } from 'react';
 import { supabase } from '../../lib/supabase';
 import { searchPlaceId, autoSelectBestMatch } from '../../utils/placeIdFetcher';
 import { enhancePlaceDetailsWithAI } from '../../utils/aiPlaceEnhancer';
-import { migrateStorePhotosViaEdge } from '../../utils/edgePhotoFetcher';
 import { BulkImportApprovalCard } from './BulkImportApprovalCard';
 import type { BulkImportQueueItem } from '../../types/bulkImport';
 import type { MainCategory, SubCategory } from '../../types/store';
 import type { PlaceDetails } from './FetchPlaceIdButton';
-import { Loader, CheckCircle, XCircle, AlertTriangle } from 'lucide-react';
+import { Loader, CheckCircle, AlertTriangle } from 'lucide-react';
 import { logger } from '../../utils/logger';
 import { generateSlug } from '../../utils/slugify';
 import { assertNoGeneratedColumns } from '../../utils/generatedColumns';
@@ -329,19 +328,8 @@ export function BulkImportQueue({
               .single();
 
             if (!retryError && retryStore) {
-              // Success with suffix slug — continue to photo migration
-              const store = retryStore;
+              // Success with suffix slug; photos remain empty until independently sourced.
               logger.log(`✅ Store inserted with suffix slug: ${storeData.slug}`);
-              if (currentItem.placeId) {
-                try {
-                  const photoUrls = await migrateStorePhotosViaEdge(store.id, currentItem.placeId, false);
-                  if (photoUrls.length > 0) {
-                    await supabase.from('stores').update({ photos: photoUrls }).eq('id', store.id);
-                  }
-                } catch (photoError) {
-                  console.error('⚠️ Photo fetch failed (continuing anyway):', photoError);
-                }
-              }
               onUpdateItem(currentIndex, { status: 'completed' });
               setTimeout(() => onMoveToNext(), 3000);
               resolved = true;
@@ -360,33 +348,6 @@ export function BulkImportQueue({
       }
 
       logger.log(`✅ Store inserted with ID: ${store.id}`);
-
-      // Migrate photos - always try if we have a placeId (serverless function fetches from Google directly)
-      if (currentItem.placeId) {
-        logger.log(`📸 Fetching photos from Google for place: ${currentItem.placeId}...`);
-
-        try {
-          const photoUrls = await migrateStorePhotosViaEdge(
-            store.id,
-            currentItem.placeId,
-            false // Not a dry run
-          );
-
-          if (photoUrls.length > 0) {
-            // Update store with photo URLs
-            await supabase
-              .from('stores')
-              .update({ photos: photoUrls })
-              .eq('id', store.id);
-
-            logger.log(`✅ Photos uploaded: ${photoUrls.length} URLs`);
-          } else {
-            logger.log('ℹ️ No photos found for this place');
-          }
-        } catch (photoError) {
-          console.error('⚠️ Photo fetch failed (continuing anyway):', photoError);
-        }
-      }
 
       // Mark as completed
       onUpdateItem(currentIndex, { status: 'completed' });

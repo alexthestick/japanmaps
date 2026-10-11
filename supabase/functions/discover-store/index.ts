@@ -254,7 +254,6 @@ Deno.serve(async (req: Request) => {
     status: 'pending',
     lat: geocode.lat ?? null,
     lng: geocode.lng ?? null,
-    google_photo_names: geocode.photo_names && geocode.photo_names.length > 0 ? geocode.photo_names : null,
     follower_count: followerCount,
     oembed_html: oembed.attempted ? oembed.html : null,
     oembed_thumbnail_url: oembed.attempted ? oembed.thumbnail_url : null,
@@ -300,7 +299,6 @@ interface GeocodeResult {
   lat?: number;
   lng?: number;
   formatted_address?: string;
-  photo_names?: string[];
 }
 
 async function geocodeCandidate(
@@ -325,7 +323,7 @@ async function geocodeCandidate(
         'Content-Type': 'application/json',
         'X-Goog-Api-Key': apiKey,
         'X-Goog-FieldMask':
-          'places.id,places.displayName,places.formattedAddress,places.location,places.businessStatus,places.photos',
+          'places.id,places.displayName,places.formattedAddress,places.location,places.businessStatus',
       },
       body: JSON.stringify({ textQuery, languageCode: 'ja' }),
     });
@@ -344,20 +342,12 @@ async function geocodeCandidate(
     const confidence: 'high' | 'low' =
       !place.businessStatus || place.businessStatus === 'OPERATIONAL' ? 'high' : 'low';
 
-    const photoNames: string[] = Array.isArray(place.photos)
-      ? place.photos
-          .slice(0, 3)
-          .map((p: { name?: unknown }) => (typeof p.name === 'string' ? p.name : null))
-          .filter((n: string | null): n is string => !!n)
-      : [];
-
     return {
       confidence,
       place_id: place.id,
       lat: place.location?.latitude,
       lng: place.location?.longitude,
       formatted_address: place.formattedAddress,
-      photo_names: photoNames,
     };
   } catch (err) {
     console.error('geocodeCandidate error', err);

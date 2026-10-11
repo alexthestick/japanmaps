@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { Plus, X, Save, AlertCircle, CheckCircle } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 import type { Store } from '../../types/store';
+import { isGoogleHostedPhotoUrl } from '../../utils/photoSource';
 
 interface PhotoUrlManagerProps {
   store: Store;
@@ -49,6 +50,12 @@ export function PhotoUrlManager({ store, onSuccess, pendingFormData, currentPhot
       return;
     }
 
+    const existingUrls = currentPhotos ?? store.photos ?? [];
+    if (validUrls.some(url => !existingUrls.includes(url) && isGoogleHostedPhotoUrl(url))) {
+      setError("Google photos can't be stored. Add your own or the store's photos.");
+      return;
+    }
+
     setLoading(true);
     setError(null);
     setSuccess(false);
@@ -86,7 +93,7 @@ export function PhotoUrlManager({ store, onSuccess, pendingFormData, currentPhot
       <h3 className="text-lg font-bold text-gray-900 mb-4">Photo URLs</h3>
 
       <p className="text-sm text-gray-600 mb-4">
-        Paste image URLs for <strong>{store.name}</strong>. Use high-quality images from Google Maps, Unsplash, or your own hosting.
+        Paste image URLs for <strong>{store.name}</strong> only when you have permission to use them. Don't use Google Maps photos.
       </p>
 
       <div className="space-y-3 mb-4">
