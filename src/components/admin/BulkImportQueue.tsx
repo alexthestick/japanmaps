@@ -125,7 +125,12 @@ export function BulkImportQueue({
       // Detect category based on place types
       const category = detectCategoryFromTypes(placeDetails.types || []);
 
-      const enhanced = await enhancePlaceDetailsWithAI(placeDetails, category);
+      const enhanced = await enhancePlaceDetailsWithAI(placeDetails, category, undefined, {
+        website: item.csvData.website || placeDetails.website,
+        instagram: item.csvData.instagram,
+        city: cityHint || extractCity(placeDetails.address),
+        neighborhood: item.csvData.neighborhood,
+      });
 
       onUpdateItem(index, {
         enhancedData: enhanced,
@@ -293,7 +298,7 @@ export function BulkImportQueue({
         main_category: mainCategory, // Use snake_case for DB
         categories: subCategories, // Sub-categories go here
         description: customDescription || currentItem.enhancedData?.description || null,
-        photos: [], // Will be populated after photo migration
+        photos: [], // Google photos are not copied during import.
         website: currentItem.placeDetails?.website || currentItem.csvData.website || null,
         instagram: currentItem.enhancedData?.instagram || currentItem.csvData.instagram || null,
         hours: currentItem.placeDetails?.hours || null,
@@ -478,7 +483,12 @@ export function BulkImportQueue({
 
       // Run AI enhancement with category detection
       const category = detectCategoryFromTypes(placeDetails.types || []);
-      const enhanced = await enhancePlaceDetailsWithAI(placeDetails, category);
+      const enhanced = await enhancePlaceDetailsWithAI(placeDetails, category, undefined, {
+        website: items[currentIndex].csvData.website || placeDetails.website,
+        instagram: items[currentIndex].csvData.instagram,
+        city: cityHint || extractCity(placeDetails.address),
+        neighborhood: items[currentIndex].csvData.neighborhood,
+      });
 
       onUpdateItem(currentIndex, {
         enhancedData: enhanced,

@@ -137,7 +137,13 @@ export function EditStoreForm({ store, onSuccess, onCancel }: EditStoreFormProps
     try {
       logger.log('🔍 Starting AI enhancement with details:', details);
       const { enhancePlaceDetailsWithAI } = await import('../../utils/aiPlaceEnhancer');
-      const enhanced = await enhancePlaceDetailsWithAI(details as any, (selectedMainCategory as any) || 'Fashion');
+      const enhanced = await enhancePlaceDetailsWithAI(details, (selectedMainCategory as any) || 'Fashion', selectedCategories, {
+        website: store.website || details.website,
+        instagram: store.instagram || '',
+        city: store.city,
+        neighborhood: store.neighborhood || '',
+        categoryHints: selectedCategories,
+      });
 
       logger.log('✅ AI enhancement successful:', enhanced);
 
@@ -159,12 +165,12 @@ export function EditStoreForm({ store, onSuccess, onCancel }: EditStoreFormProps
         address: details.address,
         latitude: details.latitude,
         longitude: details.longitude,
-        description: details.editorialSummary || details.description || `${details.name} is a clothing store located at ${details.address}.`,
+        description: `${details.name} in ${store.neighborhood || store.city}.`,
+        needsReview: true,
         hours: details.hours,
         website: details.website,
         rating: details.rating,
         userRatingCount: details.userRatingCount,
-        photos: details.photos,
       });
 
       setShowPreview(true);
@@ -318,7 +324,7 @@ export function EditStoreForm({ store, onSuccess, onCancel }: EditStoreFormProps
       <div className="mb-4 p-4 bg-blue-50 border-2 border-blue-200 rounded-lg">
         <div className="flex items-center gap-2 text-blue-800">
           <CheckCircle className="w-5 h-5 animate-spin" />
-          <p className="font-medium">✨ AI is enhancing store data... (analyzing reviews, extracting details)</p>
+          <p className="font-medium">✨ Preparing store details from the store website...</p>
         </div>
       </div>
     )}
@@ -343,7 +349,8 @@ export function EditStoreForm({ store, onSuccess, onCancel }: EditStoreFormProps
           {/* Description */}
           {enhancedData.description && (
             <div className="bg-white p-4 rounded-lg border border-purple-200">
-              <p className="text-sm font-semibold text-purple-900 mb-2">📝 AI-Generated Description:</p>
+              <p className="text-sm font-semibold text-purple-900 mb-2">📝 Description draft:</p>
+              {enhancedData.needsReview && <p className="mb-2 text-sm text-amber-800">Needs review — no usable store website text was available.</p>}
               <p className="text-gray-700 text-sm leading-relaxed">{enhancedData.description}</p>
             </div>
           )}

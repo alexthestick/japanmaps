@@ -75,7 +75,7 @@ async function fetchPlaceDetails(placeId) {
       headers: {
         'Content-Type': 'application/json',
         'X-Goog-Api-Key': apiKey,
-        'X-Goog-FieldMask': 'id,displayName,formattedAddress,location,editorialSummary,regularOpeningHours,websiteUri,internationalPhoneNumber,rating,userRatingCount,photos,reviews,types,priceLevel',
+        'X-Goog-FieldMask': 'id,displayName,formattedAddress,location,regularOpeningHours,websiteUri,internationalPhoneNumber,rating,userRatingCount,types,priceLevel',
       },
     }
   );
@@ -96,16 +96,12 @@ async function fetchPlaceDetails(placeId) {
     address: data.formattedAddress || '',
     latitude: data.location?.latitude || 0,
     longitude: data.location?.longitude || 0,
-    editorialSummary: data.editorialSummary?.text || '',
     website: data.websiteUri || '',
     phone: data.internationalPhoneNumber || '',
     rating: data.rating || 0,
     userRatingCount: data.userRatingCount || 0,
-    photos: data.photos || [],
-    reviews: data.reviews || [],
     types: data.types || [],
     priceLevel: data.priceLevel || '',
-    description: data.editorialSummary?.text || '',
     hours: data.regularOpeningHours?.weekdayDescriptions?.join('\n') || '',
   };
 }

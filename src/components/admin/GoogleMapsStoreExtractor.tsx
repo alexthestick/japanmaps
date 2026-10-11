@@ -21,6 +21,7 @@ export interface ExtractedStoreData {
   mainCategory?: string;
   instagram?: string;
   placeId?: string;
+  needsReview?: boolean;
 }
 
 export function GoogleMapsStoreExtractor({ onApplyData }: GoogleMapsStoreExtractorProps) {
@@ -66,6 +67,7 @@ export function GoogleMapsStoreExtractor({ onApplyData }: GoogleMapsStoreExtract
         mainCategory,
         categories: importResult.suggestedCategories,
         placeId: importResult.placeId,
+        needsReview: importResult.needsReview,
       };
 
       setExtractedData(data);
@@ -223,10 +225,12 @@ export function GoogleMapsStoreExtractor({ onApplyData }: GoogleMapsStoreExtract
 
             {/* AI Description */}
             <div>
+              {extractedData.needsReview && (
+                <p className="mb-2 text-sm text-amber-800">Description needs review — no usable store website text was available.</p>
+              )}
               <label className="block text-xs font-medium text-gray-700 mb-1">
                 <Sparkles className="w-3 h-3 inline mr-1 text-purple-600" />
-                AI-Generated Description
-                <span className="ml-2 text-xs text-purple-600 font-normal">✨ Powered by Claude AI</span>
+                Description draft
               </label>
               <textarea
                 value={extractedData.description}

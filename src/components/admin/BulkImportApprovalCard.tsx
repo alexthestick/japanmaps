@@ -271,6 +271,9 @@ export function BulkImportApprovalCard({
 
       {/* Description */}
       <div className="space-y-2">
+        {item.enhancedData?.needsReview && (
+          <p className="text-sm text-amber-800">Description needs review — no usable store website text was available.</p>
+        )}
         <div className="flex items-center justify-between">
           <label className="block text-sm font-medium text-gray-700">
             Description
