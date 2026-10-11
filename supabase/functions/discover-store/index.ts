@@ -39,10 +39,7 @@
  *
  * Geocoding: every candidate is geocoded at submission time via Google
  * Places Text Search, independent of anything Muse resolved client-side.
- * The field mask now also asks for photo references (photos are lazily
- * resolved to real images by the dashboard, only when a card is opened —
- * not fetched here, to avoid spending Places Photo quota / storage on
- * candidates that get bulk-rejected unseen).
+ * The field mask requests location details only, not photo references.
  *
  * oEmbed: Instagram and Threads post previews, fetched here rather than
  * client-side so the dashboard never carries a Meta call in its render
@@ -60,12 +57,59 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 const DAILY_CAP = 200;
 const OEMBED_TIMEOUT_MS = 6000;
 
+// Hints that unambiguously map to one main category, auto-assigned at
+// intake so a suggestion doesn't sit uncategorized. Two sub-category terms
+// ("antiques", "stationery") exist in both the Fashion and Home Goods
+// vocabularies (src/lib/constants.ts) and are deliberately left out here
+// rather than guessed — those hints still land with main_category: null,
+// same as any unmapped hint, for Alex to set by hand in review.
 const CATEGORY_HINT_TO_MAIN_CATEGORY: Record<string, string> = {
+  // Fashion (FASHION_SUB_CATEGORIES, minus the two ambiguous terms above)
   vintage: 'Fashion',
   archive: 'Fashion',
   designer: 'Fashion',
   streetwear: 'Fashion',
+  secondhand: 'Fashion',
+  luxury: 'Fashion',
+  'avant-garde': 'Fashion',
+  military: 'Fashion',
+  flagship: 'Fashion',
+  'concept store': 'Fashion',
+  womenswear: 'Fashion',
+  'select shop': 'Fashion',
+  // Coffee has no sub-categories; "cafe" is its own standalone hint.
   cafe: 'Coffee',
+  // Food (FOOD_SUB_CATEGORIES, lowercased)
+  ramen: 'Food',
+  sushi: 'Food',
+  izakaya: 'Food',
+  kaiseki: 'Food',
+  yakitori: 'Food',
+  tempura: 'Food',
+  'udon/soba': 'Food',
+  tonkatsu: 'Food',
+  yakiniku: 'Food',
+  'cafe/restaurant': 'Food',
+  bakery: 'Food',
+  dessert: 'Food',
+  'street food': 'Food',
+  'fine dining': 'Food',
+  pizza: 'Food',
+  burger: 'Food',
+  curry: 'Food',
+  okonomiyaki: 'Food',
+  bar: 'Food',
+  japanese: 'Food',
+  western: 'Food',
+  asian: 'Food',
+  foreign: 'Food',
+  // Home Goods (HOME_GOODS_SUB_CATEGORIES, minus the two ambiguous terms)
+  homeware: 'Home Goods',
+  furniture: 'Home Goods',
+  art: 'Home Goods',
+  'general stores': 'Home Goods',
+  toys: 'Home Goods',
+  // Spots has no sub-categories; "spot" is its own standalone hint.
   spot: 'Spots',
 };
 
@@ -79,6 +123,11 @@ interface DiscoverStoreRequest {
   category_hint?: unknown;
   notes?: unknown;
   follower_count?: unknown;
+  // Muse's own rough estimate (e.g. neighborhood-level), used only as a
+  // fallback when Places geocoding comes back empty — see the fallback
+  // logic right after geocodeCandidate() runs, below.
+  lat?: unknown;
+  lng?: unknown;
 }
 
 interface DuplicateRow {
@@ -142,6 +191,18 @@ Deno.serve(async (req: Request) => {
       ? Math.max(0, Math.round(body.follower_count))
       : null;
 
+  // Muse's rough fallback coordinates, sanity-bounded to roughly Japan so a
+  // malformed value can't land a marker on the wrong side of the planet.
+  // Only ever used below if Places itself fails to geocode the candidate.
+  const bodyLat =
+    typeof body.lat === 'number' && Number.isFinite(body.lat) && body.lat >= 20 && body.lat <= 46
+      ? body.lat
+      : null;
+  const bodyLng =
+    typeof body.lng === 'number' && Number.isFinite(body.lng) && body.lng >= 122 && body.lng <= 154
+      ? body.lng
+      : null;
+
   const admin = createClient(
     Deno.env.get('SUPABASE_URL')!,
     Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!,
@@ -171,14 +232,26 @@ Deno.serve(async (req: Request) => {
     fetchOEmbed(sourceRef),
   ]);
 
+  // Places' own geocode always wins when it succeeds. Muse's rough
+  // coordinates are only used as a fallback when Places returned nothing
+  // (confidence 'none'), and are stored at 'low' confidence to match that
+  // tier's existing meaning ("less precise than Places") — never silently
+  // promoted to 'high', and never overriding a real Places hit.
+  const usingFallbackCoords = geocode.confidence === 'none' && bodyLat != null && bodyLng != null;
+  const effectiveLat = geocode.lat ?? (usingFallbackCoords ? bodyLat! : undefined);
+  const effectiveLng = geocode.lng ?? (usingFallbackCoords ? bodyLng! : undefined);
+  const effectiveConfidence: GeocodeResult['confidence'] = usingFallbackCoords
+    ? 'low'
+    : geocode.confidence;
+
   // ── Dedup: one round trip covering all tiers ─────────────────────────
   const { data: matches, error: dupError } = await admin.rpc('find_store_duplicates', {
     p_name: name,
     p_city: city,
     p_instagram: instagram,
     p_google_place_id: geocode.place_id ?? null,
-    p_lng: geocode.lng ?? null,
-    p_lat: geocode.lat ?? null,
+    p_lng: effectiveLng ?? null,
+    p_lat: effectiveLat ?? null,
   });
 
   if (dupError) {
@@ -249,19 +322,19 @@ Deno.serve(async (req: Request) => {
     category_hint: categoryHint,
     main_category: mainCategory,
     google_place_id: geocode.place_id ?? null,
-    geocode_confidence: geocode.confidence,
+    geocode_confidence: effectiveConfidence,
     possible_duplicate_of: weakStoreMatch ? weakStoreMatch.match_id : null,
     status: 'pending',
-    lat: geocode.lat ?? null,
-    lng: geocode.lng ?? null,
+    lat: effectiveLat ?? null,
+    lng: effectiveLng ?? null,
     follower_count: followerCount,
     oembed_html: oembed.attempted ? oembed.html : null,
     oembed_thumbnail_url: oembed.attempted ? oembed.thumbnail_url : null,
     oembed_author_name: oembed.attempted ? oembed.author_name : null,
     oembed_fetched_at: oembed.attempted ? new Date().toISOString() : null,
   };
-  if (geocode.lat != null && geocode.lng != null) {
-    insertPayload.location = `POINT(${geocode.lng} ${geocode.lat})`;
+  if (effectiveLat != null && effectiveLng != null) {
+    insertPayload.location = `POINT(${effectiveLng} ${effectiveLat})`;
   }
 
   const { data: inserted, error: insertError } = await admin
@@ -279,7 +352,8 @@ Deno.serve(async (req: Request) => {
     {
       status: 'queued',
       suggestion_id: inserted!.id,
-      geocode_confidence: geocode.confidence,
+      geocode_confidence: effectiveConfidence,
+      used_fallback_coords: usingFallbackCoords,
       ...(weakStoreMatch ? { possible_duplicate_of: weakStoreMatch.match_id } : {}),
     },
     201,
