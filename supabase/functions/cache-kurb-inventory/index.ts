@@ -1,23 +1,12 @@
 import { createClient } from 'npm:@supabase/supabase-js@2';
+import { isAuthorizedCronRequest } from './auth.ts';
+import { cursorAfterAttempt, selectBatch, type KurbStore } from './batch.ts';
 
-const SUPABASE_URL = Deno.env.get('SUPABASE_URL')!;
-const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
-const KURB_API_KEY = Deno.env.get('KURB_API_KEY');
-
-// Uses service role so it can bypass RLS and write to kurb_items
-const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
-
-// Mirrors the client-side cap: max 3 items per brand per store
-function capByBrand(items: KurbApiItem[], maxPerBrand = 3): KurbApiItem[] {
-  const counts: Record<string, number> = {};
-  return items.filter(item => {
-    const key = (item.brand ?? '').toLowerCase();
-    counts[key] = (counts[key] ?? 0) + 1;
-    return counts[key] <= maxPerBrand;
-  });
-}
-
-const sleep = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
+const BATCH_SIZE = 19;
+const BETWEEN_KURB_CALLS_MS = 1_200;
+const KURB_TIMEOUT_MS = 10_000;
+const RUN_BUDGET_MS = 105_000;
+const LEASE_MS = 12 * 60_000; // Expires before the proposed 15-minute cron interval.
 
 interface KurbApiItem {
   id: number;
@@ -31,128 +20,189 @@ interface KurbApiItem {
   condition?: string | null;
 }
 
-Deno.serve(async (_req: Request) => {
+const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
+
+function response(body: Record<string, unknown>, status = 200): Response {
+  return new Response(JSON.stringify(body), {
+    status,
+    headers: { 'Content-Type': 'application/json' },
+  });
+}
+
+// Keep the existing client-side limits: three items per brand, twenty per store.
+function capByBrand(items: KurbApiItem[]): KurbApiItem[] {
+  const counts: Record<string, number> = {};
+  return items.filter((item) => {
+    const brand = (item.brand ?? '').toLowerCase();
+    counts[brand] = (counts[brand] ?? 0) + 1;
+    return counts[brand] <= 3;
+  }).slice(0, 20);
+}
+
+async function fetchKurbItems(vendorId: number, apiKey: string): Promise<KurbApiItem[]> {
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), KURB_TIMEOUT_MS);
+  try {
+    const res = await fetch(
+      `https://api.kurb.online/api/v2/partner/vendor/${vendorId}/items?currency=USD`,
+      {
+        headers: { 'X-API-Key': apiKey, 'Content-Type': 'application/json' },
+        signal: controller.signal,
+      },
+    );
+    if (!res.ok) throw new Error(`Kurb HTTP ${res.status}`);
+    const json = await res.json();
+    const rawItems = json?.data?.items ?? [];
+    if (!Array.isArray(rawItems)) throw new Error('Kurb returned an invalid items value');
+    return capByBrand(rawItems);
+  } catch (error) {
+    if (controller.signal.aborted) throw new Error('Kurb request timed out after 10s');
+    throw error;
+  } finally {
+    clearTimeout(timeout);
+  }
+}
+
+Deno.serve(async (req: Request) => {
+  // This endpoint is invoked only by pg_cron. Fail closed before doing any work,
+  // including when the server secret has not been configured.
+  if (!isAuthorizedCronRequest(req, Deno.env.get('CRON_SECRET'))) {
+    return response({ success: false, error: 'Unauthorized' }, 401);
+  }
+
   const startedAt = Date.now();
-  console.log('[cache-kurb-inventory] Starting cache refresh');
+  const runId = crypto.randomUUID();
+  let attempted = 0;
+  let fetched = 0;
+  let errors = 0;
+  const log: string[] = [];
 
   try {
-    // 1. Fetch all stores that have a Kurb vendor ID
+    const url = Deno.env.get('SUPABASE_URL');
+    const serviceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
+    const kurbKey = Deno.env.get('KURB_API_KEY');
+    if (!url || !serviceKey || !kurbKey) {
+      throw new Error('Required server-side configuration is missing');
+    }
+    const supabase = createClient(url, serviceKey);
+
     const { data: stores, error: storesError } = await supabase
       .from('stores')
       .select('id, kurb_vendor_id')
-      .not('kurb_vendor_id', 'is', null);
-
+      .not('kurb_vendor_id', 'is', null)
+      .order('id', { ascending: true });
     if (storesError) throw new Error(`stores fetch failed: ${storesError.message}`);
-    if (!stores || stores.length === 0) {
-      return new Response(JSON.stringify({ success: true, message: 'No stores with kurb_vendor_id', fetched: 0 }), {
-        headers: { 'Content-Type': 'application/json' },
-      });
+    const allStores = (stores ?? []) as KurbStore[];
+    if (allStores.length === 0) {
+      return response({ success: true, message: 'No stores with kurb_vendor_id', attempted: 0, fetched: 0, errors: 0 });
     }
 
-    console.log(`[cache-kurb-inventory] Processing ${stores.length} stores`);
-
-    if (!KURB_API_KEY) {
-      console.warn('[cache-kurb-inventory] KURB_API_KEY not set — skipping live fetch');
-      return new Response(JSON.stringify({ success: false, error: 'KURB_API_KEY not configured' }), {
-        status: 500,
-        headers: { 'Content-Type': 'application/json' },
-      });
+    // An atomic conditional UPDATE claims the singleton cursor row. If a run dies,
+    // the lease expires before the next scheduled invocation. The cursor is only
+    // advanced after processing, so an interrupted batch is safe to repeat.
+    const now = new Date().toISOString();
+    const leaseUntil = new Date(Date.now() + LEASE_MS).toISOString();
+    const { data: claim, error: claimError } = await supabase
+      .from('kurb_cache_state')
+      .update({ lease_token: runId, lease_expires_at: leaseUntil })
+      .eq('singleton', true)
+      .or(`lease_expires_at.is.null,lease_expires_at.lt."${now}"`)
+      .select('last_store_id')
+      .maybeSingle();
+    if (claimError) throw new Error(`cursor claim failed: ${claimError.message}`);
+    if (!claim) {
+      const { data: cursorRow, error: cursorError } = await supabase
+        .from('kurb_cache_state')
+        .select('singleton')
+        .eq('singleton', true)
+        .maybeSingle();
+      if (cursorError) throw new Error(`cursor lookup failed: ${cursorError.message}`);
+      if (!cursorRow) throw new Error('cursor row missing');
+      console.warn('[cache-kurb-inventory] Skipped: another run holds the lease');
+      return response({ success: true, skipped: true, reason: 'already running' });
     }
 
-    let fetched = 0;
-    let errors = 0;
-    const log: string[] = [];
+    const previousCursor = claim.last_store_id as string | null;
+    const batch = selectBatch(allStores, previousCursor, BATCH_SIZE);
+    console.log(`[cache-kurb-inventory] Starting ${batch.length}/${allStores.length} stores`);
 
-    for (let i = 0; i < stores.length; i++) {
-      const store = stores[i];
-
-      // Rate limit: stay safely under 60 req/min (~50/min = 1.2s between requests)
-      if (i > 0) await sleep(1200);
+    for (const store of batch) {
+      if (Date.now() - startedAt >= RUN_BUDGET_MS) {
+        console.warn(`[cache-kurb-inventory] Stopping at run budget after ${attempted} stores`);
+        break;
+      }
+      if (attempted > 0) await sleep(BETWEEN_KURB_CALLS_MS);
+      attempted++;
 
       try {
-        const res = await fetch(
-          `https://api.kurb.online/api/v2/partner/vendor/${store.kurb_vendor_id}/items?currency=USD`,
-          {
-            headers: {
-              'X-API-Key': KURB_API_KEY,
-              'Content-Type': 'application/json',
-            },
-          }
-        );
-
-        if (!res.ok) {
-          errors++;
-          log.push(`store ${store.id}: HTTP ${res.status}`);
-          continue;
-        }
-
-        const json = await res.json();
-        const rawItems: KurbApiItem[] = json?.data?.items ?? [];
-        // Apply same cap as client-side KurbInventory
-        const items = capByBrand(rawItems).slice(0, 20);
-
-        // If vendor has no items, clear any stale cache rows
+        const items = await fetchKurbItems(store.kurb_vendor_id, kurbKey);
         if (items.length === 0) {
-          await supabase.from('kurb_items').delete().eq('store_id', store.id);
-          fetched++;
-          continue;
+          const { error: deleteError } = await supabase
+            .from('kurb_items')
+            .delete()
+            .eq('store_id', store.id);
+          if (deleteError) throw new Error(`cache delete failed: ${deleteError.message}`);
+        } else {
+          const fetchedAt = new Date().toISOString();
+          const rows = items.map((item) => ({
+            store_id: store.id,
+            kurb_vendor_id: store.kurb_vendor_id,
+            item_id: item.id,
+            title: item.title ?? null,
+            brand: item.brand ?? null,
+            price_usd: item.converted_price ?? item.price ?? null,
+            image_url: item.image_url ?? null,
+            kurb_url: item.kurb_url ?? null,
+            size: item.size ?? null,
+            condition: item.condition ?? null,
+            fetched_at: fetchedAt,
+          }));
+          const { error: upsertError } = await supabase
+            .from('kurb_items')
+            .upsert(rows, { onConflict: 'store_id,item_id' });
+          if (upsertError) throw new Error(`cache upsert failed: ${upsertError.message}`);
+
+          const freshIds = items.map((item) => item.id);
+          const { error: staleError } = await supabase
+            .from('kurb_items')
+            .delete()
+            .eq('store_id', store.id)
+            .not('item_id', 'in', `(${freshIds.join(',')})`);
+          if (staleError) throw new Error(`stale-item delete failed: ${staleError.message}`);
         }
-
-        const now = new Date().toISOString();
-        const rows = items.map((item: KurbApiItem) => ({
-          store_id:       store.id,
-          kurb_vendor_id: store.kurb_vendor_id,
-          item_id:        item.id,
-          title:          item.title     ?? null,
-          brand:          item.brand     ?? null,
-          price_usd:      item.converted_price ?? item.price ?? null,
-          image_url:      item.image_url ?? null,
-          kurb_url:       item.kurb_url  ?? null,
-          size:           item.size      ?? null,
-          condition:      item.condition ?? null,
-          fetched_at:     now,
-        }));
-
-        // Upsert — updates price/image/etc if item already cached, inserts if new
-        const { error: upsertError } = await supabase
-          .from('kurb_items')
-          .upsert(rows, { onConflict: 'store_id,item_id' });
-
-        if (upsertError) {
-          errors++;
-          log.push(`store ${store.id}: upsert error — ${upsertError.message}`);
-          continue;
-        }
-
-        // Delete stale rows for this store — items not in latest response are sold
-        const freshIds = items.map((i: KurbApiItem) => i.id);
-        await supabase
-          .from('kurb_items')
-          .delete()
-          .eq('store_id', store.id)
-          .not('item_id', 'in', `(${freshIds.join(',')})`);
-
         fetched++;
         log.push(`store ${store.id}: cached ${items.length} items`);
-
-      } catch (err) {
+      } catch (error) {
         errors++;
-        log.push(`store ${store.id}: ${String(err)}`);
+        const message = error instanceof Error ? error.message : String(error);
+        log.push(`store ${store.id}: ${message}`);
+        console.error(`[cache-kurb-inventory] store ${store.id}: ${message}`);
       }
     }
 
+    const nextCursor = cursorAfterAttempt(allStores, batch, attempted, previousCursor);
+    const { data: released, error: releaseError } = await supabase
+      .from('kurb_cache_state')
+      .update({
+        last_store_id: nextCursor,
+        lease_token: null,
+        lease_expires_at: null,
+        updated_at: new Date().toISOString(),
+      })
+      .eq('singleton', true)
+      .eq('lease_token', runId)
+      .select('singleton')
+      .maybeSingle();
+    if (releaseError || !released) {
+      throw new Error(`cursor release failed: ${releaseError?.message ?? 'lease lost'}`);
+    }
+
     const elapsed = ((Date.now() - startedAt) / 1000).toFixed(1);
-    console.log(`[cache-kurb-inventory] Done in ${elapsed}s — ${fetched} ok, ${errors} errors`);
-
-    return new Response(JSON.stringify({ success: true, fetched, errors, elapsed, log }), {
-      headers: { 'Content-Type': 'application/json' },
-    });
-
-  } catch (err) {
-    console.error('[cache-kurb-inventory] Fatal:', err);
-    return new Response(JSON.stringify({ success: false, error: String(err) }), {
-      status: 500,
-      headers: { 'Content-Type': 'application/json' },
-    });
+    console.log(`[cache-kurb-inventory] Done in ${elapsed}s — ${attempted} attempted, ${fetched} ok, ${errors} errors, ${nextCursor === null ? 'cycle complete' : 'more to come'}`);
+    return response({ success: true, total_stores: allStores.length, attempted, fetched, errors, elapsed, cycle_complete: nextCursor === null, log });
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
+    console.error('[cache-kurb-inventory] Fatal:', message);
+    return response({ success: false, attempted, fetched, errors, error: message }, 500);
   }
 });
