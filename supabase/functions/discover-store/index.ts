@@ -187,9 +187,6 @@ Deno.serve(async (req: Request) => {
   }
 
   const optionalFields = validateOptionalIntakeFields(body as Record<string, unknown>);
-  if (!optionalFields.ok) {
-    return json({ error: optionalFields.error }, 422);
-  }
 
   const neighborhood = cleanString(body.neighborhood, 100);
   const address = cleanString(body.address, 300);
@@ -284,6 +281,7 @@ Deno.serve(async (req: Request) => {
         matched_id: confidentStoreMatch.match_id,
         matched_table: 'stores',
         match_tier: confidentStoreMatch.tier,
+        warnings: optionalFields.warnings,
       },
       200,
     );
@@ -303,13 +301,13 @@ Deno.serve(async (req: Request) => {
 
     if (suggestionMatch.status === 'rejected') {
       return json(
-        { status: 'already_rejected', suggestion_id: suggestionMatch.match_id, times_seen: timesSeen },
+        { status: 'already_rejected', suggestion_id: suggestionMatch.match_id, times_seen: timesSeen, warnings: optionalFields.warnings },
         200,
       );
     }
 
     return json(
-      { status: 'already_queued', suggestion_id: suggestionMatch.match_id, times_seen: timesSeen },
+      { status: 'already_queued', suggestion_id: suggestionMatch.match_id, times_seen: timesSeen, warnings: optionalFields.warnings },
       200,
     );
   }
@@ -368,6 +366,7 @@ Deno.serve(async (req: Request) => {
       suggestion_id: inserted!.id,
       geocode_confidence: effectiveConfidence,
       used_fallback_coords: usingFallbackCoords,
+      warnings: optionalFields.warnings,
       ...(weakStoreMatch ? { possible_duplicate_of: weakStoreMatch.match_id } : {}),
     },
     201,

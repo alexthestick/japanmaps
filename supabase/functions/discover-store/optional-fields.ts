@@ -1,21 +1,23 @@
 /**
  * Muse-only optional intake fields. Keep this independent of Deno and the
- * database so invalid payloads can be rejected before any external lookup.
+ * database so malformed optional values can be dropped before any external lookup.
  */
 export const SOURCE_TYPES = [
-  'social_post',
-  'social_profile',
-  'editorial_article',
+  'instagram_post',
+  'threads_post',
+  'instagram_profile',
   'store_website',
+  'editorial_article',
   'directory',
+  'open_data',
   'other',
 ] as const;
 
 export const DISCOVERED_VIA = [
-  'instagram',
-  'threads',
-  'web_search',
-  'website',
+  'weekly_sweep',
+  'directory_backfill',
+  'watchlist',
+  'open_data',
   'manual',
   'other',
 ] as const;
@@ -30,6 +32,16 @@ export interface OptionalIntakeFields {
   source_type: string | null;
   source_account: string | null;
   discovered_via: string | null;
+}
+
+export interface OptionalIntakeWarning {
+  field: keyof OptionalIntakeFields;
+  reason: string;
+}
+
+export interface OptionalIntakeValidation {
+  value: OptionalIntakeFields;
+  warnings: OptionalIntakeWarning[];
 }
 
 type Valid<T> = { ok: true; value: T };
@@ -81,12 +93,18 @@ function validDate(value: string): boolean {
 
 export function validateOptionalIntakeFields(
   body: Record<string, unknown>,
-): FieldResult<OptionalIntakeFields> {
-  const website = optionalText(body, 'website', 2048);
-  if (!website.ok) return website;
-  if (website.value) {
+): OptionalIntakeValidation {
+  const warnings: OptionalIntakeWarning[] = [];
+  const take = <T>(field: keyof OptionalIntakeFields, result: FieldResult<T | null>): T | null => {
+    if (result.ok) return result.value;
+    warnings.push({ field, reason: result.error });
+    return null;
+  };
+
+  let website = take('website', optionalText(body, 'website', 2048));
+  if (website) {
     try {
-      const url = new URL(website.value);
+      const url = new URL(website);
       const labels = url.hostname.split('.');
       const isIpAddress = /^\d{1,3}(?:\.\d{1,3}){3}$/.test(url.hostname);
       if (
@@ -97,56 +115,54 @@ export function validateOptionalIntakeFields(
         url.username ||
         url.password
       ) {
-        return { ok: false, error: 'website must be an http(s) URL with a domain and no credentials' };
+        warnings.push({ field: 'website', reason: 'website must be an http(s) URL with a domain and no credentials' });
+        website = null;
       }
     } catch {
-      return { ok: false, error: 'website must be a valid http(s) URL' };
+      warnings.push({ field: 'website', reason: 'website must be a valid http(s) URL' });
+      website = null;
     }
   }
 
-  const instagramBio = optionalText(body, 'instagram_bio', 1000);
-  if (!instagramBio.ok) return instagramBio;
-  const brandsCarried = optionalBrands(body);
-  if (!brandsCarried.ok) return brandsCarried;
-  const priceRange = optionalText(body, 'price_range', 3);
-  if (!priceRange.ok) return priceRange;
-  if (priceRange.value && !['$', '$$', '$$$'].includes(priceRange.value)) {
-    return { ok: false, error: 'price_range must be $, $$, or $$$' };
+  const instagramBio = take('instagram_bio', optionalText(body, 'instagram_bio', 1000));
+  const brandsCarried = take('brands_carried', optionalBrands(body));
+  let priceRange = take('price_range', optionalText(body, 'price_range', 3));
+  if (priceRange && !['$', '$$', '$$$'].includes(priceRange)) {
+    warnings.push({ field: 'price_range', reason: 'price_range must be $, $$, or $$$' });
+    priceRange = null;
   }
 
-  const openingDate = optionalText(body, 'opening_date', 10);
-  if (!openingDate.ok) return openingDate;
-  if (openingDate.value && !validDate(openingDate.value)) {
-    return { ok: false, error: 'opening_date must be a real YYYY-MM-DD date' };
+  let openingDate = take('opening_date', optionalText(body, 'opening_date', 10));
+  if (openingDate && !validDate(openingDate)) {
+    warnings.push({ field: 'opening_date', reason: 'opening_date must be a real YYYY-MM-DD date' });
+    openingDate = null;
   }
 
-  const verificationEvidence = optionalText(body, 'verification_evidence', 2000);
-  if (!verificationEvidence.ok) return verificationEvidence;
-  const sourceType = optionalText(body, 'source_type', 40);
-  if (!sourceType.ok) return sourceType;
-  if (sourceType.value && !(SOURCE_TYPES as readonly string[]).includes(sourceType.value)) {
-    return { ok: false, error: `source_type must be one of: ${SOURCE_TYPES.join(', ')}` };
+  const verificationEvidence = take('verification_evidence', optionalText(body, 'verification_evidence', 2000));
+  let sourceType = take('source_type', optionalText(body, 'source_type', 40));
+  if (sourceType && !(SOURCE_TYPES as readonly string[]).includes(sourceType)) {
+    warnings.push({ field: 'source_type', reason: `source_type must be one of: ${SOURCE_TYPES.join(', ')}` });
+    sourceType = null;
   }
-  const sourceAccount = optionalText(body, 'source_account', 200);
-  if (!sourceAccount.ok) return sourceAccount;
-  const discoveredVia = optionalText(body, 'discovered_via', 40);
-  if (!discoveredVia.ok) return discoveredVia;
-  if (discoveredVia.value && !(DISCOVERED_VIA as readonly string[]).includes(discoveredVia.value)) {
-    return { ok: false, error: `discovered_via must be one of: ${DISCOVERED_VIA.join(', ')}` };
+  const sourceAccount = take('source_account', optionalText(body, 'source_account', 200));
+  let discoveredVia = take('discovered_via', optionalText(body, 'discovered_via', 40));
+  if (discoveredVia && !(DISCOVERED_VIA as readonly string[]).includes(discoveredVia)) {
+    warnings.push({ field: 'discovered_via', reason: `discovered_via must be one of: ${DISCOVERED_VIA.join(', ')}` });
+    discoveredVia = null;
   }
 
   return {
-    ok: true,
     value: {
-      website: website.value,
-      instagram_bio: instagramBio.value,
-      brands_carried: brandsCarried.value,
-      price_range: priceRange.value,
-      opening_date: openingDate.value,
-      verification_evidence: verificationEvidence.value,
-      source_type: sourceType.value,
-      source_account: sourceAccount.value,
-      discovered_via: discoveredVia.value,
+      website,
+      instagram_bio: instagramBio,
+      brands_carried: brandsCarried,
+      price_range: priceRange,
+      opening_date: openingDate,
+      verification_evidence: verificationEvidence,
+      source_type: sourceType,
+      source_account: sourceAccount,
+      discovered_via: discoveredVia,
     },
+    warnings,
   };
 }
