@@ -10,17 +10,11 @@
  * it in the Admin Dashboard (that approval step is promoteSuggestion(),
  * client-side — see src/utils/promoteSuggestion.ts).
  *
- * Auth: two layers.
- *   1. Supabase's own JWT check (this function is deployed with
- *      verify_jwt=true) — the caller needs a valid `Authorization: Bearer
- *      <key>` header (not just `apikey` — see the design doc, this tripped
- *      up the first real test call).
- *   2. A second, function-specific secret in the `x-discovery-key` header,
- *      checked against the DISCOVERY_BOT_KEY environment secret. This is
- *      what actually restricts the endpoint to Muse: the anon key alone
- *      isn't a real secret (it's public, shipped in the frontend), so layer
- *      1 by itself would let anyone call this. Fails closed if
- *      DISCOVERY_BOT_KEY isn't configured.
+ * Auth: gateway JWT verification is OFF so Muse can use current Supabase
+ * publishable keys. The `x-discovery-key` header, checked against the
+ * DISCOVERY_BOT_KEY environment secret, is the only gate for POST requests.
+ * Missing or incorrect keys return 401; an unset server secret fails closed.
+ * Unauthenticated OPTIONS preflight does not read or write data.
  *
  * Rate limit: 200 discovery_bot submissions per UTC calendar day, enforced
  * here (not just trusted from Muse's own self-throttling).
@@ -53,6 +47,7 @@
  */
 
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
+import { validateOptionalIntakeFields } from './optional-fields.ts';
 
 const DAILY_CAP = 200;
 const OEMBED_TIMEOUT_MS = 6000;
@@ -123,6 +118,15 @@ interface DiscoverStoreRequest {
   category_hint?: unknown;
   notes?: unknown;
   follower_count?: unknown;
+  website?: unknown;
+  instagram_bio?: unknown;
+  brands_carried?: unknown;
+  price_range?: unknown;
+  opening_date?: unknown;
+  verification_evidence?: unknown;
+  source_type?: unknown;
+  source_account?: unknown;
+  discovered_via?: unknown;
   // Muse's own rough estimate (e.g. neighborhood-level), used only as a
   // fallback when Places geocoding comes back empty — see the fallback
   // logic right after geocodeCandidate() runs, below.
@@ -146,7 +150,7 @@ Deno.serve(async (req: Request) => {
     return json({ error: 'Method not allowed' }, 405);
   }
 
-  // ── Layer 2 auth: the secret that actually gates this endpoint ──────
+  // ── Muse's only POST auth gate ──────────────────────────────────────
   const discoveryKey = Deno.env.get('DISCOVERY_BOT_KEY');
   if (!discoveryKey) {
     console.error('DISCOVERY_BOT_KEY is not configured');
@@ -157,12 +161,16 @@ Deno.serve(async (req: Request) => {
   }
 
   // ── Parse + validate body ────────────────────────────────────────
-  let body: DiscoverStoreRequest;
+  let parsedBody: unknown;
   try {
-    body = await req.json();
+    parsedBody = await req.json();
   } catch {
     return json({ error: 'Invalid JSON body' }, 400);
   }
+  if (!parsedBody || typeof parsedBody !== 'object' || Array.isArray(parsedBody)) {
+    return json({ error: 'JSON body must be an object' }, 400);
+  }
+  const body = parsedBody as DiscoverStoreRequest;
 
   const name = typeof body.name === 'string' ? body.name.trim() : '';
   const city = typeof body.city === 'string' ? body.city.trim() : '';
@@ -177,6 +185,8 @@ Deno.serve(async (req: Request) => {
   if (!sourceRef) {
     return json({ error: 'source_ref is required (the Instagram/Threads post URL)' }, 422);
   }
+
+  const optionalFields = validateOptionalIntakeFields(body as Record<string, unknown>);
 
   const neighborhood = cleanString(body.neighborhood, 100);
   const address = cleanString(body.address, 300);
@@ -271,6 +281,7 @@ Deno.serve(async (req: Request) => {
         matched_id: confidentStoreMatch.match_id,
         matched_table: 'stores',
         match_tier: confidentStoreMatch.tier,
+        warnings: optionalFields.warnings,
       },
       200,
     );
@@ -290,13 +301,13 @@ Deno.serve(async (req: Request) => {
 
     if (suggestionMatch.status === 'rejected') {
       return json(
-        { status: 'already_rejected', suggestion_id: suggestionMatch.match_id, times_seen: timesSeen },
+        { status: 'already_rejected', suggestion_id: suggestionMatch.match_id, times_seen: timesSeen, warnings: optionalFields.warnings },
         200,
       );
     }
 
     return json(
-      { status: 'already_queued', suggestion_id: suggestionMatch.match_id, times_seen: timesSeen },
+      { status: 'already_queued', suggestion_id: suggestionMatch.match_id, times_seen: timesSeen, warnings: optionalFields.warnings },
       200,
     );
   }
@@ -332,6 +343,7 @@ Deno.serve(async (req: Request) => {
     oembed_thumbnail_url: oembed.attempted ? oembed.thumbnail_url : null,
     oembed_author_name: oembed.attempted ? oembed.author_name : null,
     oembed_fetched_at: oembed.attempted ? new Date().toISOString() : null,
+    ...optionalFields.value,
   };
   if (effectiveLat != null && effectiveLng != null) {
     insertPayload.location = `POINT(${effectiveLng} ${effectiveLat})`;
@@ -354,6 +366,7 @@ Deno.serve(async (req: Request) => {
       suggestion_id: inserted!.id,
       geocode_confidence: effectiveConfidence,
       used_fallback_coords: usingFallbackCoords,
+      warnings: optionalFields.warnings,
       ...(weakStoreMatch ? { possible_duplicate_of: weakStoreMatch.match_id } : {}),
     },
     201,
