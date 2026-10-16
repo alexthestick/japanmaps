@@ -21,6 +21,7 @@
 
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 import { AccountDeletionError, cleanupStorageAndDeleteUser } from './storage-cleanup.ts';
+import { readAccountDeletionSecretKey } from './secret-key.ts';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -51,24 +52,26 @@ Deno.serve(async (req: Request) => {
   }
   const jwt = authHeader.replace('Bearer ', '');
 
-  const userClient = createClient(
-    Deno.env.get('SUPABASE_URL')!,
-    Deno.env.get('SUPABASE_ANON_KEY')!,
-    { global: { headers: { Authorization: `Bearer ${jwt}` } } },
-  );
+  const secretKey = readAccountDeletionSecretKey(Deno.env.get('SUPABASE_SECRET_KEYS'));
+  const supabaseUrl = Deno.env.get('SUPABASE_URL');
+  if (!secretKey || !supabaseUrl) {
+    return err(500, 'Account deletion is temporarily unavailable. Please try again later.');
+  }
 
-  const { data: { user }, error: authError } = await userClient.auth.getUser();
+  const adminClient = createClient(supabaseUrl, secretKey);
+  let authResponse;
+  try {
+    authResponse = await adminClient.auth.getUser(jwt);
+  } catch {
+    return err(500, 'Could not verify your session. Please try again later.');
+  }
+  const { data: { user }, error: authError } = authResponse;
   if (authError || !user) {
     return err(401, 'Invalid or expired session. Please sign in again.');
   }
 
   // 2. Remove owned Storage objects before Auth deletion. SQL only reads ownership;
   //    Storage API remove() performs every file deletion.
-  const adminClient = createClient(
-    Deno.env.get('SUPABASE_URL')!,
-    Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!,
-  );
-
   try {
     const { removedCount } = await cleanupStorageAndDeleteUser({
       listOwned: async (userId, bucket) => {
