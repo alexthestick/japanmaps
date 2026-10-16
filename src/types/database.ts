@@ -303,44 +303,68 @@ export type Database = {
       store_suggestions: {
         Row: {
           address: string | null
+          brands_carried: string[] | null
           city: string
           country: string
           created_at: string | null
+          discovered_via: string | null
           id: string
           instagram: string | null
+          instagram_bio: string | null
+          opening_date: string | null
+          price_range: string | null
           reason: string
+          source_account: string | null
+          source_type: string | null
           status: string | null
           store_name: string
           submitter_email: string
           submitter_name: string | null
+          verification_evidence: string | null
           website: string | null
         }
         Insert: {
           address?: string | null
+          brands_carried?: string[] | null
           city: string
           country: string
           created_at?: string | null
+          discovered_via?: string | null
           id?: string
           instagram?: string | null
+          instagram_bio?: string | null
+          opening_date?: string | null
+          price_range?: string | null
           reason: string
+          source_account?: string | null
+          source_type?: string | null
           status?: string | null
           store_name: string
           submitter_email: string
           submitter_name?: string | null
+          verification_evidence?: string | null
           website?: string | null
         }
         Update: {
           address?: string | null
+          brands_carried?: string[] | null
           city?: string
           country?: string
           created_at?: string | null
+          discovered_via?: string | null
           id?: string
           instagram?: string | null
+          instagram_bio?: string | null
+          opening_date?: string | null
+          price_range?: string | null
           reason?: string
+          source_account?: string | null
+          source_type?: string | null
           status?: string | null
           store_name?: string
           submitter_email?: string
           submitter_name?: string | null
+          verification_evidence?: string | null
           website?: string | null
         }
         Relationships: []

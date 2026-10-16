@@ -60,6 +60,14 @@ export interface StoreSuggestion {
   notes?: string;
   instagram?: string;
   website?: string;
+  instagramBio?: string;
+  brandsCarried?: string[];
+  priceRange?: '$' | '$$' | '$$$';
+  openingDate?: string;
+  verificationEvidence?: string;
+  sourceType?: 'instagram_post' | 'threads_post' | 'instagram_profile' | 'store_website' | 'editorial_article' | 'directory' | 'open_data' | 'other';
+  sourceAccount?: string;
+  discoveredVia?: 'weekly_sweep' | 'directory_backfill' | 'watchlist' | 'open_data' | 'manual' | 'other';
   status: 'pending' | 'approved' | 'rejected';
   createdAt?: string;
   // ── Phase 1/2: discovery-pipeline fields (discovery_bot rows only) ──────
@@ -102,4 +110,3 @@ export interface StoreFilters {
 }
 
 export type SortOption = 'name' | 'city' | 'recent' | 'category';
-

@@ -15,6 +15,7 @@ import { MAIN_CATEGORIES } from '../../lib/constants';
 import { getSubCategoryOptions } from '../../utils/subCategoryOptions';
 import { Button } from '../common/Button';
 import { useSocialEmbed } from '../../hooks/useSocialEmbed';
+import { isEstimatedPrice, isRecentlyOpened, safeWebsiteUrl } from '../../utils/suggestionReviewFields';
 
 interface SuggestionReviewCardProps {
   suggestion: StoreSuggestion;
@@ -61,6 +62,16 @@ export function SuggestionReviewCard({
   const isOrphanApproved = suggestion.status === 'approved' && !suggestion.promotedStoreId;
   const isPublished = suggestion.status === 'approved' && !!suggestion.promotedStoreId;
   const canApprove = suggestion.geocodeConfidence !== 'none';
+  const hasPin = Number.isFinite(suggestion.lat) && Number.isFinite(suggestion.lng);
+  const isNew = isRecentlyOpened(suggestion.openingDate);
+  const brands = suggestion.brandsCarried?.map((brand) => brand.trim()).filter(Boolean) ?? [];
+  const websiteUrl = safeWebsiteUrl(suggestion.website);
+  const hasStoreDetails = !!(suggestion.instagramBio || websiteUrl || suggestion.priceRange);
+  const sourceDetails = [
+    suggestion.sourceType?.replace(/_/g, ' ').replace(/^./, (letter) => letter.toUpperCase()),
+    suggestion.discoveredVia?.replace(/_/g, ' ').replace(/^./, (letter) => letter.toUpperCase()),
+    suggestion.sourceAccount,
+  ].filter(Boolean).join(' · ');
 
   useSocialEmbed(isExpanded ? suggestion.oembedHtml : null);
 
@@ -151,24 +162,36 @@ export function SuggestionReviewCard({
               >
                 {suggestion.status}
               </span>
-              {suggestion.source === 'discovery_bot' && (
-                <span className="flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-purple-100 text-purple-700">
-                  <Bot className="w-3 h-3" />
-                  {suggestion.timesSeen > 1 ? `seen ${suggestion.timesSeen}×` : 'bot'}
-                </span>
-              )}
-              {suggestion.geocodeConfidence === 'none' && (
-                <span className="flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-700">
-                  <AlertTriangle className="w-3 h-3" />
-                  no coords
-                </span>
-              )}
-              {suggestion.possibleDuplicateOf && (
-                <span className="flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-orange-100 text-orange-700">
-                  <AlertTriangle className="w-3 h-3" />
-                  possible dup
-                </span>
-              )}
+              <span className="flex flex-wrap justify-end gap-1 max-w-64">
+                {isNew && (
+                  <span className="px-2 py-0.5 rounded-full text-xs font-medium bg-teal-100 text-teal-800" title={`Opened ${suggestion.openingDate}`}>
+                    New
+                  </span>
+                )}
+                {suggestion.priceRange && (
+                  <span className="px-2 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-700">
+                    {suggestion.priceRange}
+                  </span>
+                )}
+                {suggestion.source === 'discovery_bot' && (
+                  <span className="flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-purple-100 text-purple-700">
+                    <Bot className="w-3 h-3" />
+                    {suggestion.timesSeen > 1 ? `seen ${suggestion.timesSeen}×` : 'bot'}
+                  </span>
+                )}
+                {!hasPin && (
+                  <span className="flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-700">
+                    <AlertTriangle className="w-3 h-3" />
+                    No pin
+                  </span>
+                )}
+                {suggestion.possibleDuplicateOf && (
+                  <span className="flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-orange-100 text-orange-700">
+                    <AlertTriangle className="w-3 h-3" />
+                    possible dup
+                  </span>
+                )}
+              </span>
             </div>
           </div>
         </button>
@@ -184,17 +207,53 @@ export function SuggestionReviewCard({
               What They Sell
             </h4>
 
-            {suggestion.notes ? (
+            {suggestion.notes && (
               <p className="text-base text-gray-900 whitespace-pre-wrap leading-relaxed mb-4">
                 {suggestion.notes}
               </p>
-            ) : (
-              <p className="text-sm text-gray-500 italic mb-4">
-                No inventory notes on this submission — check the source post and photos below.
-              </p>
+            )}
+
+            {brands.length > 0 && (
+              <div className="mb-4">
+                <p className="text-xs font-medium text-gray-500 mb-1.5">Brands</p>
+                <div className="flex flex-wrap gap-1.5">
+                  {brands.map((brand) => (
+                    <span key={brand} className="px-2 py-0.5 rounded-full border border-gray-300 bg-white text-xs text-gray-700">
+                      {brand}
+                    </span>
+                  ))}
+                </div>
+              </div>
             )}
 
             <div className="grid sm:grid-cols-2 gap-4">
+              {hasStoreDetails && (
+                <div className="space-y-3 min-w-0">
+                  {suggestion.instagramBio && (
+                    <div>
+                      <p className="text-xs font-medium text-gray-500 mb-1">Bio</p>
+                      <p className="text-sm text-gray-800 whitespace-pre-line">{suggestion.instagramBio}</p>
+                    </div>
+                  )}
+                  {websiteUrl && (
+                    <div>
+                      <p className="text-xs font-medium text-gray-500 mb-1">Website</p>
+                      <a href={websiteUrl.href} target="_blank" rel="noopener noreferrer"
+                        className="text-sm text-blue-600 hover:underline inline-flex items-center gap-1 break-all">
+                        {websiteUrl.hostname.replace(/^www\./, '')} <ExternalLink className="w-3 h-3 shrink-0" />
+                      </a>
+                    </div>
+                  )}
+                  {suggestion.priceRange && (
+                    <div>
+                      <p className="text-xs font-medium text-gray-500 mb-1">Price</p>
+                      <p className="text-sm text-gray-800">
+                        {suggestion.priceRange}{isEstimatedPrice(suggestion.verificationEvidence) ? ' est.' : ''}
+                      </p>
+                    </div>
+                  )}
+                </div>
+              )}
               {/* Embedded source post */}
               {suggestion.oembedHtml ? (
                 <div className="min-w-0">
@@ -221,12 +280,16 @@ export function SuggestionReviewCard({
 
             </div>
 
-            {!suggestion.oembedHtml && !suggestion.sourceRef && (
-              <p className="text-xs text-gray-400">
-                No source post captured for this candidate.
-              </p>
-            )}
           </div>
+
+          {(sourceDetails || suggestion.verificationEvidence) && (
+            <div className="rounded-md border border-gray-200 bg-white px-3 py-2 text-xs text-gray-600 space-y-1">
+              {sourceDetails && <p><span className="font-semibold text-gray-700 mr-2">Source</span>{sourceDetails}</p>}
+              {suggestion.verificationEvidence && (
+                <p className="whitespace-pre-line"><span className="font-semibold text-gray-700 mr-2">Checked</span>{suggestion.verificationEvidence}</p>
+              )}
+            </div>
+          )}
 
           {/* Secondary: map pin / address / metadata — intentionally de-emphasized */}
           <div className="text-xs text-gray-500 space-y-1 border-t border-gray-100 pt-3">
@@ -235,19 +298,6 @@ export function SuggestionReviewCard({
                 <MapPin className="w-3.5 h-3.5 shrink-0" />
                 {suggestion.address}
                 {suggestion.neighborhood ? ` (${suggestion.neighborhood})` : ''}
-              </p>
-            )}
-            {suggestion.website && (
-              <p className="flex items-center gap-1.5">
-                <ExternalLink className="w-3.5 h-3.5 shrink-0" />
-                <a
-                  href={suggestion.website}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-blue-600 hover:underline truncate"
-                >
-                  {suggestion.website}
-                </a>
               </p>
             )}
             {suggestion.submitterEmail && (

@@ -1,5 +1,5 @@
 # Lost in Transit Web — Innovation & Optimization Roadmap
-**Date:** 2026-07-03 · Companion to `WEB-AUDIT-2026-07-03.md` (security items from that audit are done and verified — this doc is entirely forward-looking)
+**Date:** 2026-07-03 · Forward-looking roadmap; the removed audit is not part of this document.
 
 ---
 
