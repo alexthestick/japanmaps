@@ -1,6 +1,6 @@
 // The named server key is provided by Supabase as part of a JSON dictionary.
 // Never fall back to the disabled legacy service_role or anon keys.
-export const ACCOUNT_DELETION_SECRET_KEY_NAME = 'backend_api';
+export const ACCOUNT_DELETION_SECRET_KEY_NAME = 'backendrotation';
 
 export function readAccountDeletionSecretKey(raw: string | undefined): string | null {
   if (!raw) return null;
