@@ -7,7 +7,7 @@
  * Flow:
  *  1. Verify JWT — user must be authenticated
  *  2. Parse + validate request body
- *  3. Fetch store coordinates from DB (service role)
+ *  3. Fetch store coordinates from DB (named server key)
  *  4. Haversine distance check against dynamic radius
  *     radius = max(50, accuracy_meters * 1.5)
  *  5. If too far → return structured error with exact distance
@@ -22,6 +22,7 @@
  */
 
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
+import { authenticateGpsCheckin } from './auth.ts';
 
 // ── Haversine ─────────────────────────────────────────────────
 function distanceMeters(
@@ -64,23 +65,25 @@ Deno.serve(async (req: Request) => {
   }
 
   // ── 1. Verify JWT ─────────────────────────────────────────
-  const authHeader = req.headers.get('authorization') ?? '';
-  if (!authHeader.startsWith('Bearer ')) {
+  const auth = await authenticateGpsCheckin(
+    req.headers.get('authorization'),
+    Deno.env.get('SUPABASE_URL'),
+    Deno.env.get('SUPABASE_SECRET_KEYS'),
+    createClient,
+  );
+  if (auth.kind === 'missing_auth') {
     return err(401, 'unauthorized', 'Missing or invalid authorization header.');
   }
-  const jwt = authHeader.replace('Bearer ', '');
-
-  // Use anon key + JWT to get the calling user's identity
-  const userClient = createClient(
-    Deno.env.get('SUPABASE_URL')!,
-    Deno.env.get('SUPABASE_ANON_KEY')!,
-    { global: { headers: { Authorization: `Bearer ${jwt}` } } },
-  );
-
-  const { data: { user }, error: authError } = await userClient.auth.getUser();
-  if (authError || !user) {
+  if (auth.kind === 'missing_config') {
+    return err(500, 'auth_unavailable', 'Check-ins are temporarily unavailable. Please try again later.');
+  }
+  if (auth.kind === 'verification_unavailable') {
+    return err(500, 'auth_unavailable', 'Could not verify your session. Please try again later.');
+  }
+  if (auth.kind === 'invalid_session') {
     return err(401, 'unauthorized', 'Invalid or expired session. Please sign in again.');
   }
+  const { userId, adminClient } = auth;
 
   // ── 2. Parse + validate body ──────────────────────────────
   let body: {
@@ -112,11 +115,7 @@ Deno.serve(async (req: Request) => {
     ? accuracy_meters
     : 999; // treat unknown accuracy as worst-case
 
-  // ── 3. Fetch store coordinates (service role) ─────────────
-  const adminClient = createClient(
-    Deno.env.get('SUPABASE_URL')!,
-    Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!,
-  );
+  // ── 3. Fetch store coordinates (named server key) ──────────
 
   const { data: store, error: storeError } = await adminClient
     .from('stores')
@@ -188,7 +187,7 @@ Deno.serve(async (req: Request) => {
     .from('gps_checkins')
     .upsert(
       {
-        user_id:         user.id,
+        user_id:         userId,
         store_id:        store_id,
         visited_at:      new Date().toISOString(),
         latitude,
@@ -218,7 +217,7 @@ Deno.serve(async (req: Request) => {
     const { data: existing } = await adminClient
       .from('gps_checkins')
       .select('verified')
-      .eq('user_id', user.id)
+      .eq('user_id', userId)
       .eq('store_id', store_id)
       .single();
 
@@ -227,7 +226,7 @@ Deno.serve(async (req: Request) => {
       await adminClient
         .from('gps_checkins')
         .update({ verified: true })
-        .eq('user_id', user.id)
+        .eq('user_id', userId)
         .eq('store_id', store_id);
     }
   }
