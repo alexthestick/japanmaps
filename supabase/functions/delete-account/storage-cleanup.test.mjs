@@ -8,6 +8,10 @@ function fixture(filesByBucket = {}) {
   const files = new Map(ACCOUNT_STORAGE_BUCKETS.map((bucket) => [bucket, [...(filesByBucket[bucket] ?? [])]]));
   const calls = [];
   const operations = {
+    async cleanupImageKit(userId) {
+      calls.push(['cleanupImageKit', userId]);
+      return 0;
+    },
     async listOwned(userId, bucket) {
       calls.push(['list', userId, bucket]);
       return { data: files.get(bucket).slice(0, 100).map((object_name) => ({ object_name })), error: null };
@@ -33,10 +37,11 @@ test('removes all owned objects in each bucket before deleting the calling user'
     'finds-photos': ['user/find.jpg'],
   });
   const result = await cleanupStorageAndDeleteUser(operations, USER_ID);
-  assert.deepEqual(result, { removedCount: 4 });
+  assert.deepEqual(result, { removedCount: 4, imagekitRemovedCount: 0 });
   assert.ok([...files.values()].every((paths) => paths.length === 0));
   assert.deepEqual(calls.at(-1), ['deleteUser', USER_ID]);
   assert.equal(calls.filter(([method]) => method === 'remove').length, 4);
+  assert.deepEqual(calls[0], ['cleanupImageKit', USER_ID]);
 });
 
 test('paginates by repeatedly reading the first batch after each successful remove', async () => {
@@ -80,4 +85,13 @@ test('an Auth deletion failure is distinct from a Storage failure', async () => 
   operations.deleteUser = async () => ({ error: new Error('failure') });
   await assert.rejects(cleanupStorageAndDeleteUser(operations, USER_ID),
     (error) => error instanceof AccountDeletionError && error.stage === 'auth');
+});
+
+test('ImageKit failure stops before Storage or Auth deletion', async () => {
+  const { calls, operations } = fixture({ 'field-notes': ['user/a.jpg'] });
+  operations.cleanupImageKit = async () => { throw { removedCount: 1 }; };
+  await assert.rejects(cleanupStorageAndDeleteUser(operations, USER_ID),
+    (error) => error instanceof AccountDeletionError && error.stage === 'cleanup' &&
+      error.removedCount === 0 && error.imagekitRemovedCount === 1);
+  assert.equal(calls.length, 0);
 });
