@@ -18,15 +18,16 @@ function fixture(urls = [LEGACY, NEW]) {
       calls.push(['finds', user, from, to]);
       return { data: urls.slice(from, to + 1).map((photo_url) => ({ photo_url })), error: null };
     },
-    async isReferencedElsewhere(user, found) {
+    async findSharedUrls(user, found) {
       calls.push(['references', user, found.length]);
-      return false;
+      return [];
     },
     async listAssets(folder, skip, limit) {
       calls.push(['list', folder, skip, limit]);
       return assets.filter((asset) => asset.filePath.startsWith(`${folder}/`)).slice(skip, skip + limit);
     },
     async deleteAsset(id) { calls.push(['delete', id]); },
+    reportSkipped(counts) { calls.push(['skipped', counts]); },
   };
   return { calls, operations };
 }
@@ -44,17 +45,27 @@ test('no ImageKit Finds means no ImageKit requests or deletes', async () => {
   assert.equal(calls.some(([kind]) => kind === 'list' || kind === 'delete'), false);
 });
 
-test('shared Find URL fails closed before any delete', async () => {
+test('shared Find URL is retained, logged by count, and does not block deletion', async () => {
   const { calls, operations } = fixture([LEGACY]);
-  operations.isReferencedElsewhere = async () => true;
-  await assert.rejects(cleanupImageKitFindPhotos(operations, USER), ImageKitCleanupError);
+  operations.findSharedUrls = async () => [LEGACY];
+  assert.equal(await cleanupImageKitFindPhotos(operations, USER), 0);
   assert.equal(calls.some(([kind]) => kind === 'delete'), false);
+  assert.deepEqual(calls.find(([kind]) => kind === 'skipped'), ['skipped', { shared: 1, missing: 0 }]);
 });
 
-test('unresolved legacy URL fails closed before any delete', async () => {
+test('a shared file is retained while an unshared file is deleted', async () => {
+  const { calls, operations } = fixture([LEGACY, NEW]);
+  operations.findSharedUrls = async () => [LEGACY];
+  assert.equal(await cleanupImageKitFindPhotos(operations, USER), 1);
+  assert.deepEqual(calls.filter(([kind]) => kind === 'delete'), [['delete', 'new-id']]);
+  assert.deepEqual(calls.find(([kind]) => kind === 'skipped'), ['skipped', { shared: 1, missing: 0 }]);
+});
+
+test('missing legacy URL counts as already deleted and does not block deletion', async () => {
   const { calls, operations } = fixture([`${BASE}/field-notes/missing.jpg`]);
-  await assert.rejects(cleanupImageKitFindPhotos(operations, USER), ImageKitCleanupError);
+  assert.equal(await cleanupImageKitFindPhotos(operations, USER), 0);
   assert.equal(calls.some(([kind]) => kind === 'delete'), false);
+  assert.deepEqual(calls.find(([kind]) => kind === 'skipped'), ['skipped', { shared: 0, missing: 1 }]);
 });
 
 test('a matching CDN URL with a different file path cannot be deleted', async () => {
@@ -62,6 +73,22 @@ test('a matching CDN URL with a different file path cannot be deleted', async ()
   operations.listAssets = async () => [
     { type: 'file', fileId: 'wrong-id', filePath: '/field-notes/other.jpg', url: LEGACY },
   ];
+  assert.equal(await cleanupImageKitFindPhotos(operations, USER), 0);
+  assert.equal(calls.some(([kind]) => kind === 'delete'), false);
+  assert.deepEqual(calls.find(([kind]) => kind === 'skipped'), ['skipped', { shared: 0, missing: 1 }]);
+});
+
+test('an unavailable ImageKit API or missing key still fails closed', async () => {
+  const { calls, operations } = fixture([LEGACY]);
+  operations.listAssets = async () => { throw new Error('ImageKit credential unavailable'); };
+  await assert.rejects(cleanupImageKitFindPhotos(operations, USER), ImageKitCleanupError);
+  assert.equal(calls.some(([kind]) => kind === 'delete'), false);
+});
+
+test('even if every URL is shared, ImageKit must be reachable', async () => {
+  const { calls, operations } = fixture([LEGACY]);
+  operations.findSharedUrls = async () => [LEGACY];
+  operations.listAssets = async () => { throw new Error('ImageKit unreachable'); };
   await assert.rejects(cleanupImageKitFindPhotos(operations, USER), ImageKitCleanupError);
   assert.equal(calls.some(([kind]) => kind === 'delete'), false);
 });

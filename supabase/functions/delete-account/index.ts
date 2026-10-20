@@ -82,18 +82,18 @@ Deno.serve(async (req: Request) => {
             .eq('user_id', id).order('id').range(from, to);
           return { data, error };
         },
-        isReferencedElsewhere: async (id, urls) => {
-          for (let start = 0; start < urls.length; start += 25) {
-            const batch = urls.slice(start, start + 25);
+        findSharedUrls: async (id, urls) => {
+          const shared: string[] = [];
+          for (const url of urls) {
             const otherNotes = await adminClient.from('field_notes').select('id')
-              .in('photo_url', batch).neq('user_id', id).limit(1);
+              .eq('photo_url', url).neq('user_id', id).limit(1);
             if (otherNotes.error) throw new Error('Find reference check failed');
             const stores = await adminClient.from('stores').select('id')
-              .overlaps('photos', batch).limit(1);
+              .contains('photos', [url]).limit(1);
             if (stores.error) throw new Error('Store reference check failed');
-            if ((otherNotes.data?.length ?? 0) > 0 || (stores.data?.length ?? 0) > 0) return true;
+            if ((otherNotes.data?.length ?? 0) > 0 || (stores.data?.length ?? 0) > 0) shared.push(url);
           }
-          return false;
+          return shared;
         },
         listAssets: async (folder, skip, limit) => {
           const key = Deno.env.get('IMAGEKIT_PRIVATE_KEY');
@@ -119,6 +119,9 @@ Deno.serve(async (req: Request) => {
             signal: AbortSignal.timeout(10000),
           });
           if (!response.ok) throw new Error('ImageKit deletion failed');
+        },
+        reportSkipped: ({ shared, missing }) => {
+          console.info('delete-account ImageKit Finds skipped:', { shared, missing });
         },
       }, userId),
       listOwned: async (userId, bucket) => {

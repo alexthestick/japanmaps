@@ -10,9 +10,10 @@ type ImageKitAsset = { type: string; fileId: string; filePath: string; url: stri
 export type ImageKitCleanupOperations = {
   listFindPhotos: (userId: string, from: number, to: number) => Promise<{ data: FindPhoto[] | null; error: unknown }>;
   // Must use an admin client: a user-supplied Find URL does not prove file ownership.
-  isReferencedElsewhere: (userId: string, urls: string[]) => Promise<boolean>;
+  findSharedUrls: (userId: string, urls: string[]) => Promise<string[]>;
   listAssets: (folder: string, skip: number, limit: number) => Promise<ImageKitAsset[]>;
   deleteAsset: (fileId: string) => Promise<void>;
+  reportSkipped: (counts: { shared: number; missing: number }) => void;
 };
 
 export class ImageKitCleanupError extends Error {
@@ -56,7 +57,8 @@ export async function cleanupImageKitFindPhotos(operations: ImageKitCleanupOpera
     if (photos.size === 0) return 0;
 
     const urls = [...photos.keys()];
-    if (await operations.isReferencedElsewhere(userId, urls)) throw new Error('Find photo is shared');
+    const sharedUrls = new Set(await operations.findSharedUrls(userId, urls));
+    if ([...sharedUrls].some((url) => !photos.has(url))) throw new Error('Invalid shared-file result');
 
     const filesToDelete = new Map<string, string>();
     const folders = new Set([...photos.values()].map(({ folder }) => folder));
@@ -79,9 +81,12 @@ export async function cleanupImageKitFindPhotos(operations: ImageKitCleanupOpera
       }
       if (!finished) throw new Error('ImageKit listing limit reached');
     }
-    if (filesToDelete.size !== photos.size) throw new Error('Find photo not found in ImageKit');
+    const shared = sharedUrls.size;
+    const missing = urls.filter((url) => !sharedUrls.has(url) && !filesToDelete.has(url)).length;
+    operations.reportSkipped({ shared, missing });
 
-    for (const fileId of filesToDelete.values()) {
+    for (const [url, fileId] of filesToDelete) {
+      if (sharedUrls.has(url)) continue;
       await operations.deleteAsset(fileId);
       removedCount++;
     }
