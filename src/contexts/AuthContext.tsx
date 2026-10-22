@@ -151,35 +151,26 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }
 
   async function signUp(email: string, password: string, username: string) {
+    const normalizedUsername = username.toLowerCase();
     // 1. Check username availability first
     const { data: existing } = await supabase
       .from('profiles')
       .select('id')
-      .eq('username', username.toLowerCase())
+      .eq('username', normalizedUsername)
       .maybeSingle();
 
     if (existing) {
       return { error: new Error('Username already taken. Please choose another.') };
     }
 
-    // 2. Create auth user
-    const { data, error } = await supabase.auth.signUp({ email, password });
+    // The auth.users trigger creates the profile, including this username.
+    // Email confirmation may mean there is no client session for a profile insert.
+    const { data, error } = await supabase.auth.signUp({
+      email,
+      password,
+      options: { data: { username: normalizedUsername } },
+    });
     if (error || !data.user) return { error };
-
-    // 3. Create profile directly (no trigger dependency)
-    const { error: profileError } = await supabase
-      .from('profiles')
-      .insert({
-        id: data.user.id,
-        username: username.toLowerCase(),
-        display_name: username,
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString(),
-      });
-
-    if (profileError) {
-      logger.warn('[Auth] Could not create profile:', profileError.message);
-    }
 
     return { error: null };
   }
