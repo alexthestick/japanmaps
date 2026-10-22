@@ -200,7 +200,7 @@ export interface SubmitModalPrefill {
 
 interface SubmitModalProps {
   onClose: () => void;
-  onSubmitted: () => void;
+  onSubmitted: (status: 'approved' | 'pending') => void;
   prefill?: SubmitModalPrefill;
 }
 
@@ -347,7 +347,7 @@ export function SubmitModal({ onClose, onSubmitted, prefill }: SubmitModalProps)
       }
     }
 
-    const { error: insertError } = await supabase.from('field_notes').insert({
+    const { data: insertedFind, error: insertError } = await supabase.from('field_notes').insert({
       user_id: user.id,
       type,
       store_name: storeName.trim(),
@@ -358,15 +358,15 @@ export function SubmitModal({ onClose, onSubmitted, prefill }: SubmitModalProps)
       caption: caption.trim() || null,
       photo_url,
       status: 'pending',
-    });
+    }).select('status').single();
 
-    if (insertError) {
+    if (insertError || !insertedFind || (insertedFind.status !== 'approved' && insertedFind.status !== 'pending')) {
       setError('Something went wrong. Please try again.');
       setSubmitting(false);
       return;
     }
 
-    onSubmitted();
+    onSubmitted(insertedFind.status);
     onClose();
   }
 
@@ -906,7 +906,7 @@ export function SubmitModal({ onClose, onSubmitted, prefill }: SubmitModalProps)
                 </button>
 
                 <p className="text-center text-gray-700 text-[11px] pb-1">
-                  Finds are reviewed before appearing publicly.
+                  Your first find is reviewed. After that, finds post instantly.
                 </p>
               </motion.form>
             )}
@@ -919,7 +919,7 @@ export function SubmitModal({ onClose, onSubmitted, prefill }: SubmitModalProps)
 
 // ─── Submitted confirmation ─────────────────────────────────────────────────────
 
-function SubmittedBanner({ onDismiss }: { onDismiss: () => void }) {
+function SubmittedBanner({ status, onDismiss }: { status: 'approved' | 'pending'; onDismiss: () => void }) {
   useEffect(() => {
     const t = setTimeout(onDismiss, 5000);
     return () => clearTimeout(t);
@@ -933,7 +933,7 @@ function SubmittedBanner({ onDismiss }: { onDismiss: () => void }) {
       className="fixed top-6 left-1/2 -translate-x-1/2 z-50 flex items-center gap-3 px-5 py-3 bg-gray-900 border border-purple-500/40 rounded-2xl shadow-2xl text-sm text-white"
     >
       <div className="h-2 w-2 rounded-full bg-purple-400 animate-pulse" />
-      Your find has been submitted for review. Thanks!
+      {status === 'approved' ? 'Posted' : 'Sent for review'}
       <button onClick={onDismiss} className="text-gray-500 hover:text-white ml-2">
         <X className="h-4 w-4" />
       </button>
@@ -952,7 +952,7 @@ export function FindsPage() {
   const [filterType, setFilterType] = useState<'all' | 'visit' | 'haul'>('all');
   const [filterCity, setFilterCity] = useState('All Cities');
   const [showSubmitModal, setShowSubmitModal] = useState(false);
-  const [showBanner, setShowBanner] = useState(false);
+  const [submittedStatus, setSubmittedStatus] = useState<'approved' | 'pending' | null>(null);
   const [hasMore, setHasMore] = useState(true);
   const PAGE_SIZE = 24;
   const pageRef = useRef(0);
@@ -985,8 +985,9 @@ export function FindsPage() {
     fetchFinds(true);
   }, [filterType, filterCity]);
 
-  function handleSubmitted() {
-    setShowBanner(true);
+  function handleSubmitted(status: 'approved' | 'pending') {
+    setSubmittedStatus(status);
+    if (status === 'approved') void fetchFinds(true);
   }
 
   return (
@@ -999,7 +1000,7 @@ export function FindsPage() {
 
       {/* Submitted confirmation banner */}
       <AnimatePresence>
-        {showBanner && <SubmittedBanner onDismiss={() => setShowBanner(false)} />}
+        {submittedStatus && <SubmittedBanner status={submittedStatus} onDismiss={() => setSubmittedStatus(null)} />}
       </AnimatePresence>
 
       {/* Header */}
