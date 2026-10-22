@@ -15,7 +15,7 @@
  * 4. Server uploads to ImageKit using Node SDK
  * 5. Returns ImageKit URL to client
  */
-import ImageKit from '@imagekit/nodejs';
+import ImageKit, { toFile } from '@imagekit/nodejs';
 import { createClient } from '@supabase/supabase-js';
 import Busboy from 'busboy';
 
@@ -139,6 +139,16 @@ function parseMultipartForm(req) {
   });
 }
 
+export async function uploadToImageKit(imagekit, buffer, fileName, userId) {
+  return imagekit.files.upload({
+    file: await toFile(buffer, fileName),
+    fileName,
+    folder: `/stores/${userId}`,
+    useUniqueFileName: true,
+    tags: ['store', 'japan-maps', String(userId)],
+  });
+}
+
 export default async function handler(req, res) {
   const origin = req.headers.origin;
 
@@ -221,27 +231,17 @@ export default async function handler(req, res) {
       throw new Error('ImageKit credentials not configured');
     }
 
-    const imagekit = new ImageKit({
-      publicKey,
-      privateKey,
-      urlEndpoint,
-    });
+    const imagekit = new ImageKit({ privateKey });
 
     // Generate filename
     const timestamp = Date.now();
     const sanitizedFilename = file.filename?.replace(/[^a-zA-Z0-9.-]/g, '_') || 'upload.jpg';
     const fileName = `${timestamp}_${sanitizedFilename}`;
 
-    // Upload to ImageKit using Buffer directly (no need for base64 conversion)
+    // Upload to ImageKit using the v7 files API.
     console.log(`📤 [ImageKit Upload] file: ${fileName}, size: ${file.buffer.length} bytes, type: ${file.mimeType}`);
 
-    const uploadResult = await imagekit.upload({
-      file: file.buffer, // Pass Buffer directly - SDK handles it
-      fileName: fileName,
-      folder: `/stores/${user.id}`,
-      useUniqueFileName: true,
-      tags: ['store', 'japan-maps', String(user.id)], // Convert user.id to string!
-    });
+    const uploadResult = await uploadToImageKit(imagekit, file.buffer, fileName, user.id);
 
     console.log(`✅ [Japan Maps] Photo uploaded for user: ${user.id}, fileId: ${uploadResult.fileId}`);
 
