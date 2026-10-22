@@ -4,9 +4,9 @@ Do not run `supabase db push` on this project. The repository and production dat
 
 For each approved database change, review the exact SQL, apply only that SQL directly to the intended Supabase project, and verify the schema and existing data afterward. Check the version Supabase records for the change, then rename the corresponding migration file to match that recorded version. Do not repair or replay unrelated migration history as part of a routine change.
 
-## Proposed: trusted Finds auto-publish (not applied)
+## Trusted Finds auto-publish (applied 2026-10-22)
 
-Do **not** apply this until separately approved. The current `field_notes.status` check constraint permits only `pending`, `approved`, and `rejected`; its default is `pending`. This migration adds the first trigger on `field_notes`, permits the trigger's approved status through the two owner `WITH CHECK` policies, and leaves admin moderation and the existing SELECT policies unchanged. The exact reviewed SQL is also saved in `supabase/migrations/20261022030610_trusted_finds_auto_publish.sql`:
+Applied to production after approval as Supabase migration `20261022181831`. The `field_notes.status` check constraint permits only `pending`, `approved`, and `rejected`; its default is `pending`. This migration adds the first trigger on `field_notes`, permits the trigger's approved status through the two owner `WITH CHECK` policies, and leaves admin moderation and the existing SELECT policies unchanged. The exact reviewed SQL is also saved in `supabase/migrations/20261022181831_trusted_finds_auto_publish.sql`:
 
 ```sql
 CREATE OR REPLACE FUNCTION public.set_field_note_status_for_owner()
@@ -55,7 +55,7 @@ ALTER POLICY field_notes_update_own ON public.field_notes
   WITH CHECK (user_id = auth.uid() AND status IN ('pending', 'approved'));
 ```
 
-Before rollout, test in a non-production project with these accounts and compare database status to UI copy:
+For future regression checks, use a non-production project with these accounts and compare database status to UI copy:
 
 1. A new user submits their first Find: it is `pending`, and the form says “Sent for review.” A forged `status='approved'` from a new user is also `pending`.
 2. An admin approves that Find: it becomes `approved`. The same user submits a second Find: it is `approved`, and the form says “Posted.”
@@ -63,4 +63,4 @@ Before rollout, test in a non-production project with these accounts and compare
 4. Anonymous requests cannot bypass owner RLS. Verify that service-role writes retain their explicit status, including with the project's current secret-key type. As postgres/dashboard SQL (no JWT), delete a test store referenced by an approved Find: its `store_id` becomes `NULL` via `ON DELETE SET NULL`, while its status stays `approved`. Check the same role-less pass-through for a cron-style SQL update.
 5. Verify the public feed and store-specific feed show an approved submission immediately without a reload, while pending submissions remain out of both feeds.
 
-The web change relies on the insert returning the final `status` via `INSERT ... RETURNING`/`.select('status')`. Check the response under the existing owner SELECT policy before production rollout.
+The web change relies on the insert returning the final `status` via `INSERT ... RETURNING`/`.select('status')`. Include the response under the existing owner SELECT policy in future regression checks.
