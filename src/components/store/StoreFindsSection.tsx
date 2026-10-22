@@ -153,10 +153,10 @@ export function StoreFindsSection({ storeId, storeName, storeCity, storeNeighbor
   const [activeTab, setActiveTab] = useState<'visit' | 'haul'>('haul');
   const [showSubmitModal, setShowSubmitModal] = useState(false);
   const [submitType, setSubmitType] = useState<'visit' | 'haul'>('visit');
-  const [showBanner, setShowBanner] = useState(false);
+  const [submittedStatus, setSubmittedStatus] = useState<'approved' | 'pending' | null>(null);
 
-  useEffect(() => {
-    supabase
+  function fetchStoreFinds() {
+    return supabase
       .from('field_notes')
       .select('id, user_id, type, photo_url, store_name, item_name, caption, created_at, profiles(username, display_name)')
       .eq('store_id', storeId)
@@ -166,6 +166,10 @@ export function StoreFindsSection({ storeId, storeName, storeCity, storeNeighbor
         setFinds((data as StoreFind[]) || []);
         setLoading(false);
       });
+  }
+
+  useEffect(() => {
+    void fetchStoreFinds();
   }, [storeId]);
 
   const visits = finds.filter(f => f.type === 'visit');
@@ -287,10 +291,11 @@ export function StoreFindsSection({ storeId, storeName, storeCity, storeNeighbor
         {showSubmitModal && (
           <SubmitModal
             onClose={() => setShowSubmitModal(false)}
-            onSubmitted={() => {
+            onSubmitted={status => {
               setShowSubmitModal(false);
-              setShowBanner(true);
-              setTimeout(() => setShowBanner(false), 5000);
+              setSubmittedStatus(status);
+              if (status === 'approved') void fetchStoreFinds();
+              setTimeout(() => setSubmittedStatus(null), 5000);
             }}
             prefill={{
               storeId,
@@ -305,7 +310,7 @@ export function StoreFindsSection({ storeId, storeName, storeCity, storeNeighbor
 
       {/* Submitted banner */}
       <AnimatePresence>
-        {showBanner && (
+        {submittedStatus && (
           <motion.div
             initial={{ opacity: 0, y: -20 }}
             animate={{ opacity: 1, y: 0 }}
@@ -313,7 +318,7 @@ export function StoreFindsSection({ storeId, storeName, storeCity, storeNeighbor
             className="fixed top-6 left-1/2 -translate-x-1/2 z-[100] flex items-center gap-3 px-5 py-3 bg-gray-900 border border-purple-500/40 rounded-2xl shadow-2xl text-sm text-white"
           >
             <div className="h-2 w-2 rounded-full bg-purple-400 animate-pulse" />
-            Your find has been submitted for review. Thanks!
+            {submittedStatus === 'approved' ? 'Posted' : 'Sent for review'}
           </motion.div>
         )}
       </AnimatePresence>
