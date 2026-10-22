@@ -13,6 +13,7 @@ import { generatePassportShareCard } from '../utils/passportCanvas';
 import { computeStyleDNA, MINIMUM_STAMPS } from '../utils/computeStyleDNA';
 import { NeighborhoodBubbleMap, type NeighborhoodCount } from '../components/passport/NeighborhoodBubbleMap';
 import { useNeighborhoodQuests } from '../hooks/useNeighborhoodQuests';
+import { getDisplayUsername } from '../utils/slugify';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -921,7 +922,7 @@ function ProfileContent() {
   const [loadingPassport, setLoadingPassport] = useState(false);
   const passportFetchedRef = useRef(false);
 
-  const username = profile?.username || profile?.display_name || user?.email?.split('@')[0] || 'User';
+  const username = getDisplayUsername(profile, user?.id);
   const avatarColor = getAvatarColor(username);
   const initials = username.slice(0, 2).toUpperCase();
 

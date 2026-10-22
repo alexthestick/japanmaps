@@ -24,6 +24,7 @@ import { logger } from '../utils/logger';
 import { MAIN_CATEGORIES } from '../lib/constants';
 import { promoteSuggestion, revertSuggestionToPending } from '../utils/promoteSuggestion';
 import { defaultSubCategoriesFromHint } from '../utils/subCategoryOptions';
+import { getDisplayUsername } from '../utils/slugify';
 
 // ── Social inner tab switcher — defined at module level (NOT inside AdminDashboard)
 // so React sees a stable component type across renders and never remounts it.
@@ -1079,7 +1080,7 @@ export function AdminDashboard() {
                 if (a.status !== 'pending' && b.status === 'pending') return 1;
                 return 0;
               }).map((find: any) => {
-                const username = find.profiles?.username || find.profiles?.display_name || 'Anonymous';
+                const username = getDisplayUsername(find.profiles, find.user_id);
                 return (
                   <div
                     key={find.id}

@@ -5,6 +5,7 @@ import { getSavedStoreCount } from '../../utils/savedStores';
 import { getPendingSuggestionCount } from '../../utils/pendingSuggestions';
 import { MapStyleToggle } from '../map/MapStyleToggle';
 import { useAuthContext } from '../../contexts/AuthContext';
+import { getDisplayUsername } from '../../utils/slugify';
 
 interface HeaderProps {
   onCitiesClick?: () => void;
@@ -22,7 +23,7 @@ function avatarColor(str: string) {
 function ProfileDropdown({ onClose }: { onClose: () => void }) {
   const { user, profile, signOut } = useAuthContext();
   const navigate = useNavigate();
-  const username = profile?.username || profile?.display_name || user?.email?.split('@')[0] || '';
+  const username = getDisplayUsername(profile, user?.id);
   const color = avatarColor(username);
 
   async function handleSignOut() {
@@ -107,7 +108,7 @@ function ProfileButton() {
   const { user, profile } = useAuthContext();
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
-  const username = profile?.username || profile?.display_name || user?.email?.split('@')[0] || '';
+  const username = getDisplayUsername(profile, user?.id);
   const color = avatarColor(username);
   const initials = username.slice(0, 2).toUpperCase();
 

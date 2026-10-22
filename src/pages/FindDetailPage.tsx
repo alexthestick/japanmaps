@@ -120,6 +120,7 @@ function CommentItem({ comment, currentUserId, onDelete }: {
 export function FindDetailPage() {
   const { id } = useParams<{ id: string }>();
   const { user, profile } = useAuthContext();
+  const currentUsername = getDisplayUsername(profile, user?.id);
   const navigate = useNavigate();
 
   const [find, setFind] = useState<FindDetail | null>(null);
@@ -402,12 +403,12 @@ export function FindDetailPage() {
               <div
                 className="h-8 w-8 rounded-full flex items-center justify-center text-xs font-black flex-shrink-0 mt-0.5"
                 style={{
-                  backgroundColor: `${avatarColor(profile?.username || user.email?.split('@')[0] || '')}25`,
-                  border: `1.5px solid ${avatarColor(profile?.username || user.email?.split('@')[0] || '')}50`,
-                  color: avatarColor(profile?.username || user.email?.split('@')[0] || ''),
+                  backgroundColor: `${avatarColor(currentUsername)}25`,
+                  border: `1.5px solid ${avatarColor(currentUsername)}50`,
+                  color: avatarColor(currentUsername),
                 }}
               >
-                {(profile?.username || user.email?.split('@')[0] || '').slice(0, 2).toUpperCase()}
+                {currentUsername.slice(0, 2).toUpperCase()}
               </div>
               <div className="flex-1 flex gap-2">
                 <input
