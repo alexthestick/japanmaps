@@ -1,5 +1,5 @@
 -- Owner-submitted Finds are reviewed until the owner has an approved Find.
--- Admin moderation and service-role writes retain their requested status.
+-- Only signed-in, non-admin owners have their requested status overridden.
 CREATE OR REPLACE FUNCTION public.set_field_note_status_for_owner()
 RETURNS trigger
 LANGUAGE plpgsql
@@ -7,13 +7,27 @@ SECURITY DEFINER
 SET search_path = ''
 AS $$
 BEGIN
-  -- A missing auth.uid() is not proof of service-role access: anon also has no UID.
-  IF auth.role() = 'service_role' OR EXISTS (
+  -- Database-side updates (including ON DELETE SET NULL), service-role writes,
+  -- and anonymous requests must not change the status supplied by their caller.
+  IF auth.role() IS DISTINCT FROM 'authenticated' THEN
+    RETURN NEW;
+  END IF;
+
+  IF EXISTS (
     SELECT 1
     FROM public.profiles AS p
     WHERE p.id = auth.uid() AND p.is_admin = true
   ) THEN
     RETURN NEW;
+  END IF;
+
+  -- An owner editing a rejected Find sends it back to review, even if another
+  -- Find has since made that owner trusted.
+  IF TG_OP = 'UPDATE' THEN
+    IF OLD.status = 'rejected' THEN
+      NEW.status := 'pending';
+      RETURN NEW;
+    END IF;
   END IF;
 
   -- On UPDATE the existing approved row is intentionally included: editing a
