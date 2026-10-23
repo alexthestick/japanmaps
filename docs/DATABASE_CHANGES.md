@@ -4,6 +4,61 @@ Do not run `supabase db push` on this project. The repository and production dat
 
 For each approved database change, review the exact SQL, apply only that SQL directly to the intended Supabase project, and verify the schema and existing data afterward. Check the version Supabase records for the change, then rename the corresponding migration file to match that recorded version. Do not repair or replay unrelated migration history as part of a routine change.
 
+## Approve admin-owned Finds on insert (applied 2026-10-23)
+
+Supabase recorded this change as migration `20261023082848`. The previous trigger bypassed status-setting for admins on both INSERT and UPDATE, so an admin's own new Find could stay `pending`. This replacement sets admin INSERTs to `approved` while leaving admin moderation UPDATEs, non-admin trust and rejected-edit rules, and non-`authenticated` calls unchanged. It does not change existing pending Finds. The SQL is in `supabase/migrations/20261023082848_approve_admin_find_inserts.sql`:
+
+```sql
+-- Approve an admin's own new Find without changing admin moderation updates.
+-- All non-admin and non-authenticated paths remain as in migration 20261022181831.
+CREATE OR REPLACE FUNCTION public.set_field_note_status_for_owner()
+RETURNS trigger
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = ''
+AS $$
+BEGIN
+  -- Database-side updates (including ON DELETE SET NULL), service-role writes,
+  -- and anonymous requests must not change the status supplied by their caller.
+  IF auth.role() IS DISTINCT FROM 'authenticated' THEN
+    RETURN NEW;
+  END IF;
+
+  IF EXISTS (
+    SELECT 1
+    FROM public.profiles AS p
+    WHERE p.id = auth.uid() AND p.is_admin = true
+  ) THEN
+    -- Admin moderation updates retain the status the admin selected.
+    IF TG_OP = 'INSERT' THEN
+      NEW.status := 'approved';
+    END IF;
+    RETURN NEW;
+  END IF;
+
+  -- An owner editing a rejected Find sends it back to review, even if another
+  -- Find has since made that owner trusted.
+  IF TG_OP = 'UPDATE' THEN
+    IF OLD.status = 'rejected' THEN
+      NEW.status := 'pending';
+      RETURN NEW;
+    END IF;
+  END IF;
+
+  -- On UPDATE the existing approved row is intentionally included: editing a
+  -- user's first approved Find must not send it back to the review queue.
+  NEW.status := CASE WHEN EXISTS (
+    SELECT 1
+    FROM public.field_notes AS f
+    WHERE f.user_id = auth.uid() AND f.status = 'approved'
+  ) THEN 'approved' ELSE 'pending' END;
+  RETURN NEW;
+END;
+$$;
+```
+
+For future regression checks, use rolled-back database cases for: an authenticated admin INSERT requesting `pending` (must become `approved`); admin moderation UPDATE to `rejected` (must stay `rejected`); new and trusted non-admin INSERTs (`pending` and `approved` respectively); trusted edit of a rejected Find (`pending`); and no-JWT and service-role UPDATEs (statuses unchanged). Confirm rollback leaves no function, trigger, policy or test-row changes.
+
 ## Trusted Finds auto-publish (applied 2026-10-22)
 
 Applied to production after approval as Supabase migration `20261022181831`. The `field_notes.status` check constraint permits only `pending`, `approved`, and `rejected`; its default is `pending`. This migration adds the first trigger on `field_notes`, permits the trigger's approved status through the two owner `WITH CHECK` policies, and leaves admin moderation and the existing SELECT policies unchanged. The exact reviewed SQL is also saved in `supabase/migrations/20261022181831_trusted_finds_auto_publish.sql`:
