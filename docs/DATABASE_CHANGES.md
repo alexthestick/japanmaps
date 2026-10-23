@@ -4,9 +4,9 @@ Do not run `supabase db push` on this project. The repository and production dat
 
 For each approved database change, review the exact SQL, apply only that SQL directly to the intended Supabase project, and verify the schema and existing data afterward. Check the version Supabase records for the change, then rename the corresponding migration file to match that recorded version. Do not repair or replay unrelated migration history as part of a routine change.
 
-## Proposed: approve admin-owned Finds on insert (not applied)
+## Approve admin-owned Finds on insert (applied 2026-10-23)
 
-The live trigger currently bypasses status-setting for admins on both INSERT and UPDATE. An admin's own new Find can therefore stay `pending`. This proposed replacement sets admin INSERTs to `approved` while leaving admin moderation UPDATEs, non-admin trust and rejected-edit rules, and non-`authenticated` calls unchanged. It does not change existing pending Finds. The SQL is in `supabase/migrations/20261022220213_approve_admin_find_inserts.sql`:
+Supabase recorded this change as migration `20261023082848`. The previous trigger bypassed status-setting for admins on both INSERT and UPDATE, so an admin's own new Find could stay `pending`. This replacement sets admin INSERTs to `approved` while leaving admin moderation UPDATEs, non-admin trust and rejected-edit rules, and non-`authenticated` calls unchanged. It does not change existing pending Finds. The SQL is in `supabase/migrations/20261023082848_approve_admin_find_inserts.sql`:
 
 ```sql
 -- Approve an admin's own new Find without changing admin moderation updates.
@@ -57,7 +57,7 @@ END;
 $$;
 ```
 
-Before applying it, run rolled-back database cases for: an authenticated admin INSERT requesting `pending` (must become `approved`); admin moderation UPDATE to `rejected` (must stay `rejected`); new and trusted non-admin INSERTs (`pending` and `approved` respectively); trusted edit of a rejected Find (`pending`); and no-JWT and service-role UPDATEs (statuses unchanged). Confirm rollback leaves no function, trigger, policy or test-row changes.
+For future regression checks, use rolled-back database cases for: an authenticated admin INSERT requesting `pending` (must become `approved`); admin moderation UPDATE to `rejected` (must stay `rejected`); new and trusted non-admin INSERTs (`pending` and `approved` respectively); trusted edit of a rejected Find (`pending`); and no-JWT and service-role UPDATEs (statuses unchanged). Confirm rollback leaves no function, trigger, policy or test-row changes.
 
 ## Trusted Finds auto-publish (applied 2026-10-22)
 
