@@ -4,6 +4,10 @@ Do not run `supabase db push` on this project. The repository and production dat
 
 For each approved database change, review the exact SQL, apply only that SQL directly to the intended Supabase project, and verify the schema and existing data afterward. Check the version Supabase records for the change, then rename the corresponding migration file to match that recorded version. Do not repair or replay unrelated migration history as part of a routine change.
 
+## Profile photo owner read policy (applied 2026-10-25)
+
+Supabase recorded `20261025180726_profile_photos_user_read`. The policy is already live; do not re-apply it to production. It grants `SELECT` on `storage.objects` to `authenticated` only for objects in `profile-photos` whose filename stem equals the signed-in user's ID (`{user_id}.jpg`) or whose first folder is that ID (older paths). This is needed for profile photo uploads with `upsert: true`, which require owner `SELECT` in addition to the existing write policies. The matching SQL is in `supabase/migrations/20261025180726_profile_photos_user_read.sql`.
+
 ## Approve admin-owned Finds on insert (applied 2026-10-23)
 
 Supabase recorded this change as migration `20261023082848`. The previous trigger bypassed status-setting for admins on both INSERT and UPDATE, so an admin's own new Find could stay `pending`. This replacement sets admin INSERTs to `approved` while leaving admin moderation UPDATEs, non-admin trust and rejected-edit rules, and non-`authenticated` calls unchanged. It does not change existing pending Finds. The SQL is in `supabase/migrations/20261023082848_approve_admin_find_inserts.sql`:
