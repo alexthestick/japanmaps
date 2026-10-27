@@ -4,6 +4,10 @@ Do not run `supabase db push` on this project. The repository and production dat
 
 For each approved database change, review the exact SQL, apply only that SQL directly to the intended Supabase project, and verify the schema and existing data afterward. Check the version Supabase records for the change, then rename the corresponding migration file to match that recorded version. Do not repair or replay unrelated migration history as part of a routine change.
 
+## Find photo owner read policy (applied 2026-10-27)
+
+Supabase recorded `20261027062631_finds_photos_user_read`. The policy is already live; do not re-apply it to production. It grants `SELECT` on `storage.objects` to `authenticated` only for objects in `finds-photos` whose first folder is the signed-in user's ID. This allows owner-scoped Storage removal to return the deleted object alongside the existing `DELETE` policy. The matching SQL is in `supabase/migrations/20261027062631_finds_photos_user_read.sql`.
+
 ## Profile photo owner read policy (applied 2026-10-25)
 
 Supabase recorded `20261025180726_profile_photos_user_read`. The policy is already live; do not re-apply it to production. It grants `SELECT` on `storage.objects` to `authenticated` only for objects in `profile-photos` whose filename stem equals the signed-in user's ID (`{user_id}.jpg`) or whose first folder is that ID (older paths). This is needed for profile photo uploads with `upsert: true`, which require owner `SELECT` in addition to the existing write policies. The matching SQL is in `supabase/migrations/20261025180726_profile_photos_user_read.sql`.
