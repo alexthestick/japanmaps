@@ -4,6 +4,14 @@ Do not run `supabase db push` on this project. The repository and production dat
 
 For each approved database change, review the exact SQL, apply only that SQL directly to the intended Supabase project, and verify the schema and existing data afterward. Check the version Supabase records for the change, then rename the corresponding migration file to match that recorded version. Do not repair or replay unrelated migration history as part of a routine change.
 
+## Store chain brand in catalog RPC (applied 2026-10-28)
+
+Supabase recorded `20261028070813_get_all_stores_json_chain_brand`. The live `public.get_all_stores_json()` definition adds `chain_brand` to each store object without changing its other fields. The matching SQL is in `supabase/migrations/20261028070813_get_all_stores_json_chain_brand.sql`. This is a record of an already-live change; do not re-apply it to production.
+
+## Store chain brand column and index (applied 2026-10-28)
+
+Supabase recorded `20261028030548_stores_chain_brand`. It adds nullable `public.stores.chain_brand` and a partial index on non-null values. The matching SQL is in `supabase/migrations/20261028030548_stores_chain_brand.sql`. A separate, already-completed one-time data fix tagged 176 chain branches; its backup is `backups.stores_chain_fix_20261027`. That data fix is not part of this migration file and must not be replayed. The schema change is already live; do not re-apply it to production.
+
 ## Find photo owner read policy (applied 2026-10-27)
 
 Supabase recorded `20261027062631_finds_photos_user_read`. The policy is already live; do not re-apply it to production. It grants `SELECT` on `storage.objects` to `authenticated` only for objects in `finds-photos` whose first folder is the signed-in user's ID. This allows owner-scoped Storage removal to return the deleted object alongside the existing `DELETE` policy. The matching SQL is in `supabase/migrations/20261027062631_finds_photos_user_read.sql`.
